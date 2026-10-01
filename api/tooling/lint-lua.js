@@ -7,6 +7,22 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const defaultRoot = fileURLToPath(new URL('../', import.meta.url));
 
+function resolveInside(root, base, relativePath, description) {
+  if (typeof relativePath !== 'string' || !relativePath.trim()) {
+    throw new Error(`${description} must be a nonempty path in the API manifests`);
+  }
+  const packageRoot = path.resolve(root);
+  const resolved = path.resolve(base, relativePath);
+  if (resolved === packageRoot) {
+    throw new Error(`${description} must point to a file inside the API package, not its root: ${relativePath}`);
+  }
+  const relative = path.relative(packageRoot, resolved);
+  if (relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
+    throw new Error(`${description} resolves outside the API package: ${relativePath}; keep it inside the package.`);
+  }
+  return resolved;
+}
+
 async function luaFiles(directory) {
   let entries;
   try {
@@ -39,7 +55,7 @@ async function declaredLuaOutputs(root) {
 
   const outputs = [];
   for (const modulePath of bundle.modules) {
-    const moduleFile = path.resolve(root, modulePath);
+    const moduleFile = resolveInside(root, root, modulePath, 'Module manifest path');
     let module;
     try {
       module = JSON.parse(await readFile(moduleFile, 'utf8'));
@@ -51,10 +67,12 @@ async function declaredLuaOutputs(root) {
     }
     for (const asset of module.assets) {
       if (asset.kind === 'script' && asset.config?.script_type === 'lua') {
-        if (typeof asset.path !== 'string' || !asset.path.trim()) {
-          throw new Error(`Lua handler ${asset.id ?? '(unnamed)'} in ${moduleFile} must declare its generated path`);
-        }
-        outputs.push(path.resolve(path.dirname(moduleFile), asset.path));
+        outputs.push(resolveInside(
+          root,
+          path.dirname(moduleFile),
+          asset.path,
+          `Lua handler ${asset.id ?? '(unnamed)'} output path`,
+        ));
       }
     }
   }
