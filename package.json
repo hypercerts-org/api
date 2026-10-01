@@ -3,7 +3,8 @@
   "private": true,
   "packageManager": "pnpm@10.15.1",
   "scripts": {
-    "check": "pnpm --filter @happyview/hypercerts-api-kit check",
-    "build": "pnpm --filter @happyview/hypercerts-api-kit run build:lua"
+    "check": "pnpm --filter @happyview/hypercerts-api-kit check && pnpm --filter hypercerts-api-endpoints test",
+    "build": "pnpm --filter @happyview/hypercerts-api-kit run build:lua && pnpm --filter hypercerts-api-endpoints build",
+    "docs:dev": "pnpm --filter hypercerts-api-endpoints dev"
   }
 }
