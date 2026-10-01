@@ -14,14 +14,17 @@ async function withTempRoot(run) {
   }
 }
 
-async function declareLuaHandler(root) {
-  const modulePath = path.join(root, 'modules', 'demo', 'manifest.json');
-  await mkdir(path.dirname(modulePath), { recursive: true });
-  await writeFile(path.join(root, 'manifest.json'), JSON.stringify({ modules: ['modules/demo/manifest.json'] }));
-  await writeFile(modulePath, JSON.stringify({ assets: [{
+async function declareLuaHandler(root, {
+  manifestPath = 'modules/demo/manifest.json',
+  outputPath = '../../lua/endpoints/getExample.lua',
+} = {}) {
+  const moduleFile = path.join(root, 'modules', 'demo', 'manifest.json');
+  await mkdir(path.dirname(moduleFile), { recursive: true });
+  await writeFile(path.join(root, 'manifest.json'), JSON.stringify({ modules: [manifestPath] }));
+  await writeFile(moduleFile, JSON.stringify({ assets: [{
     kind: 'script',
     id: 'xrpc.query:org.example.getExample',
-    path: '../../lua/endpoints/getExample.lua',
+    path: outputPath,
     sourcePath: '../../lua/src/getExample.lua',
     config: { script_type: 'lua' },
   }] }));
@@ -59,6 +62,58 @@ test('requires generated endpoint bundles when Lua handlers are declared', async
     await assert.rejects(
       lintLua({ root, log: () => {} }),
       /declared generated handler bundles are missing.*pnpm build:lua/,
+    );
+  });
+});
+
+test('rejects module manifests outside the API package', async () => {
+  await withTempRoot(async (root) => {
+    await mkdir(path.join(root, 'lua', 'src'), { recursive: true });
+    await writeFile(path.join(root, 'lua', 'src', 'getExample.lua'), 'function handle() end\n');
+    await declareLuaHandler(root, { manifestPath: '../outside.json' });
+
+    await assert.rejects(
+      lintLua({ root, log: () => {} }),
+      /Module manifest path resolves outside the API package.*keep it inside the package/,
+    );
+  });
+});
+
+test('rejects the API package root as a module manifest file', async () => {
+  await withTempRoot(async (root) => {
+    await mkdir(path.join(root, 'lua', 'src'), { recursive: true });
+    await writeFile(path.join(root, 'lua', 'src', 'getExample.lua'), 'function handle() end\n');
+    await declareLuaHandler(root, { manifestPath: '.' });
+
+    await assert.rejects(
+      lintLua({ root, log: () => {} }),
+      /Module manifest path must point to a file inside the API package, not its root/,
+    );
+  });
+});
+
+test('rejects Lua handler output paths outside the API package', async () => {
+  await withTempRoot(async (root) => {
+    await mkdir(path.join(root, 'lua', 'src'), { recursive: true });
+    await writeFile(path.join(root, 'lua', 'src', 'getExample.lua'), 'function handle() end\n');
+    await declareLuaHandler(root, { outputPath: '../../../outside.lua' });
+
+    await assert.rejects(
+      lintLua({ root, log: () => {} }),
+      /Lua handler xrpc\.query:org\.example\.getExample output path resolves outside the API package.*keep it inside the package/,
+    );
+  });
+});
+
+test('rejects the API package root as a generated handler file', async () => {
+  await withTempRoot(async (root) => {
+    await mkdir(path.join(root, 'lua', 'src'), { recursive: true });
+    await writeFile(path.join(root, 'lua', 'src', 'getExample.lua'), 'function handle() end\n');
+    await declareLuaHandler(root, { outputPath: '../..' });
+
+    await assert.rejects(
+      lintLua({ root, log: () => {} }),
+      /Lua handler xrpc\.query:org\.example\.getExample output path must point to a file inside the API package, not its root/,
     );
   });
 });
