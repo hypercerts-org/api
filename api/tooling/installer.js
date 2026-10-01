@@ -1,0 +1,681 @@
+import { readFile, stat } from 'node:fs/promises';
+import { createRequire } from 'node:module';
+import path from 'node:path';
+import readline from 'node:readline';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { readLexiconSource } from './lexicon-source.js';
+
+/** @typedef {Record<string, unknown> & { backfill?: boolean; target_collection?: string; action?: string; token_cost?: number }} LexiconAssetConfig */
+/** @typedef {Record<string, unknown> & { script_type?: string; description?: string }} ScriptAssetConfig */
+/** @typedef {LexiconAssetConfig | ScriptAssetConfig} AssetConfig */
+/** @typedef {Record<string, unknown> & { id: string; kind: 'lexicon' | 'script' }} AssetCandidate */
+/** @typedef {Record<string, unknown> & { modules: string[] }} BundleManifest */
+/** @typedef {Record<string, unknown> & { id: string; kind: 'lexicon'; config: LexiconAssetConfig; dependsOn?: string[]; path?: string; packagePath?: string }} LexiconManifestAsset */
+/** @typedef {Record<string, unknown> & { id: string; kind: 'script'; config: ScriptAssetConfig; dependsOn?: string[]; path?: string }} ScriptManifestAsset */
+/** @typedef {LexiconManifestAsset | ScriptManifestAsset} ValidatedManifestAsset */
+/** @typedef {Record<string, unknown> & { assets: ValidatedManifestAsset[] }} ModuleManifest */
+/** @typedef {LexiconManifestAsset & { lexicon_json: unknown }} LoadedLexiconAsset */
+/** @typedef {ScriptManifestAsset & { path: string; body: string }} LoadedScriptAsset */
+/** @typedef {LoadedLexiconAsset | LoadedScriptAsset} LoadedAsset */
+/** @typedef {{ id: string; kind?: 'lexicon' | 'script'; dependsOn?: string[] }} OrderableAsset */
+/** @typedef {'missing' | 'unchanged'} InstallState */
+/** @typedef {{ asset: LoadedAsset; state: InstallState }} AssetInstallState */
+/** @typedef {{ config?: AssetConfig | null; lexicon_json?: unknown; body?: unknown }} InstalledAsset */
+/** External GET /admin/lexicons/:id response assertion; response.json() is not runtime-validated. @typedef {{ backfill: boolean; target_collection: string | null; action: string | null; token_cost: number | null; lexicon_json: unknown }} LexiconAdminRow */
+/** External GET /admin/scripts/:id response assertion; response.json() is not runtime-validated. @typedef {{ script_type: string; description: string | null; body: string }} ScriptAdminRow */
+/** @typedef {{ read: (asset: LoadedAsset) => Promise<InstalledAsset | null>; write: (asset: LoadedAsset) => Promise<void>; listScriptVariables?: () => Promise<unknown>; createScriptVariable?: (key: string, value: string) => Promise<void> }} AdminClient */
+/** @typedef {{ changed: string[]; unchanged: string[] }} InstallResult */
+/** @typedef {{ key: string; status: 'exists-unverified' | 'created' }} ResolverSetting */
+/** @typedef {{ env?: Record<string, string | undefined>; isTTY?: boolean; ask?: (prompt: string) => Promise<string>; onNotice?: (message: string) => void; debug?: boolean }} ApplyAssetsOptions */
+/** @typedef {InstallResult & { resolverSetting?: ResolverSetting }} ApplyAssetsResult */
+/** @typedef {Error & { completed: string[]; remaining: string[]; resolverSetting?: ResolverSetting }} PartialInstallError */
+
+const require = createRequire(new URL('../package.json', import.meta.url));
+
+/** @param {unknown} value @returns {unknown} */
+export function sortJsonKeys(value) {
+  if (Array.isArray(value)) return value.map(sortJsonKeys);
+  if (value && typeof value === 'object') {
+    const record = /** @type {Record<string, unknown>} */ (value);
+    return Object.fromEntries(Object.keys(value).sort((a, b) => {
+      if (a < b) return -1;
+      if (a > b) return 1;
+      return 0;
+    }).map((key) => [key, sortJsonKeys(record[key])]));
+  }
+  return value;
+}
+
+/** @param {unknown} document @returns {unknown} */
+function canonicalizeLexiconRefs(document) {
+  // HappyView stores canonical `lex:` refs; package schemas may use unprefixed refs.
+  const { Lexicons } = require('@atproto/lexicon');
+  // Lexicons performs the existing runtime document validation at this boundary.
+  const canonical = /** @type {import('@atproto/lexicon').LexiconDoc} */ (structuredClone(document));
+  const lexicons = new Lexicons([canonical]);
+  return lexicons.get(canonical.id);
+}
+
+/** @param {LoadedAsset} asset @param {InstalledAsset | null} installed @returns {'missing' | 'conflict' | 'unchanged'} */
+export function compareAsset(asset, installed) {
+  if (installed == null) return 'missing';
+  const declaredConfig = asset.config ?? {};
+  const installedConfig = Object.fromEntries(Object.keys(declaredConfig).map((key) => [key, installed.config?.[key]]));
+  if (JSON.stringify(sortJsonKeys(installedConfig)) !== JSON.stringify(sortJsonKeys(declaredConfig))) return 'conflict';
+  if (asset.kind === 'lexicon') {
+    if (installed.lexicon_json == null) return 'conflict';
+    const installedLexicon = canonicalizeLexiconRefs(installed.lexicon_json);
+    const declaredLexicon = canonicalizeLexiconRefs(asset.lexicon_json);
+    if (JSON.stringify(sortJsonKeys(installedLexicon)) !== JSON.stringify(sortJsonKeys(declaredLexicon))) return 'conflict';
+  }
+  if (asset.kind === 'script' && installed.body !== asset.body) return 'conflict';
+  return 'unchanged';
+}
+
+/** @param {string} fieldPath @param {unknown} expected @param {unknown} installed @param {string[]} differences */
+function describeDifference(fieldPath, expected, installed, differences) {
+  if (JSON.stringify(sortJsonKeys(expected)) === JSON.stringify(sortJsonKeys(installed))) return;
+  if (expected && installed && typeof expected === 'object' && typeof installed === 'object'
+    && !Array.isArray(expected) && !Array.isArray(installed)) {
+    const expectedFields = /** @type {Record<string, unknown>} */ (expected);
+    const installedFields = /** @type {Record<string, unknown>} */ (installed);
+    for (const key of [...new Set([...Object.keys(expectedFields), ...Object.keys(installedFields)])].sort()) {
+      describeDifference(`${fieldPath}.${key}`, expectedFields[key], installedFields[key], differences);
+    }
+    return;
+  }
+  differences.push(`${fieldPath}: expected ${JSON.stringify(expected) ?? 'undefined'}; installed ${JSON.stringify(installed) ?? 'undefined'}`);
+}
+
+/** @param {LoadedAsset} asset @param {InstalledAsset} installed @returns {string} */
+function describeAssetConflict(asset, installed) {
+  /** @type {string[]} */
+  const differences = [];
+  const declaredConfig = asset.config ?? {};
+  const installedConfig = Object.fromEntries(Object.keys(declaredConfig).map((key) => [key, installed.config?.[key]]));
+  describeDifference('config', declaredConfig, installedConfig, differences);
+  if (asset.kind === 'lexicon') {
+    if (installed.lexicon_json == null) {
+      differences.push('lexicon_json: missing from installed asset');
+    } else {
+      describeDifference('lexicon_json', canonicalizeLexiconRefs(asset.lexicon_json), canonicalizeLexiconRefs(installed.lexicon_json), differences);
+    }
+  }
+  if (asset.kind === 'script' && installed.body !== asset.body) {
+    differences.push(`body: expected ${JSON.stringify(asset.body)}; installed ${JSON.stringify(installed.body) ?? 'undefined'}`);
+  }
+  return differences.join('\n');
+}
+
+/** @param {string | URL} baseUrl @returns {URL} */
+function validateAdminUrl(baseUrl) {
+  let target;
+  try {
+    target = new URL(baseUrl);
+  } catch {
+    throw new Error('HappyView admin URL must be a valid HTTP(S) URL');
+  }
+  const IPV6_ADDRESS_BRACKETS = /^\[|\]$/g;
+  const hostname = target.hostname.toLowerCase().replace(IPV6_ADDRESS_BRACKETS, '');
+  const loopback = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
+  if (!['http:', 'https:'].includes(target.protocol) || target.username || target.password || (target.protocol === 'http:' && !loopback)) {
+    throw new Error('HappyView admin URL must use HTTPS, or HTTP on localhost/127.0.0.1/::1, with no URL credentials');
+  }
+  return target;
+}
+
+/** @param {URL} target @param {string} token @param {typeof globalThis.fetch} fetchImpl */
+function createAdminRequest(target, token, fetchImpl) {
+  return /** @param {'GET' | 'POST'} method @param {string} route @param {unknown} [body] */ async function request(method, route, body) {
+    let response;
+    try {
+      response = await fetchImpl(new URL(route, target), {
+        method,
+        headers: { Authorization: `Bearer ${token}`, ...(body === undefined ? {} : { 'content-type': 'application/json' }) },
+        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+        redirect: 'error',
+      });
+    } catch {
+      throw new Error(`HappyView ${method} ${route} request failed before receiving a response`);
+    }
+    if (method === 'GET' && response.status === 404) return null;
+    if (!response.ok) throw new Error(`HappyView ${method} ${route} returned HTTP ${response.status}`);
+    return response.status === 204 ? null : response.json();
+  };
+}
+
+/** @param {{ baseUrl: string | URL; token: string; fetchImpl?: typeof globalThis.fetch }} options */
+export function createAdminClient({ baseUrl, token, fetchImpl = globalThis.fetch }) {
+  if (typeof token !== 'string' || !token.trim()) {
+    throw new Error('HAPPYVIEW_ADMIN_TOKEN is required and must not be blank; set it before running the installer (see README.md)');
+  }
+  const target = validateAdminUrl(baseUrl);
+  const request = createAdminRequest(target, token.trim(), fetchImpl);
+  return {
+    /** @param {LoadedAsset} asset */
+    async read(asset) {
+      const encoded = encodeURIComponent(asset.id);
+      const row = await request('GET', asset.kind === 'lexicon' ? `/admin/lexicons/${encoded}` : `/admin/scripts/${encoded}`);
+      if (!row) return null;
+      if (asset.kind === 'lexicon') {
+        const lexiconRow = /** @type {LexiconAdminRow} */ (row);
+        return { config: { backfill: lexiconRow.backfill, target_collection: lexiconRow.target_collection ?? undefined, action: lexiconRow.action ?? undefined, token_cost: lexiconRow.token_cost ?? undefined }, lexicon_json: lexiconRow.lexicon_json };
+      }
+      const scriptRow = /** @type {ScriptAdminRow} */ (row);
+      return { config: { script_type: scriptRow.script_type, description: scriptRow.description ?? undefined }, body: scriptRow.body };
+    },
+    /** @param {LoadedAsset} asset */
+    async write(asset) {
+      if (asset.kind === 'lexicon') {
+        await request('POST', '/admin/lexicons', {
+          lexicon_json: asset.lexicon_json,
+          backfill: asset.config.backfill,
+          target_collection: asset.config.target_collection,
+          action: asset.config.action,
+          token_cost: asset.config.token_cost,
+        });
+      } else {
+        await request('POST', '/admin/scripts', { id: asset.id, script_type: asset.config.script_type, description: asset.config.description, body: asset.body });
+      }
+    },
+    async listScriptVariables() {
+      return request('GET', '/admin/script-variables');
+    },
+    /** @param {string} key @param {string} value */
+    async createScriptVariable(key, value) {
+      await request('POST', '/admin/script-variables', { key, value });
+    },
+  };
+}
+
+/**
+ * @template {OrderableAsset} T
+ * @param {T[]} assets
+ * @returns {T[]}
+ */
+export function orderAssets(assets) {
+  /** @type {Map<string, T>} */
+  const byId = new Map();
+  for (const asset of assets) {
+    if (byId.has(asset.id)) throw new Error(`Duplicate asset ${asset.id}; declare each asset in one module only`);
+    byId.set(asset.id, asset);
+  }
+  /** @type {T[]} */
+  const ordered = [];
+  const visiting = new Set();
+  const visited = new Set();
+  /** @param {T} asset */
+  function visit(asset) {
+    if (visited.has(asset.id)) return;
+    if (visiting.has(asset.id)) throw new Error(`Asset dependency cycle at ${asset.id}; remove the circular dependsOn reference before installing`);
+    visiting.add(asset.id);
+    for (const dependency of asset.dependsOn ?? []) {
+      const parent = byId.get(dependency);
+      if (!parent) throw new Error(`Missing asset dependency ${dependency} required by ${asset.id}; add its owner module to the bundle before installing`);
+      visit(parent);
+    }
+    visiting.delete(asset.id);
+    visited.add(asset.id);
+    ordered.push(asset);
+  }
+  for (const asset of [...assets].sort((a, b) => (a.kind === 'lexicon' ? 0 : 1) - (b.kind === 'lexicon' ? 0 : 1))) visit(asset);
+  return ordered;
+}
+
+/** @param {LoadedAsset[]} ordered @param {AdminClient} client @param {ApplyAssetsOptions} [options] @returns {Promise<AssetInstallState[]>} */
+async function preflightAssets(ordered, client, { debug = false } = {}) {
+  const states = [];
+  for (const asset of ordered) {
+    const installed = await client.read(asset);
+    const state = compareAsset(asset, installed);
+    if (state === 'conflict') {
+      const detail = debug ? `\n${describeAssetConflict(asset, /** @type {InstalledAsset} */ (installed))}` : ' (rerun with --debug to see the difference)';
+      throw new Error(`Refusing ${asset.id}: unexpected installed difference; inspect and resolve manually before retrying${detail}`);
+    }
+    states.push({ asset, state });
+  }
+  return states;
+}
+
+/** @param {AssetInstallState[]} states @param {AdminClient} client @returns {Promise<InstallResult>} */
+async function writeMissingAssets(states, client) {
+  const changed = [];
+  for (let i = 0; i < states.length; i++) {
+    const { asset, state } = states[i];
+    if (state === 'unchanged') continue;
+    try {
+      await client.write(asset);
+      changed.push(asset.id);
+    } catch (cause) {
+      const reason = cause instanceof Error ? cause.message : 'unknown write failure';
+      const error = /** @type {PartialInstallError} */ (new Error(`Install partially failed at ${asset.id}: ${reason}; completed: ${changed.join(', ') || '(none)'}; remaining: ${states.slice(i).filter((entry) => entry.state !== 'unchanged').map((entry) => entry.asset.id).join(', ')}`, { cause }));
+      error.completed = changed;
+      error.remaining = states.slice(i).filter((entry) => entry.state !== 'unchanged').map((entry) => entry.asset.id);
+      throw error;
+    }
+  }
+  return { changed, unchanged: states.filter((entry) => entry.state === 'unchanged').map(({ asset }) => asset.id) };
+}
+
+const PROFILE_LOOKUP_ASSET_IDS = new Set([
+  'app.certified.actor.getProfile',
+  'xrpc.query:app.certified.actor.getProfile',
+]);
+const RESOLVER_VARIABLE = 'HYPERCERTS_HANDLE_RESOLVER_URL';
+
+/** @param {string} value @returns {boolean} */
+function hasUnsafeResolverCharacter(value) {
+  for (const character of value) {
+    const code = character.codePointAt(0) ?? 0;
+    if (character === '\\' || code <= 0x20 || code === 0x7f || character.trim() === '') return true;
+  }
+  return false;
+}
+
+/** @param {string} value @returns {string} */
+function validateResolverUrl(value) {
+  const input = typeof value === 'string' ? value.trim() : '';
+  let target;
+  try {
+    const authority = /^https:\/\/([^/?#]+)\/?$/i.exec(input)?.[1];
+    if (!input || input.length > 2048 || hasUnsafeResolverCharacter(input) || input.includes('%')
+      || !authority || authority.endsWith(':')) throw new Error('invalid resolver URL syntax');
+    target = new URL(input);
+  } catch {
+    throw new Error(`${RESOLVER_VARIABLE} must be a valid HTTPS resolver base URL with no credentials, path, query, fragment, whitespace, or unsafe syntax; set a resolver origin such as https://resolver.example`);
+  }
+  const host = target.hostname.replace(/^\[|\]$/g, '');
+  const labels = host.split('.');
+  const validHost = target.hostname.startsWith('[')
+    ? /^[\da-f:.]+$/i.test(host) && host.includes(':')
+    : host.length <= 253 && labels.every((label) => label.length > 0 && label.length <= 63
+      && /^[a-z\d-]+$/i.test(label) && !label.startsWith('-') && !label.endsWith('-'));
+  const port = Number(target.port);
+  const validPort = target.port === '' || (port >= 1 && port <= 65535);
+  if (target.protocol !== 'https:' || target.username || target.password || target.search || target.hash
+    || target.pathname !== '/' || !target.hostname || !validHost || !validPort) {
+    throw new Error(`${RESOLVER_VARIABLE} must be a valid HTTPS resolver base URL with no credentials, path, query, fragment, whitespace, or unsafe syntax; set a resolver origin such as https://resolver.example`);
+  }
+  return target.origin;
+}
+
+/** @param {string} operation @param {string} permission @param {unknown} cause @returns {Error} */
+function resolverAdminFailure(operation, permission, cause) {
+  const reason = cause instanceof Error ? cause.message : 'unknown admin request failure';
+  return new Error(`Unable to ${operation} ${RESOLVER_VARIABLE}: ${reason}. Ensure the HappyView admin token has ${permission} permission and retry.`, { cause });
+}
+
+/** @param {AdminClient} client @param {{ env: Record<string, string | undefined>; isTTY: boolean; ask: (prompt: string) => Promise<string>; onNotice: (message: string) => void }} options @returns {Promise<ResolverSetting>} */
+async function installResolverSetting(client, { env, isTTY, ask, onNotice }) {
+  let variables;
+  try {
+    if (typeof client.listScriptVariables !== 'function') throw new Error('admin client does not support script-variable listing');
+    variables = await client.listScriptVariables();
+  } catch (cause) {
+    throw resolverAdminFailure('inspect', 'script-variables:read', cause);
+  }
+  if (!Array.isArray(variables) || variables.some((item) => !item || typeof item.key !== 'string')) {
+    throw resolverAdminFailure('inspect', 'script-variables:read', new Error('HappyView returned an invalid script-variable list'));
+  }
+  if (variables.some(({ key }) => key === RESOLVER_VARIABLE)) {
+    const message = `${RESOLVER_VARIABLE} already exists in HappyView; its script-variable list exposes only a masked preview, so its actual value cannot be verified.`;
+    onNotice(message);
+    return { key: RESOLVER_VARIABLE, status: 'exists-unverified' };
+  }
+
+  let value = typeof env[RESOLVER_VARIABLE] === 'string' ? env[RESOLVER_VARIABLE].trim() : '';
+  if (!value) {
+    if (!isTTY) {
+      throw new Error(`${RESOLVER_VARIABLE} is required for getProfile handle lookups; set an HTTPS resolver base URL in the environment or rerun pnpm install:api in an interactive terminal to enter it (see README.md)`);
+    }
+    value = await ask('Handle resolver HTTPS base URL');
+  }
+  const resolverUrl = validateResolverUrl(value);
+
+  try {
+    if (typeof client.createScriptVariable !== 'function') throw new Error('admin client does not support script-variable creation');
+    await client.createScriptVariable(RESOLVER_VARIABLE, resolverUrl);
+  } catch (cause) {
+    throw resolverAdminFailure('create', 'script-variables:create', cause);
+  }
+  return { key: RESOLVER_VARIABLE, status: 'created' };
+}
+
+/** @param {LoadedAsset[]} assets @param {AdminClient} client @param {ApplyAssetsOptions} [options] @returns {Promise<ApplyAssetsResult>} */
+export async function applyAssets(assets, client, options = {}) {
+  const ordered = orderAssets(assets);
+  const states = await preflightAssets(ordered, client, options);
+  if (!ordered.some(({ id }) => PROFILE_LOOKUP_ASSET_IDS.has(id))) {
+    return writeMissingAssets(states, client);
+  }
+
+  const resolverSetting = await installResolverSetting(client, {
+    env: options.env ?? process.env,
+    isTTY: options.isTTY ?? Boolean(process.stdin.isTTY && process.stdout.isTTY),
+    ask: options.ask ?? askOnTerminal,
+    onNotice: options.onNotice ?? ((message) => console.log(message)),
+  });
+  try {
+    const result = await writeMissingAssets(states, client);
+    return { ...result, resolverSetting };
+  } catch (cause) {
+    if (resolverSetting.status !== 'created') throw cause;
+    const partialFailure = cause instanceof Error ? /** @type {PartialInstallError} */ (cause) : undefined;
+    const reason = cause instanceof Error ? cause.message : String(cause);
+    const error = /** @type {PartialInstallError} */ (new Error(`Install partially failed after creating ${RESOLVER_VARIABLE}; the setting remains on HappyView and was not deleted. ${reason}`, { cause }));
+    error.completed = partialFailure?.completed ?? [];
+    error.remaining = partialFailure?.remaining ?? [];
+    error.resolverSetting = resolverSetting;
+    throw error;
+  }
+}
+
+// Root manifest (paths are relative to this file):
+// { "modules": ["modules/shared/manifest.json", "modules/location/manifest.json"] }
+/** @param {string} manifestPath @returns {Promise<BundleManifest>} */
+async function readBundleManifest(manifestPath) {
+  let parsed;
+  try {
+    parsed = JSON.parse(await readFile(manifestPath, 'utf8'));
+  } catch (cause) {
+    // readFile and JSON.parse throw Error instances; preserve their original message interpolation.
+    const detail = /** @type {Error} */ (cause).message;
+    throw new Error(`Bundle ${manifestPath} is missing or invalid (${detail}); create or fix the root manifest before installing`, { cause });
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error(`Bundle ${manifestPath} must list at least one module manifest in modules; add a module before installing`);
+  }
+  const candidate = /** @type {Record<string, unknown>} */ (parsed);
+  if (!Array.isArray(candidate.modules) || candidate.modules.length === 0) {
+    throw new Error(`Bundle ${manifestPath} must list at least one module manifest in modules; add a module before installing`);
+  }
+  /** @type {string[]} */
+  const modules = [];
+  for (const [moduleIndex, modulePath] of candidate.modules.entries()) {
+    if (typeof modulePath !== 'string' || !modulePath.trim()) {
+      throw new Error(`Bundle ${manifestPath} modules[${moduleIndex}] must be a nonempty module path; fix the modules list before installing`);
+    }
+    modules.push(modulePath);
+  }
+  return { ...candidate, modules };
+}
+
+// Module manifest (asset paths are relative to this module manifest):
+// {
+//   "assets": [
+//     { "id": "org.example.schema", "kind": "lexicon", "path": "schema.json", "config": { "backfill": false } },
+//     { "id": "org.example.handler", "kind": "script", "path": "handler.lua", "config": { "script_type": "lua" }, "dependsOn": ["org.example.schema"] }
+//   ]
+// }
+/** @param {string} modulePath @param {string} file @param {Map<string, string>} owners @returns {Promise<ModuleManifest>} */
+async function readModuleManifest(modulePath, file, owners) {
+  let parsed;
+  try {
+    parsed = JSON.parse(await readFile(file, 'utf8'));
+  } catch (cause) {
+    // readFile and JSON.parse throw Error instances; preserve their original message interpolation.
+    const detail = /** @type {Error} */ (cause).message;
+    throw new Error(`Module ${modulePath} is missing or invalid (${detail}); check the bundle's modules list and module manifest`, { cause });
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error(`Module ${modulePath} must declare an assets array; fix its manifest before installing`);
+  }
+  const candidate = /** @type {Record<string, unknown>} */ (parsed);
+  if (!Array.isArray(candidate.assets)) {
+    throw new TypeError(`Module ${modulePath} must declare an assets array; fix its manifest before installing`);
+  }
+  /** @type {ValidatedManifestAsset[]} */
+  const assets = [];
+  for (const [assetIndex, entry] of candidate.assets.entries()) {
+    assets.push(validateAssetEntry(entry, modulePath, assetIndex, owners));
+  }
+  return { ...candidate, assets };
+}
+
+/** @param {unknown} entry @param {string} modulePath @param {number} assetIndex @returns {AssetCandidate} */
+function validateAssetShape(entry, modulePath, assetIndex) {
+  if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+    throw new Error(`Module ${modulePath} assets[${assetIndex}] needs a nonempty string id and kind lexicon or script; fix this asset before installing`);
+  }
+  const candidate = /** @type {Record<string, unknown>} */ (entry);
+  if (typeof candidate.id !== 'string' || !candidate.id.trim() || (candidate.kind !== 'lexicon' && candidate.kind !== 'script')) {
+    throw new Error(`Module ${modulePath} assets[${assetIndex}] needs a nonempty string id and kind lexicon or script; fix this asset before installing`);
+  }
+  return /** @type {AssetCandidate} */ (candidate);
+}
+
+/** @param {AssetCandidate} candidate @param {string} modulePath @param {number} assetIndex */
+function validateAssetDependencies(candidate, modulePath, assetIndex) {
+  if (candidate.dependsOn !== undefined && (!Array.isArray(candidate.dependsOn) || candidate.dependsOn.some((id) => typeof id !== 'string' || !id.trim()))) {
+    throw new Error(`Module ${modulePath} assets[${assetIndex}] (${candidate.id}) dependsOn must be an array of nonempty string asset IDs; fix its dependencies before installing`);
+  }
+}
+
+/** @param {string} id @param {string} modulePath @param {Map<string, string>} owners */
+function claimAssetOwnership(id, modulePath, owners) {
+  if (owners.has(id)) {
+    throw new Error(`Duplicate asset ${id} in modules ${owners.get(id)} and ${modulePath}; declare it in one owner only`);
+  }
+  owners.set(id, modulePath);
+}
+
+/** @param {string} field @param {unknown} value @param {string} expectedType @returns {boolean} */
+function isValidConfigValue(field, value, expectedType) {
+  return field === 'token_cost'
+    ? typeof value === 'number' && Number.isInteger(value) && value >= -2147483648 && value <= 2147483647
+    : typeof value === expectedType;
+}
+
+/** @param {AssetCandidate} candidate @param {string} modulePath @param {number} assetIndex */
+function validateAssetConfig(candidate, modulePath, assetIndex) {
+  if (!candidate.config || typeof candidate.config !== 'object' || Array.isArray(candidate.config)) {
+    throw new Error(`Module ${modulePath} assets[${assetIndex}] (${candidate.id}) config must be a non-array object; fix its configuration before installing`);
+  }
+  const config = /** @type {Record<string, unknown>} */ (candidate.config);
+  const configFieldTypes = candidate.kind === 'lexicon'
+    ? { backfill: 'boolean', target_collection: 'string', action: 'string', token_cost: 'number' }
+    : { script_type: 'string', description: 'string' };
+  for (const [field, expectedType] of Object.entries(configFieldTypes)) {
+    const value = config[field];
+    const valid = isValidConfigValue(field, value, expectedType);
+    if (value !== undefined && !valid) {
+      const expected = field === 'token_cost' ? 'a signed 32-bit integer' : `a ${expectedType}`;
+      throw new Error(`Module ${modulePath} assets[${assetIndex}] (${candidate.id}) config.${field} must be ${expected} when provided; fix its configuration before installing`);
+    }
+  }
+}
+
+/** @param {AssetCandidate} candidate @param {string} modulePath @param {number} assetIndex */
+function validateAssetSourcePaths(candidate, modulePath, assetIndex) {
+  const sourceFields = candidate.kind === 'lexicon' ? ['path', 'packagePath'] : ['path'];
+  for (const field of sourceFields) {
+    const sourcePath = candidate[field];
+    if (sourcePath !== undefined && (typeof sourcePath !== 'string' || !sourcePath.trim())) {
+      throw new Error(`Module ${modulePath} assets[${assetIndex}] (${candidate.id}) ${field} must be a nonempty string path when provided; fix its source declaration before installing`);
+    }
+  }
+}
+
+/** @param {unknown} entry @param {string} modulePath @param {number} assetIndex @param {Map<string, string>} owners @returns {ValidatedManifestAsset} */
+function validateAssetEntry(entry, modulePath, assetIndex, owners) {
+  const candidate = validateAssetShape(entry, modulePath, assetIndex);
+  validateAssetDependencies(candidate, modulePath, assetIndex);
+  claimAssetOwnership(candidate.id, modulePath, owners);
+  validateAssetConfig(candidate, modulePath, assetIndex);
+  validateAssetSourcePaths(candidate, modulePath, assetIndex);
+  return /** @type {ValidatedManifestAsset} */ (candidate);
+}
+
+/* eslint-disable no-param-reassign -- loadAssetSource passes a private copy to populate with its loaded source. */
+/** @param {LexiconManifestAsset & { lexicon_json?: unknown }} asset @param {string} root */
+async function loadLexiconAssetSource(asset, root) {
+  asset.lexicon_json = await readLexiconSource(asset, root);
+  const lexiconId = /** @type {{ id?: unknown } | null} */ (asset.lexicon_json)?.id;
+  if (lexiconId !== asset.id) {
+    const displayedId = typeof lexiconId === 'string' ? lexiconId : JSON.stringify(lexiconId) ?? String(lexiconId);
+    throw new Error(`lexicon ID ${displayedId} does not match declared asset ID ${asset.id}`);
+  }
+}
+
+/** @param {ScriptManifestAsset & { body?: string }} asset @param {string} root */
+async function loadScriptAssetSource(asset, root) {
+  if (!asset.path) throw new Error('script source path is missing');
+  const source = path.resolve(root, asset.path);
+  const info = await stat(source);
+  if (!info.isFile()) throw new Error('script source is not a file');
+  asset.body = await readFile(source, 'utf8');
+  if (!asset.body.trim()) throw new Error('script source is empty');
+}
+/* eslint-enable no-param-reassign */
+
+/** @param {ValidatedManifestAsset} asset @returns {string} */
+function assetSourcePath(asset) {
+  if (typeof asset.path === 'string') return asset.path;
+  if (asset.kind === 'lexicon' && typeof asset.packagePath === 'string') return asset.packagePath;
+  return '(unset)';
+}
+
+/** @param {ValidatedManifestAsset & { lexicon_json?: unknown; body?: string }} asset @param {string} modulePath @param {string} root @returns {Promise<LoadedAsset>} */
+async function loadAssetSource(asset, modulePath, root) {
+  const loadedAsset = { ...asset };
+  try {
+    if (loadedAsset.kind === 'lexicon') {
+      await loadLexiconAssetSource(loadedAsset, root);
+    } else {
+      await loadScriptAssetSource(loadedAsset, root);
+    }
+    return /** @type {LoadedAsset} */ (loadedAsset);
+  } catch (cause) {
+    // Node filesystem and package-source operations throw Error instances; preserve their original message interpolation.
+    const detail = /** @type {Error} */ (cause).message;
+    throw new Error(`Asset ${loadedAsset.id} in module ${modulePath}: source ${assetSourcePath(loadedAsset)} is missing, invalid or empty (${detail}); fix the declaration or source before installing`, { cause });
+  }
+}
+
+/** @param {string} modulePath @param {string} file @param {Map<string, string>} owners @returns {Promise<LoadedAsset[]>} */
+async function loadModuleAssets(modulePath, file, owners) {
+  const module = await readModuleManifest(modulePath, file, owners);
+  /** @type {LoadedAsset[]} */
+  const assets = [];
+  for (const entry of module.assets) {
+    assets.push(await loadAssetSource(entry, modulePath, path.dirname(file)));
+  }
+  return assets;
+}
+
+/**
+ * Load one bundle of module manifests, resolving local sources relative to each module.
+ * Validates all local assets and dependencies before admin calls; returns { assets } for applyAssets.
+ * @param {string} manifestPath
+ * @returns {Promise<{ assets: LoadedAsset[] }>}
+ */
+export async function loadAssets(manifestPath) {
+  const manifest = await readBundleManifest(manifestPath);
+  /** @type {LoadedAsset[]} */
+  const assets = [];
+  /** @type {Map<string, string>} */
+  const owners = new Map();
+  for (const modulePath of manifest.modules) {
+    const file = path.resolve(path.dirname(manifestPath), modulePath);
+    assets.push(...await loadModuleAssets(modulePath, file, owners));
+  }
+  orderAssets(assets);
+  return { assets };
+}
+
+/** @param {string} label @param {{ hidden?: boolean }} [options] @returns {Promise<string>} */
+function askOnTerminal(label, { hidden = false } = {}) {
+  return new Promise((resolve, reject) => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+      terminal: true,
+    });
+
+    if (hidden) {
+      // Readline echoes keypresses through this hook; keep the token off stdout.
+      const terminal = /** @type {{ _writeToOutput: (text: string) => void }} */ (/** @type {unknown} */ (rl));
+      const writeToOutput = terminal._writeToOutput.bind(rl);
+      let promptWritten = false;
+      terminal._writeToOutput = (text) => {
+        if (!promptWritten) {
+          promptWritten = true;
+          writeToOutput(text);
+        } else if (text.includes('\n') || text.includes('\r')) {
+          writeToOutput(text);
+        }
+      };
+    }
+
+    let settled = false;
+    rl.once('close', () => {
+      if (settled) return;
+      settled = true;
+      reject(new Error(`${label} prompt ended unexpectedly; rerun in a terminal or set its environment variable`));
+    });
+    rl.once('SIGINT', () => {
+      if (settled) return;
+      settled = true;
+      rl.close();
+      reject(new Error(`${label} prompt was cancelled; rerun the installer to try again`));
+    });
+    rl.question(`${label}: `, (answer) => {
+      if (settled) return;
+      settled = true;
+      rl.close();
+      resolve(answer);
+    });
+  });
+}
+
+/**
+ * @param {{ env?: NodeJS.ProcessEnv; isTTY?: boolean; ask?: (label: string, options: { hidden?: boolean }) => Promise<string> }} [options]
+ * @returns {Promise<{ baseUrl: string; token: string }>}
+ */
+export async function resolveInstallConfig({
+  env = process.env,
+  isTTY = Boolean(process.stdin.isTTY && process.stdout.isTTY),
+  ask = askOnTerminal,
+} = {}) {
+  /** @param {string} name @param {string} label @param {{ hidden?: boolean }} [options] @returns {Promise<string>} */
+  async function resolveValue(name, label, { hidden = false } = {}) {
+    const configured = typeof env[name] === 'string' ? env[name].trim() : '';
+    if (configured) return configured;
+
+    if (!isTTY) {
+      throw new Error(`${name} is required and must not be blank; set it in the environment or run the installer in an interactive terminal (see README.md)`);
+    }
+
+    const value = await ask(label, { hidden });
+    if (typeof value !== 'string' || !value.trim()) {
+      throw new Error(`${name} is required and must not be blank; enter a value at the prompt or set it in the environment (see README.md)`);
+    }
+    return value.trim();
+  }
+
+  return {
+    baseUrl: await resolveValue('HAPPYVIEW_BASE_URL', 'HappyView URL'),
+    token: await resolveValue('HAPPYVIEW_ADMIN_TOKEN', 'HappyView admin token', { hidden: true }),
+  };
+}
+
+async function main() {
+  const args = process.argv.slice(2);
+  if (args.some((arg) => arg !== '--debug')) throw new Error('Unknown installer option; use --debug to print conflicting asset values');
+  const debug = args.includes('--debug');
+  const { baseUrl: rawBaseUrl, token } = await resolveInstallConfig();
+  const client = createAdminClient({ baseUrl: rawBaseUrl, token });
+  const { assets } = await loadAssets(fileURLToPath(new URL('../manifest.json', import.meta.url)));
+  const result = await applyAssets(assets, client, { debug });
+  console.log(JSON.stringify(result, null, 2));
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+  try {
+    await main();
+  } catch (error) {
+    // main only throws Error instances; retain the CLI's existing message output.
+    console.error(/** @type {Error} */ (error).message);
+    process.exitCode = 1;
+  }
+}

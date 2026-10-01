@@ -1,0 +1,32 @@
+{
+  "name": "@happyview/hypercerts-api-kit",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@atcute/cbor": "2.3.2",
+    "@atcute/cid": "2.4.1",
+    "@atproto/lexicon": "0.6.2",
+    "@atproto/syntax": "0.5.4",
+    "@hypercerts-org/lexicon": "1.4.0"
+  },
+  "scripts": {
+    "lint:js": "eslint --max-warnings=0 --report-unused-disable-directives .",
+    "lint:lua": "node tooling/lint-lua.js",
+    "lint": "pnpm run lint:js && pnpm run lint:lua",
+    "typecheck": "tsc --project tsconfig.json",
+    "check:generated": "node tooling/build-lua.js --check",
+    "check": "pnpm run check:generated && pnpm run lint && pnpm run typecheck && pnpm run test:unit",
+    "build:lua": "node tooling/build-lua.js",
+    "test:unit": "node --test tooling/*.test.js tests/fixtures/*.test.js tests/contracts/helpers.test.js",
+    "install:api": "node tooling/installer.js",
+    "seed:test": "node tooling/seed.js",
+    "seed:bad-dates": "node tooling/seed.js --bad-dates"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "24.3.0",
+    "eslint": "^10.11.0",
+    "globals": "^17.12.0",
+    "typescript": "5.9.3"
+  }
+}
