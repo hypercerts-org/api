@@ -1,5 +1,4 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { spawn } from 'node:child_process';
 import { accessSync, constants, statSync } from 'node:fs';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
@@ -8,6 +7,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 import { createServer } from 'node:net';
 import { compareAsset, createAdminClient, loadAssets } from './installer.js';
+import { runProcess } from './child-process.js';
 
 const packageRoot = fileURLToPath(new URL('..', import.meta.url));
 const composeFile = path.join(packageRoot, 'docker-compose.contracts.yml');
@@ -47,61 +47,6 @@ function sqlLiteral(value) {
   return `'${String(value).replaceAll("'", "''")}'`;
 }
 
-function terminateProcess(child, signalName) {
-  try {
-    if (process.platform !== 'win32' && child.pid) process.kill(-child.pid, signalName);
-    else child.kill(signalName);
-  } catch {
-    // The process may have exited between the timeout/signal and this kill.
-  }
-}
-
-function runProcess(command, args, { cwd, env = process.env, stdio = 'inherit', input, timeoutMs, signal, label }) {
-  if (signal?.aborted) return Promise.reject(signal.reason ?? new Error(`${label} was aborted`));
-  return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { cwd, env, stdio, detached: process.platform !== 'win32' });
-    let timedOut = false;
-    let abortReason;
-    let spawnError;
-    let stdout = '';
-    let stderr = '';
-    let forceKillTimer;
-    const terminate = () => {
-      terminateProcess(child, 'SIGTERM');
-      forceKillTimer = setTimeout(() => terminateProcess(child, 'SIGKILL'), 1_000);
-      forceKillTimer.unref();
-    };
-    const timeout = setTimeout(() => {
-      timedOut = true;
-      terminate();
-    }, timeoutMs);
-    const onAbort = () => {
-      abortReason = signal.reason ?? new Error(`${label} was aborted`);
-      terminate();
-    };
-    signal?.addEventListener('abort', onAbort, { once: true });
-    if (signal?.aborted) onAbort();
-    child.stdout?.on('data', (chunk) => { stdout += chunk.toString(); });
-    child.stderr?.on('data', (chunk) => { stderr += chunk.toString(); });
-    child.once('error', (error) => { spawnError = error; });
-    child.once('close', (code, childSignal) => {
-      clearTimeout(timeout);
-      clearTimeout(forceKillTimer);
-      signal?.removeEventListener('abort', onAbort);
-      if (spawnError) {
-        reject(new Error(`Could not run ${label}: ${spawnError.message}`, { cause: spawnError }));
-      } else if (timedOut) {
-        reject(new Error(`${label} timed out after ${timeoutMs}ms`));
-      } else if (abortReason) {
-        reject(abortReason);
-      } else {
-        resolve({ code, signal: childSignal, stdout, stderr });
-      }
-    });
-    if (child.stdin) child.stdin.end(input);
-  });
-}
-
 async function runPsql(psqlPath, env, sql, { signal, timeoutMs }) {
   const result = await runProcess(psqlPath, [
     '--no-psqlrc', '--set', 'ON_ERROR_STOP=1', '--host', '127.0.0.1',
@@ -114,7 +59,17 @@ async function runPsql(psqlPath, env, sql, { signal, timeoutMs }) {
     timeoutMs,
     label: 'Disposable database auth bootstrap',
   });
-  if (result.code !== 0) throw new Error(`Disposable database auth bootstrap failed${result.stderr.trim() ? `: ${result.stderr.trim()}` : ''}`);
+  if (result.code !== 0 || result.stdinError) {
+    const details = [
+      result.stderr.trim(),
+      result.stdinError && `stdin write failed: ${result.stdinError.message}`,
+    ].filter(Boolean).join('; ');
+    const status = result.code !== 0 ? ` with exit status ${result.code}` : '';
+    const message = [`Disposable database auth bootstrap failed${status}`, details].filter(Boolean).join(': ');
+    throw new Error(message, {
+      ...(result.stdinError ? { cause: result.stdinError } : {}),
+    });
+  }
 }
 
 async function runNodeTool(script, env, { signal, timeoutMs }) {
@@ -211,9 +166,39 @@ async function runDocker(project, envFile, args, { signal, timeoutMs = 300_000, 
     'compose', '--project-name', project, '--env-file', envFile, '-f', composeFile, ...args,
   ], { env, stdio: ['ignore', 'pipe', 'pipe'], timeoutMs, signal, label: `Docker Compose ${args[0]}` });
   if (result.code !== 0 && !allowFailure) {
-    throw new Error(`Docker Compose ${args[0]} failed${result.stderr.trim() ? `: ${result.stderr.trim()}` : ''}`);
+    const message = `Docker Compose ${args[0]} for project ${project} failed`;
+    throw new Error([message, result.stderr.trim()].filter(Boolean).join(': '));
   }
   return { code: result.code, stdout: result.stdout.trim(), stderr: result.stderr.trim() };
+}
+
+function composeProjectRecovery(project) {
+  const filter = `label=com.docker.compose.project=${project}`;
+  return [
+    `Project-scoped manual cleanup for ${project} (exact Docker label ${filter}):`,
+    `  docker ps -aq --filter '${filter}' | while IFS= read -r id; do [ -z "$id" ] || docker rm -f "$id"; done`,
+    `  docker network ls -q --filter '${filter}' | while IFS= read -r id; do [ -z "$id" ] || docker network rm "$id"; done`,
+    `  docker volume ls -q --filter '${filter}' | while IFS= read -r id; do [ -z "$id" ] || docker volume rm "$id"; done`,
+  ].join('\n');
+}
+
+async function removeComposeProject(project, envFile) {
+  let firstFailure;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      await runDocker(project, envFile, ['down', '--volumes', '--remove-orphans'], { timeoutMs: 30_000 });
+      log(`Removed disposable Compose project ${project}${attempt === 2 ? ' after one retry' : ''}`);
+      return;
+    } catch (error) {
+      const failure = error instanceof Error ? error : new Error(String(error));
+      if (attempt === 1) {
+        firstFailure = failure;
+        logError(`Docker Compose teardown failed for project ${project}; retrying once: ${failure.message}`);
+        continue;
+      }
+      throw new Error(`${failure.message}; first teardown attempt also failed: ${firstFailure.message}\n${composeProjectRecovery(project)}`, { cause: error });
+    }
+  }
 }
 
 async function waitForHealth(baseUrl, timeoutMs, pollMs, signal) {
@@ -235,13 +220,99 @@ async function waitForHealth(baseUrl, timeoutMs, pollMs, signal) {
   throw new Error(`Timed out waiting for HappyView GET /health after ${timeoutMs}ms (last result: ${lastStatus})`);
 }
 
+// Matches default string sorting by UTF-16 code units, without locale-sensitive collation.
+function compareCodeUnits(left, right) {
+  if (left < right) return -1;
+  if (left > right) return 1;
+  return 0;
+}
+
+async function runRuntimeStages(project, signal, recordResources) {
+  const psqlPath = trustedPsqlPath(process.env.PSQL_PATH);
+  const readyTimeoutMs = positiveInteger(process.env.HAPPYVIEW_CONTRACTS_READY_TIMEOUT_MS, 180_000, 'HAPPYVIEW_CONTRACTS_READY_TIMEOUT_MS');
+  const readyPollMs = positiveInteger(process.env.HAPPYVIEW_CONTRACTS_READY_POLL_MS, 1_000, 'HAPPYVIEW_CONTRACTS_READY_POLL_MS');
+  const stageTimeoutMs = positiveInteger(process.env.HAPPYVIEW_CONTRACTS_STAGE_TIMEOUT_MS, 120_000, 'HAPPYVIEW_CONTRACTS_STAGE_TIMEOUT_MS');
+  const adminRequestTimeoutMs = positiveInteger(process.env.HAPPYVIEW_CONTRACTS_ADMIN_REQUEST_TIMEOUT_MS, 15_000, 'HAPPYVIEW_CONTRACTS_ADMIN_REQUEST_TIMEOUT_MS');
+  const happyviewHostPort = await availableLoopbackPort();
+  const postgresHostPort = await availableLoopbackPort(new Set([happyviewHostPort]));
+  signal.throwIfAborted();
+  const tempDir = await mkdtemp(path.join(os.tmpdir(), 'happyview-contract-'));
+  const envFile = path.join(tempDir, 'compose.env');
+  recordResources({ tempDir, envFile });
+  const database = `happyview_contract_test_${randomBytes(5).toString('hex')}`;
+  const databaseUser = `contract_${randomBytes(4).toString('hex')}`;
+  const password = randomBytes(32).toString('hex');
+  await writeFile(envFile, [
+    `POSTGRES_USER=${databaseUser}`,
+    `POSTGRES_PASSWORD=${password}`,
+    `POSTGRES_DB=${database}`,
+    `POSTGRES_HOST_PORT=${postgresHostPort}`,
+    `HAPPYVIEW_HOST_PORT=${happyviewHostPort}`,
+    `SESSION_SECRET=${randomBytes(48).toString('hex')}`,
+    `TOKEN_ENCRYPTION_KEY=${randomBytes(32).toString('base64')}`,
+    '',
+  ].join('\n'), { mode: 0o600 });
+
+  signal.throwIfAborted();
+  recordResources({ composeStarted: true });
+  await runDocker(project, envFile, ['up', '--detach'], { signal });
+  const happyviewPort = await publishedPort(project, envFile, 'happyview', 3000, signal);
+  const postgresPort = await publishedPort(project, envFile, 'postgres', 5432, signal);
+  const baseUrl = `http://127.0.0.1:${happyviewPort}`;
+  await waitForHealth(baseUrl, readyTimeoutMs, readyPollMs, signal);
+  log(`HappyView is ready at ${baseUrl}/health (${project})`);
+
+  const databaseEnv = {
+    ...process.env,
+    PSQL_PATH: psqlPath,
+    HAPPYVIEW_DISPOSABLE_TEST_TARGET: 'YES',
+    PGHOST: '127.0.0.1',
+    PGPORT: postgresPort,
+    PGDATABASE: database,
+    PGUSER: databaseUser,
+    PGPASSWORD: password,
+    PGSSLMODE: 'disable',
+  };
+  delete databaseEnv.PGHOSTADDR;
+  delete databaseEnv.PGSERVICE;
+  delete databaseEnv.PGSERVICEFILE;
+
+  log('Bootstrapping a scoped admin API key in the new disposable database');
+  const adminToken = await bootstrapAdmin(psqlPath, databaseEnv, { signal, timeoutMs: stageTimeoutMs });
+  const appEnv = {
+    ...databaseEnv,
+    HAPPYVIEW_BASE_URL: baseUrl,
+    HAPPYVIEW_ADMIN_TOKEN: adminToken,
+    HYPERCERTS_HANDLE_RESOLVER_URL: 'https://resolver.invalid',
+  };
+
+  log('Installing the current branch manifest through HappyView’s localhost admin API');
+  await runNodeTool('tooling/installer.js', appEnv, { signal, timeoutMs: stageTimeoutMs });
+  const assets = await verifyInstalledAssets(baseUrl, adminToken, {
+    signal, stageTimeoutMs, requestTimeoutMs: adminRequestTimeoutMs,
+  });
+  log(`Verified ${assets.length} installed manifest assets against HappyView admin reads`);
+
+  log(`Seeding deterministic fixtures into ${database}`);
+  await runNodeTool('tooling/seed.js', databaseEnv, { signal, timeoutMs: stageTimeoutMs });
+
+  const handlers = assets
+    .filter((asset) => asset.kind === 'script' && asset.id.startsWith('xrpc.query:'))
+    .map((asset) => asset.id.slice('xrpc.query:'.length))
+    .sort(compareCodeUnits);
+  await runNodeTool('tooling/contract-suites.js', {
+    ...appEnv,
+    HAPPYVIEW_CONTRACT_HANDLERS: JSON.stringify(handlers),
+  }, { signal, timeoutMs: stageTimeoutMs });
+  signal.throwIfAborted();
+}
+
 async function main() {
   const controller = new AbortController();
   let receivedSignal;
   const requestStop = (name) => {
-    if (receivedSignal) return;
-    receivedSignal = name;
-    controller.abort(new Error(`Received ${name}; stopping runtime contract stages`));
+    receivedSignal ??= name;
+    controller.abort(new Error(`Received ${receivedSignal}; stopping runtime contract stages`));
   };
   const onSigint = () => requestStop('SIGINT');
   const onSigterm = () => requestStop('SIGTERM');
@@ -249,95 +320,20 @@ async function main() {
   process.on('SIGTERM', onSigterm);
 
   const project = `happyview-contract-${process.pid}-${randomBytes(5).toString('hex')}`;
-  let tempDir;
-  let envFile;
-  let composeStarted = false;
+  let resources = { tempDir: null, envFile: null, composeStarted: false };
   let primaryError;
   const cleanupErrors = [];
   try {
-    const psqlPath = trustedPsqlPath(process.env.PSQL_PATH);
-    const readyTimeoutMs = positiveInteger(process.env.HAPPYVIEW_CONTRACTS_READY_TIMEOUT_MS, 180_000, 'HAPPYVIEW_CONTRACTS_READY_TIMEOUT_MS');
-    const readyPollMs = positiveInteger(process.env.HAPPYVIEW_CONTRACTS_READY_POLL_MS, 1_000, 'HAPPYVIEW_CONTRACTS_READY_POLL_MS');
-    const stageTimeoutMs = positiveInteger(process.env.HAPPYVIEW_CONTRACTS_STAGE_TIMEOUT_MS, 120_000, 'HAPPYVIEW_CONTRACTS_STAGE_TIMEOUT_MS');
-    const adminRequestTimeoutMs = positiveInteger(process.env.HAPPYVIEW_CONTRACTS_ADMIN_REQUEST_TIMEOUT_MS, 15_000, 'HAPPYVIEW_CONTRACTS_ADMIN_REQUEST_TIMEOUT_MS');
-    const signal = controller.signal;
-    const happyviewHostPort = await availableLoopbackPort();
-    const postgresHostPort = await availableLoopbackPort(new Set([happyviewHostPort]));
-    signal.throwIfAborted();
-    tempDir = await mkdtemp(path.join(os.tmpdir(), 'happyview-contract-'));
-    envFile = path.join(tempDir, 'compose.env');
-    const database = `happyview_contract_test_${randomBytes(5).toString('hex')}`;
-    const databaseUser = `contract_${randomBytes(4).toString('hex')}`;
-    const password = randomBytes(32).toString('hex');
-    await writeFile(envFile, [
-      `POSTGRES_USER=${databaseUser}`,
-      `POSTGRES_PASSWORD=${password}`,
-      `POSTGRES_DB=${database}`,
-      `POSTGRES_HOST_PORT=${postgresHostPort}`,
-      `HAPPYVIEW_HOST_PORT=${happyviewHostPort}`,
-      `SESSION_SECRET=${randomBytes(48).toString('hex')}`,
-      `TOKEN_ENCRYPTION_KEY=${randomBytes(32).toString('base64')}`,
-      '',
-    ].join('\n'), { mode: 0o600 });
-
-    signal.throwIfAborted();
-    composeStarted = true;
-    await runDocker(project, envFile, ['up', '--detach'], { signal });
-    const happyviewPort = await publishedPort(project, envFile, 'happyview', 3000, signal);
-    const postgresPort = await publishedPort(project, envFile, 'postgres', 5432, signal);
-    const baseUrl = `http://127.0.0.1:${happyviewPort}`;
-    await waitForHealth(baseUrl, readyTimeoutMs, readyPollMs, signal);
-    log(`HappyView is ready at ${baseUrl}/health (${project})`);
-
-    const databaseEnv = {
-      ...process.env,
-      PSQL_PATH: psqlPath,
-      HAPPYVIEW_DISPOSABLE_TEST_TARGET: 'YES',
-      PGHOST: '127.0.0.1',
-      PGPORT: postgresPort,
-      PGDATABASE: database,
-      PGUSER: databaseUser,
-      PGPASSWORD: password,
-      PGSSLMODE: 'disable',
-    };
-    delete databaseEnv.PGHOSTADDR;
-    delete databaseEnv.PGSERVICE;
-    delete databaseEnv.PGSERVICEFILE;
-
-    log('Bootstrapping a scoped admin API key in the new disposable database');
-    const adminToken = await bootstrapAdmin(psqlPath, databaseEnv, { signal, timeoutMs: stageTimeoutMs });
-    const appEnv = {
-      ...databaseEnv,
-      HAPPYVIEW_BASE_URL: baseUrl,
-      HAPPYVIEW_ADMIN_TOKEN: adminToken,
-      HYPERCERTS_HANDLE_RESOLVER_URL: 'https://resolver.invalid',
-    };
-
-    log('Installing the current branch manifest through HappyView’s localhost admin API');
-    await runNodeTool('tooling/installer.js', appEnv, { signal, timeoutMs: stageTimeoutMs });
-    const assets = await verifyInstalledAssets(baseUrl, adminToken, {
-      signal, stageTimeoutMs, requestTimeoutMs: adminRequestTimeoutMs,
+    await runRuntimeStages(project, controller.signal, (update) => {
+      resources = { ...resources, ...update };
     });
-    log(`Verified ${assets.length} installed manifest assets against HappyView admin reads`);
-
-    log(`Seeding deterministic fixtures into ${database}`);
-    await runNodeTool('tooling/seed.js', databaseEnv, { signal, timeoutMs: stageTimeoutMs });
-
-    const handlers = assets
-      .filter((asset) => asset.kind === 'script' && asset.id.startsWith('xrpc.query:'))
-      .map((asset) => asset.id.slice('xrpc.query:'.length))
-      .sort();
-    await runNodeTool('tooling/contract-suites.js', {
-      ...appEnv,
-      HAPPYVIEW_CONTRACT_HANDLERS: JSON.stringify(handlers),
-    }, { signal, timeoutMs: stageTimeoutMs });
-    signal.throwIfAborted();
   } catch (error) {
     primaryError = error instanceof Error ? error : new Error(String(error));
   } finally {
-    if (primaryError && composeStarted && envFile) {
+    // composeStarted is recorded only after the generated env file has been written.
+    if (primaryError && resources.composeStarted) {
       try {
-        const diagnostics = await runDocker(project, envFile, ['logs', '--no-color', '--timestamps'], {
+        const diagnostics = await runDocker(project, resources.envFile, ['logs', '--no-color', '--timestamps'], {
           timeoutMs: 15_000, allowFailure: true,
         });
         logError(`\nHappyView Compose diagnostics (${project}):\n${diagnostics.stdout}\n${diagnostics.stderr}`);
@@ -345,17 +341,16 @@ async function main() {
         cleanupErrors.push(new Error(`Could not collect Compose diagnostics: ${error instanceof Error ? error.message : String(error)}`));
       }
     }
-    if (composeStarted && envFile) {
+    if (resources.composeStarted) {
       try {
-        await runDocker(project, envFile, ['down', '--volumes', '--remove-orphans'], { timeoutMs: 30_000 });
-        log(`Removed disposable Compose project ${project}`);
+        await removeComposeProject(project, resources.envFile);
       } catch (error) {
         cleanupErrors.push(error instanceof Error ? error : new Error(String(error)));
       }
     }
-    if (tempDir) {
+    if (resources.tempDir) {
       try {
-        await rm(tempDir, { recursive: true, force: true });
+        await rm(resources.tempDir, { recursive: true, force: true });
       } catch (error) {
         cleanupErrors.push(new Error(`Could not remove generated Compose env directory: ${error instanceof Error ? error.message : String(error)}`));
       }

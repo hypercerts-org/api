@@ -6,6 +6,12 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const packageRoot = fileURLToPath(new URL('..', import.meta.url));
 const badDateSuiteName = 'location-bad-dates.contract.test.js';
 
+function compareCodeUnits(left, right) {
+  if (left < right) return -1;
+  if (left > right) return 1;
+  return 0;
+}
+
 function log(message) {
   process.stdout.write(`${message}\n`);
 }
@@ -20,7 +26,7 @@ function installedHandlers() {
   if (!Array.isArray(handlers) || handlers.some((handler) => typeof handler !== 'string')) {
     throw new Error('HAPPYVIEW_CONTRACT_HANDLERS must be a JSON array of XRPC handler NSIDs');
   }
-  return [...handlers].sort();
+  return [...handlers].sort(compareCodeUnits);
 }
 
 async function endpointSuites() {

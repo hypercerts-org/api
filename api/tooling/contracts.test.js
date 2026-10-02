@@ -26,7 +26,7 @@ test('readiness timeout reports diagnostics and removes only its Compose project
   await mkdir(bin);
   const dockerLog = path.join(root, 'docker.log');
   const fakePsql = path.join(root, 'psql');
-  await writeFile(fakePsql, '#!/bin/sh\\nexit 0\\n', { mode: 0o700 });
+  await writeFile(fakePsql, ['#!/bin/sh', 'cat >/dev/null', 'exit 0', ''].join('\n'), { mode: 0o700 });
   await chmod(fakePsql, 0o700);
   const fakeDocker = path.join(bin, 'docker');
   await writeFile(fakeDocker, [
@@ -67,7 +67,13 @@ test('readiness timeout reports diagnostics and removes only its Compose project
   assert.ok(calls.some((call) => /\bdown\b/.test(call) && call.includes(project)), 'timeout must clean up this project');
 });
 
-async function createFakeAdminRuntime(t, { stageTimeoutMs, adminRequestTimeoutMs, onAdminRequest }) {
+async function createFakeAdminRuntime(t, {
+  stageTimeoutMs,
+  adminRequestTimeoutMs,
+  onAdminRequest,
+  psqlScript = ['#!/bin/sh', 'cat >/dev/null', 'exit 0', ''],
+  failDownAttempts = 0,
+}) {
   let resolveAdminRequest;
   const adminRequest = new Promise((resolve) => { resolveAdminRequest = resolve; });
   let adminRequests = 0;
@@ -88,7 +94,7 @@ async function createFakeAdminRuntime(t, { stageTimeoutMs, adminRequestTimeoutMs
   await mkdir(bin);
   const dockerLog = path.join(root, 'docker.log');
   const fakePsql = path.join(root, 'psql');
-  await writeFile(fakePsql, ['#!/bin/sh', 'exit 0', ''].join('\n'), { mode: 0o700 });
+  await writeFile(fakePsql, psqlScript.join('\n'), { mode: 0o700 });
   await chmod(fakePsql, 0o700);
   const fakeDocker = path.join(bin, 'docker');
   await writeFile(fakeDocker, [
@@ -97,6 +103,9 @@ async function createFakeAdminRuntime(t, { stageTimeoutMs, adminRequestTimeoutMs
     'case " $* " in',
     '  *" port happyview 3000 "*) printf "127.0.0.1:%s\\n" "$CONTRACTS_HTTP_PORT" ;;',
     '  *" port postgres 5432 "*) printf "127.0.0.1:54321\\n" ;;',
+    '  *" down "*)',
+    '    down_count=$(grep -c " down " "$CONTRACTS_DOCKER_LOG")',
+    '    if [ "$down_count" -le "$CONTRACTS_FAIL_DOWN_ATTEMPTS" ]; then printf "simulated teardown failure\\n" >&2; exit 23; fi ;;',
     'esac',
     '',
   ].join('\n'), { mode: 0o700 });
@@ -110,6 +119,7 @@ async function createFakeAdminRuntime(t, { stageTimeoutMs, adminRequestTimeoutMs
       PATH: `${bin}:${process.env.PATH ?? ''}`,
       CONTRACTS_DOCKER_LOG: dockerLog,
       CONTRACTS_HTTP_PORT: String(server.address().port),
+      CONTRACTS_FAIL_DOWN_ATTEMPTS: String(failDownAttempts),
       PSQL_PATH: fakePsql,
       HAPPYVIEW_CONTRACTS_READY_TIMEOUT_MS: '5000',
       HAPPYVIEW_CONTRACTS_READY_POLL_MS: '10',
@@ -165,6 +175,55 @@ async function assertScopedCleanup(dockerLog) {
   assert.ok(envFile, `Compose startup must identify the generated env file: ${calls.join('\n')}`);
   await assert.rejects(readFile(envFile), { code: 'ENOENT' });
 }
+
+test('psql closing stdin early reports its bootstrap failure and cleans only its Compose project', async (t) => {
+  const runtime = await createFakeAdminRuntime(t, {
+    stageTimeoutMs: 1_000,
+    psqlScript: ['#!/bin/sh', 'exec 0<&-', 'printf "psql exited before reading SQL\\n" >&2', 'exit 23', ''],
+  });
+  const result = await settleWithin(runtime.exited, 8_000, 'runtime runner did not finish psql failure cleanup');
+  const output = runtime.output();
+  assert.deepEqual(result, { code: 1, signal: null }, output);
+  assert.match(output, /Disposable database auth bootstrap failed with exit status 23/i);
+  assert.doesNotMatch(output, /Unhandled 'error' event/i, output);
+  assert.equal(runtime.adminRequests, 0, 'a failed psql bootstrap must not continue to installer requests');
+  await assertScopedCleanup(runtime.dockerLog);
+});
+
+test('a transient Compose teardown failure is retried once for the same project', async (t) => {
+  const runtime = await createFakeAdminRuntime(t, { stageTimeoutMs: 1_000, failDownAttempts: 1 });
+  const result = await settleWithin(runtime.exited, 8_000, 'runtime runner did not finish after recovering teardown');
+  const output = runtime.output();
+  assert.deepEqual(result, { code: 1, signal: null }, output);
+  assert.match(output, /tooling\/installer\.js timed out after 1000ms/i);
+  assert.match(output, /retrying once/i);
+  const calls = (await readFile(runtime.dockerLog, 'utf8')).trim().split('\n');
+  const downCalls = calls.filter((call) => /\bdown\b/.test(call));
+  assert.equal(downCalls.length, 2, calls.join('\n'));
+  const project = downCalls[0].match(/(?:--project-name|-p)\s+(\S+)/)?.[1];
+  assert.ok(project, `teardown must identify its unique project: ${downCalls.join('\n')}`);
+  assert.ok(downCalls.every((call) => call.includes(project)), 'both teardown attempts must target the same project');
+  assert.doesNotMatch(output, /cleanup also failed/i, output);
+  await assertScopedCleanup(runtime.dockerLog);
+});
+
+test('a persistent teardown failure reports project-scoped recovery without hiding the primary error', async (t) => {
+  const runtime = await createFakeAdminRuntime(t, { stageTimeoutMs: 1_000, failDownAttempts: 2 });
+  const result = await settleWithin(runtime.exited, 8_000, 'runtime runner did not finish after teardown failure');
+  const output = runtime.output();
+  assert.deepEqual(result, { code: 1, signal: null }, output);
+  assert.match(output, /tooling\/installer\.js timed out after 1000ms/i);
+  assert.match(output, /cleanup also failed/i);
+  const calls = (await readFile(runtime.dockerLog, 'utf8')).trim().split('\n');
+  const startup = calls.find((call) => /\bup\b/.test(call));
+  const project = startup?.match(/(?:--project-name|-p)\s+(\S+)/)?.[1];
+  assert.ok(project, `startup must name its unique project: ${calls.join('\n')}`);
+  assert.match(output, new RegExp(`Docker Compose down for project ${project} failed`));
+  assert.match(output, new RegExp(`label=com\\.docker\\.compose\\.project=${project}`));
+  assert.match(output, /docker (?:ps|network ls|volume ls)/i);
+  assert.ok(calls.filter((call) => /\bdown\b/.test(call)).every((call) => call.includes(project)));
+  await assertScopedCleanup(runtime.dockerLog);
+});
 
 test('a hanging installer child reaches its deadline and cleans its Compose project', async (t) => {
   const runtime = await createFakeAdminRuntime(t, { stageTimeoutMs: 1_000 });

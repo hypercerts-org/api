@@ -56,4 +56,3 @@ services:
       retries: 30
       start_period: 10s
     stop_grace_period: 10s
-
