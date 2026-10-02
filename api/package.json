@@ -20,8 +20,7 @@
     "test:unit": "node --test tooling/*.test.js tests/fixtures/*.test.js tests/contracts/helpers.test.js",
     "install:api": "node tooling/installer.js",
     "seed:test": "node tooling/seed.js",
-    "seed:bad-dates": "node tooling/seed.js --bad-dates",
-    "test:runtime": "node tooling/contracts.js"
+    "seed:bad-dates": "node tooling/seed.js --bad-dates"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
