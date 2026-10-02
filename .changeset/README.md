@@ -10,4 +10,4 @@ Target `@happyview/hypercerts-api-kit` and write release notes for endpoint or s
 
 The API bundle is versioned as one unit. Do not add Changesets for the separate endpoint-explorer package, documentation-only changes, tests, or release/CI maintenance that does not change the installable bundle. If the release impact is unclear, decide with the reviewer rather than guessing a version bump.
 
-A Changesets release PR updates `api/package.json` and `api/CHANGELOG.md`. After it is merged to `main`, release CI validates that exact commit and creates a `vX.Y.Z` Git tag and public GitHub Release. The bundle is not published to npm; operators retrieve the tagged source from this public repository and install it into their own HappyView instance.
+A Changesets release PR updates `api/package.json` and `api/CHANGELOG.md`. After it is merged to `main`, release CI validates that exact commit and creates an `@happyview/hypercerts-api-kit@X.Y.Z` Git tag and public GitHub Release. The bundle is not published to npm; operators retrieve the tagged source from this public repository and install it into their own HappyView instance.

@@ -167,12 +167,13 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           set -euo pipefail
+          package_name="$(node --print "require('./api/package.json').name")"
           version="$(node --print "require('./api/package.json').version")"
-          if [ -z "$version" ]; then
-            echo "::error::Could not derive an API bundle version from api/package.json"
+          if [ -z "$package_name" ] || [ -z "$version" ]; then
+            echo "::error::Could not derive the API bundle name and version from api/package.json"
             exit 1
           fi
-          tag="v${version}"
+          tag="${package_name}@${version}"
           api_url="${GITHUB_API_URL%/}"
 
           get_status() {
