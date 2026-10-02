@@ -19,6 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
 
       - uses: leafo/gh-actions-lua@6919171ccf181b826f44b9bca76307b577217377 # v13.0.0
         with:
@@ -47,6 +49,18 @@ jobs:
 
       - name: Install Node dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Validate Changesets when present
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changeset_files="$(git diff --name-only --diff-filter=ACMR "$BASE_SHA...$HEAD_SHA" -- '.changeset/*.md' ':!.changeset/README.md')"
+          if [ -n "$changeset_files" ]; then
+            pnpm changeset:status -- --since "$BASE_SHA"
+          fi
 
       - name: Check API and explorer tests
         run: pnpm check
