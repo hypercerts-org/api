@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Looks up an actor's indexed organization sidecar and associated profile. The organization sidecar must exist; a missing profile is represented as null. Authentication is not required.",
+      "description": "Gets an actor's indexed organization sidecar and associated profile by DID. Authentication is not required.",
       "parameters": {
         "type": "params",
         "required": ["actor"],
@@ -12,7 +12,7 @@
           "actor": {
             "type": "string",
             "format": "did",
-            "description": "DID of the actor whose organization sidecar is requested."
+            "description": "DID of the actor to look up."
           }
         }
       },
@@ -21,13 +21,13 @@
         "schema": { "type": "ref", "ref": "#output" }
       },
       "errors": [
-        { "name": "InvalidRequest", "description": "The actor DID is invalid or a query parameter is not accepted." },
+        { "name": "InvalidRequest", "description": "The actor DID is invalid or an unsupported parameter was supplied." },
         { "name": "RecordNotFound", "description": "No indexed organization sidecar exists for this DID." }
       ]
     },
     "organizationActorView": {
       "type": "object",
-      "description": "Actor with its required organization sidecar and nullable base profile.",
+      "description": "Actor with an indexed organization sidecar and nullable profile view.",
       "required": ["did", "profile", "organization"],
       "nullable": ["profile"],
       "properties": {
