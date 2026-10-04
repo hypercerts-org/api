@@ -7,6 +7,8 @@
     { "id": "app.certified.graph.entityFollow", "packagePath": "lexicons/app/certified/graph/entityFollow.json" },
     { "id": "app.certified.actor.profile", "packagePath": "lexicons/app/certified/actor/profile.json" },
     { "id": "org.hypercerts.claim.getActivity", "path": "lexicons/org.hypercerts.claim.getActivity.json" },
+    { "id": "org.hypercerts.claim.getContributorInformation", "path": "lexicons/org.hypercerts.claim.getContributorInformation.json" },
+    { "id": "org.hypercerts.claim.listContributorInformation", "path": "lexicons/org.hypercerts.claim.listContributorInformation.json" },
     { "id": "org.hypercerts.context.evaluation", "packagePath": "lexicons/org/hypercerts/context/evaluation.json" },
     { "id": "org.hypercerts.collection.getCollection", "path": "lexicons/org.hypercerts.collection.getCollection.json" },
     { "id": "org.hypercerts.collection.listCollectionItems", "path": "lexicons/org.hypercerts.collection.listCollectionItems.json" },
@@ -51,5 +53,10 @@
     { "id": "pub.leaflet.richtext.facet", "packagePath": "lexicons/pub/leaflet/richtext/facet.json" },
     { "id": "pub.leaflet.theme.color", "packagePath": "lexicons/pub/leaflet/theme/color.json" }
   ],
-  "modules": ["modules/shared/manifest.json"]
+  "modules": ["modules/shared/manifest.json", "modules/contributor-information/manifest.json"],
+  "handlerStatus": {
+    "getContributorInformation": "implemented",
+    "listContributorInformation": "implemented"
+  },
+  "authentication": { "unresolved": false }
 }

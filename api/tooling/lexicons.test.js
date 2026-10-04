@@ -123,6 +123,15 @@ if (hasModule('modules/actor-follow/manifest.json')) test('follow query Lexicons
   });
 });
 
+test('contributor-information view keeps nullable indexedAt required', async () => {
+  const { lexicons } = await validatePackageLexicons();
+  const view = lexicons.getDefOrThrow('org.hypercerts.api.defs#contributorInformationView');
+  assert.ok(view.required.includes('indexedAt'));
+  assert.ok(view.nullable.includes('indexedAt'));
+  assert.equal(view.properties.author.ref, 'lex:org.hypercerts.api.defs#actorView');
+  assert.equal(view.properties.record.ref, 'lex:org.hypercerts.claim.contributorInformation');
+});
+
 test('installed ATProto validator accepts package language, transitive refs, and real fixture records', async () => {
   const { lexicons, isValidDid, isValidTid } = await validatePackageLexicons();
   const { jsonToLex, lexToJson } = await import('@atproto/lexicon');

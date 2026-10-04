@@ -22,7 +22,7 @@
       "id": "org.hypercerts.api.defs",
       "path": "../../lexicons/org.hypercerts.api.defs.json",
       "config": { "backfill": false },
-      "dependsOn": ["app.certified.actor.organization", "app.certified.actor.profile"]
+      "dependsOn": ["app.certified.actor.organization", "app.certified.actor.profile", "org.hypercerts.claim.contributorInformation"]
     },
     {
       "kind": "lexicon",
