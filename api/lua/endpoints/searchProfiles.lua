@@ -1,4 +1,5 @@
 local PROFILE = "app.certified.actor.profile"
+local NULL = json.decode("null")
 
 local function invalid(message)
   error("InvalidRequest: " .. message, 0)
@@ -38,7 +39,7 @@ local function row_view(row)
   return {
     uri = row.uri,
     cid = row.cid,
-    indexedAt = row.indexed_at,
+    indexedAt = row.indexed_at == nil and NULL or row.indexed_at,
     did = row.did,
     record = json.decode(row.record),
   }

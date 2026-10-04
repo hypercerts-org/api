@@ -255,6 +255,18 @@ assert(calls[1].sql:find("rkey = 'self'", 1, true))
   });
 });
 
+test('getProfile serializes SQL NULL indexedAt as required JSON null', () => {
+  const row = profileRow(actor, 'unindexed', { displayName: 'Unindexed profile' }, '2025-01-01T00:00:00Z');
+  delete row.indexed_at;
+  const result = runLua({
+    endpoint: 'getProfile', params: { actor }, rows: [row], captureJson: true,
+    assertions: 'assert(#calls == 1 and #httpCalls == 0)',
+  });
+
+  assert.equal(Object.hasOwn(result.profile, 'indexedAt'), true);
+  assert.equal(result.profile.indexedAt, null);
+});
+
 test('getProfile resolves a handle once through the configured resolver and does not fetch a DID document', () => {
   const record = { displayName: 'Alice', createdAt: '2025-01-01T00:00:00Z' };
   const row = profileRow(actor, 'alice', record, record.createdAt);

@@ -183,6 +183,23 @@ assert(calls[2].values[1] == '${profileCollection}' and calls[2].values[2] == '$
   });
 });
 
+test('getOrganization preserves required indexedAt as null for organization and hydrated profile views', () => {
+  const organization = organizationRow(actor, 'unindexed', { organizationType: ['nonprofit'] });
+  delete organization.indexed_at;
+  const profile = profileRow(actor, 'unindexed-profile', { displayName: 'Unindexed profile' });
+  delete profile.indexed_at;
+  runLua({
+    endpoint: 'getOrganization', params: { actor }, queryResults: [[organization], [profile]],
+    assertions: `
+assert(result.actor.organization.indexedAt == NULL, 'organization indexedAt must be explicit null')
+assert(result.actor.organization.indexedAt ~= nil, 'organization indexedAt must be present')
+assert(result.actor.profile.indexedAt == NULL, 'profile indexedAt must be explicit null')
+assert(result.actor.profile.indexedAt ~= nil, 'profile indexedAt must be present')
+assert(#calls == 2)
+`,
+  });
+});
+
 test('getOrganizations preserves requested occurrences and returns explicit null for missing sidecars', () => {
   const missingActor = 'did:plc:cccccccccccccccccccccccc';
   const requested = [secondActor, missingActor, actor, secondActor];
