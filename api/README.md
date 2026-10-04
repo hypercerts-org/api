@@ -14,6 +14,10 @@ pnpm build
 
 These checks are offline and do not require a HappyView instance or database. `pnpm check` runs generated-source freshness, JavaScript/Lua lint, typechecking, and unit tests. `pnpm build` emits only Lua handlers declared by the root and module manifests. Shared Lua files are bundled into capability handlers but are not installed independently.
 
+## Runtime contracts
+
+Runtime contracts run in the GitHub Actions workflow against the code checked out for the pull request. The job generates temporary credentials, starts the pinned HappyView and PostgreSQL Compose services with PostgreSQL data on tmpfs, waits for HappyView health, bootstraps a permission-scoped admin key, installs the checked-out manifest, and seeds deterministic fixtures. It then runs the `api/tests/contracts/*.contract.test.js` files present in that checkout. If there are no endpoint contract files, the workflow reports that and skips only the endpoint-test step.
+
 ## Install a released API bundle
 
 Releases version the installable API bundle in this package; they do not publish to npm or deploy to a HappyView instance. This public repository's GitHub Releases and tagged source archives are the distribution channel. Choose an `@hypercerts-org/hypercerts-api@X.Y.Z` release tag, clone that snapshot, install its pinned workspace dependencies from the repository root, then run the installer from `api/`:
