@@ -4,57 +4,57 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Searches indexed activities by a case-insensitive literal substring in title or shortDescription. Surrounding whitespace is trimmed; blank search imposes no text restriction. Other filters combine with search using AND and retain their listing semantics. Repeated unbracketed array values accept at most 100 supplied entries; duplicates are removed. Defaults are limit=25 and sortDirection=desc; limit is 1..100. Results sort by (createdAt, uri) and use a direction-bound opaque cursor. Authentication is not required.",
+      "description": "Searches indexed activities by a case-insensitive literal substring of title or shortDescription. Search and other filters combine with AND; values within each array filter combine with OR, and duplicate values are ignored. Authentication is not required.",
       "parameters": {
         "type": "params",
         "required": ["search"],
         "properties": {
           "search": {
             "type": "string",
-            "description": "Complete text substring to find in title or shortDescription; literal %, _, and other characters are not wildcards."
+            "description": "Literal, case-insensitive substring of title or shortDescription; surrounding whitespace is trimmed, and blank input applies no text filter."
           },
           "authors": {
             "type": "array",
             "maxLength": 100,
-            "description": "Repository-owner DIDs to include; values use OR.",
+            "description": "Filter by activity repository-owner DID.",
             "items": { "type": "string", "format": "did" }
           },
           "hasOrganizationRecord": {
             "type": "boolean",
-            "description": "Whether each activity author has an app.certified.actor.organization/self record. False matches authors without that record regardless of profile presence."
+            "description": "Filter by whether the activity author has an app.certified.actor.organization/self record, regardless of profile presence."
           },
           "contributors": {
             "type": "array",
             "maxLength": 100,
-            "description": "Contributor DIDs to match against inline identities and exact referenced contributor-information versions; values use OR.",
+            "description": "Filter by contributor DID, including inline identities and the exact referenced contributor-information version.",
             "items": { "type": "string", "format": "did" }
           },
           "involvedActors": {
             "type": "array",
             "maxLength": 100,
-            "description": "DIDs matching either the activity repository owner or a contributor; values use OR, then combine with other filters using AND.",
+            "description": "Filter by activity repository-owner or contributor DID.",
             "items": { "type": "string", "format": "did" }
           },
           "uris": {
             "type": "array",
             "maxLength": 100,
-            "description": "Activity AT-URIs for bounded batch hydration; input order is not preserved.",
+            "description": "Filter by exact activity AT-URI; results follow the selected sort order, not input order.",
             "items": { "type": "string", "format": "at-uri" }
           },
           "sortDirection": {
             "type": "string",
             "enum": ["asc", "desc"],
-            "description": "Sort direction for (createdAt, uri); default desc."
+            "description": "Sort by activity createdAt, then URI; defaults to desc."
           },
           "limit": {
             "type": "integer",
             "minimum": 1,
             "maximum": 100,
-            "description": "Maximum activities in this page; default 25."
+            "description": "Maximum activities per page; defaults to 25."
           },
           "cursor": {
             "type": "string",
-            "description": "Opaque pagination cursor bound to sortDirection."
+            "description": "Opaque cursor for the next page, bound to sortDirection. Keep all other query parameters unchanged between pages."
           }
         }
       },
@@ -63,8 +63,8 @@
         "schema": { "type": "ref", "ref": "#output" }
       },
       "errors": [
-        { "name": "InvalidRequest", "description": "A filter, organization-record flag, page bound, cursor, repeated scalar, or query parameter is invalid." },
-        { "name": "ActivityQueryFailed", "description": "The activity query or required hydration lookup failed; retry after checking the HappyView PostgreSQL service." }
+        { "name": "InvalidRequest", "description": "A filter, sort direction, page limit, cursor, or query parameter is invalid." },
+        { "name": "ActivityQueryFailed", "description": "The activity query or required hydration failed." }
       ]
     },
     "output": {
@@ -75,7 +75,7 @@
           "type": "array",
           "items": { "type": "ref", "ref": "org.hypercerts.claim.getActivity#activityView" }
         },
-        "cursor": { "type": "string", "description": "Opaque cursor for the next page; omitted when pagination is complete." }
+        "cursor": { "type": "string", "description": "Next-page cursor; absent when pagination is complete." }
       }
     }
   }
