@@ -1,6 +1,6 @@
 # Hypercerts API toolkit foundation
 
-This repository branch contains the shared HappyView installer, pinned Lexicon dependencies, reusable Lua projections, fixtures, and offline checks. It contains shared view Lexicons only; endpoint-specific Lua handlers are added by capability branches.
+This repository branch contains the shared HappyView installer, pinned Lexicon dependencies, reusable Lua projections, fixtures, offline checks, and the vocabulary-tag query capability. The `org.hypercerts.vocab.getVocabTag` and `org.hypercerts.vocab.listVocabTags` handlers are bundled and registered through `api/modules/vocab/manifest.json`.
 
 ## Checks
 

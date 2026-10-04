@@ -25,6 +25,8 @@
     { "id": "org.hypercerts.collection", "packagePath": "lexicons/org/hypercerts/collection.json" },
     { "id": "org.hypercerts.entity.feature", "packagePath": "lexicons/org/hypercerts/entity/feature.json" },
     { "id": "org.hypercerts.vocab.tag", "packagePath": "lexicons/org/hypercerts/vocab/tag.json" },
+    { "id": "org.hypercerts.vocab.getVocabTag", "path": "lexicons/org.hypercerts.vocab.getVocabTag.json" },
+    { "id": "org.hypercerts.vocab.listVocabTags", "path": "lexicons/org.hypercerts.vocab.listVocabTags.json" },
     { "id": "pub.leaflet.blocks.blockquote", "packagePath": "lexicons/pub/leaflet/blocks/blockquote.json" },
     { "id": "pub.leaflet.blocks.bskyPost", "packagePath": "lexicons/pub/leaflet/blocks/bskyPost.json" },
     { "id": "pub.leaflet.blocks.button", "packagePath": "lexicons/pub/leaflet/blocks/button.json" },
@@ -51,5 +53,10 @@
     { "id": "pub.leaflet.richtext.facet", "packagePath": "lexicons/pub/leaflet/richtext/facet.json" },
     { "id": "pub.leaflet.theme.color", "packagePath": "lexicons/pub/leaflet/theme/color.json" }
   ],
-  "modules": ["modules/shared/manifest.json"]
+  "modules": ["modules/shared/manifest.json", "modules/vocab/manifest.json"],
+  "authentication": { "unresolved": false },
+  "handlerStatus": {
+    "getVocabTag": "implemented",
+    "listVocabTags": "implemented"
+  }
 }

@@ -83,6 +83,20 @@
         },
         "follow": { "type": "ref", "ref": "#entityFollowRecordView" }
       }
+    },
+    "vocabTagView": {
+      "type": "object",
+      "description": "Vocabulary-tag record with its unchanged source and hydrated publisher actor.",
+      "required": ["uri", "cid", "indexedAt", "did", "author", "record"],
+      "nullable": ["indexedAt"],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
+        "indexedAt": { "type": "string", "format": "datetime" },
+        "did": { "type": "string", "format": "did" },
+        "author": { "type": "ref", "ref": "#actorView" },
+        "record": { "type": "ref", "ref": "org.hypercerts.vocab.tag" }
+      }
     }
   }
 }
