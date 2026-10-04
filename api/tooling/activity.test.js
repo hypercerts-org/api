@@ -375,6 +375,43 @@ function activityRow({ uri, did = authorDid, record, cid, sortTimestamp }) {
   };
 }
 
+test('listActivities hydrates actor profiles across multiple bounded lookup batches', () => {
+  const contributorDids = Array.from({ length: 501 }, (_, index) => `did:web:contributor-${index}.example`);
+  const uri = `at://${authorDid}/${ACTIVITY}/many-contributors`;
+  const activity = activityRow({
+    uri, cid: 'bafyreiggggggggggggggggggggggggggggggggggggggggggggggggggg',
+    record: {
+      title: 'Activity with many contributors', createdAt: indexedAt,
+      contributors: contributorDids.map((identity) => ({ contributorIdentity: { identity } })),
+    },
+  });
+  const profile = (did, displayName) => ({
+    uri: `at://${did}/${PROFILE}/self`, did, collection: PROFILE,
+    cid: 'bafyreikkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk',
+    indexed_at: indexedAt, record: `profile-${did}`,
+    record_json: { $type: PROFILE, displayName, createdAt: indexedAt },
+  });
+  const authorProfile = profile(authorDid, 'Batched author');
+  const firstContributorProfile = profile(contributorDids[0], 'First batch contributor');
+  const lastContributorProfile = profile(contributorDids.at(-1), 'Last batch contributor');
+  const result = runLuaEndpoint({
+    endpoint: 'listActivities', params: {},
+    queryResults: [[activity], [authorProfile, firstContributorProfile], [lastContributorProfile], []],
+    assertions: `
+local activity = result.activities[1]
+assert(#result.activities == 1 and activity.uri == '${uri}')
+assert(#activity.contributors == 501)
+assert(activity.author.profile.record.displayName == 'Batched author')
+assert(activity.contributors[1].actor.profile.record.displayName == 'First batch contributor')
+assert(activity.contributors[501].actor.profile ~= NULL, 'profile from a later lookup batch must be loaded')
+assert(activity.contributors[501].actor.profile.record.displayName == 'Last batch contributor')
+assert(#calls == 4, 'actor profiles must be loaded in multiple batches before organization lookup')
+assert(#calls[2].values <= 501 and #calls[3].values <= 501, 'each actor lookup must stay within its bounded batch')
+`,
+  });
+  assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
+});
+
 test('listActivities combines actor, organization-record, URI, and contributor filters before paging and hydrates only the page', () => {
   const firstUri = `at://${authorDid}/${ACTIVITY}/first`;
   const lookaheadUri = `at://${authorDid}/${ACTIVITY}/lookahead`;

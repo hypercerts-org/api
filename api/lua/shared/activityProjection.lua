@@ -79,18 +79,20 @@ local function activity_projection_load_contributor_information(references)
 end
 
 local function activity_projection_load_actor_records(collection, dids)
-  if #dids == 0 then return {} end
-  local values, placeholders = { collection }, {}
-  for _, did in ipairs(dids) do
-    values[#values + 1] = did
-    placeholders[#placeholders + 1] = "$" .. #values
-  end
-  local rows = activity_projection_query(
-    "SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record " ..
-      "FROM happyview_records WHERE collection = $1 AND rkey = 'self' AND did IN (" .. table.concat(placeholders, ", ") .. ")",
-    values)
   local by_did = {}
-  for _, row in ipairs(rows) do by_did[row.did] = row end
+  for first = 1, #dids, 500 do
+    local values, placeholders = { collection }, {}
+    local last = math.min(first + 499, #dids)
+    for index = first, last do
+      values[#values + 1] = dids[index]
+      placeholders[#placeholders + 1] = "$" .. #values
+    end
+    local rows = activity_projection_query(
+      "SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record " ..
+        "FROM happyview_records WHERE collection = $1 AND rkey = 'self' AND did IN (" .. table.concat(placeholders, ", ") .. ")",
+      values)
+    for _, row in ipairs(rows) do by_did[row.did] = row end
+  end
   return by_did
 end
 
