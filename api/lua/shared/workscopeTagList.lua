@@ -25,7 +25,7 @@ local function workscope_tag_array(key)
 
   local unique, seen = {}, {}
   for _, did in ipairs(supplied) do
-    if not valid_did(did) then
+    if not workscope_tag_valid_did(did) then
       invalid("each " .. key .. " value must be a valid DID; resolve handles to DIDs first")
     end
     if not seen[did] then
@@ -50,8 +50,8 @@ local function workscope_tag_decode_cursor(token, direction)
   for key in pairs(value) do
     if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
   end
-  local valid, collection = valid_record_uri(value.u)
-  if not valid_datetime(value.t) or not valid or collection ~= WORKSCOPE_TAG then
+  local valid, collection = workscope_tag_valid_record_uri(value.u)
+  if not valid_datetime(value.t) or value.t:sub(1, 4) == "0000" or not valid or collection ~= WORKSCOPE_TAG then
     invalid("cursor is malformed")
   end
   return value
@@ -90,11 +90,15 @@ local function workscope_tag_list()
   local ordering = direction == "asc" and "ASC" or "DESC"
   values[#values + 1] = limit + 1
   local created_at = "workscope_tag.record::jsonb->>'createdAt'"
+  local valid_zoned_created_at = created_at .. " ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}([.][0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$' AND " ..
+    created_at .. " !~ '-00:00$' AND pg_input_is_valid(" .. created_at .. ", 'timestamp with time zone')"
+  local sort_at = "COALESCE(CASE WHEN " .. valid_zoned_created_at .. " THEN (" .. created_at ..
+    ")::timestamptz END, workscope_tag.indexed_at, workscope_tag.created_at)"
   local sql = "SELECT workscope_tag.uri, workscope_tag.did, workscope_tag.cid, " ..
     "workscope_tag.indexed_at::text AS indexed_at, workscope_tag.record::text AS record, " ..
     "to_char(sorted.sort_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp " ..
-    "FROM happyview_records AS workscope_tag CROSS JOIN LATERAL (SELECT (" .. created_at ..
-    ")::timestamptz AS sort_at) AS sorted WHERE " .. table.concat(where, " AND ") ..
+    "FROM happyview_records AS workscope_tag CROSS JOIN LATERAL (SELECT " .. sort_at ..
+    " AS sort_at) AS sorted WHERE " .. table.concat(where, " AND ") ..
     " ORDER BY sorted.sort_at " .. ordering .. ", workscope_tag.uri " .. ordering .. " LIMIT $" .. #values
   local rows = workscope_tag_query(sql, values)
   local more = #rows > limit

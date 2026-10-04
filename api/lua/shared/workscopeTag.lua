@@ -1,4 +1,23 @@
 local WORKSCOPE_TAG = "org.hypercerts.workscope.tag"
+local WORKSCOPE_TAG_NULL = json.decode("null")
+
+local function workscope_tag_valid_did(value)
+  if not valid_did(value) then return false end
+  local offset = 1
+  while true do
+    local percent = value:find("%", offset, true)
+    if not percent then return true end
+    local escape = value:sub(percent + 1, percent + 2)
+    if not escape:match("^[0-9A-Fa-f][0-9A-Fa-f]$") then return false end
+    offset = percent + 3
+  end
+end
+
+local function workscope_tag_valid_record_uri(value)
+  local valid, collection = valid_record_uri(value)
+  local authority = type(value) == "string" and value:match("^at://([^/]+)/")
+  return valid and workscope_tag_valid_did(authority), collection
+end
 
 local function workscope_tag_query(sql, values)
   if db.backend() ~= "postgres" then
@@ -12,13 +31,10 @@ local function workscope_tag_query(sql, values)
 end
 
 local function workscope_tag_view(row)
-  if type(row.indexed_at) ~= "string" then
-    error("WorkscopeTagQueryFailed: indexed work-scope tag has no indexedAt timestamp", 0)
-  end
   return {
     uri = row.uri,
     cid = row.cid,
-    indexedAt = row.indexed_at,
+    indexedAt = row.indexed_at == nil and WORKSCOPE_TAG_NULL or row.indexed_at,
     did = row.did,
     author = { did = row.did },
     record = json.decode(row.record),

@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Looks up a work-scope tag by exact AT-URI and returns its publisher actor; authentication is not required.",
+      "description": "Returns an indexed work-scope tag and its hydrated publisher for an exact AT-URI; authentication is not required.",
       "parameters": {
         "type": "params",
         "required": ["uri"],

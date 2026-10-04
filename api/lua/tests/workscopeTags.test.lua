@@ -126,6 +126,11 @@ local function assert_error(callback, expected)
   assert_contains(tostring(result), expected)
 end
 
+local function cursor_token(timestamp, uri)
+  local payload = '{"v":1,"d":"desc","t":"' .. timestamp .. '","u":"' .. uri .. '"}'
+  return (payload:gsub(".", function(char) return string.format("%02x", string.byte(char)) end))
+end
+
 local function test(name, callback)
   local ok, message = pcall(callback)
   if not ok then error(name .. ": " .. tostring(message), 0) end
@@ -161,9 +166,6 @@ test("a missing exact URI returns RecordNotFound and malformed or non-tag URIs r
   assert_error(get_workscope_tag, "InvalidRequest")
   params = { uri = "at://" .. did_a .. "/org.hypercerts.claim.activity/same-rkey" }
   assert_error(get_workscope_tag, "InvalidRequest")
-  db.lookup_rows[uri_a] = row(uri_a, did_a, "bafyreitag-a", "tag-a", nil)
-  params = { uri = uri_a }
-  assert_error(get_workscope_tag, "WorkscopeTagQueryFailed")
 end)
 
 test("author hydration database failures surface instead of becoming null sidecars", function()
@@ -209,6 +211,23 @@ test("listing applies publisher OR values and stable descending keyset paginatio
   assert_contains(query.sql, "(sorted.sort_at, workscope_tag.uri)", "cursor includes the URI tie-breaker")
   assert_equal(query.values[4], "2025-01-02T00:00:00.000000Z")
   assert_equal(query.values[5], uri_a)
+end)
+
+test("listing safely casts only valid zoned createdAt before timestamp fallbacks", function()
+  reset_database()
+  db.list_rows = { tag_a }
+  params = { limit = "1" }
+  list_workscope_tags()
+
+  local sql = db.calls[1].sql
+  assert_contains(sql, "(Z|[+-][0-9]{2}:[0-9]{2})$'",
+    "createdAt must carry an explicit timezone to be used for ordering")
+  assert_contains(sql, " !~ '-00:00$'", "unknown local-offset timestamps are not valid zoned createdAt values")
+  assert_contains(sql, "pg_input_is_valid(", "malformed record timestamps must not be cast directly")
+  assert_contains(sql, "THEN (workscope_tag.record::jsonb->>'createdAt')::timestamptz END, workscope_tag.indexed_at, workscope_tag.created_at)",
+    "valid createdAt sorts first, followed by index time and row creation time")
+  assert_contains(sql, "ORDER BY sorted.sort_at DESC, workscope_tag.uri DESC",
+    "fallback timestamps retain stable timestamp-and-URI ordering")
 end)
 
 test("ascending order and defaults are honored and cursors are direction-bound", function()
@@ -257,6 +276,39 @@ test("invalid list parameters are rejected before querying", function()
   params = { authors = { did_a }, cursor = "not-hex" }
   assert_error(list_workscope_tags, "cursor is malformed")
   assert_equal(#db.calls, 0, "invalid requests do not reach the database")
+end)
+
+test("missing indexedAt remains present as JSON null in exact and list views", function()
+  reset_database()
+  db.lookup_rows[uri_a] = row(uri_a, did_a, "bafyreitag-a", "tag-a", nil)
+  params = { uri = uri_a }
+  local exact = get_workscope_tag().workscopeTag
+  assert_equal(exact.indexedAt, NULL)
+
+  db.calls = {}
+  db.list_rows = { row(uri_a, did_a, "bafyreitag-a", "tag-a", nil, "2025-01-02T00:00:00.000000Z") }
+  params = {}
+  local listed = list_workscope_tags().workscopeTags[1]
+  assert_equal(listed.indexedAt, NULL)
+end)
+
+test("malformed percent DIDs and year-zero cursors are rejected before querying", function()
+  reset_database()
+  params = { authors = { "did:plc:publisher%GG" } }
+  assert_error(list_workscope_tags, "InvalidRequest")
+  assert_equal(#db.calls, 0, "malformed author DIDs do not reach the database")
+
+  params = { uri = "at://did:plc:publisher%GG/" .. TAG .. "/tag" }
+  assert_error(get_workscope_tag, "InvalidRequest")
+  assert_equal(#db.calls, 0, "malformed exact-lookup DIDs do not reach the database")
+
+  params = { cursor = cursor_token("2025-01-02T00:00:00Z", "at://did:plc:publisher%GG/" .. TAG .. "/tag") }
+  assert_error(list_workscope_tags, "InvalidRequest")
+  assert_equal(#db.calls, 0, "malformed cursor URIs do not reach the database")
+
+  params = { cursor = cursor_token("0000-01-01T00:00:00Z", uri_a) }
+  assert_error(list_workscope_tags, "InvalidRequest")
+  assert_equal(#db.calls, 0, "year-zero cursor timestamps do not reach the database")
 end)
 
 print("workscope tag offline behavior tests passed")

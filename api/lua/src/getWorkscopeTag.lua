@@ -1,6 +1,6 @@
 local function workscope_tag_get(uri)
   keys_only(params, { uri = true })
-  local valid, collection = valid_record_uri(uri)
+  local valid, collection = workscope_tag_valid_record_uri(uri)
   if not uri or not valid or collection ~= WORKSCOPE_TAG then
     invalid("uri must be a full org.hypercerts.workscope.tag AT-URI with a DID authority")
   end

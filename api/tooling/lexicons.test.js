@@ -121,6 +121,7 @@ if (hasModule('modules/workscope-tags/manifest.json')) test('work-scope tag quer
 
   const view = lexicons.getDefOrThrow('org.hypercerts.api.defs#workscopeTagView');
   assert.deepEqual(view.required, ['uri', 'cid', 'indexedAt', 'did', 'author', 'record']);
+  assert.deepEqual(view.nullable, ['indexedAt']);
   assert.equal(view.properties.author.ref, 'lex:org.hypercerts.api.defs#actorView');
   assert.equal(view.properties.record.ref, 'lex:org.hypercerts.workscope.tag');
   assert.deepEqual(get.defs.main.parameters.required, ['uri']);

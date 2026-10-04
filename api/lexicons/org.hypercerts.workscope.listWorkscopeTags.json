@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Lists work-scope tags by publisher DID in (createdAt, uri) order; authentication is not required.",
+      "description": "Lists indexed work-scope tags by publisher DID with stable timestamp-and-URI ordering; authentication is not required.",
       "parameters": {
         "type": "params",
         "properties": {
@@ -21,7 +21,7 @@
             "type": "string",
             "enum": ["asc", "desc"],
             "default": "desc",
-            "description": "Sort direction for (createdAt, uri); defaults to desc."
+            "description": "Sort direction for timestamp-and-URI ordering; defaults to desc."
           },
           "limit": {
             "type": "integer",

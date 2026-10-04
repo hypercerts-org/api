@@ -42,8 +42,9 @@
     },
     "workscopeTagView": {
       "type": "object",
-      "description": "Work-scope tag view with its hydrated publisher and unchanged record.",
+      "description": "Work-scope tag view with its hydrated publisher, unchanged record, and nullable index timestamp.",
       "required": ["uri", "cid", "indexedAt", "did", "author", "record"],
+      "nullable": ["indexedAt"],
       "properties": {
         "uri": { "type": "string", "format": "at-uri" },
         "cid": { "type": "string", "format": "cid" },
