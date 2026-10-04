@@ -1,5 +1,13 @@
 {
   "name": "hypercerts-api-foundation",
+  "authentication": { "unresolved": false },
+  "handlerStatus": {
+    "getFeature": "implemented",
+    "listFeatures": "implemented"
+  },
+  "luaBuild": {
+    "endpointSources": ["lua/src/getFeature.lua", "lua/src/listFeatures.lua"]
+  },
   "validationLexicons": [
     { "id": "app.certified.location", "packagePath": "lexicons/app/certified/location.json" },
     { "id": "org.hypercerts.api.defs", "path": "lexicons/org.hypercerts.api.defs.json" },
@@ -10,6 +18,9 @@
     { "id": "org.hypercerts.context.evaluation", "packagePath": "lexicons/org/hypercerts/context/evaluation.json" },
     { "id": "org.hypercerts.collection.getCollection", "path": "lexicons/org.hypercerts.collection.getCollection.json" },
     { "id": "org.hypercerts.collection.listCollectionItems", "path": "lexicons/org.hypercerts.collection.listCollectionItems.json" },
+    { "id": "org.hypercerts.entity.defs", "path": "lexicons/org.hypercerts.entity.defs.json" },
+    { "id": "org.hypercerts.entity.getFeature", "path": "lexicons/org.hypercerts.entity.getFeature.json" },
+    { "id": "org.hypercerts.entity.listFeatures", "path": "lexicons/org.hypercerts.entity.listFeatures.json" },
     { "id": "org.hypercerts.context.attachment", "packagePath": "lexicons/org/hypercerts/context/attachment.json" },
     { "id": "app.certified.badge.definition", "packagePath": "lexicons/app/certified/badge/definition.json" },
     { "id": "org.hypercerts.funding.receipt", "packagePath": "lexicons/org/hypercerts/funding/receipt.json" },
@@ -51,5 +62,5 @@
     { "id": "pub.leaflet.richtext.facet", "packagePath": "lexicons/pub/leaflet/richtext/facet.json" },
     { "id": "pub.leaflet.theme.color", "packagePath": "lexicons/pub/leaflet/theme/color.json" }
   ],
-  "modules": ["modules/shared/manifest.json"]
+  "modules": ["modules/shared/manifest.json", "modules/features/manifest.json"]
 }

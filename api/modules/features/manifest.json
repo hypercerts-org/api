@@ -1,0 +1,52 @@
+{
+  "assets": [
+    {
+      "kind": "lexicon",
+      "id": "org.hypercerts.entity.defs",
+      "path": "../../lexicons/org.hypercerts.entity.defs.json",
+      "config": { "backfill": false },
+      "dependsOn": ["org.hypercerts.api.defs", "org.hypercerts.entity.feature"]
+    },
+    {
+      "kind": "lexicon",
+      "id": "org.hypercerts.entity.getFeature",
+      "path": "../../lexicons/org.hypercerts.entity.getFeature.json",
+      "config": { "backfill": false, "target_collection": "org.hypercerts.entity.feature" },
+      "dependsOn": ["org.hypercerts.entity.feature", "org.hypercerts.entity.defs"]
+    },
+    {
+      "kind": "lexicon",
+      "id": "org.hypercerts.entity.listFeatures",
+      "path": "../../lexicons/org.hypercerts.entity.listFeatures.json",
+      "config": { "backfill": false, "target_collection": "org.hypercerts.entity.feature" },
+      "dependsOn": ["org.hypercerts.entity.feature", "org.hypercerts.entity.defs"]
+    },
+    {
+      "kind": "script",
+      "id": "xrpc.query:org.hypercerts.entity.getFeature",
+      "path": "../../lua/endpoints/getFeature.lua",
+      "sourcePath": "../../lua/src/getFeature.lua",
+      "sharedSourcePaths": [
+        "../../lua/shared/query.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/featureProjection.lua"
+      ],
+      "config": { "script_type": "lua", "description": "Feature lookup API handler" },
+      "dependsOn": ["org.hypercerts.entity.getFeature"]
+    },
+    {
+      "kind": "script",
+      "id": "xrpc.query:org.hypercerts.entity.listFeatures",
+      "path": "../../lua/endpoints/listFeatures.lua",
+      "sourcePath": "../../lua/src/listFeatures.lua",
+      "sharedSourcePaths": [
+        "../../lua/shared/query.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/listQuery.lua",
+        "../../lua/shared/featureProjection.lua"
+      ],
+      "config": { "script_type": "lua", "description": "Feature listing API handler" },
+      "dependsOn": ["org.hypercerts.entity.listFeatures"]
+    }
+  ]
+}
