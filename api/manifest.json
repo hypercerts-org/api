@@ -1,7 +1,19 @@
 {
   "name": "hypercerts-api-foundation",
+  "handlerStatus": {
+    "getEvmLink": "implemented",
+    "listEvmLinks": "implemented"
+  },
+  "authentication": {
+    "decision": "public",
+    "unresolved": false,
+    "note": "The EVM-link query endpoints expose public indexed reads and require no caller authentication."
+  },
   "validationLexicons": [
     { "id": "app.certified.location", "packagePath": "lexicons/app/certified/location.json" },
+    { "id": "app.certified.link.evm", "packagePath": "lexicons/app/certified/link/evm.json" },
+    { "id": "app.certified.link.getEvmLink", "path": "lexicons/app.certified.link.getEvmLink.json" },
+    { "id": "app.certified.link.listEvmLinks", "path": "lexicons/app.certified.link.listEvmLinks.json" },
     { "id": "org.hypercerts.api.defs", "path": "lexicons/org.hypercerts.api.defs.json" },
     { "id": "app.certified.graph.follow", "packagePath": "lexicons/app/certified/graph/follow.json" },
     { "id": "app.certified.graph.entityFollow", "packagePath": "lexicons/app/certified/graph/entityFollow.json" },
@@ -51,5 +63,5 @@
     { "id": "pub.leaflet.richtext.facet", "packagePath": "lexicons/pub/leaflet/richtext/facet.json" },
     { "id": "pub.leaflet.theme.color", "packagePath": "lexicons/pub/leaflet/theme/color.json" }
   ],
-  "modules": ["modules/shared/manifest.json"]
+  "modules": ["modules/shared/manifest.json", "modules/evm-links/manifest.json"]
 }

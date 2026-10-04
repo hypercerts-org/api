@@ -26,6 +26,7 @@ test('the full validation Lexicon closure resolves locally while only selected p
     'app.certified.defs',
     'app.certified.graph.entityFollow',
     'app.certified.graph.follow',
+    'app.certified.link.evm',
     'app.certified.location',
     'app.certified.signature.defs',
     'org.hypercerts.claim.activity',
