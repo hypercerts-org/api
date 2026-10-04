@@ -1,5 +1,14 @@
 {
   "name": "hypercerts-api-foundation",
+  "handlerStatus": {
+    "getAcknowledgement": "implemented",
+    "listAcknowledgements": "implemented"
+  },
+  "authentication": {
+    "decision": "public",
+    "unresolved": false,
+    "note": "Acknowledgement queries expose public indexed records and require no caller authentication."
+  },
   "validationLexicons": [
     { "id": "app.certified.location", "packagePath": "lexicons/app/certified/location.json" },
     { "id": "org.hypercerts.api.defs", "path": "lexicons/org.hypercerts.api.defs.json" },
@@ -8,6 +17,9 @@
     { "id": "app.certified.actor.profile", "packagePath": "lexicons/app/certified/actor/profile.json" },
     { "id": "org.hypercerts.claim.getActivity", "path": "lexicons/org.hypercerts.claim.getActivity.json" },
     { "id": "org.hypercerts.context.evaluation", "packagePath": "lexicons/org/hypercerts/context/evaluation.json" },
+    { "id": "org.hypercerts.context.acknowledgement", "packagePath": "lexicons/org/hypercerts/context/acknowledgement.json" },
+    { "id": "org.hypercerts.context.getAcknowledgement", "path": "lexicons/org.hypercerts.context.getAcknowledgement.json" },
+    { "id": "org.hypercerts.context.listAcknowledgements", "path": "lexicons/org.hypercerts.context.listAcknowledgements.json" },
     { "id": "org.hypercerts.collection.getCollection", "path": "lexicons/org.hypercerts.collection.getCollection.json" },
     { "id": "org.hypercerts.collection.listCollectionItems", "path": "lexicons/org.hypercerts.collection.listCollectionItems.json" },
     { "id": "org.hypercerts.context.attachment", "packagePath": "lexicons/org/hypercerts/context/attachment.json" },
@@ -51,5 +63,5 @@
     { "id": "pub.leaflet.richtext.facet", "packagePath": "lexicons/pub/leaflet/richtext/facet.json" },
     { "id": "pub.leaflet.theme.color", "packagePath": "lexicons/pub/leaflet/theme/color.json" }
   ],
-  "modules": ["modules/shared/manifest.json"]
+  "modules": ["modules/shared/manifest.json", "modules/acknowledgements/manifest.json"]
 }

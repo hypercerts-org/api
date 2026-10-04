@@ -1,0 +1,75 @@
+{
+  "assets": [
+    {
+      "kind": "lexicon",
+      "id": "com.atproto.repo.strongRef",
+      "packagePath": "lexicons/com/atproto/repo/strongRef.json",
+      "config": { "backfill": false },
+      "dependsOn": []
+    },
+    {
+      "kind": "lexicon",
+      "id": "org.hypercerts.context.acknowledgement",
+      "packagePath": "lexicons/org/hypercerts/context/acknowledgement.json",
+      "config": { "backfill": true },
+      "dependsOn": [
+        "org.hypercerts.defs",
+        "com.atproto.repo.strongRef",
+        "app.certified.signature.defs"
+      ]
+    },
+    {
+      "kind": "lexicon",
+      "id": "org.hypercerts.context.getAcknowledgement",
+      "path": "../../lexicons/org.hypercerts.context.getAcknowledgement.json",
+      "config": {
+        "backfill": false,
+        "target_collection": "org.hypercerts.context.acknowledgement"
+      },
+      "dependsOn": [
+        "org.hypercerts.context.acknowledgement",
+        "org.hypercerts.api.defs"
+      ]
+    },
+    {
+      "kind": "script",
+      "id": "xrpc.query:org.hypercerts.context.getAcknowledgement",
+      "path": "../../lua/endpoints/getAcknowledgement.lua",
+      "sourcePath": "../../lua/src/getAcknowledgement.lua",
+      "sharedSourcePaths": ["../../lua/shared/acknowledgement.lua"],
+      "config": {
+        "script_type": "lua",
+        "description": "Hypercerts acknowledgement lookup handler"
+      },
+      "dependsOn": ["org.hypercerts.context.getAcknowledgement"]
+    },
+    {
+      "kind": "lexicon",
+      "id": "org.hypercerts.context.listAcknowledgements",
+      "path": "../../lexicons/org.hypercerts.context.listAcknowledgements.json",
+      "config": {
+        "backfill": false,
+        "target_collection": "org.hypercerts.context.acknowledgement"
+      },
+      "dependsOn": [
+        "org.hypercerts.context.acknowledgement",
+        "org.hypercerts.api.defs"
+      ]
+    },
+    {
+      "kind": "script",
+      "id": "xrpc.query:org.hypercerts.context.listAcknowledgements",
+      "path": "../../lua/endpoints/listAcknowledgements.lua",
+      "sourcePath": "../../lua/src/listAcknowledgements.lua",
+      "sharedSourcePaths": [
+        "../../lua/shared/acknowledgement.lua",
+        "../../lua/shared/acknowledgementList.lua"
+      ],
+      "config": {
+        "script_type": "lua",
+        "description": "Hypercerts acknowledgement listing handler"
+      },
+      "dependsOn": ["org.hypercerts.context.listAcknowledgements"]
+    }
+  ]
+}

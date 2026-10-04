@@ -40,6 +40,20 @@
         "organization": { "type": "ref", "ref": "#organizationView" }
       }
     },
+    "acknowledgementView": {
+      "type": "object",
+      "description": "Acknowledgement record with its publisher actor.",
+      "required": ["uri", "cid", "indexedAt", "did", "author", "record"],
+      "nullable": ["indexedAt"],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
+        "indexedAt": { "type": "string", "format": "datetime" },
+        "did": { "type": "string", "format": "did" },
+        "author": { "type": "ref", "ref": "#actorView" },
+        "record": { "type": "ref", "ref": "org.hypercerts.context.acknowledgement" }
+      }
+    },
     "entityFollowRecordView": {
       "type": "object",
       "description": "Raw indexed entity-follow record view, including the DID that published the relationship.",
