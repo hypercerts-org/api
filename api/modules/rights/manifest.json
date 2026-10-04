@@ -1,0 +1,51 @@
+{
+  "assets": [
+    {
+      "kind": "lexicon",
+      "id": "org.hypercerts.claim.getRights",
+      "path": "../../lexicons/org.hypercerts.claim.getRights.json",
+      "config": { "backfill": false, "target_collection": "org.hypercerts.claim.rights" },
+      "dependsOn": ["org.hypercerts.claim.rights", "org.hypercerts.api.defs"]
+    },
+    {
+      "kind": "script",
+      "id": "xrpc.query:org.hypercerts.claim.getRights",
+      "path": "../../lua/endpoints/getRights.lua",
+      "sourcePath": "../../lua/src/getRights.lua",
+      "sharedSourcePaths": [
+        "../../lua/shared/query.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/rightsIdentifier.lua",
+        "../../lua/shared/recordView.lua",
+        "../../lua/shared/actorView.lua",
+        "../../lua/shared/rightsView.lua"
+      ],
+      "config": { "script_type": "lua", "description": "Look up one rights record" },
+      "dependsOn": ["org.hypercerts.claim.getRights"]
+    },
+    {
+      "kind": "lexicon",
+      "id": "org.hypercerts.claim.listRights",
+      "path": "../../lexicons/org.hypercerts.claim.listRights.json",
+      "config": { "backfill": false, "target_collection": "org.hypercerts.claim.rights" },
+      "dependsOn": ["org.hypercerts.claim.rights", "org.hypercerts.api.defs"]
+    },
+    {
+      "kind": "script",
+      "id": "xrpc.query:org.hypercerts.claim.listRights",
+      "path": "../../lua/endpoints/listRights.lua",
+      "sourcePath": "../../lua/src/listRights.lua",
+      "sharedSourcePaths": [
+        "../../lua/shared/query.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/rightsIdentifier.lua",
+        "../../lua/shared/recordView.lua",
+        "../../lua/shared/actorView.lua",
+        "../../lua/shared/rightsView.lua",
+        "../../lua/shared/listQuery.lua"
+      ],
+      "config": { "script_type": "lua", "description": "List rights records" },
+      "dependsOn": ["org.hypercerts.claim.listRights"]
+    }
+  ]
+}

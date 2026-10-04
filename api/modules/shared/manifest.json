@@ -9,6 +9,7 @@
     { "kind": "lexicon", "id": "app.certified.location", "packagePath": "lexicons/app/certified/location.json", "config": { "backfill": true }, "dependsOn": [], "registrationGroup": "location-record-schema-sources" },
     { "kind": "lexicon", "id": "app.certified.signature.defs", "packagePath": "lexicons/app/certified/signature/defs.json", "config": { "backfill": false }, "dependsOn": [], "registrationGroup": "location-record-schema-sources" },
     { "kind": "lexicon", "id": "org.hypercerts.claim.activity", "packagePath": "lexicons/org/hypercerts/claim/activity.json", "config": { "backfill": true }, "dependsOn": [] },
+    { "kind": "lexicon", "id": "org.hypercerts.claim.rights", "packagePath": "lexicons/org/hypercerts/claim/rights.json", "config": { "backfill": true }, "dependsOn": ["org.hypercerts.defs", "app.certified.signature.defs"] },
     { "kind": "lexicon", "id": "org.hypercerts.claim.contributorInformation", "packagePath": "lexicons/org/hypercerts/claim/contributorInformation.json", "config": { "backfill": true }, "dependsOn": [] },
     { "kind": "lexicon", "id": "org.hypercerts.collection", "packagePath": "lexicons/org/hypercerts/collection.json", "config": { "backfill": true }, "dependsOn": ["org.hypercerts.defs", "app.certified.signature.defs"] },
     { "kind": "lexicon", "id": "org.hypercerts.context.attachment", "packagePath": "lexicons/org/hypercerts/context/attachment.json", "config": { "backfill": true }, "dependsOn": [] },
@@ -22,7 +23,7 @@
       "id": "org.hypercerts.api.defs",
       "path": "../../lexicons/org.hypercerts.api.defs.json",
       "config": { "backfill": false },
-      "dependsOn": ["app.certified.actor.organization", "app.certified.actor.profile"]
+      "dependsOn": ["app.certified.actor.organization", "app.certified.actor.profile", "org.hypercerts.claim.rights"]
     },
     {
       "kind": "lexicon",

@@ -30,6 +30,7 @@ test('the full validation Lexicon closure resolves locally while only selected p
     'app.certified.signature.defs',
     'org.hypercerts.claim.activity',
     'org.hypercerts.claim.contributorInformation',
+    'org.hypercerts.claim.rights',
     'org.hypercerts.collection',
     'org.hypercerts.context.attachment',
     'org.hypercerts.context.evaluation',
@@ -121,6 +122,30 @@ if (hasModule('modules/actor-follow/manifest.json')) test('follow query Lexicons
     listActorFollowers: ['actor'],
     listActorFollowing: ['actor'],
   });
+});
+
+if (hasModule('modules/rights/manifest.json')) test('rights queries preserve the indexed record and declare bounded author pagination', async () => {
+  const { lexicons, documents } = await validatePackageLexicons();
+  const byId = new Map(documents.map((document) => [document.id, document]));
+  const shared = byId.get('org.hypercerts.api.defs');
+  const rights = byId.get('org.hypercerts.claim.rights');
+  const getRights = byId.get('org.hypercerts.claim.getRights');
+  const listRights = byId.get('org.hypercerts.claim.listRights');
+  assert.ok(shared && rights && getRights && listRights);
+
+  const rightsView = lexicons.getDefOrThrow('org.hypercerts.api.defs#rightsView');
+  assert.deepEqual(rightsView.required, ['uri', 'cid', 'indexedAt', 'did', 'author', 'record']);
+  assert.deepEqual(rightsView.nullable, ['indexedAt']);
+  assert.equal(rightsView.properties.author.ref, 'lex:org.hypercerts.api.defs#actorView');
+  assert.equal(rightsView.properties.record.ref, 'lex:org.hypercerts.claim.rights');
+  assert.equal(getRights.defs.output.properties.rights.ref, 'lex:org.hypercerts.api.defs#rightsView');
+  assert.deepEqual(getRights.defs.main.errors.map(({ name }) => name), ['InvalidRequest', 'RecordNotFound']);
+  assert.equal(listRights.defs.main.parameters.properties.authors.type, 'array');
+  assert.equal(listRights.defs.main.parameters.properties.authors.maxLength, 100);
+  assert.equal(listRights.defs.main.parameters.properties.authors.items.format, 'did');
+  assert.equal(listRights.defs.main.parameters.properties.limit.minimum, 1);
+  assert.equal(listRights.defs.main.parameters.properties.limit.maximum, 100);
+  assert.equal(listRights.defs.output.properties.rights.items.ref, 'lex:org.hypercerts.api.defs#rightsView');
 });
 
 test('installed ATProto validator accepts package language, transitive refs, and real fixture records', async () => {
