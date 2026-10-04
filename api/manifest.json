@@ -1,5 +1,17 @@
 {
   "name": "hypercerts-api-foundation",
+  "handlerStatus": {
+    "searchBadgeDefinitions": "implemented",
+    "getBadgeAward": "implemented",
+    "listBadgeAwards": "implemented",
+    "getBadgeResponse": "implemented",
+    "listBadgeResponses": "implemented"
+  },
+  "authentication": {
+    "decision": "public",
+    "unresolved": false,
+    "note": "Badge query endpoints expose public indexed record reads and require no caller authentication."
+  },
   "validationLexicons": [
     { "id": "app.certified.location", "packagePath": "lexicons/app/certified/location.json" },
     { "id": "org.hypercerts.api.defs", "path": "lexicons/org.hypercerts.api.defs.json" },
@@ -11,7 +23,14 @@
     { "id": "org.hypercerts.collection.getCollection", "path": "lexicons/org.hypercerts.collection.getCollection.json" },
     { "id": "org.hypercerts.collection.listCollectionItems", "path": "lexicons/org.hypercerts.collection.listCollectionItems.json" },
     { "id": "org.hypercerts.context.attachment", "packagePath": "lexicons/org/hypercerts/context/attachment.json" },
+    { "id": "app.certified.badge.award", "packagePath": "lexicons/app/certified/badge/award.json" },
     { "id": "app.certified.badge.definition", "packagePath": "lexicons/app/certified/badge/definition.json" },
+    { "id": "app.certified.badge.response", "packagePath": "lexicons/app/certified/badge/response.json" },
+    { "id": "app.certified.badge.searchBadgeDefinitions", "path": "lexicons/app.certified.badge.searchBadgeDefinitions.json" },
+    { "id": "app.certified.badge.getBadgeAward", "path": "lexicons/app.certified.badge.getBadgeAward.json" },
+    { "id": "app.certified.badge.listBadgeAwards", "path": "lexicons/app.certified.badge.listBadgeAwards.json" },
+    { "id": "app.certified.badge.getBadgeResponse", "path": "lexicons/app.certified.badge.getBadgeResponse.json" },
+    { "id": "app.certified.badge.listBadgeResponses", "path": "lexicons/app.certified.badge.listBadgeResponses.json" },
     { "id": "org.hypercerts.funding.receipt", "packagePath": "lexicons/org/hypercerts/funding/receipt.json" },
     { "id": "app.certified.actor.organization", "packagePath": "lexicons/app/certified/actor/organization.json" },
     { "id": "app.bsky.richtext.facet", "packagePath": "lexicons/app/bsky/richtext/facet.json" },
@@ -51,5 +70,5 @@
     { "id": "pub.leaflet.richtext.facet", "packagePath": "lexicons/pub/leaflet/richtext/facet.json" },
     { "id": "pub.leaflet.theme.color", "packagePath": "lexicons/pub/leaflet/theme/color.json" }
   ],
-  "modules": ["modules/shared/manifest.json"]
+  "modules": ["modules/shared/manifest.json", "modules/badge-queries/manifest.json"]
 }
