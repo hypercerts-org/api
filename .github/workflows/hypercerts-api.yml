@@ -67,6 +67,8 @@ jobs:
       PSQL_PATH: /usr/bin/psql
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         with:
@@ -136,6 +138,7 @@ jobs:
           set -a
           source "$COMPOSE_ENV_FILE"
           set +a
+          export PGPASSWORD="$POSTGRES_PASSWORD"
           admin_token="hv_$(openssl rand -hex 16)"
           key_hash="$(printf '%s' "$admin_token" | sha256sum | cut -d ' ' -f 1)"
           user_id="$(node -e 'process.stdout.write(require("node:crypto").randomUUID())')"
