@@ -7,6 +7,8 @@
     { "id": "app.certified.graph.entityFollow", "packagePath": "lexicons/app/certified/graph/entityFollow.json" },
     { "id": "app.certified.actor.profile", "packagePath": "lexicons/app/certified/actor/profile.json" },
     { "id": "org.hypercerts.claim.getActivity", "path": "lexicons/org.hypercerts.claim.getActivity.json" },
+    { "id": "org.hypercerts.claim.getContribution", "path": "lexicons/org.hypercerts.claim.getContribution.json" },
+    { "id": "org.hypercerts.claim.listContributions", "path": "lexicons/org.hypercerts.claim.listContributions.json" },
     { "id": "org.hypercerts.context.evaluation", "packagePath": "lexicons/org/hypercerts/context/evaluation.json" },
     { "id": "org.hypercerts.collection.getCollection", "path": "lexicons/org.hypercerts.collection.getCollection.json" },
     { "id": "org.hypercerts.collection.listCollectionItems", "path": "lexicons/org.hypercerts.collection.listCollectionItems.json" },
@@ -22,6 +24,7 @@
     { "id": "org.hypercerts.workscope.cel", "packagePath": "lexicons/org/hypercerts/workscope/cel.json" },
     { "id": "org.hypercerts.claim.activity", "packagePath": "lexicons/org/hypercerts/claim/activity.json" },
     { "id": "org.hypercerts.claim.contributorInformation", "packagePath": "lexicons/org/hypercerts/claim/contributorInformation.json" },
+    { "id": "org.hypercerts.claim.contribution", "packagePath": "lexicons/org/hypercerts/claim/contribution.json" },
     { "id": "org.hypercerts.collection", "packagePath": "lexicons/org/hypercerts/collection.json" },
     { "id": "org.hypercerts.entity.feature", "packagePath": "lexicons/org/hypercerts/entity/feature.json" },
     { "id": "org.hypercerts.vocab.tag", "packagePath": "lexicons/org/hypercerts/vocab/tag.json" },
@@ -51,5 +54,7 @@
     { "id": "pub.leaflet.richtext.facet", "packagePath": "lexicons/pub/leaflet/richtext/facet.json" },
     { "id": "pub.leaflet.theme.color", "packagePath": "lexicons/pub/leaflet/theme/color.json" }
   ],
-  "modules": ["modules/shared/manifest.json"]
+  "authentication": { "unresolved": false },
+  "handlerStatus": { "getContribution": "implemented", "listContributions": "implemented" },
+  "modules": ["modules/shared/manifest.json", "modules/contribution/manifest.json"]
 }

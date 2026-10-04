@@ -1,0 +1,37 @@
+{
+  "lexicon": 1,
+  "id": "org.hypercerts.claim.getContribution",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Looks up one contribution record by exact AT-URI; authentication is not required.",
+      "parameters": {
+        "type": "params",
+        "required": ["uri"],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "Full AT-URI of the contribution record, using a DID authority."
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": { "type": "ref", "ref": "#output" }
+      },
+      "errors": [
+        { "name": "InvalidRequest", "description": "The URI must identify a contribution record with a DID authority." },
+        { "name": "RecordNotFound", "description": "No indexed contribution record exists at this AT-URI." },
+        { "name": "ContributionQueryFailed", "description": "The contribution record or publisher could not be read from PostgreSQL." }
+      ]
+    },
+    "output": {
+      "type": "object",
+      "required": ["contribution"],
+      "properties": {
+        "contribution": { "type": "ref", "ref": "org.hypercerts.api.defs#contributionView" }
+      }
+    }
+  }
+}
