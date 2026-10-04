@@ -1,0 +1,49 @@
+{
+  "lexicon": 1,
+  "id": "org.hypercerts.workscope.getWorkscopeTag",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Looks up a work-scope tag by exact AT-URI and returns its publisher actor; authentication is not required.",
+      "parameters": {
+        "type": "params",
+        "required": ["uri"],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "Full work-scope-tag AT-URI using a DID authority."
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": { "type": "ref", "ref": "#output" }
+      },
+      "errors": [
+        {
+          "name": "InvalidRequest",
+          "description": "The URI is invalid or is not a work-scope-tag AT-URI."
+        },
+        {
+          "name": "RecordNotFound",
+          "description": "No indexed work-scope tag exists at this AT-URI."
+        },
+        {
+          "name": "WorkscopeTagQueryFailed",
+          "description": "The record lookup or publisher hydration failed."
+        }
+      ]
+    },
+    "output": {
+      "type": "object",
+      "required": ["workscopeTag"],
+      "properties": {
+        "workscopeTag": {
+          "type": "ref",
+          "ref": "org.hypercerts.api.defs#workscopeTagView"
+        }
+      }
+    }
+  }
+}
