@@ -29,7 +29,13 @@ export function normalizeBaseUrl(input) {
     );
   }
 
-  return `${url.origin}${url.pathname.replace(/\/+$/, '')}`;
+  const pathname = url.pathname;
+  let pathnameEnd = pathname.length;
+  while (pathnameEnd > 0 && pathname[pathnameEnd - 1] === '/') {
+    pathnameEnd--;
+  }
+
+  return `${url.origin}${pathname.slice(0, pathnameEnd)}`;
 }
 
 /**

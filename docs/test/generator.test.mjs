@@ -20,6 +20,11 @@ const searchLexicon = {
             maxLength: 40,
             examples: ['river bank'],
           },
+          emptyExample: {
+            type: 'string',
+            example: '',
+            examples: ['fallback'],
+          },
           tags: {
             type: 'array',
             description: 'Repeated tag filters.',
@@ -57,6 +62,7 @@ test('OpenAPI generation preserves query contract and marks unresolved refs', ()
   });
   const operation = document.paths['/xrpc/app.certified.demo.search'].get;
   const search = operation.parameters.find((parameter) => parameter.name === 'search');
+  const emptyExample = operation.parameters.find((parameter) => parameter.name === 'emptyExample');
   const tags = operation.parameters.find((parameter) => parameter.name === 'tags');
 
   assert.equal(document.openapi, '3.1.0');
@@ -71,6 +77,7 @@ test('OpenAPI generation preserves query contract and marks unresolved refs', ()
   assert.equal(Object.hasOwn(search.schema, 'description'), false);
   assert.equal(search.schema.maxLength, 40);
   assert.equal(search.example, 'river bank');
+  assert.equal(emptyExample.example, '');
   assert.equal(tags.description, 'Repeated tag filters.');
   assert.deepEqual(tags.schema, {
     type: 'array',
@@ -90,4 +97,63 @@ test('OpenAPI generation preserves query contract and marks unresolved refs', ()
     document.components.schemas['org.hypercerts.api.defs.recordView']['x-lexicon-ref'],
     'org.hypercerts.api.defs#recordView',
   );
+});
+
+test('OpenAPI conversion resolves cyclic and union refs and preserves object-schema fallbacks', () => {
+  const lexiconId = 'app.certified.demo.schemaCases';
+  const document = generator.buildOpenApi([{
+    lexicon: 1,
+    id: lexiconId,
+    defs: {
+      main: {
+        type: 'query',
+        output: { encoding: 'application/json', schema: { type: 'ref', ref: '#node' } },
+      },
+      node: {
+        type: 'object',
+        closed: true,
+        required: ['next', 'choice'],
+        nullable: ['optional'],
+        properties: {
+          next: { type: 'ref', ref: '#node' },
+          choice: {
+            type: 'union',
+            description: 'A known variant.',
+            refs: ['#textVariant', '#countVariant'],
+          },
+          optional: { type: 'string' },
+          unknownUnion: { type: 'union' },
+        },
+      },
+      textVariant: { type: 'object', properties: { value: { type: 'string' } } },
+      countVariant: { type: 'object', properties: { value: { type: 'integer' } } },
+    },
+  }]);
+  const schemas = document.components.schemas;
+
+  assert.deepEqual(schemas[`${lexiconId}.node`], {
+    type: 'object',
+    required: ['next', 'choice'],
+    properties: {
+      next: { $ref: `#/components/schemas/${lexiconId}.node` },
+      choice: {
+        anyOf: [
+          { $ref: `#/components/schemas/${lexiconId}.textVariant` },
+          { $ref: `#/components/schemas/${lexiconId}.countVariant` },
+        ],
+        description: 'A known variant.',
+      },
+      optional: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      unknownUnion: { type: 'object' },
+    },
+    additionalProperties: false,
+  });
+  assert.deepEqual(schemas[`${lexiconId}.textVariant`], {
+    type: 'object',
+    properties: { value: { type: 'string' } },
+  });
+  assert.deepEqual(schemas[`${lexiconId}.countVariant`], {
+    type: 'object',
+    properties: { value: { type: 'integer' } },
+  });
 });

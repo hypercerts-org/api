@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import test from 'node:test';
 import { createServer } from 'vite';
 import viteConfig from '../vite.config.mjs';
@@ -58,6 +60,28 @@ test('Vite serves the copied Hypercerts lockup and theme-specific favicons byte-
       assert.equal(createHash('sha256').update(body).digest('hex'), asset.sha256, `${asset.url} should match the website artwork`);
     }
   });
+});
+
+test('SSR-rendered API reference brand links to the app root', async () => {
+  const server = await createServer({
+    ...viteConfig,
+    configFile: false,
+    logLevel: 'silent',
+    server: { middlewareMode: true, hmr: false },
+  });
+
+  try {
+    const { App } = await server.ssrLoadModule('/web/src/App.tsx');
+    const markup = renderToStaticMarkup(createElement(App));
+    const brand = htmlTags(markup, 'a').find(
+      (tag) => attribute(tag, 'aria-label') === 'Hypercerts API reference home',
+    );
+
+    assert.ok(brand, 'rendered API reference should include its brand link');
+    assert.equal(attribute(brand, 'href'), '/', 'the brand link should return to the app root');
+  } finally {
+    await server.close();
+  }
 });
 
 test('Vite serves API-reference social metadata and color-scheme favicon links', async () => {

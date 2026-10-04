@@ -74,6 +74,7 @@ test('build-time HappyView server config keeps an ordered default and rejects in
 
 test('base URL validation accepts the default and local servers but rejects unsafe custom URLs', () => {
   assert.equal(normalizeBaseUrl('https://api.example.test/v1/'), 'https://api.example.test/v1');
+  assert.equal(normalizeBaseUrl('https://api.example.test/v1////'), 'https://api.example.test/v1');
   assert.equal(normalizeBaseUrl('http://127.0.0.1:8080/'), 'http://127.0.0.1:8080');
 
   for (const invalid of [

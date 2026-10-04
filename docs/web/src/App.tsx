@@ -48,7 +48,7 @@ export function App() {
       showOperationId: false,
       showSidebar: true,
       showDeveloperTools: 'never',
-      customCss: '.introduction-section .section-content > .flex.gap-1\\.5 { display: none; }',
+      customCss: String.raw`.introduction-section .section-content > .flex.gap-1\.5 { display: none; }`,
       defaultOpenFirstTag: true,
       defaultOpenAllTags: false,
       expandAllParameters: false,
@@ -87,7 +87,7 @@ export function App() {
   return (
     <div className="app-frame">
       <header className="site-header">
-        <a className="brand" href="#" aria-label="Hypercerts API reference home">
+        <a className="brand" href="/" aria-label="Hypercerts API reference home">
           <img className="brand-logo" src="/brand/logo-horizontal.svg" alt="" />
           <span className="brand-api"><span className="brand-divider" aria-hidden="true">/</span> API</span>
         </a>

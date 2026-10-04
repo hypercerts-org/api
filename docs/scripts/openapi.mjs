@@ -35,46 +35,67 @@ function referenceParts(reference, currentLexiconId) {
   return { lexiconId, definitionName: fragment || 'main' };
 }
 
+function referenceSchema(reference, currentLexiconId, lexicons, schemas, active) {
+  const { lexiconId, definitionName } = referenceParts(reference, currentLexiconId);
+  const target = lexicons.get(lexiconId)?.defs?.[definitionName];
+  const key = componentKey(lexiconId, definitionName);
+  if (!target && !schemas[key]) {
+    schemas[key] = {
+      description: `Schema reference ${reference} is outside the committed local Lexicon snapshot.`,
+      'x-lexicon-ref': reference,
+    };
+  } else if (target && !schemas[key] && !active.has(key)) {
+    active.add(key);
+    schemas[key] = toSchema(target, lexiconId, lexicons, schemas, active);
+    active.delete(key);
+  }
+  return { $ref: `#/components/schemas/${key}` };
+}
+
+function unionSchema(source, currentLexiconId, lexicons, schemas, active) {
+  return {
+    anyOf: source.refs.map((reference) =>
+      referenceSchema(reference, currentLexiconId, lexicons, schemas, active),
+    ),
+    ...(source.description ? { description: source.description } : {}),
+  };
+}
+
+function arraySchema(source, result, currentLexiconId, lexicons, schemas, active) {
+  if (Object.hasOwn(source, 'minLength')) {
+    result.minItems = source.minLength;
+    delete result.minLength;
+  }
+  if (Object.hasOwn(source, 'maxLength')) {
+    result.maxItems = source.maxLength;
+    delete result.maxLength;
+  }
+  if (source.items) result.items = toSchema(source.items, currentLexiconId, lexicons, schemas, active);
+}
+
+function objectSchema(source, result, currentLexiconId, lexicons, schemas, active) {
+  if (Array.isArray(source.required)) result.required = [...source.required];
+  if (source.properties) {
+    result.properties = {};
+    for (const [name, property] of Object.entries(source.properties)) {
+      const converted = toSchema(property, currentLexiconId, lexicons, schemas, active);
+      if (Array.isArray(source.nullable) && source.nullable.includes(name)) {
+        result.properties[name] = { anyOf: [converted, { type: 'null' }] };
+      } else {
+        result.properties[name] = converted;
+      }
+    }
+  }
+  if (source.closed === true) result.additionalProperties = false;
+}
+
 function toSchema(source, currentLexiconId, lexicons, schemas, active = new Set()) {
   if (!source || typeof source !== 'object') return {};
   if (source.type === 'ref') {
-    const reference = source.ref;
-    const { lexiconId, definitionName } = referenceParts(reference, currentLexiconId);
-    const target = lexicons.get(lexiconId)?.defs?.[definitionName];
-    const key = componentKey(lexiconId, definitionName);
-    if (!target && !schemas[key]) {
-      schemas[key] = {
-        description: `Schema reference ${reference} is outside the committed local Lexicon snapshot.`,
-        'x-lexicon-ref': reference,
-      };
-    } else if (target && !schemas[key] && !active.has(key)) {
-      active.add(key);
-      schemas[key] = toSchema(target, lexiconId, lexicons, schemas, active);
-      active.delete(key);
-    }
-    return { $ref: `#/components/schemas/${key}` };
+    return referenceSchema(source.ref, currentLexiconId, lexicons, schemas, active);
   }
-
   if (source.type === 'union' && Array.isArray(source.refs)) {
-    return {
-      anyOf: source.refs.map((reference) => {
-        const { lexiconId, definitionName } = referenceParts(reference, currentLexiconId);
-        const key = componentKey(lexiconId, definitionName);
-        const target = lexicons.get(lexiconId)?.defs?.[definitionName];
-        if (!target && !schemas[key]) {
-          schemas[key] = {
-            description: `Schema reference ${reference} is outside the committed local Lexicon snapshot.`,
-            'x-lexicon-ref': reference,
-          };
-        } else if (target && !schemas[key] && !active.has(key)) {
-          active.add(key);
-          schemas[key] = toSchema(target, lexiconId, lexicons, schemas, active);
-          active.delete(key);
-        }
-        return { $ref: `#/components/schemas/${key}` };
-      }),
-      ...(source.description ? { description: source.description } : {}),
-    };
+    return unionSchema(source, currentLexiconId, lexicons, schemas, active);
   }
 
   const result = {};
@@ -85,30 +106,10 @@ function toSchema(source, currentLexiconId, lexicons, schemas, active = new Set(
     result['x-lexicon-maxGraphemes'] = source.maxGraphemes;
   }
   if (source.type === 'array') {
-    if (Object.hasOwn(source, 'minLength')) {
-      result.minItems = source.minLength;
-      delete result.minLength;
-    }
-    if (Object.hasOwn(source, 'maxLength')) {
-      result.maxItems = source.maxLength;
-      delete result.maxLength;
-    }
-    if (source.items) result.items = toSchema(source.items, currentLexiconId, lexicons, schemas, active);
+    arraySchema(source, result, currentLexiconId, lexicons, schemas, active);
   }
   if (source.type === 'object') {
-    if (Array.isArray(source.required)) result.required = [...source.required];
-    if (source.properties) {
-      result.properties = {};
-      for (const [name, property] of Object.entries(source.properties)) {
-        const converted = toSchema(property, currentLexiconId, lexicons, schemas, active);
-        if (Array.isArray(source.nullable) && source.nullable.includes(name)) {
-          result.properties[name] = { anyOf: [converted, { type: 'null' }] };
-        } else {
-          result.properties[name] = converted;
-        }
-      }
-    }
-    if (source.closed === true) result.additionalProperties = false;
+    objectSchema(source, result, currentLexiconId, lexicons, schemas, active);
   }
   if (source.type === 'union' && !Array.isArray(source.refs)) result.type = 'object';
   return result;
@@ -125,11 +126,7 @@ function namespaceTag(lexiconId) {
   return parts.length > 3 ? parts.slice(0, 3).join('.') : parts.slice(0, -1).join('.');
 }
 
-function operationFor(lexicon, lexicons, schemas, coverage, sources) {
-  const { id } = lexicon;
-  const main = lexicon.defs.main;
-  const isQuery = main.type === 'query';
-  const parametersDef = main.parameters;
+function operationParameters(parametersDef, id, lexicons, schemas) {
   const requiredNames = new Set(parametersDef?.required ?? []);
   const parameters = [];
 
@@ -145,14 +142,24 @@ function operationFor(lexicon, lexicons, schemas, coverage, sources) {
       parameter.style = 'form';
       parameter.explode = true;
     }
-    const example = Object.hasOwn(property, 'example')
-      ? property.example
-      : Array.isArray(property.examples) && property.examples.length > 0
-        ? property.examples[0]
-        : undefined;
+    let example;
+    if (Object.hasOwn(property, 'example')) {
+      example = property.example;
+    } else if (Array.isArray(property.examples) && property.examples.length > 0) {
+      example = property.examples[0];
+    }
     if (example !== undefined) parameter.example = example;
     parameters.push(parameter);
   }
+
+  return parameters;
+}
+
+function operationFor(lexicon, lexicons, schemas, coverage, sources) {
+  const { id } = lexicon;
+  const main = lexicon.defs.main;
+  const isQuery = main.type === 'query';
+  const parameters = operationParameters(main.parameters, id, lexicons, schemas);
 
   const output = main.output?.schema
     ? toSchema(main.output.schema, id, lexicons, schemas)

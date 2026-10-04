@@ -36,6 +36,45 @@ async function activeApiLexicons(apiRoot, rootManifest) {
   return active;
 }
 
+async function refreshEndpoint(endpoint, sourceRoot, primaryWorktree) {
+  const worktree = path.resolve(sourceRoot, endpoint.source.worktree);
+  if (!isInside(sourceRoot, worktree)) throw new Error(`Worktree path escapes source root: ${endpoint.source.worktree}`);
+  const sourceFile = path.resolve(worktree, endpoint.source.path);
+  if (!isInside(worktree, sourceFile)) throw new Error(`Source file escapes worktree: ${endpoint.source.path}`);
+  const bytes = await readFile(sourceFile);
+  const lexicon = JSON.parse(bytes.toString('utf8'));
+  const type = lexicon.defs?.main?.type;
+  if (lexicon.id !== endpoint.id || !['query', 'procedure'].includes(type)) {
+    throw new Error(`Expected ${endpoint.id} to be a query/procedure Lexicon at ${sourceFile}`);
+  }
+  const apiRoot = path.join(worktree, 'hypercerts-api');
+  const rootManifest = await readJson(path.join(apiRoot, 'manifest.json'));
+  const active = await activeApiLexicons(apiRoot, rootManifest);
+  const activeModule = active.get(endpoint.id) ?? null;
+  endpoint.file = `sources/lexicons/${endpoint.id}.json`;
+  endpoint.type = type;
+  if (!activeModule) {
+    endpoint.coverage = 'unmanifested-unsupported';
+  } else if (endpoint.source.worktree === primaryWorktree) {
+    endpoint.coverage = 'primary';
+  } else {
+    endpoint.coverage = 'branch-only';
+  }
+  endpoint.source.branch = gitValue(worktree, 'branch', '--show-current');
+  endpoint.source.commit = gitValue(worktree, 'rev-parse', 'HEAD');
+  endpoint.source.activeModule = activeModule;
+
+  return {
+    snapshot: { file: path.join(root, endpoint.file), bytes },
+    sourceRoot: {
+      branch: endpoint.source.branch,
+      commit: endpoint.source.commit,
+      manifestPath: 'hypercerts-api/manifest.json',
+      targetHappyViewRevision: rootManifest.targetHappyViewRevision,
+    },
+  };
+}
+
 async function main() {
   const sourceRootArg = process.argv[2];
   if (sourceRootArg === '--help' || sourceRootArg === '-h') {
@@ -55,36 +94,9 @@ async function main() {
   const refreshed = [];
 
   for (const endpoint of index.endpoints) {
-    const worktree = path.resolve(sourceRoot, endpoint.source.worktree);
-    if (!isInside(sourceRoot, worktree)) throw new Error(`Worktree path escapes source root: ${endpoint.source.worktree}`);
-    const sourceFile = path.resolve(worktree, endpoint.source.path);
-    if (!isInside(worktree, sourceFile)) throw new Error(`Source file escapes worktree: ${endpoint.source.path}`);
-    const bytes = await readFile(sourceFile);
-    const lexicon = JSON.parse(bytes.toString('utf8'));
-    const type = lexicon.defs?.main?.type;
-    if (lexicon.id !== endpoint.id || !['query', 'procedure'].includes(type)) {
-      throw new Error(`Expected ${endpoint.id} to be a query/procedure Lexicon at ${sourceFile}`);
-    }
-    const apiRoot = path.join(worktree, 'hypercerts-api');
-    const rootManifest = await readJson(path.join(apiRoot, 'manifest.json'));
-    const active = await activeApiLexicons(apiRoot, rootManifest);
-    const activeModule = active.get(endpoint.id) ?? null;
-    endpoint.file = `sources/lexicons/${endpoint.id}.json`;
-    endpoint.type = type;
-    endpoint.coverage = activeModule
-      ? (endpoint.source.worktree === index.primaryWorktree ? 'primary' : 'branch-only')
-      : 'unmanifested-unsupported';
-    endpoint.source.branch = gitValue(worktree, 'branch', '--show-current');
-    endpoint.source.commit = gitValue(worktree, 'rev-parse', 'HEAD');
-    endpoint.source.activeModule = activeModule;
-    refreshed.push({ file: path.join(root, endpoint.file), bytes });
-
-    index.sourceRoots[endpoint.source.worktree] = {
-      branch: endpoint.source.branch,
-      commit: endpoint.source.commit,
-      manifestPath: 'hypercerts-api/manifest.json',
-      targetHappyViewRevision: rootManifest.targetHappyViewRevision,
-    };
+    const result = await refreshEndpoint(endpoint, sourceRoot, index.primaryWorktree);
+    refreshed.push(result.snapshot);
+    index.sourceRoots[endpoint.source.worktree] = result.sourceRoot;
   }
 
   const primaryApi = path.join(sourceRoot, index.primaryWorktree, 'hypercerts-api');
