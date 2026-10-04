@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Looks up one indexed funding receipt by exact AT-URI and hydrates its publisher actor. The full receipt record is preserved unchanged, including amount as a decimal string; parties and funded targets remain unexpanded. A receipt is not proof that payment occurred. Missing author profile or organization sidecar is null; operational hydration failures return errors. A missing indexed receipt is RecordNotFound. Authentication is not required.",
+      "description": "Returns one indexed funding receipt and hydrates its publisher actor. Authentication is not required.",
       "parameters": {
         "type": "params",
         "required": ["uri"],
@@ -12,7 +12,7 @@
           "uri": {
             "type": "string",
             "format": "at-uri",
-            "description": "Full funding-receipt record AT-URI using a DID authority."
+            "description": "Funding-receipt AT-URI using a DID authority; lookup matches the URI only, not a CID."
           }
         }
       },
@@ -23,7 +23,7 @@
       "errors": [
         { "name": "InvalidRequest", "description": "The URI is invalid or is not a funding-receipt record AT-URI." },
         { "name": "RecordNotFound", "description": "No indexed funding receipt exists at this AT-URI." },
-        { "name": "ReceiptQueryFailed", "description": "The receipt query or publisher hydration lookup failed; retry after checking the HappyView PostgreSQL service." }
+        { "name": "ReceiptQueryFailed", "description": "The receipt query or publisher hydration failed." }
       ]
     },
     "output": {
@@ -35,7 +35,7 @@
     },
     "receiptView": {
       "type": "object",
-      "description": "Funding-receipt record view with hydrated publisher actor and the full indexed record unchanged; party and funded-target references remain unexpanded. A receipt is not proof that payment occurred.",
+      "description": "Funding receipt with its publisher actor hydrated; the indexed record is unchanged, including its decimal-string amount, and party and funded-target references are not expanded. Missing publisher profile or organization sidecars are null; indexedAt is null when the index has no timestamp. A receipt is not proof of payment.",
       "required": ["uri", "cid", "indexedAt", "did", "author", "record"],
       "nullable": ["indexedAt"],
       "properties": {
