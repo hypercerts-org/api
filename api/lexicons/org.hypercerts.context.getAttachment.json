@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Looks up one indexed attachment by exact AT-URI and hydrates its publisher actor. The full record is preserved unchanged; subjects, content, and location remain unexpanded, and external files are not fetched. Missing author profile or organization sidecar is null; operational hydration failures return errors. A missing indexed attachment is RecordNotFound. Authentication is not required.",
+      "description": "Returns the current indexed attachment at the given AT-URI with its publisher view. Authentication is not required.",
       "parameters": {
         "type": "params",
         "required": ["uri"],
@@ -12,7 +12,7 @@
           "uri": {
             "type": "string",
             "format": "at-uri",
-            "description": "Full attachment record AT-URI using a DID authority."
+            "description": "AT-URI of the attachment record, using a DID authority; lookup is by URI only, not a specific CID/version."
           }
         }
       },
@@ -21,9 +21,9 @@
         "schema": { "type": "ref", "ref": "#output" }
       },
       "errors": [
-        { "name": "InvalidRequest", "description": "The URI is invalid or is not an attachment record AT-URI." },
-        { "name": "RecordNotFound", "description": "No indexed attachment exists at this AT-URI." },
-        { "name": "AttachmentQueryFailed", "description": "The attachment query or required publisher hydration failed; retry after checking the HappyView PostgreSQL service." }
+        { "name": "InvalidRequest", "description": "The URI is invalid or does not identify an attachment record." },
+        { "name": "RecordNotFound", "description": "No indexed attachment was found at this AT-URI." },
+        { "name": "AttachmentQueryFailed", "description": "The attachment lookup or required publisher hydration failed." }
       ]
     },
     "output": {
@@ -35,7 +35,7 @@
     },
     "attachmentView": {
       "type": "object",
-      "description": "Attachment record view with hydrated publisher actor and the full indexed record unchanged; subject, content, and location references remain unexpanded.",
+      "description": "Attachment with its hydrated publisher and unchanged source record; subject, content, and location references are not expanded, and external files are not fetched. Missing publisher sidecars are null; query or hydration failures fail the request.",
       "required": ["uri", "cid", "indexedAt", "did", "author", "record"],
       "nullable": ["indexedAt"],
       "properties": {

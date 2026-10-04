@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Looks up one indexed evaluation by exact AT-URI and hydrates its publisher plus the first 100 original evaluator entries. Later entries remain in the projection with hydrationStatus omitted and no profile or organization. The original record and evaluator positions, order, and duplicates are preserved. Missing profiles and organization sidecars are null; operational hydration failures return errors. Authentication is not required.",
+      "description": "Returns the indexed evaluation at the given AT-URI with its publisher and evaluator views. Authentication is not required.",
       "parameters": {
         "type": "params",
         "required": ["uri"],
@@ -12,7 +12,7 @@
           "uri": {
             "type": "string",
             "format": "at-uri",
-            "description": "Full evaluation record AT-URI using a DID authority."
+            "description": "AT-URI of the evaluation record, using a DID authority; lookup is by URI only, not a specific CID/version."
           }
         }
       },
@@ -21,13 +21,13 @@
         "schema": { "type": "ref", "ref": "#output" }
       },
       "errors": [
-        { "name": "InvalidRequest", "description": "The URI is invalid or is not an evaluation record AT-URI." },
-        { "name": "RecordNotFound", "description": "No indexed evaluation exists at this AT-URI." }
+        { "name": "InvalidRequest", "description": "The URI is invalid or does not identify an evaluation record." },
+        { "name": "RecordNotFound", "description": "No indexed evaluation was found at this AT-URI." }
       ]
     },
     "hydratedEvaluationEvaluatorView": {
       "type": "object",
-      "description": "An original evaluator entry whose Certified profile and organization sidecar were looked up, including when either is missing.",
+      "description": "An original evaluator entry with its profile and organization sidecars looked up.",
       "required": ["did", "hydrationStatus", "profile", "organization"],
       "nullable": ["profile", "organization"],
       "properties": {
@@ -39,7 +39,7 @@
     },
     "omittedEvaluationEvaluatorView": {
       "type": "object",
-      "description": "An original evaluator entry beyond the 100-position hydration cap; profile and organization are deliberately omitted.",
+      "description": "An original evaluator entry not hydrated.",
       "required": ["did", "hydrationStatus"],
       "properties": {
         "did": { "type": "string", "format": "did" },
@@ -48,7 +48,7 @@
     },
     "evaluationView": {
       "type": "object",
-      "description": "Evaluation record view with hydrated publisher and a one-for-one evaluator projection. Preserve the original record and evaluator order, length, duplicates, and entry fields; hydrate only the first 100 source positions.",
+      "description": "Evaluation with the complete original record, hydrated publisher, and evaluator views. For hydrated actors, missing profile or organization sidecars are null; query or hydration failures fail the request.",
       "required": ["uri", "cid", "indexedAt", "did", "author", "record", "evaluators"],
       "properties": {
         "uri": { "type": "string", "format": "at-uri" },
@@ -60,7 +60,7 @@
         "evaluators": {
           "type": "array",
           "maxLength": 1000,
-          "description": "One-for-one sibling projection of record.evaluators in source order, retaining duplicates and source entry fields. Entries beyond the hydration cap remain present with hydrationStatus omitted.",
+          "description": "One-for-one projection of record.evaluators, preserving source order, duplicates, and entry fields. Entries after position 100 remain present with hydrationStatus \"omitted\" and no profile or organization.",
           "items": {
             "type": "union",
             "refs": ["#hydratedEvaluationEvaluatorView", "#omittedEvaluationEvaluatorView"]
