@@ -3,8 +3,8 @@
   "private": true,
   "packageManager": "pnpm@10.15.1",
   "scripts": {
-    "check": "pnpm --filter @happyview/hypercerts-api-kit check",
-    "build": "pnpm --filter @happyview/hypercerts-api-kit run build:lua",
+    "check": "pnpm --filter @hypercerts-org/hypercerts-api check",
+    "build": "pnpm --filter @hypercerts-org/hypercerts-api run build:lua",
     "changeset": "changeset",
     "changeset:status": "changeset status",
     "version:packages": "changeset version && pnpm install --lockfile-only"

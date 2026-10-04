@@ -16,10 +16,10 @@ These checks are offline and do not require a HappyView instance or database. `p
 
 ## Install a released API bundle
 
-Releases version the installable API bundle in this package; they do not publish to npm or deploy to a HappyView instance. This public repository's GitHub Releases and tagged source archives are the distribution channel. Choose an `@happyview/hypercerts-api-kit@X.Y.Z` release tag, clone that snapshot, install its pinned workspace dependencies from the repository root, then run the installer from `api/`:
+Releases version the installable API bundle in this package; they do not publish to npm or deploy to a HappyView instance. This public repository's GitHub Releases and tagged source archives are the distribution channel. Choose an `@hypercerts-org/hypercerts-api@X.Y.Z` release tag, clone that snapshot, install its pinned workspace dependencies from the repository root, then run the installer from `api/`:
 
 ```sh
-git clone --depth 1 --branch '@happyview/hypercerts-api-kit@X.Y.Z' https://github.com/hypercerts-org/api.git hypercerts-api
+git clone --depth 1 --branch '@hypercerts-org/hypercerts-api@X.Y.Z' https://github.com/hypercerts-org/api.git hypercerts-api
 cd hypercerts-api
 pnpm install --frozen-lockfile
 cd api
