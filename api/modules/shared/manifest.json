@@ -13,6 +13,7 @@
     { "kind": "lexicon", "id": "org.hypercerts.collection", "packagePath": "lexicons/org/hypercerts/collection.json", "config": { "backfill": true }, "dependsOn": ["org.hypercerts.defs", "app.certified.signature.defs"] },
     { "kind": "lexicon", "id": "org.hypercerts.context.attachment", "packagePath": "lexicons/org/hypercerts/context/attachment.json", "config": { "backfill": true }, "dependsOn": [] },
     { "kind": "lexicon", "id": "org.hypercerts.context.evaluation", "packagePath": "lexicons/org/hypercerts/context/evaluation.json", "config": { "backfill": true }, "dependsOn": ["app.certified.defs", "app.certified.signature.defs", "org.hypercerts.defs"] },
+    { "kind": "lexicon", "id": "org.hypercerts.context.measurement", "packagePath": "lexicons/org/hypercerts/context/measurement.json", "config": { "backfill": true }, "dependsOn": ["app.certified.defs", "app.certified.signature.defs", "org.hypercerts.defs"] },
     { "kind": "lexicon", "id": "org.hypercerts.defs", "packagePath": "lexicons/org/hypercerts/defs.json", "config": { "backfill": false }, "dependsOn": [], "registrationGroup": "location-record-schema-sources" },
     { "kind": "lexicon", "id": "org.hypercerts.entity.feature", "packagePath": "lexicons/org/hypercerts/entity/feature.json", "config": { "backfill": true }, "dependsOn": ["org.hypercerts.defs", "app.certified.signature.defs"] },
     { "kind": "lexicon", "id": "org.hypercerts.funding.receipt", "packagePath": "lexicons/org/hypercerts/funding/receipt.json", "config": { "backfill": true }, "dependsOn": [] },

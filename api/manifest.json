@@ -8,6 +8,9 @@
     { "id": "app.certified.actor.profile", "packagePath": "lexicons/app/certified/actor/profile.json" },
     { "id": "org.hypercerts.claim.getActivity", "path": "lexicons/org.hypercerts.claim.getActivity.json" },
     { "id": "org.hypercerts.context.evaluation", "packagePath": "lexicons/org/hypercerts/context/evaluation.json" },
+    { "id": "org.hypercerts.context.measurement", "packagePath": "lexicons/org/hypercerts/context/measurement.json" },
+    { "id": "org.hypercerts.context.getMeasurement", "path": "lexicons/org.hypercerts.context.getMeasurement.json" },
+    { "id": "org.hypercerts.context.listMeasurements", "path": "lexicons/org.hypercerts.context.listMeasurements.json" },
     { "id": "org.hypercerts.collection.getCollection", "path": "lexicons/org.hypercerts.collection.getCollection.json" },
     { "id": "org.hypercerts.collection.listCollectionItems", "path": "lexicons/org.hypercerts.collection.listCollectionItems.json" },
     { "id": "org.hypercerts.context.attachment", "packagePath": "lexicons/org/hypercerts/context/attachment.json" },
@@ -51,5 +54,5 @@
     { "id": "pub.leaflet.richtext.facet", "packagePath": "lexicons/pub/leaflet/richtext/facet.json" },
     { "id": "pub.leaflet.theme.color", "packagePath": "lexicons/pub/leaflet/theme/color.json" }
   ],
-  "modules": ["modules/shared/manifest.json"]
+  "modules": ["modules/shared/manifest.json", "modules/context-measurements/manifest.json"]
 }

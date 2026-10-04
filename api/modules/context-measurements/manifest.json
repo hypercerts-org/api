@@ -1,0 +1,66 @@
+{
+  "name": "context-measurements",
+  "assets": [
+    {
+      "kind": "lexicon",
+      "id": "org.hypercerts.context.getMeasurement",
+      "path": "../../lexicons/org.hypercerts.context.getMeasurement.json",
+      "config": {
+        "backfill": false,
+        "target_collection": "org.hypercerts.context.measurement"
+      },
+      "dependsOn": [
+        "org.hypercerts.context.measurement",
+        "org.hypercerts.api.defs"
+      ]
+    },
+    {
+      "kind": "script",
+      "id": "xrpc.query:org.hypercerts.context.getMeasurement",
+      "path": "../../lua/endpoints/getMeasurement.lua",
+      "sourcePath": "../../lua/src/getMeasurement.lua",
+      "sharedSourcePaths": [
+        "../../lua/shared/query.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/recordView.lua",
+        "../../lua/shared/actorView.lua",
+        "../../lua/shared/measurementQuery.lua"
+      ],
+      "config": {
+        "script_type": "lua"
+      },
+      "dependsOn": ["org.hypercerts.context.getMeasurement"]
+    },
+    {
+      "kind": "lexicon",
+      "id": "org.hypercerts.context.listMeasurements",
+      "path": "../../lexicons/org.hypercerts.context.listMeasurements.json",
+      "config": {
+        "backfill": false,
+        "target_collection": "org.hypercerts.context.measurement"
+      },
+      "dependsOn": [
+        "org.hypercerts.context.measurement",
+        "org.hypercerts.context.getMeasurement"
+      ]
+    },
+    {
+      "kind": "script",
+      "id": "xrpc.query:org.hypercerts.context.listMeasurements",
+      "path": "../../lua/endpoints/listMeasurements.lua",
+      "sourcePath": "../../lua/src/listMeasurements.lua",
+      "sharedSourcePaths": [
+        "../../lua/shared/query.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/listQuery.lua",
+        "../../lua/shared/recordView.lua",
+        "../../lua/shared/actorView.lua",
+        "../../lua/shared/measurementQuery.lua"
+      ],
+      "config": {
+        "script_type": "lua"
+      },
+      "dependsOn": ["org.hypercerts.context.listMeasurements"]
+    }
+  ]
+}
