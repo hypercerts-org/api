@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
-const root = fileURLToPath(new URL('../', import.meta.url));
+const root = fileURLToPath(new URL('../../../', import.meta.url));
 const COLLECTION = 'org.hypercerts.collection';
 const did = 'did:plc:aaaaaaaaaaaaaaaaaaaaaaaa';
 const collectionUri = `at://${did}/${COLLECTION}/collection-one`;
@@ -466,7 +466,7 @@ assert(#calls == 3, 'repeated organization-record flags must be rejected before 
 });
 
 test('collection Lexicons and module manifest close all four endpoint contracts', async () => {
-  const manifest = JSON.parse(await readFile(new URL('../manifest.json', import.meta.url), 'utf8'));
+  const manifest = JSON.parse(await readFile(new URL('../../../manifest.json', import.meta.url), 'utf8'));
   const collectionModulePath = 'modules/collection/manifest.json';
   assert.ok(manifest.modules.includes(collectionModulePath), 'root bundle includes the collection module');
 
@@ -485,13 +485,13 @@ test('collection Lexicons and module manifest close all four endpoint contracts'
   ]) assert.ok(validationIds.has(id), `validation closure includes ${id}`);
 
   const [module, shared] = await Promise.all([
-    readFile(new URL(`../${collectionModulePath}`, import.meta.url), 'utf8').then(JSON.parse),
-    readFile(new URL('../modules/shared/manifest.json', import.meta.url), 'utf8').then(JSON.parse),
+    readFile(new URL(`../../../${collectionModulePath}`, import.meta.url), 'utf8').then(JSON.parse),
+    readFile(new URL('../../../modules/shared/manifest.json', import.meta.url), 'utf8').then(JSON.parse),
   ]);
   const assets = new Map(module.assets.map((asset) => [asset.id, asset]));
   const sharedAssets = new Map(shared.assets.map((asset) => [asset.id, asset]));
   for (const id of endpointIds) {
-    const query = JSON.parse(await readFile(new URL(`../lexicons/${id}.json`, import.meta.url), 'utf8'));
+    const query = JSON.parse(await readFile(new URL(`../../../lexicons/${id}.json`, import.meta.url), 'utf8'));
     assert.equal(query.id, id);
     assert.equal(Number(assets.has(id)) + Number(sharedAssets.has(id)), 1, `${id} has exactly one Lexicon owner`);
     assert.ok(assets.has(`xrpc.query:${id}`), `collection module installs handler ${id}`);
@@ -500,10 +500,10 @@ test('collection Lexicons and module manifest close all four endpoint contracts'
     assert.ok(sharedAssets.has(id), `shared foundation owns the reusable ${id} view Lexicon`);
   }
 
-  const get = JSON.parse(await readFile(new URL('../lexicons/org.hypercerts.collection.getCollection.json', import.meta.url), 'utf8'));
-  const list = JSON.parse(await readFile(new URL('../lexicons/org.hypercerts.collection.listCollections.json', import.meta.url), 'utf8'));
-  const search = JSON.parse(await readFile(new URL('../lexicons/org.hypercerts.collection.searchCollections.json', import.meta.url), 'utf8'));
-  const items = JSON.parse(await readFile(new URL('../lexicons/org.hypercerts.collection.listCollectionItems.json', import.meta.url), 'utf8'));
+  const get = JSON.parse(await readFile(new URL('../../../lexicons/org.hypercerts.collection.getCollection.json', import.meta.url), 'utf8'));
+  const list = JSON.parse(await readFile(new URL('../../../lexicons/org.hypercerts.collection.listCollections.json', import.meta.url), 'utf8'));
+  const search = JSON.parse(await readFile(new URL('../../../lexicons/org.hypercerts.collection.searchCollections.json', import.meta.url), 'utf8'));
+  const items = JSON.parse(await readFile(new URL('../../../lexicons/org.hypercerts.collection.listCollectionItems.json', import.meta.url), 'utf8'));
   const collectionView = get.defs.collectionView;
   assert.deepEqual(collectionView.required, ['uri', 'cid', 'indexedAt', 'did', 'author', 'record']);
   assert.deepEqual(collectionView.nullable, ['indexedAt']);
