@@ -1,0 +1,4670 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Hypercerts API",
+    "version": "snapshot-134b24d020a0",
+    "description": "Public Hypercerts XRPC endpoints. Coverage labels describe local source manifests, not deployment or runtime verification."
+  },
+  "servers": [
+    {
+      "url": "https://api.test.hypercerts.dev",
+      "description": "API test server (default)"
+    }
+  ],
+  "tags": [
+    {
+      "name": "app.certified.actor"
+    },
+    {
+      "name": "app.certified.badge"
+    },
+    {
+      "name": "app.certified.graph"
+    },
+    {
+      "name": "app.certified.location"
+    },
+    {
+      "name": "org.hypercerts.claim"
+    },
+    {
+      "name": "org.hypercerts.collection"
+    },
+    {
+      "name": "org.hypercerts.context"
+    },
+    {
+      "name": "org.hypercerts.funding"
+    }
+  ],
+  "paths": {
+    "/xrpc/app.certified.actor.getOrganization": {
+      "get": {
+        "operationId": "app_certified_actor_getOrganization",
+        "tags": [
+          "app.certified.actor"
+        ],
+        "description": "Looks up an actor's indexed organization sidecar and associated profile. The organization sidecar must exist; a missing profile is represented as null. Authentication is not required.",
+        "parameters": [
+          {
+            "name": "actor",
+            "in": "query",
+            "required": true,
+            "description": "DID of the actor whose organization sidecar is requested.",
+            "schema": {
+              "type": "string",
+              "format": "did"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app.certified.actor.getOrganization.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "app.certified.actor.getOrganization",
+        "x-hypercerts-coverage": "branch-only",
+        "x-hypercerts-source": {
+          "worktree": "happyview-organization-queries",
+          "branch": "api/organization-queries",
+          "commit": "918a72afabd987110ab9eaaa06e1e8eb51a0b916",
+          "path": "hypercerts-api/lexicons/app.certified.actor.getOrganization.json",
+          "activeModule": "modules/organization/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "The actor DID is invalid or a query parameter is not accepted."
+          },
+          {
+            "name": "RecordNotFound",
+            "description": "No indexed organization sidecar exists for this DID."
+          }
+        ]
+      }
+    },
+    "/xrpc/app.certified.actor.getOrganizations": {
+      "get": {
+        "operationId": "app_certified_actor_getOrganizations",
+        "tags": [
+          "app.certified.actor"
+        ],
+        "description": "Returns one organization result for each supplied actor DID, preserving input order and duplicates. Authentication is not required. actors is a required nonempty array of 1..100 DIDs, counted before deduplication and encoded as repeated unbracketed query keys. Handles are not resolved; the query uses indexed records only and makes no network calls. A missing organization sidecar is returned as null, and present sidecars include the associated profile or null. This endpoint does not paginate.",
+        "parameters": [
+          {
+            "name": "actors",
+            "in": "query",
+            "required": true,
+            "description": "Actor DIDs to look up; repeated unbracketed values preserve their original order and duplicates.",
+            "schema": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "did"
+              }
+            },
+            "style": "form",
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app.certified.actor.getOrganizations.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "app.certified.actor.getOrganizations",
+        "x-hypercerts-coverage": "branch-only",
+        "x-hypercerts-source": {
+          "worktree": "happyview-organization-queries",
+          "branch": "api/organization-queries",
+          "commit": "918a72afabd987110ab9eaaa06e1e8eb51a0b916",
+          "path": "hypercerts-api/lexicons/app.certified.actor.getOrganizations.json",
+          "activeModule": "modules/organization/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "actors must contain 1 through 100 valid DIDs; unknown query parameters are not accepted."
+          },
+          {
+            "name": "OrganizationQueryFailed",
+            "description": "The indexed organization sidecars or associated profiles could not be queried."
+          }
+        ]
+      }
+    },
+    "/xrpc/app.certified.actor.getProfile": {
+      "get": {
+        "operationId": "app_certified_actor_getProfile",
+        "tags": [
+          "app.certified.actor"
+        ],
+        "description": "Public lookup of one indexed Certified profile by DID or handle. Handles are resolved through the configured resolver's com.atproto.identity.resolveHandle response; the response DID is validated, but no DID document is fetched for independent verification. Operators trust the resolver configured for their HappyView instance. Authentication is not required.",
+        "parameters": [
+          {
+            "name": "actor",
+            "in": "query",
+            "required": true,
+            "description": "DID or handle of the profile actor.",
+            "schema": {
+              "type": "string",
+              "format": "at-identifier"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app.certified.actor.getProfile.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "app.certified.actor.getProfile",
+        "x-hypercerts-coverage": "primary",
+        "x-hypercerts-source": {
+          "worktree": "happyview-profile-history-rewrite",
+          "branch": "api/profile-queries",
+          "commit": "134b24d020a01876e51f857e32726ccdf670200d",
+          "path": "hypercerts-api/lexicons/app.certified.actor.getProfile.json",
+          "activeModule": "modules/profile/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "The actor is neither a valid DID nor a valid handle, or an unknown parameter was supplied."
+          },
+          {
+            "name": "HandleResolverConfigError",
+            "description": "HYPERCERTS_HANDLE_RESOLVER_URL is missing or invalid; configure an HTTPS resolver base URL for this HappyView instance."
+          },
+          {
+            "name": "HandleResolutionFailed",
+            "description": "The configured resolver request failed or returned a response without a valid DID."
+          },
+          {
+            "name": "RecordNotFound",
+            "description": "The actor was identified, but no indexed Certified profile exists."
+          },
+          {
+            "name": "ProfileQueryFailed",
+            "description": "The indexed profile could not be queried."
+          }
+        ]
+      }
+    },
+    "/xrpc/app.certified.actor.getProfiles": {
+      "get": {
+        "operationId": "app_certified_actor_getProfiles",
+        "tags": [
+          "app.certified.actor"
+        ],
+        "description": "Returns one profile result for each supplied actor DID, preserving input order and duplicates. Authentication is not required. actors is a required nonempty array of 1..100 DIDs, counted before deduplication, encoded as repeated unbracketed query keys. Handles are not resolved. Missing indexed profiles are returned as null. This endpoint does not paginate.",
+        "parameters": [
+          {
+            "name": "actors",
+            "in": "query",
+            "required": true,
+            "description": "Actor DIDs to look up; repeated unbracketed values preserve their original order and duplicates.",
+            "schema": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "did"
+              }
+            },
+            "style": "form",
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app.certified.actor.getProfiles.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "app.certified.actor.getProfiles",
+        "x-hypercerts-coverage": "primary",
+        "x-hypercerts-source": {
+          "worktree": "happyview-profile-history-rewrite",
+          "branch": "api/profile-queries",
+          "commit": "134b24d020a01876e51f857e32726ccdf670200d",
+          "path": "hypercerts-api/lexicons/app.certified.actor.getProfiles.json",
+          "activeModule": "modules/profile/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "actors must contain 1 through 100 valid DIDs; unknown query parameters are not accepted."
+          },
+          {
+            "name": "ProfileQueryFailed",
+            "description": "The indexed profiles could not be queried."
+          }
+        ]
+      }
+    },
+    "/xrpc/app.certified.actor.listOrganizations": {
+      "get": {
+        "operationId": "app_certified_actor_listOrganizations",
+        "tags": [
+          "app.certified.actor"
+        ],
+        "description": "Lists actors with indexed organization sidecars. organizationTypes accepts at most 100 repeated unbracketed values and uses OR within that filter; distinct filters use AND. Omitted visibility imposes no restriction, including public, unlisted, and unspecified values; supplied visibility is an exact string match. Results sort by (createdAt, uri), default desc, with a direction-bound opaque cursor. Keep other parameters unchanged between pages. Authentication is not required.",
+        "parameters": [
+          {
+            "name": "organizationTypes",
+            "in": "query",
+            "required": false,
+            "description": "Exact organizationType values; OR within this filter.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "maxLength": 128
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "visibility",
+            "in": "query",
+            "required": false,
+            "description": "Exact match against the sidecar visibility value. Omission adds no visibility restriction; missing values do not match a supplied value.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "required": false,
+            "description": "Sort direction for (createdAt, uri); default desc.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum actors in the page; default 25.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Opaque pagination cursor, bound to sortDirection.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app.certified.actor.listOrganizations.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "app.certified.actor.listOrganizations",
+        "x-hypercerts-coverage": "branch-only",
+        "x-hypercerts-source": {
+          "worktree": "happyview-organization-queries",
+          "branch": "api/organization-queries",
+          "commit": "918a72afabd987110ab9eaaa06e1e8eb51a0b916",
+          "path": "hypercerts-api/lexicons/app.certified.actor.listOrganizations.json",
+          "activeModule": "modules/organization/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "A filter value, page bound, cursor, repeated scalar, or query parameter is invalid."
+          }
+        ]
+      }
+    },
+    "/xrpc/app.certified.actor.listProfiles": {
+      "get": {
+        "operationId": "app_certified_actor_listProfiles",
+        "tags": [
+          "app.certified.actor"
+        ],
+        "description": "Public paginated discovery listing of indexed Certified profiles. Authentication is not required. This endpoint accepts pagination parameters only; use getProfiles for actor-specific batch lookup and searchProfiles for profile-text search. The handler applies limit=25 and sortDirection=desc when omitted; limit is 1..100. Results sort by a valid zoned createdAt, otherwise indexedAt (or stored row creation time when indexedAt is absent), then URI, both in the requested direction. The opaque cursor is direction-bound and provides no snapshot guarantee; keep other parameters unchanged between pages. Unknown parameters and repeated scalar keys are rejected.",
+        "parameters": [
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "required": false,
+            "description": "Sort direction; handler default is desc.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Page size; handler default is 25.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Opaque versioned keyset cursor bound to sortDirection.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app.certified.actor.listProfiles.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "app.certified.actor.listProfiles",
+        "x-hypercerts-coverage": "primary",
+        "x-hypercerts-source": {
+          "worktree": "happyview-profile-history-rewrite",
+          "branch": "api/profile-queries",
+          "commit": "134b24d020a01876e51f857e32726ccdf670200d",
+          "path": "hypercerts-api/lexicons/app.certified.actor.listProfiles.json",
+          "activeModule": "modules/profile/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "A parameter is invalid, repeated where scalar, or unknown."
+          },
+          {
+            "name": "ProfileQueryFailed",
+            "description": "The indexed profiles could not be queried."
+          }
+        ]
+      }
+    },
+    "/xrpc/app.certified.actor.searchOrganizations": {
+      "get": {
+        "operationId": "app_certified_actor_searchOrganizations",
+        "tags": [
+          "app.certified.actor"
+        ],
+        "description": "Searches the associated Certified profile displayName and description using the complete trimmed search text as a case-insensitive literal substring within either field. An organization without an associated profile cannot match nonblank search text; blank-after-trimming search imposes no search restriction. Other filters combine with search using AND. Results and pagination otherwise match listOrganizations. Authentication is not required.",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": true,
+            "description": "Required search text; matching is literal, case-insensitive, and does not split terms across fields. A blank trimmed value imposes no search restriction.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "actors",
+            "in": "query",
+            "required": false,
+            "description": "Actor DIDs whose organization sidecars are included; DIDs only, with OR within this filter.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "did"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "organizationTypes",
+            "in": "query",
+            "required": false,
+            "description": "Exact organizationType values; OR within this filter.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "maxLength": 128
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "visibility",
+            "in": "query",
+            "required": false,
+            "description": "Exact match against the sidecar visibility value. Omission adds no visibility restriction; missing values do not match a supplied value.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "required": false,
+            "description": "Sort direction for (createdAt, uri); default desc.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum actors in the page; default 25.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Opaque pagination cursor, bound to sortDirection.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app.certified.actor.searchOrganizations.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "app.certified.actor.searchOrganizations",
+        "x-hypercerts-coverage": "branch-only",
+        "x-hypercerts-source": {
+          "worktree": "happyview-organization-queries",
+          "branch": "api/organization-queries",
+          "commit": "918a72afabd987110ab9eaaa06e1e8eb51a0b916",
+          "path": "hypercerts-api/lexicons/app.certified.actor.searchOrganizations.json",
+          "activeModule": "modules/organization/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "A filter value, page bound, cursor, repeated scalar, or query parameter is invalid."
+          }
+        ]
+      }
+    },
+    "/xrpc/app.certified.actor.searchProfiles": {
+      "get": {
+        "operationId": "app_certified_actor_searchProfiles",
+        "tags": [
+          "app.certified.actor"
+        ],
+        "description": "Public text search over indexed Certified profiles. Authentication is not required. search is trimmed and matched as a case-insensitive literal substring in displayName or description; blank-after-trim search imposes no text restriction, though listProfiles is preferred for unrestricted listing. actors uses repeated unbracketed keys, accepts at most 100 supplied DIDs before deduplication, and ORs them together; actor and search filters combine with AND before pagination. The handler applies limit=25 and sortDirection=desc when omitted; limit is 1..100. Results sort by a valid zoned createdAt, otherwise indexedAt (or stored row creation time when indexedAt is absent), then URI, both in the requested direction. The opaque cursor is direction-bound and provides no snapshot guarantee; keep other parameters unchanged between pages. Unknown parameters and repeated scalar keys are rejected.",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": true,
+            "description": "Required search text; after trimming, matched case-insensitively as a literal substring in displayName or description. Blank is unrestricted.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "required": false,
+            "description": "Sort direction; handler default is desc.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "actors",
+            "in": "query",
+            "required": false,
+            "description": "DIDs whose indexed profiles may be returned. Repeated values are ORed; handles are not resolved.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "did"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Page size; handler default is 25.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Opaque versioned keyset cursor bound to sortDirection.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app.certified.actor.searchProfiles.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "app.certified.actor.searchProfiles",
+        "x-hypercerts-coverage": "primary",
+        "x-hypercerts-source": {
+          "worktree": "happyview-profile-history-rewrite",
+          "branch": "api/profile-queries",
+          "commit": "134b24d020a01876e51f857e32726ccdf670200d",
+          "path": "hypercerts-api/lexicons/app.certified.actor.searchProfiles.json",
+          "activeModule": "modules/profile/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "A parameter is invalid, repeated where scalar, or unknown."
+          },
+          {
+            "name": "ProfileQueryFailed",
+            "description": "The indexed profiles could not be queried."
+          }
+        ]
+      }
+    },
+    "/xrpc/app.certified.badge.getBadgeDefinition": {
+      "get": {
+        "operationId": "app_certified_badge_getBadgeDefinition",
+        "tags": [
+          "app.certified.badge"
+        ],
+        "description": "Public lookup of one indexed badge definition by exact AT-URI and DID authority. The original record is preserved and only its publisher actor is hydrated. Authentication is not required.",
+        "parameters": [
+          {
+            "name": "uri",
+            "in": "query",
+            "required": true,
+            "description": "Full AT-URI of the badge-definition record using a DID authority.",
+            "schema": {
+              "type": "string",
+              "format": "at-uri"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app.certified.badge.getBadgeDefinition.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "app.certified.badge.getBadgeDefinition",
+        "x-hypercerts-coverage": "unmanifested-unsupported",
+        "x-hypercerts-source": {
+          "worktree": "happyview-badge-definitions-queries",
+          "branch": "api/badge-definitions",
+          "commit": "a0455e92881077b3da33c7753fdb4486712d8f5b",
+          "path": "hypercerts-api/lexicons/app.certified.badge.getBadgeDefinition.json",
+          "activeModule": null
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "The URI is invalid or is not a badge-definition record AT-URI with a DID authority."
+          },
+          {
+            "name": "RecordNotFound",
+            "description": "No indexed badge definition exists at this exact AT-URI."
+          }
+        ]
+      }
+    },
+    "/xrpc/app.certified.badge.listBadgeDefinitions": {
+      "get": {
+        "operationId": "app_certified_badge_listBadgeDefinitions",
+        "tags": [
+          "app.certified.badge"
+        ],
+        "description": "Lists indexed badge definitions with author-DID and exact open-string badgeType filters. Repeated unbracketed array keys accept up to 100 values each; values within each filter use OR and distinct filters use AND. Results sort by (createdAt, uri), default desc, with an opaque cursor bound to sortDirection. Keep other parameters unchanged between pages. Authentication is not required.",
+        "parameters": [
+          {
+            "name": "authors",
+            "in": "query",
+            "required": false,
+            "description": "DIDs of repositories that published the badge definitions; OR within this filter.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "did"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "badgeTypes",
+            "in": "query",
+            "required": false,
+            "description": "Exact open-string badgeType values; OR within this filter.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "maxLength": 100
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "required": false,
+            "description": "Sort direction for (createdAt, uri).",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum definitions in the page.",
+            "schema": {
+              "type": "integer",
+              "default": 25,
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Opaque pagination cursor, bound to sortDirection.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app.certified.badge.listBadgeDefinitions.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "app.certified.badge.listBadgeDefinitions",
+        "x-hypercerts-coverage": "unmanifested-unsupported",
+        "x-hypercerts-source": {
+          "worktree": "happyview-badge-definitions-queries",
+          "branch": "api/badge-definitions",
+          "commit": "a0455e92881077b3da33c7753fdb4486712d8f5b",
+          "path": "hypercerts-api/lexicons/app.certified.badge.listBadgeDefinitions.json",
+          "activeModule": null
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "A filter value, page bound, cursor, repeated scalar, or query parameter is invalid."
+          }
+        ]
+      }
+    },
+    "/xrpc/app.certified.graph.getEntityFollow": {
+      "get": {
+        "operationId": "app_certified_graph_getEntityFollow",
+        "tags": [
+          "app.certified.graph"
+        ],
+        "description": "Returns the representative entity-follow record for one actor and entity URI, or explicit null when the relationship is not indexed. Duplicate relationships use the record with earliest createdAt, URI ascending as tie-breaker. Operational failures return errors, never a missing-relationship response. Authentication is not required.",
+        "parameters": [
+          {
+            "name": "actor",
+            "in": "query",
+            "required": true,
+            "description": "DID of the actor who published the entity-follow record.",
+            "schema": {
+              "type": "string",
+              "format": "did"
+            }
+          },
+          {
+            "name": "entity",
+            "in": "query",
+            "required": true,
+            "description": "Full DID-authority AT-URI of the followed record identity; matching does not pin a CID or restrict the target collection.",
+            "schema": {
+              "type": "string",
+              "format": "at-uri"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app.certified.graph.getEntityFollow.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "app.certified.graph.getEntityFollow",
+        "x-hypercerts-coverage": "branch-only",
+        "x-hypercerts-source": {
+          "worktree": "happyview-entity-follow-queries",
+          "branch": "api/entity-follow-queries",
+          "commit": "81bab9cfc1fdf7ee52bc892274b2d016a519c0bc",
+          "path": "hypercerts-api/lexicons/app.certified.graph.getEntityFollow.json",
+          "activeModule": "modules/entity-follow/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "The actor DID, entity AT-URI, or query parameters are invalid."
+          }
+        ]
+      }
+    },
+    "/xrpc/app.certified.graph.getFollow": {
+      "get": {
+        "operationId": "app_certified_graph_getFollow",
+        "tags": [
+          "app.certified.graph"
+        ],
+        "description": "Returns the earliest indexed follow record for one actor-to-actor relationship, or null when no matching relationship is indexed. Authentication is not required.",
+        "parameters": [
+          {
+            "name": "actor",
+            "in": "query",
+            "required": true,
+            "description": "DID of the actor who published the follow record. Required.",
+            "schema": {
+              "type": "string",
+              "format": "did"
+            }
+          },
+          {
+            "name": "subject",
+            "in": "query",
+            "required": true,
+            "description": "DID of the actor named as the follow record's subject. Required.",
+            "schema": {
+              "type": "string",
+              "format": "did"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app.certified.graph.getFollow.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "app.certified.graph.getFollow",
+        "x-hypercerts-coverage": "primary",
+        "x-hypercerts-source": {
+          "worktree": "happyview-profile-history-rewrite",
+          "branch": "api/profile-queries",
+          "commit": "134b24d020a01876e51f857e32726ccdf670200d",
+          "path": "hypercerts-api/lexicons/app.certified.graph.getFollow.json",
+          "activeModule": "modules/actor-follow/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "A required DID is invalid, repeated, or accompanied by an unknown parameter."
+          }
+        ]
+      }
+    },
+    "/xrpc/app.certified.graph.listActorFollowers": {
+      "get": {
+        "operationId": "app_certified_graph_listActorFollowers",
+        "tags": [
+          "app.certified.graph"
+        ],
+        "description": "Lists actors whose indexed follow records name the requested actor as subject. Authentication is not required. Duplicate relationships are collapsed before pagination.",
+        "parameters": [
+          {
+            "name": "actor",
+            "in": "query",
+            "required": true,
+            "description": "DID of the actor whose incoming follows are listed. Required.",
+            "schema": {
+              "type": "string",
+              "format": "did"
+            }
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "required": false,
+            "description": "Sort by each representative follow's createdAt and URI in this direction; the default is desc.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum relationships returned; the handler default is 25.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Opaque cursor from the previous page, bound to sortDirection. Keep other query parameters unchanged between pages.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app.certified.graph.listActorFollowers.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "app.certified.graph.listActorFollowers",
+        "x-hypercerts-coverage": "primary",
+        "x-hypercerts-source": {
+          "worktree": "happyview-profile-history-rewrite",
+          "branch": "api/profile-queries",
+          "commit": "134b24d020a01876e51f857e32726ccdf670200d",
+          "path": "hypercerts-api/lexicons/app.certified.graph.listActorFollowers.json",
+          "activeModule": "modules/actor-follow/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "A required DID, sort direction, limit, cursor, or query parameter is invalid."
+          }
+        ]
+      }
+    },
+    "/xrpc/app.certified.graph.listActorFollowing": {
+      "get": {
+        "operationId": "app_certified_graph_listActorFollowing",
+        "tags": [
+          "app.certified.graph"
+        ],
+        "description": "Lists actors named as subjects by the requested actor's indexed follow records. Authentication is not required. Duplicate relationships are collapsed before pagination.",
+        "parameters": [
+          {
+            "name": "actor",
+            "in": "query",
+            "required": true,
+            "description": "DID of the actor whose outgoing follows are listed. Required.",
+            "schema": {
+              "type": "string",
+              "format": "did"
+            }
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "required": false,
+            "description": "Sort by each representative follow's createdAt and URI in this direction; the default is desc.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum relationships returned; the handler default is 25.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Opaque cursor from the previous page, bound to sortDirection. Keep other query parameters unchanged between pages.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app.certified.graph.listActorFollowing.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "app.certified.graph.listActorFollowing",
+        "x-hypercerts-coverage": "primary",
+        "x-hypercerts-source": {
+          "worktree": "happyview-profile-history-rewrite",
+          "branch": "api/profile-queries",
+          "commit": "134b24d020a01876e51f857e32726ccdf670200d",
+          "path": "hypercerts-api/lexicons/app.certified.graph.listActorFollowing.json",
+          "activeModule": "modules/actor-follow/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "A required DID, sort direction, limit, cursor, or query parameter is invalid."
+          }
+        ]
+      }
+    },
+    "/xrpc/app.certified.graph.listEntityFollowers": {
+      "get": {
+        "operationId": "app_certified_graph_listEntityFollowers",
+        "tags": [
+          "app.certified.graph"
+        ],
+        "description": "Lists actors following one entity URI. Duplicate (actor, entity) relationships are collapsed before pagination using the earliest-created record and URI ascending tie-breaker. Results sort by each representative follow's (createdAt, uri) in sortDirection, default desc, with an opaque direction-bound cursor. Only the returned page is hydrated; missing profiles or organization sidecars remain explicit nulls. Operational failures return errors, not partial pages. Authentication is not required.",
+        "parameters": [
+          {
+            "name": "entity",
+            "in": "query",
+            "required": true,
+            "description": "Full DID-authority AT-URI of the followed record identity; matching does not pin a CID or restrict the target collection.",
+            "schema": {
+              "type": "string",
+              "format": "at-uri"
+            }
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "required": false,
+            "description": "Sort direction for representative follow (createdAt, uri); default desc.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum relationships in the page; default 25.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Opaque cursor bound to sortDirection; keep all other query parameters unchanged.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app.certified.graph.listEntityFollowers.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "app.certified.graph.listEntityFollowers",
+        "x-hypercerts-coverage": "branch-only",
+        "x-hypercerts-source": {
+          "worktree": "happyview-entity-follow-queries",
+          "branch": "api/entity-follow-queries",
+          "commit": "81bab9cfc1fdf7ee52bc892274b2d016a519c0bc",
+          "path": "hypercerts-api/lexicons/app.certified.graph.listEntityFollowers.json",
+          "activeModule": "modules/entity-follow/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "The entity AT-URI, sort direction, page bound, cursor, or query parameters are invalid."
+          }
+        ]
+      }
+    },
+    "/xrpc/app.certified.graph.listEntityFollowing": {
+      "get": {
+        "operationId": "app_certified_graph_listEntityFollowing",
+        "tags": [
+          "app.certified.graph"
+        ],
+        "description": "Lists entities followed by one actor. Duplicate (actor, entity URI) relationships are collapsed before pagination using the earliest-created record and URI ascending tie-breaker. Results sort by each representative follow's (createdAt, uri) in sortDirection, default desc, with an opaque direction-bound cursor. Resolve the latest indexed target at each URI and hydrate only this page. Preserve the target URI and follow record when the target is missing or unsupported. Operational failures return errors, not partial pages. Authentication is not required.",
+        "parameters": [
+          {
+            "name": "actor",
+            "in": "query",
+            "required": true,
+            "description": "DID of the actor whose outgoing entity follows are listed.",
+            "schema": {
+              "type": "string",
+              "format": "did"
+            }
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "required": false,
+            "description": "Sort direction for representative follow (createdAt, uri); default desc.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum relationships in the page; default 25.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Opaque cursor bound to sortDirection; keep all other query parameters unchanged.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app.certified.graph.listEntityFollowing.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "app.certified.graph.listEntityFollowing",
+        "x-hypercerts-coverage": "branch-only",
+        "x-hypercerts-source": {
+          "worktree": "happyview-entity-follow-queries",
+          "branch": "api/entity-follow-queries",
+          "commit": "81bab9cfc1fdf7ee52bc892274b2d016a519c0bc",
+          "path": "hypercerts-api/lexicons/app.certified.graph.listEntityFollowing.json",
+          "activeModule": "modules/entity-follow/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "The actor DID, sort direction, page bound, cursor, or query parameters are invalid."
+          }
+        ]
+      }
+    },
+    "/xrpc/app.certified.graph.listRecentFollows": {
+      "get": {
+        "operationId": "app_certified_graph_listRecentFollows",
+        "tags": [
+          "app.certified.graph"
+        ],
+        "description": "Beta query for raw account- and entity-follow records published by anyone, ordered by descending (createdAt, uri). Duplicate records are preserved and before is an exclusive upper bound on publisher-declared createdAt; these behaviors are provisional pending consumer confirmation. This is a recent-activity feed, not a lossless ingestion or backfill API; late-indexed records and concurrent changes may be missed across pages. Authentication is not required.",
+        "parameters": [
+          {
+            "name": "before",
+            "in": "query",
+            "required": false,
+            "description": "Exclusive upper bound on the follow record's publisher-declared createdAt, not indexedAt; omit to start with the newest indexed records. Keep unchanged across cursor pages.",
+            "schema": {
+              "type": "string",
+              "format": "datetime"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum follow records per page; default 25.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Opaque cursor for the next page; keep before unchanged. Pagination has no snapshot guarantee.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app.certified.graph.listRecentFollows.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "app.certified.graph.listRecentFollows",
+        "x-hypercerts-coverage": "branch-only",
+        "x-hypercerts-source": {
+          "worktree": "happyview-recent-follows-queries",
+          "branch": "api/recent-follows",
+          "commit": "0503116f5d1b63d493ccdd2a7aa721da67caf875",
+          "path": "hypercerts-api/lexicons/app.certified.graph.listRecentFollows.json",
+          "activeModule": "modules/recent-follows/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "The before datetime, limit, cursor, or query parameter is invalid; use a valid datetime, limit of 1–100, or a cursor from this query."
+          }
+        ]
+      }
+    },
+    "/xrpc/app.certified.location.getLocation": {
+      "get": {
+        "operationId": "app_certified_location_getLocation",
+        "tags": [
+          "app.certified.location"
+        ],
+        "description": "Public lookup of one indexed location record by full AT-URI. Authentication is not required.",
+        "parameters": [
+          {
+            "name": "uri",
+            "in": "query",
+            "required": true,
+            "description": "Full record AT-URI using a DID authority.",
+            "schema": {
+              "type": "string",
+              "format": "at-uri"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app.certified.location.getLocation.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "app.certified.location.getLocation",
+        "x-hypercerts-coverage": "primary",
+        "x-hypercerts-source": {
+          "worktree": "happyview-profile-history-rewrite",
+          "branch": "api/profile-queries",
+          "commit": "134b24d020a01876e51f857e32726ccdf670200d",
+          "path": "hypercerts-api/lexicons/app.certified.location.getLocation.json",
+          "activeModule": "modules/location/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "RecordNotFound",
+            "description": "No indexed location exists at this AT-URI."
+          }
+        ]
+      }
+    },
+    "/xrpc/app.certified.location.listLocations": {
+      "get": {
+        "operationId": "app_certified_location_listLocations",
+        "tags": [
+          "app.certified.location"
+        ],
+        "description": "Public listing of indexed location records. Authentication is not required. Array filters use repeated unbracketed keys, maximum 100 supplied values before deduplication; omission is unrestricted. The handler applies limit=25 and sortDirection=desc when omitted; limit is 1..100. Results sort by a valid zoned createdAt, otherwise indexedAt (or the stored row creation time when indexedAt is absent), then URI, both in the requested direction; the opaque direction-bound cursor captures that database timestamp at UTC microsecond precision, with no snapshot guarantee. Keep other parameters unchanged between pages. Unknown parameters and repeated scalar keys are rejected.",
+        "parameters": [
+          {
+            "name": "authors",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "did"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "uris",
+            "in": "query",
+            "required": false,
+            "description": "Full record AT-URIs using DID authorities.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "at-uri"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "locationTypes",
+            "in": "query",
+            "required": false,
+            "description": "Exact open-string match against locationType; empty strings are values, not sentinels.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "maxLength": 20
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Page size; handler default is 25.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Opaque versioned keyset cursor bound to sortDirection.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "required": false,
+            "description": "Sort direction; handler default is desc.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app.certified.location.listLocations.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "app.certified.location.listLocations",
+        "x-hypercerts-coverage": "primary",
+        "x-hypercerts-source": {
+          "worktree": "happyview-profile-history-rewrite",
+          "branch": "api/profile-queries",
+          "commit": "134b24d020a01876e51f857e32726ccdf670200d",
+          "path": "hypercerts-api/lexicons/app.certified.location.listLocations.json",
+          "activeModule": "modules/location/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "A query parameter is invalid, repeated where scalar, or unknown."
+          }
+        ]
+      }
+    },
+    "/xrpc/org.hypercerts.claim.getActivity": {
+      "get": {
+        "operationId": "org_hypercerts_claim_getActivity",
+        "tags": [
+          "org.hypercerts.claim"
+        ],
+        "description": "Public lookup of one indexed activity by full AT-URI. Authentication is not required.",
+        "parameters": [
+          {
+            "name": "uri",
+            "in": "query",
+            "required": true,
+            "description": "Full AT-URI of the activity record, using a DID authority.",
+            "schema": {
+              "type": "string",
+              "format": "at-uri"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/org.hypercerts.claim.getActivity.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "org.hypercerts.claim.getActivity",
+        "x-hypercerts-coverage": "branch-only",
+        "x-hypercerts-source": {
+          "worktree": "happyview-activity-queries-worktree",
+          "branch": "api/activity-queries",
+          "commit": "43ac93be85747e09b8b5f6fa4aafb27d536f9367",
+          "path": "hypercerts-api/lexicons/org.hypercerts.claim.getActivity.json",
+          "activeModule": "modules/activity/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "The URI is not a full activity AT-URI or the request contains an unsupported parameter."
+          },
+          {
+            "name": "RecordNotFound",
+            "description": "No indexed activity exists at this AT-URI."
+          },
+          {
+            "name": "ActivityQueryFailed",
+            "description": "The activity or required hydration lookup failed; retry after checking the HappyView PostgreSQL service."
+          }
+        ]
+      }
+    },
+    "/xrpc/org.hypercerts.claim.listActivities": {
+      "get": {
+        "operationId": "org_hypercerts_claim_listActivities",
+        "tags": [
+          "org.hypercerts.claim"
+        ],
+        "description": "Lists indexed activities with AND between filters and OR within each array filter. Repeated unbracketed array values accept at most 100 supplied entries; duplicates are removed. Defaults are limit=25 and sortDirection=desc; limit is 1..100. Results sort by (createdAt, uri) and use a direction-bound opaque cursor; keep all other parameters unchanged between pages. Authentication is not required.",
+        "parameters": [
+          {
+            "name": "authors",
+            "in": "query",
+            "required": false,
+            "description": "Repository-owner DIDs to include; values use OR.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "did"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "hasOrganizationRecord",
+            "in": "query",
+            "required": false,
+            "description": "Whether each activity author has an app.certified.actor.organization/self record. False matches authors without that record regardless of profile presence.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "contributors",
+            "in": "query",
+            "required": false,
+            "description": "Contributor DIDs to match against inline identities and exact referenced contributor-information versions; values use OR.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "did"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "involvedActors",
+            "in": "query",
+            "required": false,
+            "description": "DIDs matching either the activity repository owner or a contributor; values use OR, then combine with other filters using AND.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "did"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "uris",
+            "in": "query",
+            "required": false,
+            "description": "Activity AT-URIs for bounded batch hydration; input order is not preserved.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "at-uri"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "required": false,
+            "description": "Sort direction for (createdAt, uri); default desc.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum activities in this page; default 25.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Opaque pagination cursor bound to sortDirection.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/org.hypercerts.claim.listActivities.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "org.hypercerts.claim.listActivities",
+        "x-hypercerts-coverage": "branch-only",
+        "x-hypercerts-source": {
+          "worktree": "happyview-activity-queries-worktree",
+          "branch": "api/activity-queries",
+          "commit": "43ac93be85747e09b8b5f6fa4aafb27d536f9367",
+          "path": "hypercerts-api/lexicons/org.hypercerts.claim.listActivities.json",
+          "activeModule": "modules/activity/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "A filter, organization-record flag, page bound, cursor, repeated scalar, or query parameter is invalid."
+          },
+          {
+            "name": "ActivityQueryFailed",
+            "description": "The activity query or required hydration lookup failed; retry after checking the HappyView PostgreSQL service."
+          }
+        ]
+      }
+    },
+    "/xrpc/org.hypercerts.claim.searchActivities": {
+      "get": {
+        "operationId": "org_hypercerts_claim_searchActivities",
+        "tags": [
+          "org.hypercerts.claim"
+        ],
+        "description": "Searches indexed activities by a case-insensitive literal substring in title or shortDescription. Surrounding whitespace is trimmed; blank search imposes no text restriction. Other filters combine with search using AND and retain their listing semantics. Repeated unbracketed array values accept at most 100 supplied entries; duplicates are removed. Defaults are limit=25 and sortDirection=desc; limit is 1..100. Results sort by (createdAt, uri) and use a direction-bound opaque cursor. Authentication is not required.",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": true,
+            "description": "Complete text substring to find in title or shortDescription; literal %, _, and other characters are not wildcards.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "authors",
+            "in": "query",
+            "required": false,
+            "description": "Repository-owner DIDs to include; values use OR.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "did"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "hasOrganizationRecord",
+            "in": "query",
+            "required": false,
+            "description": "Whether each activity author has an app.certified.actor.organization/self record. False matches authors without that record regardless of profile presence.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "contributors",
+            "in": "query",
+            "required": false,
+            "description": "Contributor DIDs to match against inline identities and exact referenced contributor-information versions; values use OR.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "did"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "involvedActors",
+            "in": "query",
+            "required": false,
+            "description": "DIDs matching either the activity repository owner or a contributor; values use OR, then combine with other filters using AND.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "did"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "uris",
+            "in": "query",
+            "required": false,
+            "description": "Activity AT-URIs for bounded batch hydration; input order is not preserved.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "at-uri"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "required": false,
+            "description": "Sort direction for (createdAt, uri); default desc.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum activities in this page; default 25.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Opaque pagination cursor bound to sortDirection.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/org.hypercerts.claim.searchActivities.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "org.hypercerts.claim.searchActivities",
+        "x-hypercerts-coverage": "branch-only",
+        "x-hypercerts-source": {
+          "worktree": "happyview-activity-queries-worktree",
+          "branch": "api/activity-queries",
+          "commit": "43ac93be85747e09b8b5f6fa4aafb27d536f9367",
+          "path": "hypercerts-api/lexicons/org.hypercerts.claim.searchActivities.json",
+          "activeModule": "modules/activity/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "A filter, organization-record flag, page bound, cursor, repeated scalar, or query parameter is invalid."
+          },
+          {
+            "name": "ActivityQueryFailed",
+            "description": "The activity query or required hydration lookup failed; retry after checking the HappyView PostgreSQL service."
+          }
+        ]
+      }
+    },
+    "/xrpc/org.hypercerts.collection.getCollection": {
+      "get": {
+        "operationId": "org_hypercerts_collection_getCollection",
+        "tags": [
+          "org.hypercerts.collection"
+        ],
+        "description": "Looks up one indexed collection by exact AT-URI. Hydrates its author and exact-version location and tag sibling projections; the original collection record remains unchanged. Missing related target versions are null without hiding the collection. Authentication is not required.",
+        "parameters": [
+          {
+            "name": "uri",
+            "in": "query",
+            "required": true,
+            "description": "Full collection record AT-URI using a DID authority.",
+            "schema": {
+              "type": "string",
+              "format": "at-uri"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/org.hypercerts.collection.getCollection.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "org.hypercerts.collection.getCollection",
+        "x-hypercerts-coverage": "branch-only",
+        "x-hypercerts-source": {
+          "worktree": "happyview-activity-queries-phase1",
+          "branch": "api/collection-queries",
+          "commit": "2b3162b785299d2362af7f725eff4ca5e47ce609",
+          "path": "hypercerts-api/lexicons/org.hypercerts.collection.getCollection.json",
+          "activeModule": "modules/collection/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "The URI is invalid or is not a collection record AT-URI."
+          },
+          {
+            "name": "RecordNotFound",
+            "description": "No indexed collection exists at this AT-URI."
+          }
+        ]
+      }
+    },
+    "/xrpc/org.hypercerts.collection.listCollectionItems": {
+      "get": {
+        "operationId": "org_hypercerts_collection_listCollectionItems",
+        "tags": [
+          "org.hypercerts.collection"
+        ],
+        "description": "Resolves one collection's embedded items in source order, one level only. Each target must match the item's exact strong-reference URI+CID; nested collections are summaries, and unavailable versions or unsupported kinds return record null. Pagination follows the latest indexed collection at the same URI across pages, even after collection changes; no version-change error or restart is required. Item additions, removals, or reordering may cause skipped or repeated results. There is no sortDirection parameter. Authentication is not required.",
+        "parameters": [
+          {
+            "name": "collection",
+            "in": "query",
+            "required": true,
+            "description": "Full collection record AT-URI using a DID authority.",
+            "schema": {
+              "type": "string",
+              "format": "at-uri"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum embedded items in the page; default 25.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Opaque item-pagination cursor. Continue with the same collection URI; it is not bound to a collection version.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/org.hypercerts.collection.listCollectionItems.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "org.hypercerts.collection.listCollectionItems",
+        "x-hypercerts-coverage": "branch-only",
+        "x-hypercerts-source": {
+          "worktree": "happyview-activity-queries-phase1",
+          "branch": "api/collection-queries",
+          "commit": "2b3162b785299d2362af7f725eff4ca5e47ce609",
+          "path": "hypercerts-api/lexicons/org.hypercerts.collection.listCollectionItems.json",
+          "activeModule": "modules/collection/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "The collection AT-URI, page bound, cursor, or query parameters are invalid."
+          },
+          {
+            "name": "RecordNotFound",
+            "description": "No indexed collection exists at this AT-URI."
+          }
+        ]
+      }
+    },
+    "/xrpc/org.hypercerts.collection.listCollections": {
+      "get": {
+        "operationId": "org_hypercerts_collection_listCollections",
+        "tags": [
+          "org.hypercerts.collection"
+        ],
+        "description": "Lists indexed collections. Array inputs use repeated unbracketed keys and are limited to 100 values per parameter. All distinct filters combine with AND. Values within authors, types, uris, and itemUris use OR; tagUris is the exception and requires every requested URI to occur in the collection's tags. itemUris and tagUris compare reference URIs only, without CID or target-body lookup. Duplicate inputs are removed; URI input order is not preserved. Results sort by (createdAt, uri), default desc, with an opaque direction-bound cursor. Authentication is not required.",
+        "parameters": [
+          {
+            "name": "authors",
+            "in": "query",
+            "required": false,
+            "description": "Repository-owner DIDs; OR within this filter.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "did"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "hasOrganizationRecord",
+            "in": "query",
+            "required": false,
+            "description": "Whether the collection author has an app.certified.actor.organization/self record; false matches authors without it regardless of profile presence.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "types",
+            "in": "query",
+            "required": false,
+            "description": "Exact open-string collection types; OR within this filter.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "maxLength": 64
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "uris",
+            "in": "query",
+            "required": false,
+            "description": "Exact collection record AT-URIs for bounded batch hydration; OR within this filter.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "at-uri"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "itemUris",
+            "in": "query",
+            "required": false,
+            "description": "Returns collections where any embedded items[].itemIdentifier.uri matches a supplied AT-URI; URI-only matching, without CID comparison or item hydration.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "at-uri"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "tagUris",
+            "in": "query",
+            "required": false,
+            "description": "Conjunctive tag filter: every supplied vocabulary-tag AT-URI must occur in record.tags. Compares URI only, without CID comparison or tag-body inspection.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "at-uri"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "required": false,
+            "description": "Sort direction for (createdAt, uri); default desc.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum collections in the page; default 25.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Opaque pagination cursor, bound to sortDirection.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/org.hypercerts.collection.listCollections.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "org.hypercerts.collection.listCollections",
+        "x-hypercerts-coverage": "branch-only",
+        "x-hypercerts-source": {
+          "worktree": "happyview-activity-queries-phase1",
+          "branch": "api/collection-queries",
+          "commit": "2b3162b785299d2362af7f725eff4ca5e47ce609",
+          "path": "hypercerts-api/lexicons/org.hypercerts.collection.listCollections.json",
+          "activeModule": "modules/collection/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "A filter value, organization-record flag, page bound, cursor, repeated scalar, or query parameter is invalid."
+          }
+        ]
+      }
+    },
+    "/xrpc/org.hypercerts.collection.searchCollections": {
+      "get": {
+        "operationId": "org_hypercerts_collection_searchCollections",
+        "tags": [
+          "org.hypercerts.collection"
+        ],
+        "description": "Searches collection title or shortDescription using the complete trimmed search text as a case-insensitive literal substring within either field; terms are not split across fields. Blank-after-trimming search imposes no search restriction. Other filters combine with search using AND. Filters, pagination, ordering, hydration, and output otherwise match listCollections. Authentication is not required.",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": true,
+            "description": "Required search text; literal case-insensitive substring in title or shortDescription. A blank trimmed value imposes no search restriction.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "authors",
+            "in": "query",
+            "required": false,
+            "description": "Repository-owner DIDs; OR within this filter.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "did"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "hasOrganizationRecord",
+            "in": "query",
+            "required": false,
+            "description": "Whether the collection author has an app.certified.actor.organization/self record; false matches authors without it regardless of profile presence.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "types",
+            "in": "query",
+            "required": false,
+            "description": "Exact open-string collection types; OR within this filter.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "maxLength": 64
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "uris",
+            "in": "query",
+            "required": false,
+            "description": "Exact collection record AT-URIs for bounded batch hydration; OR within this filter.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "at-uri"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "itemUris",
+            "in": "query",
+            "required": false,
+            "description": "Returns collections where any embedded items[].itemIdentifier.uri matches a supplied AT-URI; URI-only matching, without CID comparison or item hydration.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "at-uri"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "tagUris",
+            "in": "query",
+            "required": false,
+            "description": "Conjunctive tag filter: every supplied vocabulary-tag AT-URI must occur in record.tags. Compares URI only, without CID comparison or tag-body inspection.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "at-uri"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "required": false,
+            "description": "Sort direction for (createdAt, uri); default desc.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum collections in the page; default 25.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Opaque pagination cursor, bound to sortDirection.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/org.hypercerts.collection.searchCollections.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "org.hypercerts.collection.searchCollections",
+        "x-hypercerts-coverage": "branch-only",
+        "x-hypercerts-source": {
+          "worktree": "happyview-activity-queries-phase1",
+          "branch": "api/collection-queries",
+          "commit": "2b3162b785299d2362af7f725eff4ca5e47ce609",
+          "path": "hypercerts-api/lexicons/org.hypercerts.collection.searchCollections.json",
+          "activeModule": "modules/collection/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "Search text, a filter value, organization-record flag, page bound, cursor, repeated scalar, or query parameter is invalid."
+          }
+        ]
+      }
+    },
+    "/xrpc/org.hypercerts.context.getAttachment": {
+      "get": {
+        "operationId": "org_hypercerts_context_getAttachment",
+        "tags": [
+          "org.hypercerts.context"
+        ],
+        "description": "Looks up one indexed attachment by exact AT-URI and hydrates its publisher actor. The full record is preserved unchanged; subjects, content, and location remain unexpanded, and external files are not fetched. Missing author profile or organization sidecar is null; operational hydration failures return errors. A missing indexed attachment is RecordNotFound. Authentication is not required.",
+        "parameters": [
+          {
+            "name": "uri",
+            "in": "query",
+            "required": true,
+            "description": "Full attachment record AT-URI using a DID authority.",
+            "schema": {
+              "type": "string",
+              "format": "at-uri"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/org.hypercerts.context.getAttachment.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "org.hypercerts.context.getAttachment",
+        "x-hypercerts-coverage": "branch-only",
+        "x-hypercerts-source": {
+          "worktree": "happyview-context-attachments-queries",
+          "branch": "api/context-attachments",
+          "commit": "43bafb3ef58c0bcb6b627f1b8bd905aa579d4e00",
+          "path": "hypercerts-api/lexicons/org.hypercerts.context.getAttachment.json",
+          "activeModule": "modules/context-attachments/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "The URI is invalid or is not an attachment record AT-URI."
+          },
+          {
+            "name": "RecordNotFound",
+            "description": "No indexed attachment exists at this AT-URI."
+          },
+          {
+            "name": "AttachmentQueryFailed",
+            "description": "The attachment query or required publisher hydration failed; retry after checking the HappyView PostgreSQL service."
+          }
+        ]
+      }
+    },
+    "/xrpc/org.hypercerts.context.getEvaluation": {
+      "get": {
+        "operationId": "org_hypercerts_context_getEvaluation",
+        "tags": [
+          "org.hypercerts.context"
+        ],
+        "description": "Looks up one indexed evaluation by exact AT-URI and hydrates its publisher plus the first 100 original evaluator entries. Later entries remain in the projection with hydrationStatus omitted and no profile or organization. The original record and evaluator positions, order, and duplicates are preserved. Missing profiles and organization sidecars are null; operational hydration failures return errors. Authentication is not required.",
+        "parameters": [
+          {
+            "name": "uri",
+            "in": "query",
+            "required": true,
+            "description": "Full evaluation record AT-URI using a DID authority.",
+            "schema": {
+              "type": "string",
+              "format": "at-uri"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/org.hypercerts.context.getEvaluation.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "org.hypercerts.context.getEvaluation",
+        "x-hypercerts-coverage": "branch-only",
+        "x-hypercerts-source": {
+          "worktree": "happyview-context-evaluations-queries",
+          "branch": "api/context-evaluations",
+          "commit": "52014876cadf9d01b06507cf06ae6649a1d42dfa",
+          "path": "hypercerts-api/lexicons/org.hypercerts.context.getEvaluation.json",
+          "activeModule": "modules/context-evaluation/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "The URI is invalid or is not an evaluation record AT-URI."
+          },
+          {
+            "name": "RecordNotFound",
+            "description": "No indexed evaluation exists at this AT-URI."
+          }
+        ]
+      }
+    },
+    "/xrpc/org.hypercerts.context.listAttachments": {
+      "get": {
+        "operationId": "org_hypercerts_context_listAttachments",
+        "tags": [
+          "org.hypercerts.context"
+        ],
+        "description": "Lists indexed attachments. Repeated unbracketed array keys accept at most 100 values each; values within each filter use OR, distinct filters use AND, and duplicate inputs are removed. subjects matches any record.subjects[].uri without CID comparison; contentTypes is an exact open-string match. Results sort by (createdAt, uri), default desc, with an opaque cursor bound to sortDirection; input URI order is not preserved. The full record and hydrated publisher actor are returned; related targets and file bytes are not fetched. Missing author records are null, while operational hydration failures return errors. Authentication is not required.",
+        "parameters": [
+          {
+            "name": "authors",
+            "in": "query",
+            "required": false,
+            "description": "Publisher repository DIDs; OR within this filter.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "did"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "uris",
+            "in": "query",
+            "required": false,
+            "description": "Exact attachment AT-URIs for bounded batch hydration; OR within this filter.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "at-uri"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "subjects",
+            "in": "query",
+            "required": false,
+            "description": "Subject AT-URIs matched against any record.subjects[].uri, regardless of position and without CID comparison; OR within this filter.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "at-uri"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "contentTypes",
+            "in": "query",
+            "required": false,
+            "description": "Exact open-string matches against record.contentType; this is not a file MIME-type filter.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "required": false,
+            "description": "Sort direction for (createdAt, uri); default desc.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum attachments in the page; default 25.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Opaque pagination cursor bound to sortDirection; keep other parameters unchanged between pages.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/org.hypercerts.context.listAttachments.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "org.hypercerts.context.listAttachments",
+        "x-hypercerts-coverage": "branch-only",
+        "x-hypercerts-source": {
+          "worktree": "happyview-context-attachments-queries",
+          "branch": "api/context-attachments",
+          "commit": "43bafb3ef58c0bcb6b627f1b8bd905aa579d4e00",
+          "path": "hypercerts-api/lexicons/org.hypercerts.context.listAttachments.json",
+          "activeModule": "modules/context-attachments/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "A filter value, sort direction, page bound, cursor, repeated scalar, or query parameter is invalid."
+          },
+          {
+            "name": "AttachmentQueryFailed",
+            "description": "The attachment query or required publisher hydration failed; retry after checking the HappyView PostgreSQL service."
+          }
+        ]
+      }
+    },
+    "/xrpc/org.hypercerts.context.listEvaluations": {
+      "get": {
+        "operationId": "org_hypercerts_context_listEvaluations",
+        "tags": [
+          "org.hypercerts.context"
+        ],
+        "description": "Lists indexed evaluations. Repeated unbracketed array keys accept at most 100 values each; values within authors, evaluators, and subjects use OR, while distinct filters use AND. evaluators matches every record.evaluators[].did, including entries beyond the hydration cap; subjects matches record.subject.uri without CID comparison. Results sort by (createdAt, uri), default desc, with an opaque cursor bound to sortDirection. Each result preserves its full record and evaluator order, length, duplicates, and entry fields; hydrate only the first 100 original evaluator positions, marking all later entries omitted. Missing profiles or organization sidecars are null; operational hydration failures return errors. Authentication is not required.",
+        "parameters": [
+          {
+            "name": "authors",
+            "in": "query",
+            "required": false,
+            "description": "Publisher repository DIDs; OR within this filter.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "did"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "evaluators",
+            "in": "query",
+            "required": false,
+            "description": "DIDs named in the original record.evaluators[].did entries; filtering includes positions beyond the hydration cap.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "did"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "subjects",
+            "in": "query",
+            "required": false,
+            "description": "Subject AT-URIs matched against record.subject.uri without CID comparison; OR within this filter.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "at-uri"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "required": false,
+            "description": "Sort direction for (createdAt, uri); default desc.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum evaluations in the page; default 25.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Opaque pagination cursor, bound to sortDirection; keep other parameters unchanged between pages.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/org.hypercerts.context.listEvaluations.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "org.hypercerts.context.listEvaluations",
+        "x-hypercerts-coverage": "branch-only",
+        "x-hypercerts-source": {
+          "worktree": "happyview-context-evaluations-queries",
+          "branch": "api/context-evaluations",
+          "commit": "52014876cadf9d01b06507cf06ae6649a1d42dfa",
+          "path": "hypercerts-api/lexicons/org.hypercerts.context.listEvaluations.json",
+          "activeModule": "modules/context-evaluation/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "A filter value, sort direction, page bound, cursor, repeated scalar, or query parameter is invalid."
+          }
+        ]
+      }
+    },
+    "/xrpc/org.hypercerts.funding.getReceipt": {
+      "get": {
+        "operationId": "org_hypercerts_funding_getReceipt",
+        "tags": [
+          "org.hypercerts.funding"
+        ],
+        "description": "Looks up one indexed funding receipt by exact AT-URI and hydrates its publisher actor. The full receipt record is preserved unchanged, including amount as a decimal string; parties and funded targets remain unexpanded. A receipt is not proof that payment occurred. Missing author profile or organization sidecar is null; operational hydration failures return errors. A missing indexed receipt is RecordNotFound. Authentication is not required.",
+        "parameters": [
+          {
+            "name": "uri",
+            "in": "query",
+            "required": true,
+            "description": "Full funding-receipt record AT-URI using a DID authority.",
+            "schema": {
+              "type": "string",
+              "format": "at-uri"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/org.hypercerts.funding.getReceipt.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "org.hypercerts.funding.getReceipt",
+        "x-hypercerts-coverage": "unmanifested-unsupported",
+        "x-hypercerts-source": {
+          "worktree": "happyview-funding-receipts-queries",
+          "branch": "api/funding-receipts",
+          "commit": "d3643a26c0bab24972b847fbf3e07794702aea04",
+          "path": "hypercerts-api/lexicons/org.hypercerts.funding.getReceipt.json",
+          "activeModule": null
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "The URI is invalid or is not a funding-receipt record AT-URI."
+          },
+          {
+            "name": "RecordNotFound",
+            "description": "No indexed funding receipt exists at this AT-URI."
+          },
+          {
+            "name": "ReceiptQueryFailed",
+            "description": "The receipt query or publisher hydration lookup failed; retry after checking the HappyView PostgreSQL service."
+          }
+        ]
+      }
+    },
+    "/xrpc/org.hypercerts.funding.listReceipts": {
+      "get": {
+        "operationId": "org_hypercerts_funding_listReceipts",
+        "tags": [
+          "org.hypercerts.funding"
+        ],
+        "description": "Lists indexed funding receipt records without collapsing payments. Distinct filters combine with AND; values within each array use OR. from and to accept plain strings but the server must reject the whole request if any entry is not a DID or full record AT-URI, identifying the parameter and entry, explaining the accepted formats, and telling callers to resolve handles to DIDs. A DID matches only the party's DID variant; an AT-URI matches only its strong-reference URI, without CID comparison. These filters do not match free text or resolve wallets; omitted from adds no sender condition. forUris matches record.for.uri without CID comparison. transactionIds match exact identifiers without normalization. Repeated unbracketed array keys accept at most 100 values each; duplicates are removed. Results sort by (createdAt, uri), default desc, with an opaque cursor bound to sortDirection. The full receipt record and hydrated publisher are returned without target expansion or a duplicate parties projection. A receipt is not proof of payment; operational failures return errors, not empty pages. Authentication is not required.",
+        "parameters": [
+          {
+            "name": "authors",
+            "in": "query",
+            "required": false,
+            "description": "Publisher repository DIDs, including facilitator, personal, and group repositories; OR within this filter.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "did"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "uris",
+            "in": "query",
+            "required": false,
+            "description": "Exact funding-receipt AT-URIs for bounded batch hydration; OR within this filter.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "at-uri"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "description": "Mixed DID or full record AT-URI identifiers. DIDs match only the record's from DID variant; AT-URIs match only its strong-reference URI. Free text and wallet-to-DID expansion do not match; invalid entries reject the whole request with the parameter and entry identified.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "description": "Mixed DID or full record AT-URI identifiers. DIDs match only the record's to DID variant; AT-URIs match only its strong-reference URI. Free text and wallet-to-DID expansion do not match; invalid entries reject the whole request with the parameter and entry identified.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "forUris",
+            "in": "query",
+            "required": false,
+            "description": "Funded-target AT-URIs matched against record.for.uri only, without CID comparison.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "at-uri"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "transactionIds",
+            "in": "query",
+            "required": false,
+            "description": "Exact transaction identifier matches; values are not normalized or generically lowercased.",
+            "schema": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "required": false,
+            "description": "Sort direction for (createdAt, uri); default desc.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum receipts in the page; default 25.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Opaque pagination cursor bound to sortDirection; keep other parameters unchanged between pages.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/org.hypercerts.funding.listReceipts.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "org.hypercerts.funding.listReceipts",
+        "x-hypercerts-coverage": "unmanifested-unsupported",
+        "x-hypercerts-source": {
+          "worktree": "happyview-funding-receipts-queries",
+          "branch": "api/funding-receipts",
+          "commit": "d3643a26c0bab24972b847fbf3e07794702aea04",
+          "path": "hypercerts-api/lexicons/org.hypercerts.funding.listReceipts.json",
+          "activeModule": null
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "A filter or page parameter is invalid. For from/to values, identify the failing parameter and entry, require a valid DID or full record AT-URI, and tell callers to resolve handles to DIDs."
+          },
+          {
+            "name": "ReceiptQueryFailed",
+            "description": "The receipt query or publisher hydration lookup failed; retry after checking the HappyView PostgreSQL service."
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "org.hypercerts.api.defs.profileView": {
+        "description": "Schema reference org.hypercerts.api.defs#profileView is outside the committed local Lexicon snapshot.",
+        "x-lexicon-ref": "org.hypercerts.api.defs#profileView"
+      },
+      "org.hypercerts.api.defs.organizationView": {
+        "description": "Schema reference org.hypercerts.api.defs#organizationView is outside the committed local Lexicon snapshot.",
+        "x-lexicon-ref": "org.hypercerts.api.defs#organizationView"
+      },
+      "app.certified.actor.getOrganization.organizationActorView": {
+        "type": "object",
+        "description": "Actor with its required organization sidecar and nullable base profile.",
+        "required": [
+          "did",
+          "profile",
+          "organization"
+        ],
+        "properties": {
+          "did": {
+            "type": "string",
+            "format": "did"
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/org.hypercerts.api.defs.profileView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "organization": {
+            "$ref": "#/components/schemas/org.hypercerts.api.defs.organizationView"
+          }
+        }
+      },
+      "app.certified.actor.getOrganization.output": {
+        "type": "object",
+        "required": [
+          "actor"
+        ],
+        "properties": {
+          "actor": {
+            "$ref": "#/components/schemas/app.certified.actor.getOrganization.organizationActorView"
+          }
+        }
+      },
+      "app.certified.actor.getOrganizations.organizationResult": {
+        "type": "object",
+        "required": [
+          "actor",
+          "organization"
+        ],
+        "properties": {
+          "actor": {
+            "type": "string",
+            "description": "Actor DID from the corresponding request occurrence.",
+            "format": "did"
+          },
+          "organization": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/app.certified.actor.getOrganization.organizationActorView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "app.certified.actor.getOrganizations.output": {
+        "type": "object",
+        "required": [
+          "organizations"
+        ],
+        "properties": {
+          "organizations": {
+            "type": "array",
+            "description": "One result per supplied actor occurrence, in input order. The organization is null when no indexed sidecar exists.",
+            "items": {
+              "$ref": "#/components/schemas/app.certified.actor.getOrganizations.organizationResult"
+            }
+          }
+        }
+      },
+      "app.certified.actor.getProfile.output": {
+        "type": "object",
+        "required": [
+          "profile"
+        ],
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/org.hypercerts.api.defs.profileView"
+          }
+        }
+      },
+      "app.certified.actor.getProfiles.profileResult": {
+        "type": "object",
+        "required": [
+          "actor",
+          "profile"
+        ],
+        "properties": {
+          "actor": {
+            "type": "string",
+            "format": "did"
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/org.hypercerts.api.defs.profileView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "app.certified.actor.getProfiles.output": {
+        "type": "object",
+        "required": [
+          "profiles"
+        ],
+        "properties": {
+          "profiles": {
+            "type": "array",
+            "description": "One result per supplied actor occurrence, in input order. The profile is null when no indexed profile exists.",
+            "items": {
+              "$ref": "#/components/schemas/app.certified.actor.getProfiles.profileResult"
+            }
+          }
+        }
+      },
+      "app.certified.actor.listOrganizations.output": {
+        "type": "object",
+        "required": [
+          "actors"
+        ],
+        "properties": {
+          "actors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/app.certified.actor.getOrganization.organizationActorView"
+            }
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Opaque cursor for the next page; omitted when there is no next page."
+          }
+        }
+      },
+      "app.certified.actor.listProfiles.output": {
+        "type": "object",
+        "required": [
+          "profiles"
+        ],
+        "properties": {
+          "profiles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/org.hypercerts.api.defs.profileView"
+            }
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Opaque cursor for the next page; omitted when pagination is complete."
+          }
+        }
+      },
+      "app.certified.actor.searchOrganizations.output": {
+        "type": "object",
+        "required": [
+          "actors"
+        ],
+        "properties": {
+          "actors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/app.certified.actor.getOrganization.organizationActorView"
+            }
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Opaque cursor for the next page; omitted when there is no next page."
+          }
+        }
+      },
+      "app.certified.actor.searchProfiles.output": {
+        "type": "object",
+        "required": [
+          "profiles"
+        ],
+        "properties": {
+          "profiles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/org.hypercerts.api.defs.profileView"
+            }
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Opaque cursor for the next page; omitted when pagination is complete."
+          }
+        }
+      },
+      "org.hypercerts.api.defs.actorView": {
+        "description": "Schema reference org.hypercerts.api.defs#actorView is outside the committed local Lexicon snapshot.",
+        "x-lexicon-ref": "org.hypercerts.api.defs#actorView"
+      },
+      "app.certified.badge.definition.main": {
+        "description": "Schema reference app.certified.badge.definition is outside the committed local Lexicon snapshot.",
+        "x-lexicon-ref": "app.certified.badge.definition"
+      },
+      "app.certified.badge.getBadgeDefinition.badgeDefinitionView": {
+        "type": "object",
+        "description": "Full indexed badge-definition record view with hydrated publisher actor.",
+        "required": [
+          "uri",
+          "cid",
+          "indexedAt",
+          "did",
+          "author",
+          "record"
+        ],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "cid": {
+            "type": "string",
+            "format": "cid"
+          },
+          "indexedAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "did": {
+            "type": "string",
+            "format": "did"
+          },
+          "author": {
+            "$ref": "#/components/schemas/org.hypercerts.api.defs.actorView"
+          },
+          "record": {
+            "$ref": "#/components/schemas/app.certified.badge.definition.main"
+          }
+        }
+      },
+      "app.certified.badge.getBadgeDefinition.output": {
+        "type": "object",
+        "required": [
+          "badgeDefinition"
+        ],
+        "properties": {
+          "badgeDefinition": {
+            "$ref": "#/components/schemas/app.certified.badge.getBadgeDefinition.badgeDefinitionView"
+          }
+        }
+      },
+      "app.certified.badge.listBadgeDefinitions.output": {
+        "type": "object",
+        "required": [
+          "badgeDefinitions"
+        ],
+        "properties": {
+          "badgeDefinitions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/app.certified.badge.getBadgeDefinition.badgeDefinitionView"
+            }
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Opaque cursor for the next page; omitted when there is no next page."
+          }
+        }
+      },
+      "org.hypercerts.api.defs.entityFollowRecordView": {
+        "description": "Schema reference org.hypercerts.api.defs#entityFollowRecordView is outside the committed local Lexicon snapshot.",
+        "x-lexicon-ref": "org.hypercerts.api.defs#entityFollowRecordView"
+      },
+      "app.certified.graph.getEntityFollow.output": {
+        "type": "object",
+        "required": [
+          "follow"
+        ],
+        "properties": {
+          "follow": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/org.hypercerts.api.defs.entityFollowRecordView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "app.certified.graph.follow.main": {
+        "description": "Schema reference app.certified.graph.follow is outside the committed local Lexicon snapshot.",
+        "x-lexicon-ref": "app.certified.graph.follow"
+      },
+      "app.certified.graph.getFollow.followRecordView": {
+        "type": "object",
+        "description": "Raw indexed follow record view, including the DID that published the relationship.",
+        "required": [
+          "uri",
+          "cid",
+          "indexedAt",
+          "did",
+          "record"
+        ],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "cid": {
+            "type": "string",
+            "format": "cid"
+          },
+          "indexedAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "did": {
+            "type": "string",
+            "format": "did"
+          },
+          "record": {
+            "$ref": "#/components/schemas/app.certified.graph.follow.main"
+          }
+        }
+      },
+      "app.certified.graph.getFollow.output": {
+        "type": "object",
+        "description": "The raw representative follow record, or explicit null when the relationship is not indexed.",
+        "required": [
+          "follow"
+        ],
+        "properties": {
+          "follow": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/app.certified.graph.getFollow.followRecordView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "app.certified.graph.getFollow.actorFollowView": {
+        "type": "object",
+        "description": "The displayed actor and the raw follow record representing its relationship.",
+        "required": [
+          "did",
+          "profile",
+          "organization",
+          "follow"
+        ],
+        "properties": {
+          "did": {
+            "type": "string",
+            "format": "did"
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/org.hypercerts.api.defs.profileView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "organization": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/org.hypercerts.api.defs.organizationView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "follow": {
+            "$ref": "#/components/schemas/app.certified.graph.getFollow.followRecordView"
+          }
+        }
+      },
+      "app.certified.graph.listActorFollowers.output": {
+        "type": "object",
+        "required": [
+          "followers",
+          "totalCount"
+        ],
+        "properties": {
+          "followers": {
+            "type": "array",
+            "description": "Incoming relationships, with each displayed DID identifying the actor who published the follow.",
+            "items": {
+              "$ref": "#/components/schemas/app.certified.graph.getFollow.actorFollowView"
+            }
+          },
+          "totalCount": {
+            "type": "integer",
+            "description": "Number of matching relationships after duplicate relationships are collapsed, before cursor and limit are applied.",
+            "minimum": 0
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Opaque cursor for the next page; omitted when there are no more relationships."
+          }
+        }
+      },
+      "app.certified.graph.listActorFollowing.output": {
+        "type": "object",
+        "required": [
+          "following",
+          "totalCount"
+        ],
+        "properties": {
+          "following": {
+            "type": "array",
+            "description": "Outgoing relationships, with each displayed DID identifying the actor named as the follow subject.",
+            "items": {
+              "$ref": "#/components/schemas/app.certified.graph.getFollow.actorFollowView"
+            }
+          },
+          "totalCount": {
+            "type": "integer",
+            "description": "Number of matching relationships after duplicate relationships are collapsed, before cursor and limit are applied.",
+            "minimum": 0
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Opaque cursor for the next page; omitted when there are no more relationships."
+          }
+        }
+      },
+      "org.hypercerts.api.defs.entityFollowerView": {
+        "description": "Schema reference org.hypercerts.api.defs#entityFollowerView is outside the committed local Lexicon snapshot.",
+        "x-lexicon-ref": "org.hypercerts.api.defs#entityFollowerView"
+      },
+      "app.certified.graph.listEntityFollowers.output": {
+        "type": "object",
+        "required": [
+          "followers"
+        ],
+        "properties": {
+          "followers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/org.hypercerts.api.defs.entityFollowerView"
+            }
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Opaque cursor for the next page; omitted when there are no more relationships."
+          }
+        }
+      },
+      "org.hypercerts.api.defs.entityFollowingItem": {
+        "description": "Schema reference org.hypercerts.api.defs#entityFollowingItem is outside the committed local Lexicon snapshot.",
+        "x-lexicon-ref": "org.hypercerts.api.defs#entityFollowingItem"
+      },
+      "app.certified.graph.listEntityFollowing.output": {
+        "type": "object",
+        "required": [
+          "entities"
+        ],
+        "properties": {
+          "entities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/org.hypercerts.api.defs.entityFollowingItem"
+            }
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Opaque cursor for the next page; omitted when there are no more relationships."
+          }
+        }
+      },
+      "app.certified.graph.entityFollow.main": {
+        "description": "Schema reference app.certified.graph.entityFollow is outside the committed local Lexicon snapshot.",
+        "x-lexicon-ref": "app.certified.graph.entityFollow"
+      },
+      "app.certified.graph.listRecentFollows.recentFollowView": {
+        "type": "object",
+        "description": "Raw indexed account- or entity-follow record with its publishing repository identity. The unchanged record's $type distinguishes the follow collection.",
+        "required": [
+          "uri",
+          "cid",
+          "indexedAt",
+          "did",
+          "record"
+        ],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "description": "AT-URI of this follow record.",
+            "format": "at-uri"
+          },
+          "cid": {
+            "type": "string",
+            "description": "CID of the indexed follow record version.",
+            "format": "cid"
+          },
+          "indexedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "Time this follow record was indexed, not the ordering field.",
+                "format": "datetime"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "did": {
+            "type": "string",
+            "description": "DID of the repository that published this follow record.",
+            "format": "did"
+          },
+          "record": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/app.certified.graph.follow.main"
+              },
+              {
+                "$ref": "#/components/schemas/app.certified.graph.entityFollow.main"
+              }
+            ],
+            "description": "Unmodified account- or entity-follow record; its $type identifies the collection."
+          }
+        }
+      },
+      "app.certified.graph.listRecentFollows.output": {
+        "type": "object",
+        "required": [
+          "follows"
+        ],
+        "properties": {
+          "follows": {
+            "type": "array",
+            "description": "Raw follow records from both collections, sorted by createdAt descending then URI descending, including duplicates.",
+            "items": {
+              "$ref": "#/components/schemas/app.certified.graph.listRecentFollows.recentFollowView"
+            }
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Opaque cursor for the next page; omitted when no further page exists."
+          }
+        }
+      },
+      "app.certified.location.main": {
+        "description": "Schema reference app.certified.location is outside the committed local Lexicon snapshot.",
+        "x-lexicon-ref": "app.certified.location"
+      },
+      "app.certified.location.getLocation.locationView": {
+        "type": "object",
+        "description": "Location record with full indexed metadata, original payload, and hydrated author.",
+        "required": [
+          "uri",
+          "cid",
+          "indexedAt",
+          "did",
+          "author",
+          "record"
+        ],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "cid": {
+            "type": "string",
+            "format": "cid"
+          },
+          "indexedAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "did": {
+            "type": "string",
+            "format": "did"
+          },
+          "author": {
+            "$ref": "#/components/schemas/org.hypercerts.api.defs.actorView"
+          },
+          "record": {
+            "$ref": "#/components/schemas/app.certified.location.main"
+          }
+        }
+      },
+      "app.certified.location.getLocation.output": {
+        "type": "object",
+        "required": [
+          "location"
+        ],
+        "properties": {
+          "location": {
+            "$ref": "#/components/schemas/app.certified.location.getLocation.locationView"
+          }
+        }
+      },
+      "app.certified.location.listLocations.output": {
+        "type": "object",
+        "required": [
+          "locations"
+        ],
+        "properties": {
+          "locations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/app.certified.location.getLocation.locationView"
+            }
+          },
+          "cursor": {
+            "type": "string"
+          }
+        }
+      },
+      "org.hypercerts.claim.activity.main": {
+        "description": "Schema reference org.hypercerts.claim.activity is outside the committed local Lexicon snapshot.",
+        "x-lexicon-ref": "org.hypercerts.claim.activity"
+      },
+      "org.hypercerts.claim.activity.contributorIdentity": {
+        "description": "Schema reference org.hypercerts.claim.activity#contributorIdentity is outside the committed local Lexicon snapshot.",
+        "x-lexicon-ref": "org.hypercerts.claim.activity#contributorIdentity"
+      },
+      "com.atproto.repo.strongRef.main": {
+        "description": "Schema reference com.atproto.repo.strongRef is outside the committed local Lexicon snapshot.",
+        "x-lexicon-ref": "com.atproto.repo.strongRef"
+      },
+      "org.hypercerts.claim.activity.contributorRole": {
+        "description": "Schema reference org.hypercerts.claim.activity#contributorRole is outside the committed local Lexicon snapshot.",
+        "x-lexicon-ref": "org.hypercerts.claim.activity#contributorRole"
+      },
+      "org.hypercerts.claim.contributorInformation.main": {
+        "description": "Schema reference org.hypercerts.claim.contributorInformation is outside the committed local Lexicon snapshot.",
+        "x-lexicon-ref": "org.hypercerts.claim.contributorInformation"
+      },
+      "org.hypercerts.claim.getActivity.contributorInformationView": {
+        "type": "object",
+        "description": "The exact indexed contributor-information version identified by the source strong reference.",
+        "required": [
+          "uri",
+          "cid",
+          "indexedAt",
+          "did",
+          "record"
+        ],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "cid": {
+            "type": "string",
+            "format": "cid"
+          },
+          "indexedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "datetime"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "did": {
+            "type": "string",
+            "format": "did"
+          },
+          "record": {
+            "$ref": "#/components/schemas/org.hypercerts.claim.contributorInformation.main"
+          }
+        }
+      },
+      "org.hypercerts.claim.getActivity.contributorActorView": {
+        "type": "object",
+        "description": "Contributor DID with nullable current Certified profile.",
+        "required": [
+          "did",
+          "profile"
+        ],
+        "properties": {
+          "did": {
+            "type": "string",
+            "format": "did"
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/org.hypercerts.api.defs.profileView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "org.hypercerts.claim.getActivity.activityContributorView": {
+        "type": "object",
+        "description": "Original activity contributor fields with exact-version contributor information and nullable actor hydration.",
+        "required": [
+          "contributorIdentity",
+          "contributorInformation",
+          "actor"
+        ],
+        "properties": {
+          "contributorIdentity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/org.hypercerts.claim.activity.contributorIdentity"
+              },
+              {
+                "$ref": "#/components/schemas/com.atproto.repo.strongRef.main"
+              }
+            ]
+          },
+          "contributionWeight": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "contributionDetails": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/org.hypercerts.claim.activity.contributorRole"
+              },
+              {
+                "$ref": "#/components/schemas/com.atproto.repo.strongRef.main"
+              }
+            ]
+          },
+          "contributorInformation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/org.hypercerts.claim.getActivity.contributorInformationView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "actor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/org.hypercerts.claim.getActivity.contributorActorView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "org.hypercerts.claim.getActivity.activityView": {
+        "type": "object",
+        "description": "Activity record with metadata, unchanged source payload, hydrated author, and optional contributor projection.",
+        "required": [
+          "uri",
+          "cid",
+          "indexedAt",
+          "did",
+          "author",
+          "record"
+        ],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "cid": {
+            "type": "string",
+            "format": "cid"
+          },
+          "indexedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "datetime"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "did": {
+            "type": "string",
+            "format": "did"
+          },
+          "author": {
+            "$ref": "#/components/schemas/org.hypercerts.api.defs.actorView"
+          },
+          "record": {
+            "$ref": "#/components/schemas/org.hypercerts.claim.activity.main"
+          },
+          "contributors": {
+            "type": "array",
+            "description": "Hydrated contributor projection in the same order and with the same multiplicity as record.contributors; omitted only when the source field is absent.",
+            "items": {
+              "$ref": "#/components/schemas/org.hypercerts.claim.getActivity.activityContributorView"
+            }
+          }
+        }
+      },
+      "org.hypercerts.claim.getActivity.output": {
+        "type": "object",
+        "required": [
+          "activity"
+        ],
+        "properties": {
+          "activity": {
+            "$ref": "#/components/schemas/org.hypercerts.claim.getActivity.activityView"
+          }
+        }
+      },
+      "org.hypercerts.claim.listActivities.output": {
+        "type": "object",
+        "required": [
+          "activities"
+        ],
+        "properties": {
+          "activities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/org.hypercerts.claim.getActivity.activityView"
+            }
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Opaque cursor for the next page; omitted when pagination is complete."
+          }
+        }
+      },
+      "org.hypercerts.claim.searchActivities.output": {
+        "type": "object",
+        "required": [
+          "activities"
+        ],
+        "properties": {
+          "activities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/org.hypercerts.claim.getActivity.activityView"
+            }
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Opaque cursor for the next page; omitted when pagination is complete."
+          }
+        }
+      },
+      "app.certified.actor.profile.main": {
+        "description": "Schema reference app.certified.actor.profile is outside the committed local Lexicon snapshot.",
+        "x-lexicon-ref": "app.certified.actor.profile"
+      },
+      "org.hypercerts.collection.getCollection.collectionProfileView": {
+        "type": "object",
+        "description": "Profile record view used in collection author projections; indexedAt is required and may be null when the index has no timestamp.",
+        "required": [
+          "uri",
+          "cid",
+          "indexedAt",
+          "did",
+          "record"
+        ],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "cid": {
+            "type": "string",
+            "format": "cid"
+          },
+          "indexedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "datetime"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "did": {
+            "type": "string",
+            "format": "did"
+          },
+          "record": {
+            "$ref": "#/components/schemas/app.certified.actor.profile.main"
+          }
+        }
+      },
+      "app.certified.actor.organization.main": {
+        "description": "Schema reference app.certified.actor.organization is outside the committed local Lexicon snapshot.",
+        "x-lexicon-ref": "app.certified.actor.organization"
+      },
+      "org.hypercerts.collection.getCollection.collectionOrganizationView": {
+        "type": "object",
+        "description": "Organization sidecar view used in collection author projections; indexedAt is required and may be null when the index has no timestamp.",
+        "required": [
+          "uri",
+          "cid",
+          "indexedAt",
+          "did",
+          "record"
+        ],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "cid": {
+            "type": "string",
+            "format": "cid"
+          },
+          "indexedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "datetime"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "did": {
+            "type": "string",
+            "format": "did"
+          },
+          "record": {
+            "$ref": "#/components/schemas/app.certified.actor.organization.main"
+          }
+        }
+      },
+      "org.hypercerts.collection.getCollection.collectionActorView": {
+        "type": "object",
+        "description": "Collection author DID with nullable profile and organization sidecar views whose indexedAt values may be null.",
+        "required": [
+          "did",
+          "profile",
+          "organization"
+        ],
+        "properties": {
+          "did": {
+            "type": "string",
+            "format": "did"
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/org.hypercerts.collection.getCollection.collectionProfileView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "organization": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/org.hypercerts.collection.getCollection.collectionOrganizationView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "org.hypercerts.collection.main": {
+        "description": "Schema reference org.hypercerts.collection is outside the committed local Lexicon snapshot.",
+        "x-lexicon-ref": "org.hypercerts.collection"
+      },
+      "org.hypercerts.collection.getCollection.locationRecordView": {
+        "type": "object",
+        "description": "Raw location record view with metadata and no author hydration, used for exact-version collection reference projections.",
+        "required": [
+          "uri",
+          "cid",
+          "indexedAt",
+          "did",
+          "record"
+        ],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "cid": {
+            "type": "string",
+            "format": "cid"
+          },
+          "indexedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "datetime"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "did": {
+            "type": "string",
+            "format": "did"
+          },
+          "record": {
+            "$ref": "#/components/schemas/app.certified.location.main"
+          }
+        }
+      },
+      "org.hypercerts.collection.getCollection.collectionLocationView": {
+        "type": "object",
+        "description": "Original strong-reference URI and CID plus the exact referenced location record view, or null when that version is unavailable.",
+        "required": [
+          "uri",
+          "cid",
+          "record"
+        ],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "cid": {
+            "type": "string",
+            "format": "cid"
+          },
+          "record": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/org.hypercerts.collection.getCollection.locationRecordView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "org.hypercerts.vocab.tag.main": {
+        "description": "Schema reference org.hypercerts.vocab.tag is outside the committed local Lexicon snapshot.",
+        "x-lexicon-ref": "org.hypercerts.vocab.tag"
+      },
+      "org.hypercerts.collection.getCollection.vocabTagRecordView": {
+        "type": "object",
+        "description": "Raw vocabulary-tag record view with metadata and no author hydration, used for exact-version collection reference projections.",
+        "required": [
+          "uri",
+          "cid",
+          "indexedAt",
+          "did",
+          "record"
+        ],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "cid": {
+            "type": "string",
+            "format": "cid"
+          },
+          "indexedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "datetime"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "did": {
+            "type": "string",
+            "format": "did"
+          },
+          "record": {
+            "$ref": "#/components/schemas/org.hypercerts.vocab.tag.main"
+          }
+        }
+      },
+      "org.hypercerts.collection.getCollection.collectionTagView": {
+        "type": "object",
+        "description": "Original strong-reference URI and CID plus the exact referenced vocabulary-tag record view, or null when that version is unavailable.",
+        "required": [
+          "uri",
+          "cid",
+          "record"
+        ],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "cid": {
+            "type": "string",
+            "format": "cid"
+          },
+          "record": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/org.hypercerts.collection.getCollection.vocabTagRecordView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "org.hypercerts.collection.getCollection.collectionView": {
+        "type": "object",
+        "description": "Collection record view with hydrated author and optional sibling projections for location and tags. The original record is unchanged; exact strong-reference versions are used and unresolved projections retain their source URI/CID with record null.",
+        "required": [
+          "uri",
+          "cid",
+          "indexedAt",
+          "did",
+          "author",
+          "record"
+        ],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "cid": {
+            "type": "string",
+            "format": "cid"
+          },
+          "indexedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "datetime"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "did": {
+            "type": "string",
+            "format": "did"
+          },
+          "author": {
+            "$ref": "#/components/schemas/org.hypercerts.collection.getCollection.collectionActorView"
+          },
+          "record": {
+            "$ref": "#/components/schemas/org.hypercerts.collection.main"
+          },
+          "location": {
+            "$ref": "#/components/schemas/org.hypercerts.collection.getCollection.collectionLocationView"
+          },
+          "tags": {
+            "type": "array",
+            "description": "Projection of record.tags preserving order, length, and duplicates, including an empty array; omitted only when record.tags is absent.",
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/org.hypercerts.collection.getCollection.collectionTagView"
+            }
+          }
+        }
+      },
+      "org.hypercerts.collection.getCollection.output": {
+        "type": "object",
+        "required": [
+          "collection"
+        ],
+        "properties": {
+          "collection": {
+            "$ref": "#/components/schemas/org.hypercerts.collection.getCollection.collectionView"
+          }
+        }
+      },
+      "org.hypercerts.collection.listCollectionItems.collectionSummaryView": {
+        "type": "object",
+        "description": "Non-recursive summary of a collection item target.",
+        "required": [
+          "uri",
+          "cid",
+          "did",
+          "title"
+        ],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "cid": {
+            "type": "string",
+            "format": "cid"
+          },
+          "did": {
+            "type": "string",
+            "format": "did"
+          },
+          "type": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 800,
+            "x-lexicon-maxGraphemes": 80
+          },
+          "shortDescription": {
+            "type": "string",
+            "maxLength": 3000,
+            "x-lexicon-maxGraphemes": 300
+          }
+        }
+      },
+      "org.hypercerts.entity.feature.main": {
+        "description": "Schema reference org.hypercerts.entity.feature is outside the committed local Lexicon snapshot.",
+        "x-lexicon-ref": "org.hypercerts.entity.feature"
+      },
+      "org.hypercerts.collection.listCollectionItems.featureView": {
+        "type": "object",
+        "description": "Feature record view with hydrated author actor; feature location, tag, and sameAs references remain unexpanded.",
+        "required": [
+          "uri",
+          "cid",
+          "indexedAt",
+          "did",
+          "author",
+          "record"
+        ],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "cid": {
+            "type": "string",
+            "format": "cid"
+          },
+          "indexedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "datetime"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "did": {
+            "type": "string",
+            "format": "did"
+          },
+          "author": {
+            "$ref": "#/components/schemas/org.hypercerts.collection.getCollection.collectionActorView"
+          },
+          "record": {
+            "$ref": "#/components/schemas/org.hypercerts.entity.feature.main"
+          }
+        }
+      },
+      "org.hypercerts.collection.listCollectionItems.collectionItemView": {
+        "type": "object",
+        "description": "One embedded collection item in source order, retaining its original strong reference and optional weight. Resolve only an exact URI+CID target one level deep; nested collections use a summary, and unavailable versions or unsupported kinds produce record null.",
+        "required": [
+          "itemIdentifier",
+          "record"
+        ],
+        "properties": {
+          "itemIdentifier": {
+            "$ref": "#/components/schemas/com.atproto.repo.strongRef.main"
+          },
+          "itemWeight": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "record": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/org.hypercerts.claim.getActivity.activityView"
+                  },
+                  {
+                    "$ref": "#/components/schemas/org.hypercerts.collection.listCollectionItems.collectionSummaryView"
+                  },
+                  {
+                    "$ref": "#/components/schemas/org.hypercerts.collection.listCollectionItems.featureView"
+                  }
+                ],
+                "description": "Resolved ActivityView, CollectionSummaryView, or FeatureView using the item strong reference's exact URI+CID; otherwise null."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "org.hypercerts.collection.listCollectionItems.output": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/org.hypercerts.collection.listCollectionItems.collectionItemView"
+            }
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Opaque cursor for the next page; omitted when there is no next page."
+          }
+        }
+      },
+      "org.hypercerts.collection.listCollections.output": {
+        "type": "object",
+        "required": [
+          "collections"
+        ],
+        "properties": {
+          "collections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/org.hypercerts.collection.getCollection.collectionView"
+            }
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Opaque cursor for the next page; omitted when there is no next page."
+          }
+        }
+      },
+      "org.hypercerts.collection.searchCollections.output": {
+        "type": "object",
+        "required": [
+          "collections"
+        ],
+        "properties": {
+          "collections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/org.hypercerts.collection.getCollection.collectionView"
+            }
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Opaque cursor for the next page; omitted when there is no next page."
+          }
+        }
+      },
+      "org.hypercerts.context.attachment.main": {
+        "description": "Schema reference org.hypercerts.context.attachment is outside the committed local Lexicon snapshot.",
+        "x-lexicon-ref": "org.hypercerts.context.attachment"
+      },
+      "org.hypercerts.context.getAttachment.attachmentView": {
+        "type": "object",
+        "description": "Attachment record view with hydrated publisher actor and the full indexed record unchanged; subject, content, and location references remain unexpanded.",
+        "required": [
+          "uri",
+          "cid",
+          "indexedAt",
+          "did",
+          "author",
+          "record"
+        ],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "cid": {
+            "type": "string",
+            "format": "cid"
+          },
+          "indexedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "datetime"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "did": {
+            "type": "string",
+            "format": "did"
+          },
+          "author": {
+            "$ref": "#/components/schemas/org.hypercerts.api.defs.actorView"
+          },
+          "record": {
+            "$ref": "#/components/schemas/org.hypercerts.context.attachment.main"
+          }
+        }
+      },
+      "org.hypercerts.context.getAttachment.output": {
+        "type": "object",
+        "required": [
+          "attachment"
+        ],
+        "properties": {
+          "attachment": {
+            "$ref": "#/components/schemas/org.hypercerts.context.getAttachment.attachmentView"
+          }
+        }
+      },
+      "org.hypercerts.context.evaluation.main": {
+        "description": "Schema reference org.hypercerts.context.evaluation is outside the committed local Lexicon snapshot.",
+        "x-lexicon-ref": "org.hypercerts.context.evaluation"
+      },
+      "org.hypercerts.context.getEvaluation.hydratedEvaluationEvaluatorView": {
+        "type": "object",
+        "description": "An original evaluator entry whose Certified profile and organization sidecar were looked up, including when either is missing.",
+        "required": [
+          "did",
+          "hydrationStatus",
+          "profile",
+          "organization"
+        ],
+        "properties": {
+          "did": {
+            "type": "string",
+            "format": "did"
+          },
+          "hydrationStatus": {
+            "type": "string",
+            "const": "hydrated"
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/org.hypercerts.api.defs.profileView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "organization": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/org.hypercerts.api.defs.organizationView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "org.hypercerts.context.getEvaluation.omittedEvaluationEvaluatorView": {
+        "type": "object",
+        "description": "An original evaluator entry beyond the 100-position hydration cap; profile and organization are deliberately omitted.",
+        "required": [
+          "did",
+          "hydrationStatus"
+        ],
+        "properties": {
+          "did": {
+            "type": "string",
+            "format": "did"
+          },
+          "hydrationStatus": {
+            "type": "string",
+            "const": "omitted"
+          }
+        }
+      },
+      "org.hypercerts.context.getEvaluation.evaluationView": {
+        "type": "object",
+        "description": "Evaluation record view with hydrated publisher and a one-for-one evaluator projection. Preserve the original record and evaluator order, length, duplicates, and entry fields; hydrate only the first 100 source positions.",
+        "required": [
+          "uri",
+          "cid",
+          "indexedAt",
+          "did",
+          "author",
+          "record",
+          "evaluators"
+        ],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "cid": {
+            "type": "string",
+            "format": "cid"
+          },
+          "indexedAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "did": {
+            "type": "string",
+            "format": "did"
+          },
+          "author": {
+            "$ref": "#/components/schemas/org.hypercerts.api.defs.actorView"
+          },
+          "record": {
+            "$ref": "#/components/schemas/org.hypercerts.context.evaluation.main"
+          },
+          "evaluators": {
+            "type": "array",
+            "description": "One-for-one sibling projection of record.evaluators in source order, retaining duplicates and source entry fields. Entries beyond the hydration cap remain present with hydrationStatus omitted.",
+            "maxItems": 1000,
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/org.hypercerts.context.getEvaluation.hydratedEvaluationEvaluatorView"
+                },
+                {
+                  "$ref": "#/components/schemas/org.hypercerts.context.getEvaluation.omittedEvaluationEvaluatorView"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "org.hypercerts.context.getEvaluation.output": {
+        "type": "object",
+        "required": [
+          "evaluation"
+        ],
+        "properties": {
+          "evaluation": {
+            "$ref": "#/components/schemas/org.hypercerts.context.getEvaluation.evaluationView"
+          }
+        }
+      },
+      "org.hypercerts.context.listAttachments.output": {
+        "type": "object",
+        "required": [
+          "attachments"
+        ],
+        "properties": {
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/org.hypercerts.context.getAttachment.attachmentView"
+            }
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Opaque cursor for the next page; omitted when there is no next page."
+          }
+        }
+      },
+      "org.hypercerts.context.listEvaluations.output": {
+        "type": "object",
+        "required": [
+          "evaluations"
+        ],
+        "properties": {
+          "evaluations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/org.hypercerts.context.getEvaluation.evaluationView"
+            }
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Opaque cursor for the next page; omitted when there is no next page."
+          }
+        }
+      },
+      "org.hypercerts.funding.receipt.main": {
+        "description": "Schema reference org.hypercerts.funding.receipt is outside the committed local Lexicon snapshot.",
+        "x-lexicon-ref": "org.hypercerts.funding.receipt"
+      },
+      "org.hypercerts.funding.getReceipt.receiptView": {
+        "type": "object",
+        "description": "Funding-receipt record view with hydrated publisher actor and the full indexed record unchanged; party and funded-target references remain unexpanded. A receipt is not proof that payment occurred.",
+        "required": [
+          "uri",
+          "cid",
+          "indexedAt",
+          "did",
+          "author",
+          "record"
+        ],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "cid": {
+            "type": "string",
+            "format": "cid"
+          },
+          "indexedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "datetime"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "did": {
+            "type": "string",
+            "format": "did"
+          },
+          "author": {
+            "$ref": "#/components/schemas/org.hypercerts.api.defs.actorView"
+          },
+          "record": {
+            "$ref": "#/components/schemas/org.hypercerts.funding.receipt.main"
+          }
+        }
+      },
+      "org.hypercerts.funding.getReceipt.output": {
+        "type": "object",
+        "required": [
+          "receipt"
+        ],
+        "properties": {
+          "receipt": {
+            "$ref": "#/components/schemas/org.hypercerts.funding.getReceipt.receiptView"
+          }
+        }
+      },
+      "org.hypercerts.funding.listReceipts.output": {
+        "type": "object",
+        "required": [
+          "receipts"
+        ],
+        "properties": {
+          "receipts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/org.hypercerts.funding.getReceipt.receiptView"
+            }
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Opaque cursor for the next page; omitted when there is no next page."
+          }
+        }
+      }
+    }
+  },
+  "x-hypercerts-source": "api/profile-queries@134b24d020a01876e51f857e32726ccdf670200d",
+  "x-hypercerts-unresolved-references": [
+    {
+      "component": "app.certified.actor.organization.main",
+      "reference": "app.certified.actor.organization"
+    },
+    {
+      "component": "app.certified.actor.profile.main",
+      "reference": "app.certified.actor.profile"
+    },
+    {
+      "component": "app.certified.badge.definition.main",
+      "reference": "app.certified.badge.definition"
+    },
+    {
+      "component": "app.certified.graph.entityFollow.main",
+      "reference": "app.certified.graph.entityFollow"
+    },
+    {
+      "component": "app.certified.graph.follow.main",
+      "reference": "app.certified.graph.follow"
+    },
+    {
+      "component": "app.certified.location.main",
+      "reference": "app.certified.location"
+    },
+    {
+      "component": "com.atproto.repo.strongRef.main",
+      "reference": "com.atproto.repo.strongRef"
+    },
+    {
+      "component": "org.hypercerts.api.defs.actorView",
+      "reference": "org.hypercerts.api.defs#actorView"
+    },
+    {
+      "component": "org.hypercerts.api.defs.entityFollowerView",
+      "reference": "org.hypercerts.api.defs#entityFollowerView"
+    },
+    {
+      "component": "org.hypercerts.api.defs.entityFollowingItem",
+      "reference": "org.hypercerts.api.defs#entityFollowingItem"
+    },
+    {
+      "component": "org.hypercerts.api.defs.entityFollowRecordView",
+      "reference": "org.hypercerts.api.defs#entityFollowRecordView"
+    },
+    {
+      "component": "org.hypercerts.api.defs.organizationView",
+      "reference": "org.hypercerts.api.defs#organizationView"
+    },
+    {
+      "component": "org.hypercerts.api.defs.profileView",
+      "reference": "org.hypercerts.api.defs#profileView"
+    },
+    {
+      "component": "org.hypercerts.claim.activity.main",
+      "reference": "org.hypercerts.claim.activity"
+    },
+    {
+      "component": "org.hypercerts.claim.activity.contributorIdentity",
+      "reference": "org.hypercerts.claim.activity#contributorIdentity"
+    },
+    {
+      "component": "org.hypercerts.claim.activity.contributorRole",
+      "reference": "org.hypercerts.claim.activity#contributorRole"
+    },
+    {
+      "component": "org.hypercerts.claim.contributorInformation.main",
+      "reference": "org.hypercerts.claim.contributorInformation"
+    },
+    {
+      "component": "org.hypercerts.collection.main",
+      "reference": "org.hypercerts.collection"
+    },
+    {
+      "component": "org.hypercerts.context.attachment.main",
+      "reference": "org.hypercerts.context.attachment"
+    },
+    {
+      "component": "org.hypercerts.context.evaluation.main",
+      "reference": "org.hypercerts.context.evaluation"
+    },
+    {
+      "component": "org.hypercerts.entity.feature.main",
+      "reference": "org.hypercerts.entity.feature"
+    },
+    {
+      "component": "org.hypercerts.funding.receipt.main",
+      "reference": "org.hypercerts.funding.receipt"
+    },
+    {
+      "component": "org.hypercerts.vocab.tag.main",
+      "reference": "org.hypercerts.vocab.tag"
+    }
+  ]
+}
