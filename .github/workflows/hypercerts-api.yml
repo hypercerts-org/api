@@ -1,4 +1,4 @@
-name: Hypercerts API checks
+name: CI
 
 on:
   pull_request:
@@ -16,9 +16,12 @@ permissions:
 
 jobs:
   checks:
+    name: API validation and build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
 
       - uses: leafo/gh-actions-lua@6919171ccf181b826f44b9bca76307b577217377 # v13.0.0
         with:
@@ -48,8 +51,138 @@ jobs:
       - name: Install Node dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Validate Changesets when present
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          changeset_files="$(git diff --name-only --diff-filter=ACMR "$BASE_SHA...$HEAD_SHA" -- '.changeset/*.md' ':!.changeset/README.md')"
+          if [ -n "$changeset_files" ]; then
+            pnpm exec changeset status --since "$BASE_SHA"
+          fi
+
       - name: Check API and explorer tests
         run: pnpm check
 
       - name: Build API Lua bundles and explorer
         run: pnpm build
+
+  runtime-contracts:
+    name: HTTP tests (HappyView + PostgreSQL)
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: leafo/gh-actions-lua@6919171ccf181b826f44b9bca76307b577217377 # v13.0.0
+        with:
+          luaVersion: "5.4"
+
+      - name: Add Lua 5.4 executable alias
+        run: |
+          lua_bin="$(command -v lua)"
+          ln -s "$lua_bin" "${lua_bin%/*}/lua5.4"
+          lua5.4 -e 'assert(_VERSION == "Lua 5.4", "expected Lua 5.4")'
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 10.15.1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install Node dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install PostgreSQL client
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client
+          psql_path="$(command -v psql)"
+          test -x "$psql_path"
+          printf 'PSQL_PATH=%s\n' "$psql_path" >> "$GITHUB_ENV"
+
+      - name: Pull pinned HTTP test images
+        timeout-minutes: 10
+        run: |
+          docker pull postgres:17.6-alpine@sha256:ef257d85f76e48da1c64832459b59fcaba1a4dac97bf5d7450c77753542eee94
+          docker pull ghcr.io/gamesgamesgamesgamesgames/happyview:2.13.0@sha256:df44f5c7275e16cd6755b75c37e089fb22b24361f7084d1dc66f07d9c5667e64
+
+      - name: Run task-isolated HTTP suites
+        timeout-minutes: 20
+        run: pnpm test:http
+
+      - name: Remove any remaining task-owned HTTP services
+        if: always()
+        timeout-minutes: 5
+        run: |
+          set -euo pipefail
+          project="${HYPERCERTS_HTTP_TEST_COMPOSE_PROJECT:-}"
+          env_file="${HYPERCERTS_HTTP_TEST_COMPOSE_ENV_FILE:-}"
+          if [[ -z "$project" || -z "$env_file" ]]; then
+            echo "No task-owned HTTP Compose project was registered."
+            exit 0
+          fi
+          if [[ ! "$project" =~ ^hypercerts-http-[0-9]+-[a-f0-9]+$ ]]; then
+            echo "Refusing cleanup for unexpected Compose project name: $project" >&2
+            exit 1
+          fi
+          if [[ ! -f "$env_file" || -L "$env_file" ]]; then
+            containers="$(docker ps --all --quiet --filter "label=com.docker.compose.project=$project")"
+            networks="$(docker network ls --quiet --filter "label=com.docker.compose.project=$project")"
+            volumes="$(docker volume ls --quiet --filter "label=com.docker.compose.project=$project")"
+            if [[ -n "$containers$networks$volumes" ]]; then
+              printf 'Refusing cleanup because credentials are unavailable and project %s still has resources: containers=[%s] networks=[%s] volumes=[%s]\n' "$project" "${containers//$'\n'/ }" "${networks//$'\n'/ }" "${volumes//$'\n'/ }" >&2
+              exit 1
+            fi
+            echo "Task-owned Compose credentials are unavailable, but project $project has no labeled containers, networks, or volumes."
+            exit 0
+          fi
+          runner_temp="$(realpath "$RUNNER_TEMP")"
+          env_file="$(realpath "$env_file")"
+          case "$env_file" in
+            "$runner_temp"/hypercerts-http-*/compose.env) ;;
+            *) echo "Refusing cleanup for credentials outside RUNNER_TEMP: $env_file" >&2; exit 1 ;;
+          esac
+          compose_file="$(realpath "$GITHUB_WORKSPACE/api/docker-compose.contracts.yml")"
+          compose=(docker compose --project-name "$project" --env-file "$env_file" --project-directory "$GITHUB_WORKSPACE/api" -f "$compose_file")
+          container_ids="$("${compose[@]}" ps --all --quiet)"
+          while IFS= read -r id; do
+            [[ -n "$id" ]] || continue
+            project_label="$(docker inspect --format '{{ index .Config.Labels "com.docker.compose.project" }}' "$id")"
+            service_label="$(docker inspect --format '{{ index .Config.Labels "com.docker.compose.service" }}' "$id")"
+            config_files="$(docker inspect --format '{{ index .Config.Labels "com.docker.compose.project.config_files" }}' "$id")"
+            case ",$config_files," in *,"$compose_file",*) ;; *) echo "Refusing cleanup of container with unrelated Compose config: $id" >&2; exit 1 ;; esac
+            if [[ "$project_label" != "$project" || "$service_label" != postgres && "$service_label" != happyview ]]; then
+              echo "Refusing cleanup of container not owned by this HTTP test project: $id" >&2
+              exit 1
+            fi
+          done <<< "$container_ids"
+          network_ids="$(docker network ls --quiet --filter "label=com.docker.compose.project=$project")"
+          while IFS= read -r id; do
+            [[ -n "$id" ]] || continue
+            network_project="$(docker network inspect --format '{{ index .Labels "com.docker.compose.project" }}' "$id")"
+            [[ "$network_project" == "$project" ]] || { echo "Refusing cleanup of unrelated network: $id" >&2; exit 1; }
+          done <<< "$network_ids"
+          volume_ids="$(docker volume ls --quiet --filter "label=com.docker.compose.project=$project")"
+          while IFS= read -r id; do
+            [[ -n "$id" ]] || continue
+            volume_project="$(docker volume inspect --format '{{ index .Labels "com.docker.compose.project" }}' "$id")"
+            [[ "$volume_project" == "$project" ]] || { echo "Refusing cleanup of unrelated volume: $id" >&2; exit 1; }
+          done <<< "$volume_ids"
+          if [[ -n "$container_ids$network_ids$volume_ids" ]]; then
+            "${compose[@]}" down --volumes --timeout 10
+          fi
+          env_dir="${env_file%/compose.env}"
+          rm -f "$env_file"
+          rmdir "$env_dir"
