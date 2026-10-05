@@ -46,7 +46,8 @@ function run(command, args, options = {}) {
 function runQuiet(command, args, options = {}) {
   const result = spawn(command, args, options);
   if (result.status !== 0) {
-    throw new Error(`${command} ${args.join(' ')} failed: ${result.stderr || `exit status ${result.status ?? 'unknown'}`}`);
+    const failure = result.stderr || `exit status ${result.status ?? 'unknown'}`;
+    throw new Error(`${command} ${args.join(' ')} failed: ${failure}`);
   }
   return result.stdout.trim();
 }
@@ -65,6 +66,12 @@ function requirePsqlPath() {
   return executable;
 }
 
+function compareEntryNames(left, right) {
+  if (left.name < right.name) return -1;
+  if (left.name > right.name) return 1;
+  return 0;
+}
+
 async function findFiles(directory, suffix) {
   let entries;
   try {
@@ -73,26 +80,29 @@ async function findFiles(directory, suffix) {
     if (error?.code === 'ENOENT') return [];
     throw error;
   }
-  entries.sort((left, right) => left.name < right.name ? -1 : left.name > right.name ? 1 : 0);
+  entries.sort(compareEntryNames);
 
-  const files = [];
-  for (const entry of entries) {
+  const fileGroups = await Promise.all(entries.map(async (entry) => {
     const entryPath = path.join(directory, entry.name);
-    if (entry.isDirectory()) files.push(...await findFiles(entryPath, suffix));
-    else if (entry.isFile() && entry.name.endsWith(suffix)) files.push(entryPath);
-  }
-  return files;
+    if (entry.isDirectory()) {
+      const nestedFiles = await findFiles(entryPath, suffix);
+      return nestedFiles;
+    }
+    if (entry.isFile() && entry.name.endsWith(suffix)) return [entryPath];
+    return [];
+  }));
+  return fileGroups.flat();
 }
 
 async function loadFixtureRows(fixtureModules) {
   const rows = [];
-  for (const file of fixtureModules) {
+  await fixtureModules.reduce((previous, file) => previous.then(async () => {
     const fixture = await import(pathToFileURL(file).href);
     if (!Array.isArray(fixture.seedRows) || fixture.seedRows.length === 0) {
       throw new Error(`${path.relative(apiRoot, file)} must export a nonempty seedRows array.`);
     }
     rows.push(...fixture.seedRows);
-  }
+  }), Promise.resolve());
   if (rows.length === 0) throw new Error('No HTTP fixture rows found; add a *.fixture.js module under tests/http/fixtures.');
   return rows;
 }
@@ -295,7 +305,7 @@ function teardownOwnedProject(compose, projectName, envFile, dockerEnv, composeE
   run('docker', composeArgs(projectName, envFile, ['down', '--volumes', '--timeout', '10']), { env: composeEnv });
 }
 
-async function main() {
+async function prepareRun() {
   const psqlPath = requirePsqlPath();
   const suites = await findFiles(httpTestRoot, '.http.test.js');
   if (suites.length === 0) {
@@ -337,106 +347,151 @@ async function main() {
   ].join('\n'), { mode: 0o600 });
 
   const compose = (args) => runQuiet('docker', composeArgs(projectName, envFile, args), { env: composeEnv });
-  let ownsProject = false;
-  let retainCredentials = false;
-  let failure;
+  return {
+    psqlPath,
+    suites,
+    httpSeedRows,
+    dockerEnv,
+    dockerContext,
+    projectName,
+    postgresUser,
+    postgresPassword,
+    postgresDatabase,
+    adminToken,
+    composeEnv,
+    tempRoot,
+    envFile,
+    compose,
+    lifecycleState: { ownsProject: false, retainCredentials: false, failure: undefined },
+  };
+}
 
+async function validateTaskProject(context) {
+  const { lifecycleState } = context;
+  let composeConfig;
   try {
-    let composeConfig;
-    try {
-      composeConfig = JSON.parse(compose(['config', '--format', 'json']));
-    } catch (cause) {
-      throw new Error(`Could not read the task Compose configuration before starting services: ${cause.message}`, { cause });
-    }
-    assertImagesCached(imagesFromComposeConfig(composeConfig), dockerEnv, dockerContext);
-    if (compose(['ps', '--all', '--quiet'])) throw new Error(`Refusing to reuse non-empty Compose project ${projectName}.`);
-    const networks = runQuiet('docker', ['network', 'ls', '--quiet', '--filter', `label=com.docker.compose.project=${projectName}`], { env: dockerEnv });
-    const volumes = runQuiet('docker', ['volume', 'ls', '--quiet', '--filter', `label=com.docker.compose.project=${projectName}`], { env: dockerEnv });
-    if (networks || volumes) throw new Error(`Refusing to reuse existing Docker resources for Compose project ${projectName}.`);
-    if (process.env.GITHUB_ENV) {
-      await appendFile(process.env.GITHUB_ENV, `HYPERCERTS_HTTP_TEST_COMPOSE_PROJECT=${projectName}\nHYPERCERTS_HTTP_TEST_COMPOSE_ENV_FILE=${envFile}\n`);
-    }
-
-    ownsProject = true;
-    process.stdout.write(`Starting disposable local HTTP test project ${projectName} (cached images only).\n`);
-    run('docker', composeArgs(projectName, envFile, ['up', '--pull', 'never', '--detach', '--wait', '--wait-timeout', '180']), {
-      env: composeEnv,
-      timeoutMs: 210_000,
-      label: 'Task-owned Docker Compose startup',
-    });
-
-    const postgresPort = publishedPort(compose, 'postgres', 5432, dockerEnv);
-    const happyviewPort = publishedPort(compose, 'happyview', 3000, dockerEnv);
-    const baseUrl = `http://127.0.0.1:${happyviewPort}`;
-    await waitForHealth(baseUrl);
-
-    const pgEnv = seedEnvironment({
-      database: postgresDatabase,
-      user: postgresUser,
-      password: postgresPassword,
-      port: postgresPort,
-      psqlPath,
-    });
-    bootstrapAdmin(psqlPath, pgEnv, adminToken);
-
-    const localEnv = localProxyEnvironment(process.env);
-    const installerEnv = {
-      ...localEnv,
-      HAPPYVIEW_BASE_URL: baseUrl,
-      HAPPYVIEW_ADMIN_TOKEN: adminToken,
-      HYPERCERTS_HANDLE_RESOLVER_URL: 'https://resolver.invalid',
-    };
-    run('pnpm', ['--filter', '@hypercerts-org/hypercerts-api', 'run', 'install:api'], {
-      env: installerEnv,
-      timeoutMs: 180_000,
-      label: 'Checkout API manifest install into disposable HappyView',
-    });
-
-    psql(psqlPath, pgEnv, buildSeedInput(pgEnv));
-    psql(psqlPath, pgEnv, buildSeedInput(pgEnv, httpSeedRows));
-
-    const testEnv = {
-      ...localProxyEnvironment(process.env),
-      HAPPYVIEW_BASE_URL: baseUrl,
-    };
-    process.stdout.write(`Running ${suites.length} HTTP suite files against ${baseUrl}.\n`);
-    runHttpCases(suites, testEnv);
-  } catch (error) {
-    failure = error;
-    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
-    if (ownsProject) {
-      try {
-        const logs = spawn('docker', composeArgs(projectName, envFile, ['logs', '--no-color', '--timestamps', '--tail', '100']), { env: composeEnv });
-        if (logs.stdout) process.stderr.write(logs.stdout);
-        if (logs.stderr) process.stderr.write(logs.stderr);
-      } catch (logError) {
-        process.stderr.write(`Unable to collect task-owned Compose logs: ${logError instanceof Error ? logError.message : String(logError)}\n`);
-      }
-    }
-  } finally {
-    if (ownsProject) {
-      try {
-        teardownOwnedProject(compose, projectName, envFile, dockerEnv, composeEnv);
-      } catch (cleanupError) {
-        process.stderr.write(`Task-owned Compose teardown failed: ${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}\n`);
-        failure ??= cleanupError;
-        retainCredentials = true;
-      }
-    }
-    if (retainCredentials) {
-      const recovery = process.env.GITHUB_ENV ? 'the workflow always-cleanup step will retry' : 'retain it for task-scoped manual cleanup';
-      process.stderr.write(`Retaining task-owned temporary credentials at ${envFile}; ${recovery}.\n`);
-    } else {
-      try {
-        await rm(tempRoot, { recursive: true, force: true });
-      } catch (cleanupError) {
-        process.stderr.write(`Unable to remove task-owned temporary credentials: ${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}\n`);
-        failure ??= cleanupError;
-      }
-    }
+    composeConfig = JSON.parse(context.compose(['config', '--format', 'json']));
+  } catch (cause) {
+    throw new Error(`Could not read the task Compose configuration before starting services: ${cause.message}`, { cause });
+  }
+  assertImagesCached(imagesFromComposeConfig(composeConfig), context.dockerEnv, context.dockerContext);
+  if (context.compose(['ps', '--all', '--quiet'])) throw new Error(`Refusing to reuse non-empty Compose project ${context.projectName}.`);
+  const networks = runQuiet('docker', ['network', 'ls', '--quiet', '--filter', `label=com.docker.compose.project=${context.projectName}`], { env: context.dockerEnv });
+  const volumes = runQuiet('docker', ['volume', 'ls', '--quiet', '--filter', `label=com.docker.compose.project=${context.projectName}`], { env: context.dockerEnv });
+  if (networks || volumes) throw new Error(`Refusing to reuse existing Docker resources for Compose project ${context.projectName}.`);
+  if (process.env.GITHUB_ENV) {
+    await appendFile(process.env.GITHUB_ENV, `HYPERCERTS_HTTP_TEST_COMPOSE_PROJECT=${context.projectName}\nHYPERCERTS_HTTP_TEST_COMPOSE_ENV_FILE=${context.envFile}\n`);
   }
 
-  if (failure) process.exitCode = 1;
+  lifecycleState.ownsProject = true;
+}
+
+function startTaskServices(context) {
+  process.stdout.write(`Starting disposable local HTTP test project ${context.projectName} (cached images only).\n`);
+  run('docker', composeArgs(context.projectName, context.envFile, ['up', '--pull', 'never', '--detach', '--wait', '--wait-timeout', '180']), {
+    env: context.composeEnv,
+    timeoutMs: 210_000,
+    label: 'Task-owned Docker Compose startup',
+  });
+}
+
+async function installAndSeedApi(context) {
+  const postgresPort = publishedPort(context.compose, 'postgres', 5432, context.dockerEnv);
+  const happyviewPort = publishedPort(context.compose, 'happyview', 3000, context.dockerEnv);
+  const baseUrl = `http://127.0.0.1:${happyviewPort}`;
+  await waitForHealth(baseUrl);
+
+  const pgEnv = seedEnvironment({
+    database: context.postgresDatabase,
+    user: context.postgresUser,
+    password: context.postgresPassword,
+    port: postgresPort,
+    psqlPath: context.psqlPath,
+  });
+  bootstrapAdmin(context.psqlPath, pgEnv, context.adminToken);
+
+  const localEnv = localProxyEnvironment(process.env);
+  const installerEnv = {
+    ...localEnv,
+    HAPPYVIEW_BASE_URL: baseUrl,
+    HAPPYVIEW_ADMIN_TOKEN: context.adminToken,
+    HYPERCERTS_HANDLE_RESOLVER_URL: 'https://resolver.invalid',
+  };
+  run('pnpm', ['--filter', '@hypercerts-org/hypercerts-api', 'run', 'install:api'], {
+    env: installerEnv,
+    timeoutMs: 180_000,
+    label: 'Checkout API manifest install into disposable HappyView',
+  });
+
+  psql(context.psqlPath, pgEnv, buildSeedInput(pgEnv));
+  psql(context.psqlPath, pgEnv, buildSeedInput(pgEnv, context.httpSeedRows));
+  return baseUrl;
+}
+
+function runHttpSuites(context, baseUrl) {
+  const testEnv = {
+    ...localProxyEnvironment(process.env),
+    HAPPYVIEW_BASE_URL: baseUrl,
+  };
+  process.stdout.write(`Running ${context.suites.length} HTTP suite files against ${baseUrl}.\n`);
+  runHttpCases(context.suites, testEnv);
+}
+
+async function runHttpLifecycle(context) {
+  await validateTaskProject(context);
+  startTaskServices(context);
+  const baseUrl = await installAndSeedApi(context);
+  runHttpSuites(context, baseUrl);
+}
+
+function reportRunFailure(error, context) {
+  process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+  if (!context.lifecycleState.ownsProject) return;
+  try {
+    const logs = spawn('docker', composeArgs(context.projectName, context.envFile, ['logs', '--no-color', '--timestamps', '--tail', '100']), { env: context.composeEnv });
+    if (logs.stdout) process.stderr.write(logs.stdout);
+    if (logs.stderr) process.stderr.write(logs.stderr);
+  } catch (logError) {
+    process.stderr.write(`Unable to collect task-owned Compose logs: ${logError instanceof Error ? logError.message : String(logError)}\n`);
+  }
+}
+
+async function cleanupRun(context) {
+  const { lifecycleState } = context;
+  if (lifecycleState.ownsProject) {
+    try {
+      teardownOwnedProject(context.compose, context.projectName, context.envFile, context.dockerEnv, context.composeEnv);
+    } catch (cleanupError) {
+      process.stderr.write(`Task-owned Compose teardown failed: ${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}\n`);
+      lifecycleState.failure ??= cleanupError;
+      lifecycleState.retainCredentials = true;
+    }
+  }
+  if (lifecycleState.retainCredentials) {
+    const recovery = process.env.GITHUB_ENV ? 'the workflow always-cleanup step will retry' : 'retain it for task-scoped manual cleanup';
+    process.stderr.write(`Retaining task-owned temporary credentials at ${context.envFile}; ${recovery}.\n`);
+  } else {
+    try {
+      await rm(context.tempRoot, { recursive: true, force: true });
+    } catch (cleanupError) {
+      process.stderr.write(`Unable to remove task-owned temporary credentials: ${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}\n`);
+      lifecycleState.failure ??= cleanupError;
+    }
+  }
+}
+
+async function main() {
+  const context = await prepareRun();
+  try {
+    await runHttpLifecycle(context);
+  } catch (error) {
+    context.lifecycleState.failure = error;
+    reportRunFailure(error, context);
+  } finally {
+    await cleanupRun(context);
+  }
+
+  if (context.lifecycleState.failure) process.exitCode = 1;
 }
 
 await main();
