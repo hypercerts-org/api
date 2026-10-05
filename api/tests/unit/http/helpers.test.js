@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { contractUrl, requireContractTarget } from './helpers.js';
+import { contractUrl, requireContractTarget } from '../../http/helpers.js';
 
 test('repeated arrays use unbracketed keys, omit empty options, and preserve URL encoding', () => {
   assert.equal(contractUrl('http://127.0.0.1:8080', 'org.example.search', {
