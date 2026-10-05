@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { contractUrl, requireContractTarget } from './helpers.js';
 
 const endpoint = 'org.hypercerts.funding.listReceipts';
-const publisherA = 'did:plc:abcdefghijklmnopqrstuvwx';
+const publisherA = 'did:web:funding-http-publisher.invalid';
 const publisherB = 'did:plc:bbbbbbbbbbbbbbbbbbbbbbbb';
 const sender = 'did:plc:cccccccccccccccccccccccc';
 const recipient = 'did:plc:eeeeeeeeeeeeeeeeeeeeeeee';
