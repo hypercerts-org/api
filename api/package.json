@@ -22,8 +22,7 @@
     "test:http": "node tooling/run-http-tests.js",
     "install:api": "node tooling/installer.js",
     "seed:test": "node tooling/seed.js",
-    "seed:bad-dates": "node tooling/seed.js --bad-dates",
-    "test:contracts": "node --test tests/contracts/actor-follow.contract.test.js"
+    "seed:bad-dates": "node tooling/seed.js --bad-dates"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

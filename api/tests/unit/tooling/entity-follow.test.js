@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = fileURLToPath(new URL('../', import.meta.url));
+const root = fileURLToPath(new URL('../../../', import.meta.url));
 const actor = 'did:plc:aaaaaaaaaaaaaaaaaaaaaaaa';
 const author = 'did:plc:bbbbbbbbbbbbbbbbbbbbbbbb';
 const entityUri = `at://${author}/org.hypercerts.entity.feature/feature-one`;

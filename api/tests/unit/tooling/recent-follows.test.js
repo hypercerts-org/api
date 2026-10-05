@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { validatePackageLexicons } from './validate-lexicons.js';
+import { validatePackageLexicons } from '../../../tooling/validate-lexicons.js';
 
-const root = fileURLToPath(new URL('../', import.meta.url));
+const root = fileURLToPath(new URL('../../../', import.meta.url));
 
 async function readJson(file) {
   return JSON.parse(await readFile(file, 'utf8'));

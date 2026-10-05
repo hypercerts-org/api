@@ -4,15 +4,15 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { loadAssets } from './installer.js';
-import { validatePackageLexicons } from './validate-lexicons.js';
+import { loadAssets } from '../../../tooling/installer.js';
+import { validatePackageLexicons } from '../../../tooling/validate-lexicons.js';
 import {
   actorFollowOrganizationRecords,
   actorFollowProfileRecords,
   actorFollowRecords,
-} from '../tests/fixtures/actor-follows.js';
+} from '../../fixtures/actor-follows.js';
 
-const root = fileURLToPath(new URL('../', import.meta.url));
+const root = fileURLToPath(new URL('../../../', import.meta.url));
 const actor = 'did:plc:aaaaaaaaaaaaaaaaaaaaaaaa';
 const follower = 'did:plc:bbbbbbbbbbbbbbbbbbbbbbbb';
 const subject = 'did:plc:cccccccccccccccccccccccc';
