@@ -3,7 +3,7 @@ import * as CID from '@atcute/cid';
 import { locationRecords } from '../../fixtures/records.js';
 
 const collection = 'org.hypercerts.funding.receipt';
-const publisher = 'did:plc:abcdefghijklmnopqrstuvwx';
+const publisher = 'did:web:funding-http-publisher.invalid';
 const otherPublisher = 'did:plc:bbbbbbbbbbbbbbbbbbbbbbbb';
 const sender = 'did:plc:cccccccccccccccccccccccc';
 const otherSender = 'did:plc:dddddddddddddddddddddddd';

@@ -1,5 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readdir } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { encode } from '@atcute/cbor';
 import * as CID from '@atcute/cid';
 import { isValidDid, isValidTid } from '@atproto/syntax';
@@ -11,6 +14,26 @@ import {
   actorFollowProfileRecords,
   actorFollowRecords,
 } from '../../fixtures/actor-follows.js';
+
+const httpFixtureRoot = fileURLToPath(new URL('../../http/fixtures/', import.meta.url));
+
+function compareEntryNames(left, right) {
+  if (left.name < right.name) return -1;
+  if (left.name > right.name) return 1;
+  return 0;
+}
+
+async function findHttpFixtureFiles(directory) {
+  const entries = await readdir(directory, { withFileTypes: true });
+  entries.sort(compareEntryNames);
+  const groups = await Promise.all(entries.map(async (entry) => {
+    const entryPath = path.join(directory, entry.name);
+    if (entry.isDirectory()) return findHttpFixtureFiles(entryPath);
+    if (entry.isFile() && entry.name.endsWith('.fixture.js')) return [entryPath];
+    return [];
+  }));
+  return groups.flat();
+}
 
 test('fixtures have consistent full AT-URIs, valid DID/TID/CID identifiers, types, and fixed timestamps', () => {
   const records = [
@@ -29,6 +52,46 @@ test('fixtures have consistent full AT-URIs, valid DID/TID/CID identifiers, type
     assert.equal(cid.digest.codec, 0x12);
     assert.equal(cid.digest.contents.length, 32);
     assert.equal(row.indexedAt, '2025-01-02T03:04:05.000Z');
+  }
+});
+
+test('shared and recursively discovered HTTP seed rows have unique URIs and identities with CBOR-derived CIDs', async () => {
+  const sharedRows = [
+    ...locationRecords, ...profileRecords, ...organizationRecords,
+    ...actorFollowRecords, ...actorFollowProfileRecords, ...actorFollowOrganizationRecords,
+    ...activityFixtureRows,
+  ];
+  const fixtureFiles = await findHttpFixtureFiles(httpFixtureRoot);
+  assert.ok(fixtureFiles.length > 0, 'expected recursively discovered HTTP fixture modules');
+
+  const httpRows = [];
+  for (const file of fixtureFiles) {
+    const fixture = await import(pathToFileURL(file).href);
+    assert.ok(Array.isArray(fixture.seedRows), `${path.relative(httpFixtureRoot, file)} must export seedRows`);
+    httpRows.push(...fixture.seedRows);
+  }
+
+  const allRows = [...sharedRows, ...httpRows];
+  const seenUris = new Set();
+  const seenIdentities = new Set();
+  const duplicateUris = [];
+  const duplicateIdentities = [];
+  for (const row of allRows) {
+    assert.equal(row.uri, `at://${row.did}/${row.collection}/${row.rkey}`);
+    const identity = JSON.stringify([row.did, row.collection, row.rkey]);
+    if (seenUris.has(row.uri)) duplicateUris.push(row.uri);
+    if (seenIdentities.has(identity)) duplicateIdentities.push(identity);
+    seenUris.add(row.uri);
+    seenIdentities.add(identity);
+  }
+
+  assert.deepEqual({
+    duplicateUris: [...new Set(duplicateUris)].sort(),
+    duplicateIdentities: [...new Set(duplicateIdentities)].sort(),
+  }, { duplicateUris: [], duplicateIdentities: [] }, 'shared and HTTP fixture rows must not collide in URI-based seed upserts');
+
+  for (const row of allRows) {
+    assert.equal(CID.toString(await CID.create(0x71, encode(row.record))), row.cid, `CBOR-derived CID mismatch for ${row.uri}`);
   }
 });
 
