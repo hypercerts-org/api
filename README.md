@@ -14,4 +14,4 @@ pnpm check
 pnpm build
 ```
 
-These commands do not deploy or contact a HappyView instance. `pnpm install:api` sends admin requests and requires an explicitly approved target and token. `LICENSE.md` retains the MIT notice.
+These checks do not deploy or contact a HappyView instance. See [CONTRIBUTING.md](CONTRIBUTING.md) for local development and HTTP test guidance, and [api/README.md](api/README.md) for API bundle and release installation details. `LICENSE.md` retains the MIT notice.
