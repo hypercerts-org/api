@@ -18,7 +18,7 @@
     "check:generated": "node tooling/build-lua.js --check",
     "check": "pnpm run check:generated && pnpm run lint && pnpm run typecheck && pnpm run test:unit",
     "build:lua": "node tooling/build-lua.js",
-    "test:unit": "node --test tooling/*.test.js tests/fixtures/*.test.js tests/contracts/helpers.test.js",
+    "test:unit": "node --test tooling/*.test.js tests/fixtures/*.test.js tests/contracts/helpers.test.js tests/contracts/badge-definition.contract.test.js",
     "install:api": "node tooling/installer.js",
     "seed:test": "node tooling/seed.js",
     "seed:bad-dates": "node tooling/seed.js --bad-dates",
