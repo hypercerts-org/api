@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { contractUrl, requireContractTarget } from './helpers.js';
 
-const receiptUri = 'at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.funding.receipt/receipt-a';
+const publisherDid = 'did:web:funding-http-publisher.invalid';
+const receiptUri = `at://${publisherDid}/org.hypercerts.funding.receipt/receipt-a`;
 const collection = 'org.hypercerts.funding.receipt';
 
 async function getReceipt(uri) {
@@ -27,7 +28,7 @@ test('getReceipt returns the indexed record and hydrates its publisher sidecars'
 
   const { receipt } = body;
   assert.equal(receipt.uri, receiptUri);
-  assert.equal(receipt.did, 'did:plc:abcdefghijklmnopqrstuvwx');
+  assert.equal(receipt.did, publisherDid);
   assert.equal(receipt.indexedAt, '2025-02-01T00:00:00.000Z');
   assert.equal(receipt.record.$type, collection);
   assert.equal(receipt.record.amount, '0012345678901234567890.00000001');
@@ -41,13 +42,13 @@ test('getReceipt returns the indexed record and hydrates its publisher sidecars'
     uri: 'at://did:plc:ffffffffffffffffffffffff/org.hypercerts.claim.activity/target',
     cid: 'bafyreidr6dv5qtbrfubummgssjqfow3eavqwnihvmectr63yalrnu4yqea',
   });
-  assert.equal(receipt.author.did, 'did:plc:abcdefghijklmnopqrstuvwx');
+  assert.equal(receipt.author.did, publisherDid);
   assert.equal(receipt.author.profile.record.displayName, 'Test Publisher');
   assert.deepEqual(receipt.author.organization.record.organizationType, ['nonprofit']);
 });
 
 test('getReceipt exposes RecordNotFound using the pinned HappyView runtime error response', async () => {
-  const missingUri = 'at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.funding.receipt/not-indexed';
+  const missingUri = `at://${publisherDid}/org.hypercerts.funding.receipt/not-indexed`;
   const { response, body } = await getReceipt(missingUri);
   // The pinned HappyView release serializes ordinary Lua errors as runtime script_error responses.
   assert.equal(response.status, 500, JSON.stringify(body));
