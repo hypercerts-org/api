@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = fileURLToPath(new URL('../../', import.meta.url));
+const root = fileURLToPath(new URL('../../../', import.meta.url));
 const read = (relative) => readFile(path.resolve(root, relative), 'utf8');
 
 test('listContributorInformation filters repeated authors and resumes in the selected order', async () => {
