@@ -13,6 +13,7 @@ const tagUris = {
   tieZ: `at://${publisherA}/${collection}/tag-tie-z`,
   tieB: `at://${publisherB}/${collection}/tag-tie-b`,
   older: `at://${publisherA}/${collection}/tag-older`,
+  unknownOffset: `at://${publisherA}/${collection}/tag-unknown-offset`,
   filterC: `at://${publisherC}/${collection}/tag-filter-c`,
 };
 
@@ -82,13 +83,43 @@ test('listWorkscopeTags ORs repeated author filters and omits unselected publish
     tagUris.tieB,
     tagUris.tieZ,
     tagUris.tieA,
+    tagUris.unknownOffset,
     tagUris.older,
   ]);
-  assert.equal(body.workscopeTags[0].author.profile, null);
-  assert.equal(body.workscopeTags[0].author.organization, null);
-  assert.equal(body.workscopeTags[1].author.profile.record.displayName, 'Workscope Test Publisher');
-  assert.deepEqual(body.workscopeTags[1].author.organization.record.organizationType, ['community']);
+  const unknownOffset = body.workscopeTags.find(({ uri }) => uri === tagUris.unknownOffset);
+  const tieB = body.workscopeTags.find(({ uri }) => uri === tagUris.tieB);
+  assert.ok(unknownOffset, 'the fallback record is included in the ordered results');
+  assert.ok(tieB, 'the publisher with absent sidecars remains in the ordered results');
+  assert.equal(unknownOffset.author.profile.record.displayName, 'Workscope Test Publisher');
+  assert.deepEqual(unknownOffset.author.organization.record.organizationType, ['community']);
+  assert.equal(tieB.author.profile, null);
+  assert.equal(tieB.author.organization, null);
   assert.equal(Object.hasOwn(body, 'cursor'), false);
+});
+
+test('listWorkscopeTags falls back to indexedAt for an unknown-offset createdAt', async () => {
+  const authors = [publisherA];
+  const descending = await request(listEndpoint, { authors, limit: 10 });
+  assert.equal(descending.response.status, 200, JSON.stringify(descending.body));
+  assert.deepEqual(descending.body.workscopeTags.map(({ uri }) => uri), [
+    tagUris.tieZ,
+    tagUris.tieA,
+    tagUris.unknownOffset,
+    tagUris.older,
+  ]);
+
+  const ascending = await request(listEndpoint, { authors, sortDirection: 'asc', limit: 10 });
+  assert.equal(ascending.response.status, 200, JSON.stringify(ascending.body));
+  assert.deepEqual(ascending.body.workscopeTags.map(({ uri }) => uri), [
+    tagUris.older,
+    tagUris.unknownOffset,
+    tagUris.tieA,
+    tagUris.tieZ,
+  ]);
+  const unknownOffset = descending.body.workscopeTags.find(({ uri }) => uri === tagUris.unknownOffset);
+  assert.ok(unknownOffset);
+  assert.equal(unknownOffset.record.createdAt, '2025-03-02T00:00:00-00:00');
+  assert.equal(unknownOffset.indexedAt, '2025-02-28T12:00:00.000Z');
 });
 
 test('getWorkscopeTag returns null sidecars when the publisher has no indexed profile or organization', async () => {
@@ -121,48 +152,59 @@ test('listWorkscopeTags returns no rows for an unmatched author filter', async (
 });
 
 test('listWorkscopeTags paginates tied timestamps in descending timestamp-and-URI order', async () => {
-  const first = await request(listEndpoint, { authors: [publisherA, publisherB], limit: 2 });
+  const authors = [publisherA, publisherB];
+  const first = await request(listEndpoint, { authors, limit: 2 });
   assert.equal(first.response.status, 200, JSON.stringify(first.body));
   assert.deepEqual(first.body.workscopeTags.map(({ uri }) => uri), [tagUris.tieB, tagUris.tieZ]);
   assert.equal(typeof first.body.cursor, 'string');
 
-  const second = await request(listEndpoint, {
-    authors: [publisherA, publisherB],
-    limit: 2,
-    cursor: first.body.cursor,
-  });
+  const second = await request(listEndpoint, { authors, limit: 2, cursor: first.body.cursor });
   assert.equal(second.response.status, 200, JSON.stringify(second.body));
-  assert.deepEqual(second.body.workscopeTags.map(({ uri }) => uri), [tagUris.tieA, tagUris.older]);
-  assert.equal(Object.hasOwn(second.body, 'cursor'), false);
-  assert.deepEqual([...first.body.workscopeTags, ...second.body.workscopeTags].map(({ uri }) => uri), [
+  assert.deepEqual(second.body.workscopeTags.map(({ uri }) => uri), [tagUris.tieA, tagUris.unknownOffset]);
+  assert.equal(typeof second.body.cursor, 'string');
+
+  const third = await request(listEndpoint, { authors, limit: 2, cursor: second.body.cursor });
+  assert.equal(third.response.status, 200, JSON.stringify(third.body));
+  assert.deepEqual(third.body.workscopeTags.map(({ uri }) => uri), [tagUris.older]);
+  assert.equal(Object.hasOwn(third.body, 'cursor'), false);
+  assert.deepEqual([...first.body.workscopeTags, ...second.body.workscopeTags, ...third.body.workscopeTags].map(({ uri }) => uri), [
     tagUris.tieB,
     tagUris.tieZ,
     tagUris.tieA,
+    tagUris.unknownOffset,
     tagUris.older,
   ]);
 });
 
 test('listWorkscopeTags paginates tied timestamps in ascending timestamp-and-URI order', async () => {
-  const first = await request(listEndpoint, {
-    authors: [publisherA, publisherB],
-    sortDirection: 'asc',
-    limit: 2,
-  });
+  const authors = [publisherA, publisherB];
+  const first = await request(listEndpoint, { authors, sortDirection: 'asc', limit: 2 });
   assert.equal(first.response.status, 200, JSON.stringify(first.body));
-  assert.deepEqual(first.body.workscopeTags.map(({ uri }) => uri), [tagUris.older, tagUris.tieA]);
+  assert.deepEqual(first.body.workscopeTags.map(({ uri }) => uri), [tagUris.older, tagUris.unknownOffset]);
   assert.equal(typeof first.body.cursor, 'string');
 
   const second = await request(listEndpoint, {
-    authors: [publisherA, publisherB],
+    authors,
     sortDirection: 'asc',
     limit: 2,
     cursor: first.body.cursor,
   });
   assert.equal(second.response.status, 200, JSON.stringify(second.body));
-  assert.deepEqual(second.body.workscopeTags.map(({ uri }) => uri), [tagUris.tieZ, tagUris.tieB]);
-  assert.equal(Object.hasOwn(second.body, 'cursor'), false);
-  assert.deepEqual([...first.body.workscopeTags, ...second.body.workscopeTags].map(({ uri }) => uri), [
+  assert.deepEqual(second.body.workscopeTags.map(({ uri }) => uri), [tagUris.tieA, tagUris.tieZ]);
+  assert.equal(typeof second.body.cursor, 'string');
+
+  const third = await request(listEndpoint, {
+    authors,
+    sortDirection: 'asc',
+    limit: 2,
+    cursor: second.body.cursor,
+  });
+  assert.equal(third.response.status, 200, JSON.stringify(third.body));
+  assert.deepEqual(third.body.workscopeTags.map(({ uri }) => uri), [tagUris.tieB]);
+  assert.equal(Object.hasOwn(third.body, 'cursor'), false);
+  assert.deepEqual([...first.body.workscopeTags, ...second.body.workscopeTags, ...third.body.workscopeTags].map(({ uri }) => uri), [
     tagUris.older,
+    tagUris.unknownOffset,
     tagUris.tieA,
     tagUris.tieZ,
     tagUris.tieB,

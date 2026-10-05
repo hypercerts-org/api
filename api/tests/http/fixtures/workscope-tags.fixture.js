@@ -31,13 +31,19 @@ const tagSpecs = [
     record: { key: 'older_key', name: 'Older tag', createdAt: '2025-02-28T00:00:00Z' },
   },
   {
+    did: publisherA,
+    rkey: 'tag-unknown-offset',
+    indexedAt: '2025-02-28T12:00:00.000Z',
+    record: { key: 'unknown_offset_key', name: 'Unknown offset timestamp', createdAt: '2025-03-02T00:00:00-00:00' },
+  },
+  {
     did: publisherC,
     rkey: 'tag-filter-c',
     record: { key: 'filter_key', name: 'Filter-only tag from C', createdAt: '2025-03-02T00:00:00Z' },
   },
 ];
 
-async function seedRow(collection, did, rkey, fields) {
+async function seedRow(collection, did, rkey, fields, rowIndexedAt = indexedAt) {
   const record = { $type: collection, ...fields };
   return {
     uri: `at://${did}/${collection}/${rkey}`,
@@ -45,13 +51,13 @@ async function seedRow(collection, did, rkey, fields) {
     collection,
     rkey,
     cid: CID.toString(await CID.create(0x71, encode(record))),
-    indexedAt,
+    indexedAt: rowIndexedAt,
     record,
   };
 }
 
 export const seedRows = await Promise.all([
-  ...tagSpecs.map(({ did, rkey, record }) => seedRow(workscopeTag, did, rkey, record)),
+  ...tagSpecs.map(({ did, rkey, record, indexedAt: rowIndexedAt }) => seedRow(workscopeTag, did, rkey, record, rowIndexedAt)),
   seedRow(profile, publisherA, 'self', {
     displayName: 'Workscope Test Publisher',
     description: 'Publisher profile for workscope-tag HTTP contracts.',

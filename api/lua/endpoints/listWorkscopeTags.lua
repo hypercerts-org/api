@@ -257,8 +257,13 @@ local function workscope_tag_list()
   local created_at = "workscope_tag.record::jsonb->>'createdAt'"
   local valid_zoned_created_at = created_at .. " ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}([.][0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$' AND " ..
     created_at .. " !~ '-00:00$' AND pg_input_is_valid(" .. created_at .. ", 'timestamp with time zone')"
+  local indexed_at = "workscope_tag.indexed_at"
+  local row_created_at = "workscope_tag.created_at"
+  local function timestamp_fallback(column)
+    return "CASE WHEN pg_input_is_valid(" .. column .. ", 'timestamp with time zone') THEN " .. column .. "::timestamptz END"
+  end
   local sort_at = "COALESCE(CASE WHEN " .. valid_zoned_created_at .. " THEN (" .. created_at ..
-    ")::timestamptz END, workscope_tag.indexed_at, workscope_tag.created_at)"
+    ")::timestamptz END, " .. timestamp_fallback(indexed_at) .. ", " .. timestamp_fallback(row_created_at) .. ")"
   local sql = "SELECT workscope_tag.uri, workscope_tag.did, workscope_tag.cid, " ..
     "workscope_tag.indexed_at::text AS indexed_at, workscope_tag.record::text AS record, " ..
     "to_char(sorted.sort_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp " ..

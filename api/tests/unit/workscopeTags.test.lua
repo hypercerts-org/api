@@ -224,8 +224,8 @@ test("listing safely casts only valid zoned createdAt before timestamp fallbacks
     "createdAt must carry an explicit timezone to be used for ordering")
   assert_contains(sql, " !~ '-00:00$'", "unknown local-offset timestamps are not valid zoned createdAt values")
   assert_contains(sql, "pg_input_is_valid(", "malformed record timestamps must not be cast directly")
-  assert_contains(sql, "THEN (workscope_tag.record::jsonb->>'createdAt')::timestamptz END, workscope_tag.indexed_at, workscope_tag.created_at)",
-    "valid createdAt sorts first, followed by index time and row creation time")
+  assert_contains(sql, "THEN (workscope_tag.record::jsonb->>'createdAt')::timestamptz END, CASE WHEN pg_input_is_valid(workscope_tag.indexed_at, 'timestamp with time zone') THEN workscope_tag.indexed_at::timestamptz END, CASE WHEN pg_input_is_valid(workscope_tag.created_at, 'timestamp with time zone') THEN workscope_tag.created_at::timestamptz END)",
+    "valid createdAt sorts first, followed by guarded index time and row creation time")
   assert_contains(sql, "ORDER BY sorted.sort_at DESC, workscope_tag.uri DESC",
     "fallback timestamps retain stable timestamp-and-URI ordering")
 end)
