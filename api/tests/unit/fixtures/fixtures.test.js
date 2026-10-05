@@ -47,6 +47,16 @@ test('activity HTTP fixture repositories do not collide with activity, follow, f
   assert.equal(new Set(activityHttpFixtureRows.map(({ uri }) => uri)).size, activityHttpFixtureRows.length);
 });
 
+test('shared and HTTP fixture rows do not reuse record URIs', () => {
+  const rows = [
+    ...locationRecords, ...profileRecords, ...organizationRecords,
+    ...actorFollowRecords, ...actorFollowProfileRecords, ...actorFollowOrganizationRecords,
+    ...activityFixtureRows, ...activityHttpFixtureRows, ...badgeHttpFixtureRows, ...fundingHttpFixtureRows,
+  ];
+  const uris = rows.map(({ uri }) => uri);
+  assert.equal(new Set(uris).size, uris.length, 'duplicate fixture URIs silently overwrite earlier seeded records');
+});
+
 test('actor-follow fixtures isolate publishers and cover date precedence, URI ties, and sparse sidecars', async () => {
   const publishers = new Set([actorFollowDids.publisher, actorFollowDids.otherPublisher]);
   assert.equal(publishers.size, 2);
