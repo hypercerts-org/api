@@ -11,6 +11,29 @@ import {
   actorFollowProfileRecords,
   actorFollowRecords,
 } from '../../fixtures/actor-follows.js';
+import { readdir } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
+const packageRoot = fileURLToPath(new URL('../../../', import.meta.url));
+
+function compareEntryNames(left, right) {
+  if (left.name < right.name) return -1;
+  if (left.name > right.name) return 1;
+  return 0;
+}
+
+async function findFixtureFiles(directory, suffix) {
+  const entries = await readdir(directory, { withFileTypes: true });
+  entries.sort(compareEntryNames);
+  const fileGroups = await Promise.all(entries.map(async (entry) => {
+    const entryPath = path.join(directory, entry.name);
+    if (entry.isDirectory()) return findFixtureFiles(entryPath, suffix);
+    if (entry.isFile() && entry.name.endsWith(suffix)) return [entryPath];
+    return [];
+  }));
+  return fileGroups.flat();
+}
 
 test('fixtures have consistent full AT-URIs, valid DID/TID/CID identifiers, types, and fixed timestamps', () => {
   const records = [
@@ -29,6 +52,40 @@ test('fixtures have consistent full AT-URIs, valid DID/TID/CID identifiers, type
     assert.equal(cid.digest.codec, 0x12);
     assert.equal(cid.digest.contents.length, 32);
     assert.equal(row.indexedAt, '2025-01-02T03:04:05.000Z');
+  }
+});
+
+test('shared and recursively discovered HTTP fixture rows have unique identities and CBOR-derived CIDs', async () => {
+  const fixtureFiles = await findFixtureFiles(path.join(packageRoot, 'tests', 'http', 'fixtures'), '.fixture.js');
+  const httpRows = [];
+  for (const file of fixtureFiles) {
+    const { seedRows } = await import(pathToFileURL(file).href);
+    assert.ok(Array.isArray(seedRows) && seedRows.length > 0, `${path.relative(packageRoot, file)} must export nonempty seedRows`);
+    httpRows.push(...seedRows);
+  }
+
+  const rows = [
+    ...locationRecords, ...profileRecords, ...organizationRecords,
+    ...actorFollowRecords, ...actorFollowProfileRecords, ...actorFollowOrganizationRecords,
+    ...activityFixtureRows, ...httpRows,
+  ];
+  const seenUris = new Set();
+  const seenIdentities = new Set();
+  const duplicateUris = [];
+  const duplicateIdentities = [];
+  for (const row of rows) {
+    const identity = JSON.stringify([row.did, row.collection, row.rkey]);
+    if (seenUris.has(row.uri)) duplicateUris.push(row.uri);
+    if (seenIdentities.has(identity)) duplicateIdentities.push(identity);
+    seenUris.add(row.uri);
+    seenIdentities.add(identity);
+  }
+  assert.deepEqual(duplicateUris, [], 'shared and HTTP fixture rows must not overwrite one another by URI');
+  assert.deepEqual(duplicateIdentities, [], 'shared and HTTP fixture rows must not reuse repository record identities');
+
+  for (const row of rows) {
+    assert.equal(row.uri, `at://${row.did}/${row.collection}/${row.rkey}`);
+    assert.equal(CID.toString(await CID.create(0x71, encode(row.record))), row.cid, row.uri);
   }
 });
 
