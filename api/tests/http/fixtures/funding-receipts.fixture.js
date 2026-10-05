@@ -3,7 +3,7 @@ import * as CID from '@atcute/cid';
 import { locationRecords } from '../../fixtures/records.js';
 
 const collection = 'org.hypercerts.funding.receipt';
-const publisher = 'did:plc:abcdefghijklmnopqrstuvwx';
+const publisher = 'did:web:funding-http-publisher.invalid';
 const otherPublisher = 'did:plc:bbbbbbbbbbbbbbbbbbbbbbbb';
 const sender = 'did:plc:cccccccccccccccccccccccc';
 const otherSender = 'did:plc:dddddddddddddddddddddddd';
@@ -99,15 +99,40 @@ const receiptSpecs = [
   },
 ];
 
-export const seedRows = await Promise.all(receiptSpecs.map(async ({ did, rkey, record }) => {
-  const storedRecord = { $type: collection, ...record };
+const publisherSidecarSpecs = [
+  {
+    collection: 'app.certified.actor.profile',
+    rkey: 'self',
+    record: {
+      displayName: 'Test Publisher',
+      createdAt: '2025-01-02T03:04:05.000Z',
+    },
+  },
+  {
+    collection: 'app.certified.actor.organization',
+    rkey: 'self',
+    record: {
+      organizationType: ['nonprofit'],
+      visibility: 'public',
+      createdAt: '2025-01-02T03:04:05.000Z',
+    },
+  },
+];
+
+async function makeSeedRow({ did, collection: rowCollection, rkey, record }) {
+  const storedRecord = { $type: rowCollection, ...record };
   return {
-    uri: `at://${did}/${collection}/${rkey}`,
+    uri: `at://${did}/${rowCollection}/${rkey}`,
     did,
-    collection,
+    collection: rowCollection,
     rkey,
     cid: CID.toString(await CID.create(0x71, encode(storedRecord))),
     indexedAt,
     record: storedRecord,
   };
-}));
+}
+
+export const seedRows = await Promise.all([
+  ...receiptSpecs.map(({ did, rkey, record }) => makeSeedRow({ did, collection, rkey, record })),
+  ...publisherSidecarSpecs.map((sidecar) => makeSeedRow({ did: publisher, ...sidecar })),
+]);

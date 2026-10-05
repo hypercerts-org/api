@@ -32,6 +32,17 @@ test('fixtures have consistent full AT-URIs, valid DID/TID/CID identifiers, type
   }
 });
 
+test('funding HTTP actor sidecars do not shadow shared fixture identities', async () => {
+  const { seedRows: fundingRows } = await import('../../http/fixtures/funding-receipts.fixture.js');
+  const sharedSidecars = [...profileRecords, ...organizationRecords];
+  const sharedUris = new Set(sharedSidecars.map(({ uri }) => uri));
+  const sharedIdentities = new Set(sharedSidecars.map(({ did, collection, rkey }) => `${did}\0${collection}\0${rkey}`));
+  const duplicates = fundingRows.filter(({ uri, did, collection, rkey }) =>
+    sharedUris.has(uri) || sharedIdentities.has(`${did}\0${collection}\0${rkey}`));
+
+  assert.deepEqual(duplicates.map(({ uri }) => uri), []);
+});
+
 test('actor-follow fixtures isolate publishers and cover date precedence, URI ties, and sparse sidecars', async () => {
   const publishers = new Set([actorFollowDids.publisher, actorFollowDids.otherPublisher]);
   assert.equal(publishers.size, 2);

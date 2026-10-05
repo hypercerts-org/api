@@ -8,16 +8,16 @@ pnpm check
 pnpm build
 ```
 
-`pnpm check` validates generated handlers, lint, types, and unit tests. `pnpm build` refreshes declared Lua handler bundles. These commands do not contact a HappyView instance. `pnpm install:api` sends admin requests and requires an explicitly approved target and token.
+`pnpm check` validates generated handlers, lint, types, and unit tests. `pnpm build` refreshes declared Lua handler bundles. These checks do not deploy or contact a HappyView instance. `pnpm install:api` sends admin requests and requires an explicitly approved target and token. See [CONTRIBUTING.md](CONTRIBUTING.md) for local development and HTTP test guidance, and [api/README.md](api/README.md) for API bundle and release installation details.
 
 ## Installed HTTP endpoint inventory
 
-`pnpm test:http` runs the installed XRPC handlers against a task-owned disposable local HappyView and PostgreSQL project. It covers the funding, badge-definition, and work-scope-tag endpoints:
+`pnpm test:http` runs installed XRPC handlers against a task-owned disposable local HappyView and PostgreSQL project. It covers:
 
 | Capability | XRPC endpoints | HTTP contracts |
 | --- | --- | --- |
 | Funding receipts | `org.hypercerts.funding.getReceipt`, `org.hypercerts.funding.listReceipts` | Record retrieval, repeated filters, stable pagination, and named runtime errors |
 | Badge definitions | `app.certified.badge.getBadgeDefinition`, `app.certified.badge.listBadgeDefinitions` | Record/CID retrieval, publisher sidecars, filters, tied pagination, and named runtime errors |
-| Work-scope tags | `org.hypercerts.workscope.getWorkscopeTag`, `org.hypercerts.workscope.listWorkscopeTags` | Exact URI retrieval, author filters, hydrated and absent sidecars, bidirectional tied pagination, and named runtime errors |
+| Work-scope tags | `org.hypercerts.workscope.getWorkscopeTag`, `org.hypercerts.workscope.listWorkscopeTags` | Exact-URI retrieval, author filters, hydrated and null sidecars, middle-position `indexedAt` fallback, tied pagination in both directions, and named runtime errors |
 
-The HTTP runner uses cached, digest-pinned images only; it does not pull images. See [`api/README.md`](api/README.md) for installer, fixture, and disposable test details. `LICENSE.md` retains the upstream MIT notice.
+The HTTP runner uses cached, digest-pinned images only; it does not pull images. `LICENSE.md` retains the upstream MIT notice.
