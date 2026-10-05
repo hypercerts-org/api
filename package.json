@@ -3,8 +3,9 @@
   "private": true,
   "packageManager": "pnpm@10.15.1",
   "scripts": {
-    "check": "pnpm --filter @hypercerts-org/hypercerts-api check",
-    "build": "pnpm --filter @hypercerts-org/hypercerts-api run build:lua",
+    "check": "pnpm --filter @hypercerts-org/hypercerts-api check && pnpm --filter hypercerts-api-endpoints test",
+    "build": "pnpm --filter @hypercerts-org/hypercerts-api run build:lua && pnpm --filter hypercerts-api-endpoints build",
+    "docs:dev": "pnpm --filter hypercerts-api-endpoints dev",
     "changeset": "changeset",
     "changeset:status": "changeset status",
     "version:packages": "changeset version && pnpm install --lockfile-only"

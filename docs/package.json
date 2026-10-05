@@ -1,0 +1,25 @@
+{
+  "name": "hypercerts-api-endpoints",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "node --test test/*.test.mjs",
+    "generate": "node scripts/generate-openapi.mjs"
+  },
+  "dependencies": {
+    "@hypercerts-org/ui-react": "0.2.0",
+    "@scalar/api-reference-react": "^0.9.75",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.0.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.1"
+  }
+}
