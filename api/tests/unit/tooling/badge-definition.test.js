@@ -3,11 +3,11 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { isValidLexiconDoc, Lexicons } from '@atproto/lexicon';
-import { orderAssets } from './installer.js';
-import { readLexiconSource } from './lexicon-source.js';
-import { validatePackageLexicons } from './validate-lexicons.js';
+import { orderAssets } from '../../../tooling/installer.js';
+import { readLexiconSource } from '../../../tooling/lexicon-source.js';
+import { validatePackageLexicons } from '../../../tooling/validate-lexicons.js';
 
-const root = fileURLToPath(new URL('../', import.meta.url));
+const root = fileURLToPath(new URL('../../../', import.meta.url));
 const badgeModulePath = 'modules/badge-definitions/manifest.json';
 const sharedModulePath = 'modules/shared/manifest.json';
 

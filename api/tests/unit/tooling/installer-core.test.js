@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { applyAssets, compareAsset, createAdminClient, orderAssets, sortJsonKeys } from './installer.js';
+import { applyAssets, compareAsset, createAdminClient, orderAssets, sortJsonKeys } from '../../../tooling/installer.js';
 
 test('installer orders dependencies before consumers regardless of manifest order', () => {
   const assets = [

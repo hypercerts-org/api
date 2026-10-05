@@ -8,15 +8,23 @@ From the repository root:
 
 ```sh
 pnpm install --frozen-lockfile
+pnpm test:unit
 pnpm check
 pnpm build
+PSQL_PATH="$(command -v psql)" pnpm test:http
 ```
 
-These checks are offline and do not require a HappyView instance or database. `pnpm check` runs generated-source freshness, JavaScript/Lua lint, typechecking, and unit tests. `pnpm build` emits only Lua handlers declared by the root and module manifests. Shared Lua files are bundled into capability handlers but are not installed independently.
+`pnpm test:unit` and `pnpm check` run the recursively discovered tests under `api/tests/unit`; unit tests do not require HappyView or PostgreSQL. `pnpm check` also validates generated-source freshness, JavaScript/Lua lint, and types. `pnpm build` emits only Lua handlers declared by the root and module manifests. Shared Lua files are bundled into capability handlers but are not installed independently.
 
-## Runtime contracts
+`pnpm test:http` requires a local Docker Compose daemon, `psql`, and the pinned PostgreSQL and HappyView images already present in the local image cache. The local runner never pulls images. The CI workflow explicitly pulls only the two digest-pinned test images before running the same command. Set `PSQL_PATH` to the absolute path returned by `command -v psql`.
 
-Runtime contracts run in the GitHub Actions workflow against the code checked out for the pull request. The job generates temporary credentials, starts the pinned HappyView and PostgreSQL Compose services with PostgreSQL data on tmpfs, waits for HappyView health, bootstraps a permission-scoped admin key, installs the checked-out manifest, and seeds deterministic fixtures. It then runs the `api/tests/contracts/*.contract.test.js` files present in that checkout. If there are no endpoint contract files, the workflow reports that and skips only the endpoint-test step.
+## HTTP runtime tests
+
+HTTP suites live in `api/tests/http` and call the two funding, two badge-definition, and two location XRPC endpoints installed from the current checkout. `pnpm test:http` discovers `*.http.test.js` suites and fixture modules named `*.fixture.js`, then creates a random Compose project with loopback-only dynamic ports, PostgreSQL data on tmpfs, and a task-owned default bridge network. Bridge networking permits container egress. HappyView receives loopback placeholder upstream URLs and proxy variables pointing to `127.0.0.1:9`; these are application-level settings, not network-hard egress isolation. The installer and HTTP suites target only the task-owned loopback service. The runner installs this checkout's manifest, seeds shared and HTTP fixtures, runs the suites, and tears down only that generated Compose project and its temporary credentials. Locally, Compose uses `--pull never`; missing cached images fail before service startup.
+
+The HTTP gate fails when it discovers zero suites, executes zero `node:test` cases, or runs only skipped cases. These checks cover real HTTP behavior against PostgreSQL, not just Lua handlers with a fake database. Funding coverage exercises record retrieval, repeated filters, and pagination. Badge-definition coverage exercises retrieval with an icon and allowed-issuer list, publisher-sidecar hydration, author and badge-type filters, createdAt/URI pagination ties, and named error responses. Location coverage exercises retrieval, nullable sidecars, repeated author/URI/location-type filters, unsupported-search errors, tied pagination in both directions, malformed/absent createdAt handling, and named errors. Badge and location fixtures use CBOR-derived record CIDs and are seeded only into the task-owned disposable database.
+
+For the pinned HappyView release, ordinary Lua `error()` exceptions are returned as HTTP 500 JSON with `error: "script_error"` and `errorType: "runtime"`; the error name appears in `message`. The negative HTTP tests assert this observed runtime behavior. They do not define an ideal public HTTP status contract or guarantee 4xx mapping for `RecordNotFound` and `InvalidRequest`.
 
 ## Install a released API bundle
 

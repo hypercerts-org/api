@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { makeDateCaseRows, badDateSeedSql } from './bad-dates.js';
-import { profileRecords } from './records.js';
+import { makeDateCaseRows, badDateSeedSql } from '../../fixtures/bad-dates.js';
+import { profileRecords } from '../../fixtures/records.js';
 
 test('date cases apply to a different record collection without changing the base fixture', async () => {
   const base = profileRecords[0];

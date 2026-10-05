@@ -1,7 +1,7 @@
-// Run only after badDateSeedSql has been loaded into an approved disposable target.
+// These deliberately malformed record timestamps are seeded by location.fixture.js into the disposable HTTP target.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { badDateLocations } from '../fixtures/bad-location-dates.js';
+import { badDateLocations } from './fixtures/location.fixture.js';
 import { contractUrl, requireContractTarget } from './helpers.js';
 
 const baseUrl = requireContractTarget();

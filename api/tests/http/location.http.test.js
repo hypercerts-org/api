@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { locationRecords, profileRecords, organizationRecords } from '../fixtures/records.js';
+import { locationRecords, profileRecords, organizationRecords } from './fixtures/location.fixture.js';
+import { locationRecords as baselineLocationRecords } from '../fixtures/records.js';
 import { contractUrl, requireContractTarget } from './helpers.js';
 
 const baseUrl = requireContractTarget();
@@ -24,6 +25,7 @@ async function assertDomainError(response, code) {
   const body = await response.json();
   assert.equal(body.error, 'script_error');
   assert.equal(body.errorType, 'runtime');
+  assert.equal(body.method, code === 'RecordNotFound' ? 'app.certified.location.getLocation' : 'app.certified.location.listLocations');
   assert.match(body.message, new RegExp(`^runtime error: ${code}:`));
   assert.doesNotMatch(body.message, /SELECT|happyview_records|at:\/\//);
 }
@@ -57,11 +59,16 @@ test('getLocation missing URI fails as a record-not-found error, not an empty vi
   await assertDomainError(response, 'RecordNotFound');
 });
 
-test('listLocations applies repeated authors, URI and open location-type filters together', async () => {
+test('listLocations applies repeated author, URI, and location-type filters with independent exclusions', async () => {
   const result = await get('app.certified.location.listLocations', {
-    authors: [forest.did], uris: [forest.uri, river.uri], locationTypes: ['geojson', 'address'], limit: 100, sortDirection: 'asc',
+    authors: [forest.did, profileOnly.did],
+    uris: [forest.uri, river.uri, emptyTypeLocation.uri, profileOnly.uri, organizationOnly.uri],
+    locationTypes: ['geojson', 'address'], limit: 100, sortDirection: 'asc',
   });
-  assert.deepEqual(result.locations.map(({ uri }) => uri).sort(), [forest.uri, river.uri].sort());
+  assert.deepEqual(
+    result.locations.map(({ uri }) => uri).sort(),
+    [forest.uri, river.uri, profileOnly.uri].sort(),
+  );
   assert.equal(result.cursor, undefined);
 });
 
@@ -81,9 +88,14 @@ test('author hydration keeps records visible for all profile and organization co
   assert.equal(byUri.get(organizationOnly.uri).organization.did, organizationOnly.did);
 });
 
-test('empty locationType matches the fixture value', async () => {
+test('empty locationType matches location fixture values including the seeded baseline', async () => {
   const result = await get('app.certified.location.listLocations', { locationTypes: [''] });
-  assert.deepEqual(result.locations.map(({ uri }) => uri), [emptyTypeLocation.uri]);
+  const baselineEmptyTypeLocation = baselineLocationRecords.find(({ record }) => record.locationType === '');
+  assert.ok(baselineEmptyTypeLocation);
+  assert.deepEqual(
+    result.locations.map(({ uri }) => uri).sort(),
+    [emptyTypeLocation.uri, baselineEmptyTypeLocation.uri].sort(),
+  );
 });
 
 test('listLocations paginates deterministically in both directions without changing filters', async () => {

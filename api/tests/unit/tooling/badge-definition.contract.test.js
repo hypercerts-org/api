@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-const root = fileURLToPath(new URL('../../', import.meta.url));
+const root = fileURLToPath(new URL('../../../', import.meta.url));
 const endpointPath = (name) => `lua/endpoints/${name}.lua`;
 const uri = 'at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.badge.definition/3jzfcijpj2z2z';
 const author = 'did:plc:aaaaaaaaaaaaaaaaaaaaaaaa';

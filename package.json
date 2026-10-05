@@ -4,6 +4,8 @@
   "packageManager": "pnpm@10.15.1",
   "scripts": {
     "check": "pnpm --filter @hypercerts-org/hypercerts-api check && pnpm --filter hypercerts-api-endpoints test",
+    "test:unit": "pnpm --filter @hypercerts-org/hypercerts-api run test:unit",
+    "test:http": "pnpm --filter @hypercerts-org/hypercerts-api run test:http",
     "build": "pnpm --filter @hypercerts-org/hypercerts-api run build:lua && pnpm --filter hypercerts-api-endpoints build",
     "docs:dev": "pnpm --filter hypercerts-api-endpoints dev",
     "changeset": "changeset",

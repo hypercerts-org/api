@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { contractUrl } from './helpers.js';
+import { contractUrl } from '../../http/helpers.js';
 
 test('listLocations filter names and values serialize as expected', () => {
   assert.equal(contractUrl('http://127.0.0.1:8080', 'app.certified.location.listLocations', {
