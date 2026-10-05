@@ -1,13 +1,21 @@
 {
   "name": "hypercerts-api-foundation",
+  "collection": "app.certified.location",
+  "targetHappyViewRevision": "a2f347e605d7cd9c11669b320e43c10dbfe982e3",
+  "runtimeCompatibility": "compatible-at-target-revision",
+  "status": "handlers-implemented; location-and-actor-follow-runtime-validated-at-target-revision; other-query-runtime-validation-pending",
   "handlerStatus": {
+    "getBadgeDefinition": "implemented",
+    "listBadgeDefinitions": "implemented",
+    "getReceipt": "implemented",
+    "listReceipts": "implemented",
     "getAcknowledgement": "implemented",
     "listAcknowledgements": "implemented"
   },
   "authentication": {
     "decision": "public",
     "unresolved": false,
-    "note": "Acknowledgement queries expose public indexed records and require no caller authentication."
+    "note": "The query endpoints expose public indexed record reads and require no caller authentication."
   },
   "validationLexicons": [
     { "id": "app.certified.location", "packagePath": "lexicons/app/certified/location.json" },
@@ -17,14 +25,15 @@
     { "id": "app.certified.actor.profile", "packagePath": "lexicons/app/certified/actor/profile.json" },
     { "id": "org.hypercerts.claim.getActivity", "path": "lexicons/org.hypercerts.claim.getActivity.json" },
     { "id": "org.hypercerts.context.evaluation", "packagePath": "lexicons/org/hypercerts/context/evaluation.json" },
-    { "id": "org.hypercerts.context.acknowledgement", "packagePath": "lexicons/org/hypercerts/context/acknowledgement.json" },
-    { "id": "org.hypercerts.context.getAcknowledgement", "path": "lexicons/org.hypercerts.context.getAcknowledgement.json" },
-    { "id": "org.hypercerts.context.listAcknowledgements", "path": "lexicons/org.hypercerts.context.listAcknowledgements.json" },
     { "id": "org.hypercerts.collection.getCollection", "path": "lexicons/org.hypercerts.collection.getCollection.json" },
     { "id": "org.hypercerts.collection.listCollectionItems", "path": "lexicons/org.hypercerts.collection.listCollectionItems.json" },
     { "id": "org.hypercerts.context.attachment", "packagePath": "lexicons/org/hypercerts/context/attachment.json" },
     { "id": "app.certified.badge.definition", "packagePath": "lexicons/app/certified/badge/definition.json" },
+    { "id": "app.certified.badge.getBadgeDefinition", "path": "lexicons/app.certified.badge.getBadgeDefinition.json" },
+    { "id": "app.certified.badge.listBadgeDefinitions", "path": "lexicons/app.certified.badge.listBadgeDefinitions.json" },
     { "id": "org.hypercerts.funding.receipt", "packagePath": "lexicons/org/hypercerts/funding/receipt.json" },
+    { "id": "org.hypercerts.funding.getReceipt", "path": "lexicons/org.hypercerts.funding.getReceipt.json" },
+    { "id": "org.hypercerts.funding.listReceipts", "path": "lexicons/org.hypercerts.funding.listReceipts.json" },
     { "id": "app.certified.actor.organization", "packagePath": "lexicons/app/certified/actor/organization.json" },
     { "id": "app.bsky.richtext.facet", "packagePath": "lexicons/app/bsky/richtext/facet.json" },
     { "id": "app.certified.signature.defs", "packagePath": "lexicons/app/certified/signature/defs.json" },
@@ -61,7 +70,15 @@
     { "id": "pub.leaflet.blocks.website", "packagePath": "lexicons/pub/leaflet/blocks/website.json" },
     { "id": "pub.leaflet.pages.linearDocument", "packagePath": "lexicons/pub/leaflet/pages/linearDocument.json" },
     { "id": "pub.leaflet.richtext.facet", "packagePath": "lexicons/pub/leaflet/richtext/facet.json" },
-    { "id": "pub.leaflet.theme.color", "packagePath": "lexicons/pub/leaflet/theme/color.json" }
+    { "id": "pub.leaflet.theme.color", "packagePath": "lexicons/pub/leaflet/theme/color.json" },
+    { "id": "org.hypercerts.context.acknowledgement", "packagePath": "lexicons/org/hypercerts/context/acknowledgement.json" },
+    { "id": "org.hypercerts.context.getAcknowledgement", "path": "lexicons/org.hypercerts.context.getAcknowledgement.json" },
+    { "id": "org.hypercerts.context.listAcknowledgements", "path": "lexicons/org.hypercerts.context.listAcknowledgements.json" }
   ],
-  "modules": ["modules/shared/manifest.json", "modules/acknowledgements/manifest.json"]
+  "modules": [
+    "modules/shared/manifest.json",
+    "modules/badge-definitions/manifest.json",
+    "modules/funding/manifest.json",
+    "modules/acknowledgements/manifest.json"
+  ]
 }
