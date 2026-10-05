@@ -183,7 +183,7 @@ jobs:
 
       - name: Install this checkout's API manifest
         timeout-minutes: 4
-        run: pnpm --filter @happyview/hypercerts-api-kit run install:api
+        run: pnpm --filter @hypercerts-org/hypercerts-api run install:api
 
       - name: Seed disposable PostgreSQL fixtures
         timeout-minutes: 4
@@ -199,7 +199,7 @@ jobs:
           export PGUSER="$POSTGRES_USER"
           export PGPASSWORD="$POSTGRES_PASSWORD"
           export PGSSLMODE=disable
-          pnpm --filter @happyview/hypercerts-api-kit run seed:test
+          pnpm --filter @hypercerts-org/hypercerts-api run seed:test
 
       - name: Run contract tests present in this checkout
         working-directory: api
