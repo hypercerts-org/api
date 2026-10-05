@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = fileURLToPath(new URL('../', import.meta.url));
+const root = fileURLToPath(new URL('../../../', import.meta.url));
 const read = (relative) => readFile(path.resolve(root, relative), 'utf8');
 
 test('getRights returns the full indexed record and a nullable hydrated publisher', async () => {
