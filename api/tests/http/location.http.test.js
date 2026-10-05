@@ -99,18 +99,28 @@ test('empty locationType matches location fixture values including the seeded ba
 });
 
 test('listLocations paginates deterministically in both directions without changing filters', async () => {
+  const pageSize = 2;
   for (const direction of ['asc', 'desc']) {
-    const all = [];
-    let cursor;
-    do {
-      const page = await get('app.certified.location.listLocations', { authors: [forest.did, noRelations.did], limit: 2, sortDirection: direction, cursor });
-      all.push(...page.locations.map(({ uri }) => uri));
-      cursor = page.cursor;
-    } while (cursor);
     const expected = [forest, river, blobLocation, emptyTypeLocation, noRelations].sort((a, b) => {
       const delta = Date.parse(a.record.createdAt) - Date.parse(b.record.createdAt);
       return (delta || a.uri.localeCompare(b.uri)) * (direction === 'asc' ? 1 : -1);
     }).map(({ uri }) => uri);
+    const maxPages = Math.ceil(expected.length / pageSize);
+    const all = [];
+    const seenCursors = new Set();
+    let cursor;
+    let pageCount = 0;
+    do {
+      assert.ok(pageCount < maxPages, `pagination exceeded ${maxPages} pages`);
+      const page = await get('app.certified.location.listLocations', { authors: [forest.did, noRelations.did], limit: pageSize, sortDirection: direction, cursor });
+      pageCount += 1;
+      all.push(...page.locations.map(({ uri }) => uri));
+      if (page.cursor) {
+        assert.ok(!seenCursors.has(page.cursor), 'pagination returned a repeated cursor');
+        seenCursors.add(page.cursor);
+      }
+      cursor = page.cursor;
+    } while (cursor);
     assert.deepEqual(all, expected);
   }
 });

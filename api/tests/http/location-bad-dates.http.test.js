@@ -27,14 +27,20 @@ test('bad or absent createdAt falls back without hiding or changing records in g
 
 test('bad dates and equal instants paginate without gaps in either direction using the DB key', async () => {
   const uris = badDateLocations.map(({ uri }) => uri);
+  const pageSize = 3;
   for (const direction of ['asc', 'desc']) {
     const expected = direction === 'asc' ? asc : [...asc].reverse();
+    const maxPages = Math.ceil(expected.length / pageSize);
     const seen = [];
+    const seenCursors = new Set();
     let cursor;
+    let pageCount = 0;
     do {
+      assert.ok(pageCount < maxPages, `pagination exceeded ${maxPages} pages`);
       const page = await request('app.certified.location.listLocations', {
-        uris, limit: 3, sortDirection: direction, cursor,
+        uris, limit: pageSize, sortDirection: direction, cursor,
       });
+      pageCount += 1;
       for (const view of page.locations) {
         const key = view.uri.slice(view.uri.lastIndexOf('/') + 1);
         seen.push(key);
@@ -42,6 +48,8 @@ test('bad dates and equal instants paginate without gaps in either direction usi
       }
       cursor = page.cursor;
       if (cursor) {
+        assert.ok(!seenCursors.has(cursor), 'pagination returned a repeated cursor');
+        seenCursors.add(cursor);
         const token = JSON.parse(Buffer.from(cursor, 'hex').toString('utf8'));
         const last = seen.at(-1);
         assert.equal(token.t, expectedTime(last));
