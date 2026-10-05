@@ -9,7 +9,9 @@
     "listActivities": "implemented",
     "searchActivities": "implemented",
     "getReceipt": "implemented",
-    "listReceipts": "implemented"
+    "listReceipts": "implemented",
+    "getBadgeDefinition": "implemented",
+    "listBadgeDefinitions": "implemented"
   },
   "authentication": {
     "decision": "public",
@@ -68,6 +70,14 @@
     {
       "id": "app.certified.badge.definition",
       "packagePath": "lexicons/app/certified/badge/definition.json"
+    },
+    {
+      "id": "app.certified.badge.getBadgeDefinition",
+      "path": "lexicons/app.certified.badge.getBadgeDefinition.json"
+    },
+    {
+      "id": "app.certified.badge.listBadgeDefinitions",
+      "path": "lexicons/app.certified.badge.listBadgeDefinitions.json"
     },
     {
       "id": "org.hypercerts.funding.receipt",
@@ -232,6 +242,7 @@
   ],
   "modules": [
     "modules/shared/manifest.json",
+    "modules/badge-definitions/manifest.json",
     "modules/activity/manifest.json",
     "modules/funding/manifest.json"
   ]
