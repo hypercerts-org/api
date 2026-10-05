@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-const root = fileURLToPath(new URL('../', import.meta.url));
+const root = fileURLToPath(new URL('../../../', import.meta.url));
 const organizationCollection = 'app.certified.actor.organization';
 const profileCollection = 'app.certified.actor.profile';
 const actor = 'did:plc:aaaaaaaaaaaaaaaaaaaaaaaa';

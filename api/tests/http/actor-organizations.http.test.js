@@ -1,10 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { organizationRecords, profileRecords } from '../fixtures/records.js';
+import { actorFixtureDids, seedRows } from './fixtures/actors.fixture.js';
 import { contractUrl, requireContractTarget } from './helpers.js';
 
 const baseUrl = requireContractTarget();
-const [publicOrganization, profilelessOrganization, unlistedOrganization] = organizationRecords;
+const organizationCollection = 'app.certified.actor.organization';
+const profileCollection = 'app.certified.actor.profile';
+const organizationRecords = seedRows.filter(({ collection }) => collection === organizationCollection);
+const profileRecords = seedRows.filter(({ collection }) => collection === profileCollection);
+const publicOrganization = organizationRecords.find(({ did }) => did === actorFixtureDids.alpine);
+const profilelessOrganization = organizationRecords.find(({ did }) => did === actorFixtureDids.organizationOnly);
+const unlistedOrganization = organizationRecords.find(({ did }) => did === actorFixtureDids.forest);
 const unlistedProfile = profileRecords.find(({ did }) => did === unlistedOrganization.did);
 
 function recordView(record) {
@@ -86,10 +92,7 @@ test('getOrganizations preserves repeated DID occurrences and serializes a missi
 });
 
 test('listOrganizations combines exact type and visibility filters and leaves omitted visibility unrestricted', async () => {
-  const organizations = await get('app.certified.actor.listOrganizations', {
-    organizationTypes: ['nonprofit', 'community'],
-    limit: 100,
-  });
+  const organizations = await get('app.certified.actor.listOrganizations', { limit: 100 });
   const listedUris = new Set(organizations.actors.map(({ organization }) => organization.uri));
   for (const organization of organizationRecords) assert.ok(listedUris.has(organization.uri));
   const byDid = new Map(organizations.actors.map((actor) => [actor.did, actor]));
@@ -98,6 +101,25 @@ test('listOrganizations combines exact type and visibility filters and leaves om
   assert.equal(byDid.get(profilelessOrganization.did).profile, null);
   assert.equal(byDid.get(unlistedOrganization.did).organization.record.visibility, 'unlisted');
   assert.equal(byDid.get(unlistedOrganization.did).profile.record.displayName, unlistedProfile.record.displayName);
+
+  const communityOrCooperative = await get('app.certified.actor.listOrganizations', {
+    organizationTypes: ['community', 'cooperative'], sortDirection: 'asc', limit: 100,
+  });
+  assert.deepEqual(communityOrCooperative.actors.map(({ did }) => did), [
+    'did:plc:cccccccccccccccccccccccc',
+    'did:web:organization-only.example',
+    'did:plc:mmmmmmmmmmmmmmmmmmmmmmmm',
+    'did:plc:nnnnnnnnnnnnnnnnnnnnnnnn',
+    'did:plc:qqqqqqqqqqqqqqqqqqqqqqqq',
+    'did:plc:jjjjjjjjjjjjjjjjjjjjjjjj',
+  ]);
+
+  const communityUnlisted = await get('app.certified.actor.listOrganizations', {
+    organizationTypes: ['community'], visibility: 'unlisted', limit: 100,
+  });
+  assert.deepEqual(communityUnlisted.actors.map(({ did }) => did), [actorFixtureDids.forest]);
+  assert.deepEqual(communityUnlisted.actors[0].organization.record.organizationType, ['community']);
+  assert.equal(communityUnlisted.actors[0].organization.record.visibility, 'unlisted');
 
   const publicOnly = await get('app.certified.actor.listOrganizations', { visibility: 'public' });
   assert.ok(publicOnly.actors.some(({ organization }) => organization.uri === publicOrganization.uri));
@@ -109,11 +131,11 @@ test('listOrganizations combines exact type and visibility filters and leaves om
 
 test('searchOrganizations matches full trimmed literal profile text and excludes organizations without profiles', async () => {
   const result = await get('app.certified.actor.searchOrganizations', {
-    search: '  Forest %_ Network  ', actors: [unlistedOrganization.did],
+    search: '  Forest %_ Commons  ', actors: [unlistedOrganization.did],
   });
   assert.equal(result.actors.length, 1);
   assert.equal(result.actors[0].did, unlistedOrganization.did);
-  assert.equal(result.actors[0].profile.record.displayName, 'Unlisted Forest %_ Network');
+  assert.equal(result.actors[0].profile.record.displayName, 'Forest %_ Commons');
   assert.deepEqual(result.actors[0].organization.record, unlistedOrganization.record);
 
   const absentProfile = await get('app.certified.actor.searchOrganizations', {

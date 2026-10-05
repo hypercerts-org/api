@@ -4,10 +4,10 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { loadAssets } from './installer.js';
-import { validatePackageLexicons } from './validate-lexicons.js';
+import { loadAssets } from '../../../tooling/installer.js';
+import { validatePackageLexicons } from '../../../tooling/validate-lexicons.js';
 
-const root = fileURLToPath(new URL('../', import.meta.url));
+const root = fileURLToPath(new URL('../../../', import.meta.url));
 const collection = 'app.certified.actor.profile';
 const actor = 'did:plc:aaaaaaaaaaaaaaaaaaaaaaaa';
 const secondActor = 'did:plc:bbbbbbbbbbbbbbbbbbbbbbbb';

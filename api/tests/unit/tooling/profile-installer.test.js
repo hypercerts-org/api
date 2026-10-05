@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as installer from './installer.js';
+import * as installer from '../../../tooling/installer.js';
 
 const resolverKey = 'HYPERCERTS_HANDLE_RESOLVER_URL';
 const profileHandlerId = 'xrpc.query:app.certified.actor.getProfile';
