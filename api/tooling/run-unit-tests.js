@@ -6,17 +6,23 @@ import { fileURLToPath } from 'node:url';
 const packageRoot = fileURLToPath(new URL('../', import.meta.url));
 const unitRoot = path.join(packageRoot, 'tests', 'unit');
 
+function compareEntryNames(left, right) {
+  if (left.name < right.name) return -1;
+  if (left.name > right.name) return 1;
+  return 0;
+}
+
 async function findTestFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
-  entries.sort((left, right) => left.name < right.name ? -1 : left.name > right.name ? 1 : 0);
+  entries.sort(compareEntryNames);
 
-  const files = [];
-  for (const entry of entries) {
+  const fileGroups = await Promise.all(entries.map((entry) => {
     const entryPath = path.join(directory, entry.name);
-    if (entry.isDirectory()) files.push(...await findTestFiles(entryPath));
-    else if (entry.isFile() && entry.name.endsWith('.test.js')) files.push(entryPath);
-  }
-  return files;
+    if (entry.isDirectory()) return findTestFiles(entryPath);
+    if (entry.isFile() && entry.name.endsWith('.test.js')) return [entryPath];
+    return [];
+  }));
+  return fileGroups.flat();
 }
 
 try {
