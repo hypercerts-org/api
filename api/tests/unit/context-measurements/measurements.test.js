@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-const root = fileURLToPath(new URL('../', import.meta.url));
+const root = fileURLToPath(new URL('../../../', import.meta.url));
 
 test('measurement handlers preserve the public lookup, filtering, pagination, and hydration contract', () => {
-  const result = spawnSync('lua5.4', ['tests/measurements.lua'], {
+  const result = spawnSync('lua5.4', ['tests/unit/context-measurements/measurements.lua'], {
     cwd: root,
     encoding: 'utf8',
   });
