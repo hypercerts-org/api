@@ -4,25 +4,25 @@ import { spawnSync } from 'node:child_process';
 import { chmod, copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { locationRecords, profileRecords, organizationRecords } from '../tests/fixtures/records.js';
-import { actorFollowRecords, actorFollowProfileRecords, actorFollowOrganizationRecords } from '../tests/fixtures/actor-follows.js';
-import { activityFixtureRows } from '../tests/fixtures/activities.js';
-import { badDateLocations } from '../tests/fixtures/bad-location-dates.js';
-import { buildBadDateSeedInput, buildSeedInput, psqlTargetArgs } from './seed.js';
+import { locationRecords, profileRecords, organizationRecords } from '../../fixtures/records.js';
+import { actorFollowRecords, actorFollowProfileRecords, actorFollowOrganizationRecords } from '../../fixtures/actor-follows.js';
+import { activityFixtureRows } from '../../fixtures/activities.js';
+import { badDateLocations } from '../../fixtures/bad-location-dates.js';
+import { buildBadDateSeedInput, buildSeedInput, psqlTargetArgs } from '../../../tooling/seed.js';
 
-const packageRoot = fileURLToPath(new URL('..', import.meta.url));
+const packageRoot = fileURLToPath(new URL('../../../', import.meta.url));
 
 async function withCopiedSeedModule(run) {
   const root = await mkdtemp(path.join(packageRoot, '.seed-cli-#'));
   try {
     await mkdir(path.join(root, 'tooling'), { recursive: true });
     await mkdir(path.join(root, 'tests/fixtures'), { recursive: true });
-    await copyFile(new URL('./seed.js', import.meta.url), path.join(root, 'tooling/seed.js'));
-    await copyFile(new URL('../tests/fixtures/records.js', import.meta.url), path.join(root, 'tests/fixtures/records.js'));
-    await copyFile(new URL('../tests/fixtures/actor-follows.js', import.meta.url), path.join(root, 'tests/fixtures/actor-follows.js'));
-    await copyFile(new URL('../tests/fixtures/activities.js', import.meta.url), path.join(root, 'tests/fixtures/activities.js'));
-    await copyFile(new URL('../tests/fixtures/bad-dates.js', import.meta.url), path.join(root, 'tests/fixtures/bad-dates.js'));
-    await copyFile(new URL('../tests/fixtures/bad-location-dates.js', import.meta.url), path.join(root, 'tests/fixtures/bad-location-dates.js'));
+    await copyFile(new URL('../../../tooling/seed.js', import.meta.url), path.join(root, 'tooling/seed.js'));
+    await copyFile(new URL('../../fixtures/records.js', import.meta.url), path.join(root, 'tests/fixtures/records.js'));
+    await copyFile(new URL('../../fixtures/actor-follows.js', import.meta.url), path.join(root, 'tests/fixtures/actor-follows.js'));
+    await copyFile(new URL('../../fixtures/activities.js', import.meta.url), path.join(root, 'tests/fixtures/activities.js'));
+    await copyFile(new URL('../../fixtures/bad-dates.js', import.meta.url), path.join(root, 'tests/fixtures/bad-dates.js'));
+    await copyFile(new URL('../../fixtures/bad-location-dates.js', import.meta.url), path.join(root, 'tests/fixtures/bad-location-dates.js'));
     await writeFile(path.join(root, 'package.json'), '{"type":"module"}\n');
     return await run(path.join(root, 'tooling/seed.js'));
   } finally {

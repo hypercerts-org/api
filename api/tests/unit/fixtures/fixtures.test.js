@@ -3,14 +3,14 @@ import assert from 'node:assert/strict';
 import { encode } from '@atcute/cbor';
 import * as CID from '@atcute/cid';
 import { isValidDid, isValidTid } from '@atproto/syntax';
-import { locationRecords, profileRecords, organizationRecords, seedSql } from './records.js';
-import { activityContributorInformationVersions, activityFixtureRows } from './activities.js';
+import { locationRecords, profileRecords, organizationRecords, seedSql } from '../../fixtures/records.js';
+import { activityContributorInformationVersions, activityFixtureRows } from '../../fixtures/activities.js';
 import {
   actorFollowDids,
   actorFollowOrganizationRecords,
   actorFollowProfileRecords,
   actorFollowRecords,
-} from './actor-follows.js';
+} from '../../fixtures/actor-follows.js';
 
 test('fixtures have consistent full AT-URIs, valid DID/TID/CID identifiers, types, and fixed timestamps', () => {
   const records = [

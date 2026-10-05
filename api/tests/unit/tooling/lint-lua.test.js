@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { lintLua } from './lint-lua.js';
+import { lintLua } from '../../../tooling/lint-lua.js';
 
 async function withTempRoot(run) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'hypercerts-api-lint-lua-'));

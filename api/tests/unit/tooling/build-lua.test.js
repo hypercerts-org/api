@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { buildLuaBundles, checkLuaBundles } from './lua-bundles.js';
+import { buildLuaBundles, checkLuaBundles } from '../../../tooling/lua-bundles.js';
 
 async function withManifestLuaRoot(run) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'hypercerts-api-manifest-build-'));
