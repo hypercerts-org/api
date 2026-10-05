@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadAssets } from './installer.js';
+import { loadAssets } from '../../../tooling/installer.js';
 
-const root = fileURLToPath(new URL('../', import.meta.url));
+const root = fileURLToPath(new URL('../../../', import.meta.url));
 const read = (relative) => readFile(path.resolve(root, relative), 'utf8');
 const manifestPath = path.join(root, 'manifest.json');
 
