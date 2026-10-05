@@ -23,7 +23,7 @@
     "install:api": "node tooling/installer.js",
     "seed:test": "node tooling/seed.js",
     "seed:bad-dates": "node tooling/seed.js --bad-dates",
-    "test:contracts": "node --test tests/contracts/activity.contract.test.js"
+    "test:contracts": "pnpm run test:http"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

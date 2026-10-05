@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-const root = fileURLToPath(new URL('../', import.meta.url));
+const root = fileURLToPath(new URL('../../../', import.meta.url));
 const ACTIVITY = 'org.hypercerts.claim.activity';
 const CONTRIBUTOR_INFORMATION = 'org.hypercerts.claim.contributorInformation';
 const PROFILE = 'app.certified.actor.profile';
@@ -66,8 +66,8 @@ function withoutRecordJson(row) {
 }
 
 test('activity API manifests and Lexicons declare the implemented endpoint contracts', async () => {
-  const manifest = JSON.parse(await readFile(new URL('../manifest.json', import.meta.url), 'utf8'));
-  const module = JSON.parse(await readFile(new URL('../modules/activity/manifest.json', import.meta.url), 'utf8'));
+  const manifest = JSON.parse(await readFile(new URL('../../../manifest.json', import.meta.url), 'utf8'));
+  const module = JSON.parse(await readFile(new URL('../../../modules/activity/manifest.json', import.meta.url), 'utf8'));
   assert.deepEqual({
     getActivity: manifest.handlerStatus.getActivity,
     listActivities: manifest.handlerStatus.listActivities,
@@ -81,7 +81,7 @@ test('activity API manifests and Lexicons declare the implemented endpoint contr
   const endpointNames = ['getActivity', 'listActivities', 'searchActivities'];
   for (const name of endpointNames) {
     const nsid = `org.hypercerts.claim.${name}`;
-    const lexiconPath = `../lexicons/${nsid}.json`;
+    const lexiconPath = `../../../lexicons/${nsid}.json`;
     const schema = JSON.parse(await readFile(new URL(lexiconPath, import.meta.url), 'utf8'));
     assert.equal(schema.id, nsid);
     assert.ok(manifest.validationLexicons.some(({ id, path }) => id === nsid && path));
@@ -90,7 +90,7 @@ test('activity API manifests and Lexicons declare the implemented endpoint contr
     assert.equal(script.sourcePath, `../../lua/src/${name}.lua`);
   }
 
-  const getSchema = JSON.parse(await readFile(new URL('../lexicons/org.hypercerts.claim.getActivity.json', import.meta.url), 'utf8'));
+  const getSchema = JSON.parse(await readFile(new URL('../../../lexicons/org.hypercerts.claim.getActivity.json', import.meta.url), 'utf8'));
   assert.deepEqual(getSchema.defs.main.parameters.required, ['uri']);
   assert.deepEqual(getSchema.defs.activityView.required, ['uri', 'cid', 'indexedAt', 'did', 'author', 'record']);
   assert.deepEqual(getSchema.defs.activityView.nullable, ['indexedAt']);
@@ -101,8 +101,8 @@ test('activity API manifests and Lexicons declare the implemented endpoint contr
   assert.deepEqual(getSchema.defs.contributorActorView.required, ['did', 'profile']);
   assert.deepEqual(getSchema.defs.contributorActorView.nullable, ['profile']);
 
-  const listSchema = JSON.parse(await readFile(new URL('../lexicons/org.hypercerts.claim.listActivities.json', import.meta.url), 'utf8'));
-  const searchSchema = JSON.parse(await readFile(new URL('../lexicons/org.hypercerts.claim.searchActivities.json', import.meta.url), 'utf8'));
+  const listSchema = JSON.parse(await readFile(new URL('../../../lexicons/org.hypercerts.claim.listActivities.json', import.meta.url), 'utf8'));
+  const searchSchema = JSON.parse(await readFile(new URL('../../../lexicons/org.hypercerts.claim.searchActivities.json', import.meta.url), 'utf8'));
   assert.equal(listSchema.defs.main.parameters.properties.uris.maxLength, 100);
   assert.equal(listSchema.defs.main.parameters.properties.limit.maximum, 100);
   assert.deepEqual(searchSchema.defs.main.parameters.required, ['search']);
