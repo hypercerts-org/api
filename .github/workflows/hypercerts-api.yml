@@ -60,7 +60,7 @@ jobs:
           set -euo pipefail
           changeset_files="$(git diff --name-only --diff-filter=ACMR "$BASE_SHA...$HEAD_SHA" -- '.changeset/*.md' ':!.changeset/README.md')"
           if [ -n "$changeset_files" ]; then
-            pnpm changeset:status -- --since "$BASE_SHA"
+            pnpm exec changeset status --since "$BASE_SHA"
           fi
 
       - name: Check API and explorer tests
