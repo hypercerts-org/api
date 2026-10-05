@@ -1,5 +1,6 @@
 {
-  "name": "@happyview/hypercerts-api-kit",
+  "name": "@hypercerts-org/hypercerts-api",
+  "version": "0.0.0",
   "private": true,
   "type": "module",
   "dependencies": {
@@ -17,7 +18,8 @@
     "check:generated": "node tooling/build-lua.js --check",
     "check": "pnpm run check:generated && pnpm run lint && pnpm run typecheck && pnpm run test:unit",
     "build:lua": "node tooling/build-lua.js",
-    "test:unit": "node --test tooling/*.test.js tests/fixtures/*.test.js tests/contracts/*.test.js",
+    "test:unit": "node tooling/run-unit-tests.js",
+    "test:http": "node tooling/run-http-tests.js",
     "install:api": "node tooling/installer.js",
     "seed:test": "node tooling/seed.js",
     "seed:bad-dates": "node tooling/seed.js --bad-dates"
