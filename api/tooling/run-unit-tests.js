@@ -16,9 +16,12 @@ async function findTestFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
   entries.sort(compareEntryNames);
 
-  const fileGroups = await Promise.all(entries.map((entry) => {
+  const fileGroups = await Promise.all(entries.map(async (entry) => {
     const entryPath = path.join(directory, entry.name);
-    if (entry.isDirectory()) return findTestFiles(entryPath);
+    if (entry.isDirectory()) {
+      const nestedFiles = await findTestFiles(entryPath);
+      return nestedFiles;
+    }
     if (entry.isFile() && entry.name.endsWith('.test.js')) return [entryPath];
     return [];
   }));

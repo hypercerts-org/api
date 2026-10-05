@@ -82,9 +82,12 @@ async function findFiles(directory, suffix) {
   }
   entries.sort(compareEntryNames);
 
-  const fileGroups = await Promise.all(entries.map((entry) => {
+  const fileGroups = await Promise.all(entries.map(async (entry) => {
     const entryPath = path.join(directory, entry.name);
-    if (entry.isDirectory()) return findFiles(entryPath, suffix);
+    if (entry.isDirectory()) {
+      const nestedFiles = await findFiles(entryPath, suffix);
+      return nestedFiles;
+    }
     if (entry.isFile() && entry.name.endsWith(suffix)) return [entryPath];
     return [];
   }));
