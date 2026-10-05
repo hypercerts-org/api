@@ -1,5 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readdir } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { encode } from '@atcute/cbor';
 import * as CID from '@atcute/cid';
 import { isValidDid, isValidTid } from '@atproto/syntax';
@@ -11,6 +14,29 @@ import {
   actorFollowProfileRecords,
   actorFollowRecords,
 } from '../../fixtures/actor-follows.js';
+
+async function findFixtureModules(directory) {
+  const entries = await readdir(directory, { withFileTypes: true });
+  entries.sort((left, right) => left.name < right.name ? -1 : left.name > right.name ? 1 : 0);
+  const fileGroups = await Promise.all(entries.map(async (entry) => {
+    const entryPath = path.join(directory, entry.name);
+    if (entry.isDirectory()) return findFixtureModules(entryPath);
+    if (entry.isFile() && entry.name.endsWith('.fixture.js')) return [entryPath];
+    return [];
+  }));
+  return fileGroups.flat();
+}
+
+function duplicateKeys(rows, keyFor) {
+  const seen = new Set();
+  const duplicates = new Set();
+  for (const row of rows) {
+    const key = keyFor(row);
+    if (seen.has(key)) duplicates.add(key);
+    seen.add(key);
+  }
+  return [...duplicates].sort();
+}
 
 test('fixtures have consistent full AT-URIs, valid DID/TID/CID identifiers, types, and fixed timestamps', () => {
   const records = [
@@ -29,6 +55,31 @@ test('fixtures have consistent full AT-URIs, valid DID/TID/CID identifiers, type
     assert.equal(cid.digest.codec, 0x12);
     assert.equal(cid.digest.contents.length, 32);
     assert.equal(row.indexedAt, '2025-01-02T03:04:05.000Z');
+  }
+});
+
+test('HTTP seed rows are unique against shared fixtures and use CBOR-derived CIDs', async () => {
+  const sharedRows = [
+    ...locationRecords, ...profileRecords, ...organizationRecords,
+    ...actorFollowRecords, ...actorFollowProfileRecords, ...actorFollowOrganizationRecords,
+    ...activityFixtureRows,
+  ];
+  const fixtureRoot = fileURLToPath(new URL('../../http/fixtures/', import.meta.url));
+  const fixtureModules = await findFixtureModules(fixtureRoot);
+  const httpRows = (await Promise.all(fixtureModules.map(async (file) => {
+    const fixture = await import(pathToFileURL(file).href);
+    return fixture.seedRows;
+  }))).flat();
+  const allRows = [...sharedRows, ...httpRows];
+
+  assert.deepEqual(duplicateKeys(allRows, ({ uri }) => uri), [], 'seed rows must not overwrite another record URI');
+  assert.deepEqual(
+    duplicateKeys(allRows, ({ did, collection, rkey }) => JSON.stringify([did, collection, rkey])),
+    [],
+    'seed rows must not reuse another record identity',
+  );
+  for (const row of allRows) {
+    assert.equal(CID.toString(await CID.create(0x71, encode(row.record))), row.cid, `incorrect CID for ${row.uri}`);
   }
 });
 
