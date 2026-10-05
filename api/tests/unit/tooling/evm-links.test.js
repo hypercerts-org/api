@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = fileURLToPath(new URL('../', import.meta.url));
+const root = fileURLToPath(new URL('../../../', import.meta.url));
 const moduleFile = path.join(root, 'modules/evm-links/manifest.json');
 const did = 'did:plc:ewvi7nxzyoun6zhxrhs64oiz';
 const uri = `at://${did}/app.certified.link.evm/wallet-1`;
