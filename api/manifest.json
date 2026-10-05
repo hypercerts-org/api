@@ -8,7 +8,9 @@
     "getCollection": "implemented",
     "listCollections": "implemented",
     "searchCollections": "implemented",
-    "listCollectionItems": "implemented"
+    "listCollectionItems": "implemented",
+    "getReceipt": "implemented",
+    "listReceipts": "implemented"
   },
   "authentication": {
     "decision": "public",
@@ -71,6 +73,14 @@
     {
       "id": "org.hypercerts.funding.receipt",
       "packagePath": "lexicons/org/hypercerts/funding/receipt.json"
+    },
+    {
+      "id": "org.hypercerts.funding.getReceipt",
+      "path": "lexicons/org.hypercerts.funding.getReceipt.json"
+    },
+    {
+      "id": "org.hypercerts.funding.listReceipts",
+      "path": "lexicons/org.hypercerts.funding.listReceipts.json"
     },
     {
       "id": "app.certified.actor.organization",
@@ -223,6 +233,7 @@
   ],
   "modules": [
     "modules/shared/manifest.json",
-    "modules/collection/manifest.json"
+    "modules/collection/manifest.json",
+    "modules/funding/manifest.json"
   ]
 }
