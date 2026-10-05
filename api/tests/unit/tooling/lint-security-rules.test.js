@@ -6,7 +6,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-const packageRoot = fileURLToPath(new URL('../', import.meta.url));
+const packageRoot = fileURLToPath(new URL('../../../', import.meta.url));
 
 function lintLua(file) {
   const args = ['--config', '.luacheckrc', '--no-color', file];

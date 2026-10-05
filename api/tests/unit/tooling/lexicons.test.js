@@ -1,18 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { locationRecords, profileRecords, organizationRecords } from '../tests/fixtures/records.js';
-import { validatePackageLexicons } from './validate-lexicons.js';
-import { readLexiconSource } from './lexicon-source.js';
-import { loadAssets } from './installer.js';
+import { locationRecords, profileRecords, organizationRecords } from '../../fixtures/records.js';
+import { validatePackageLexicons } from '../../../tooling/validate-lexicons.js';
+import { readLexiconSource } from '../../../tooling/lexicon-source.js';
+import { loadAssets } from '../../../tooling/installer.js';
 import { fileURLToPath } from 'node:url';
 
-const rootManifest = JSON.parse(await readFile(new URL('../manifest.json', import.meta.url), 'utf8'));
+const rootManifest = JSON.parse(await readFile(new URL('../../../manifest.json', import.meta.url), 'utf8'));
 const hasModule = (modulePath) => rootManifest.modules.includes(modulePath);
 
 test('the full validation Lexicon closure resolves locally while only selected package Lexicons deploy', async () => {
-  const manifest = JSON.parse(await readFile(new URL('../manifest.json', import.meta.url), 'utf8'));
-  const { assets } = await loadAssets(fileURLToPath(new URL('../manifest.json', import.meta.url)));
+  const manifest = JSON.parse(await readFile(new URL('../../../manifest.json', import.meta.url), 'utf8'));
+  const { assets } = await loadAssets(fileURLToPath(new URL('../../../manifest.json', import.meta.url)));
   const { documents } = await validatePackageLexicons();
   const validatedIds = documents.map((document) => document.id);
   assert.deepEqual(validatedIds.sort(), manifest.validationLexicons.map(({ id }) => id).sort());

@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-const root = fileURLToPath(new URL('../', import.meta.url));
+const root = fileURLToPath(new URL('../../../', import.meta.url));
 const collection = 'org.hypercerts.funding.receipt';
 const author = 'did:plc:aaaaaaaaaaaaaaaaaaaaaaaa';
 const otherAuthor = 'did:plc:bbbbbbbbbbbbbbbbbbbbbbbb';
