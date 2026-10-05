@@ -11,7 +11,9 @@
     "getEntityFollow": "implemented",
     "listEntityFollowers": "implemented",
     "listEntityFollowing": "implemented",
-    "listRecentFollows": "implemented"
+    "listRecentFollows": "implemented",
+    "getReceipt": "implemented",
+    "listReceipts": "implemented"
   },
   "authentication": {
     "decision": "public",
@@ -242,12 +244,21 @@
     {
       "id": "pub.leaflet.theme.color",
       "packagePath": "lexicons/pub/leaflet/theme/color.json"
+    },
+    {
+      "id": "org.hypercerts.funding.getReceipt",
+      "path": "lexicons/org.hypercerts.funding.getReceipt.json"
+    },
+    {
+      "id": "org.hypercerts.funding.listReceipts",
+      "path": "lexicons/org.hypercerts.funding.listReceipts.json"
     }
   ],
   "modules": [
     "modules/shared/manifest.json",
     "modules/actor-follow/manifest.json",
     "modules/entity-follow/manifest.json",
-    "modules/recent-follows/manifest.json"
+    "modules/recent-follows/manifest.json",
+    "modules/funding/manifest.json"
   ]
 }
