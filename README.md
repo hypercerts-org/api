@@ -14,6 +14,6 @@ pnpm check
 pnpm build
 ```
 
-`pnpm check` validates the pinned Lexicon closure, lint, types, and unit tests. `pnpm build` refreshes declared Lua handler bundles. These commands do not deploy or contact a HappyView instance. `pnpm install:api` sends admin requests and requires an explicitly approved target and token.
+`pnpm check` validates the pinned Lexicon closure, lint, types, and unit tests. `pnpm build` refreshes declared Lua handler bundles. These checks do not deploy or contact a HappyView instance. `pnpm install:api` sends admin requests and requires an explicitly approved target and token.
 
-See [`api/README.md`](api/README.md) for installer and fixture details. `LICENSE.md` retains the upstream MIT notice.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for local development and HTTP test guidance, and [api/README.md](api/README.md) for capability details and released-bundle installation. `LICENSE.md` retains the upstream MIT notice.
