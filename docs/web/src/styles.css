@@ -1,0 +1,304 @@
+@import '@scalar/api-reference-react/style.css';
+@import "@hypercerts-org/ui-react/styles.css";
+
+@font-face {
+  font-family: "Instrument Serif";
+  src: url("/fonts/InstrumentSerif-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Instrument Serif";
+  src: url("/fonts/InstrumentSerif-Italic.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Switzer Variable";
+  src: url("/fonts/Switzer-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --brand-white: #ffffff;
+  --ui-bg: #f1f1f1;
+  --surface-cream: #f9f6ef;
+  --brand-black: #000000;
+  --ui-grey-dark: #535353;
+  --ui-grey-muted: #666666;
+  --ui-separator: #d2d2d2;
+  --brand-accent: #af2901;
+  --status-danger-bg: #f9eeeb;
+  --body-font-family: "Switzer Variable", system-ui, sans-serif;
+  color-scheme: light;
+  font-family: var(--body-font-family);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  background: var(--brand-white);
+  color: var(--ui-grey-dark);
+}
+
+.light-mode {
+  --scalar-font: var(--body-font-family);
+  --scalar-background-1: var(--brand-white);
+  --scalar-background-2: var(--ui-bg);
+  --scalar-background-3: var(--surface-cream);
+  --scalar-color-1: var(--brand-black);
+  --scalar-color-2: var(--ui-grey-dark);
+  --scalar-color-3: var(--ui-grey-muted);
+  --scalar-color-accent: var(--brand-accent);
+  --scalar-border-color: var(--ui-separator);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-width: 320px;
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--brand-white);
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.app-frame {
+  min-height: 100vh;
+  background: var(--brand-white);
+}
+
+.site-header {
+  position: sticky;
+  z-index: 20;
+  top: 0;
+  display: flex;
+  min-height: 62px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 0 28px;
+  border-bottom: 1px solid var(--ui-separator);
+  background: var(--brand-white);
+}
+
+.brand {
+  display: inline-flex;
+  min-width: max-content;
+  align-items: center;
+  gap: 10px;
+  color: var(--brand-black);
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+}
+
+.brand-logo {
+  display: block;
+  width: auto;
+  height: 28px;
+  max-width: calc(100vw - 120px);
+  flex: 0 1 auto;
+  object-fit: contain;
+}
+
+.brand-api {
+  font-family: var(--body-font-family);
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  white-space: nowrap;
+}
+
+.brand-divider {
+  padding: 0 2px;
+  color: var(--ui-grey-muted);
+  font-weight: 400;
+}
+
+.header-actions {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 18px;
+}
+
+.server-control {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.server-control label {
+  color: var(--ui-grey-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.server-control select,
+.custom-server-form input {
+  min-height: 34px;
+  border: 1px solid var(--ui-separator);
+  border-radius: 6px;
+  outline: none;
+  background: var(--brand-white);
+  color: var(--ui-grey-dark);
+  font-size: 12px;
+}
+
+.server-control select {
+  max-width: 220px;
+  padding: 0 30px 0 10px;
+}
+
+.server-control select:focus-visible,
+.custom-server-form input:focus-visible,
+.custom-server-form button:focus-visible,
+.download-link:focus-visible,
+.brand:focus-visible {
+  outline: 2px solid var(--brand-accent);
+  outline-offset: 2px;
+}
+
+.custom-server-form {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.custom-server-form input {
+  width: min(250px, 24vw);
+  padding: 0 10px;
+}
+
+.custom-server-form input::placeholder {
+  color: var(--ui-grey-muted);
+}
+
+.custom-server-form input[aria-invalid="true"] {
+  border-color: var(--brand-accent);
+  background: var(--status-danger-bg);
+}
+
+.custom-server-form button {
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid var(--brand-black);
+  border-radius: 6px;
+  background: var(--brand-black);
+  color: var(--brand-white);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.custom-server-form button:hover {
+  background: var(--ui-bg);
+  color: var(--brand-black);
+}
+
+.server-error {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  width: max-content;
+  max-width: min(360px, 80vw);
+  padding: 8px 10px;
+  border: 1px solid var(--brand-accent);
+  border-radius: 5px;
+  background: var(--status-danger-bg);
+  color: var(--brand-accent);
+  font-size: 12px;
+}
+
+.download-link {
+  display: inline-flex;
+  min-width: max-content;
+  align-items: center;
+  gap: 7px;
+  color: var(--ui-grey-dark);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.download-link:hover {
+  color: var(--brand-accent);
+}
+
+.reference-main {
+  min-height: calc(100vh - 62px);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+@media (max-width: 820px) {
+  .site-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+
+  .header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 10px 14px;
+  }
+
+  .custom-server-form input {
+    width: min(250px, 54vw);
+  }
+}
+
+@media (max-width: 480px) {
+  .brand-logo {
+    height: 24px;
+    max-width: calc(100vw - 96px);
+  }
+
+  .server-control {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .server-control select {
+    flex: 1;
+  }
+
+  .custom-server-form {
+    width: 100%;
+  }
+
+  .custom-server-form input {
+    flex: 1;
+    width: 0;
+  }
+}
