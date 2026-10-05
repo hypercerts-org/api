@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-const root = fileURLToPath(new URL('../', import.meta.url));
+const root = fileURLToPath(new URL('../../../', import.meta.url));
 const definitionCollection = 'app.certified.badge.definition';
 const awardCollection = 'app.certified.badge.award';
 const responseCollection = 'app.certified.badge.response';
