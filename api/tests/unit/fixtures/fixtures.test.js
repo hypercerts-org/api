@@ -8,6 +8,9 @@ import * as CID from '@atcute/cid';
 import { isValidDid, isValidTid } from '@atproto/syntax';
 import { locationRecords, profileRecords, organizationRecords, seedSql } from '../../fixtures/records.js';
 import { activityContributorInformationVersions, activityFixtureRows } from '../../fixtures/activities.js';
+import { seedRows as activityHttpFixtureRows } from '../../http/fixtures/activity.fixture.js';
+import { seedRows as badgeHttpFixtureRows } from '../../http/fixtures/badge-definitions.fixture.js';
+import { seedRows as fundingHttpFixtureRows } from '../../http/fixtures/funding-receipts.fixture.js';
 import {
   actorFollowDids,
   actorFollowOrganizationRecords,
@@ -60,7 +63,7 @@ test('fixtures have consistent full AT-URIs, valid DID/TID/CID identifiers, type
   const records = [
     ...locationRecords, ...profileRecords, ...organizationRecords,
     ...actorFollowRecords, ...actorFollowProfileRecords, ...actorFollowOrganizationRecords,
-    ...activityFixtureRows,
+    ...activityFixtureRows, ...activityHttpFixtureRows,
   ];
   for (const row of records) {
     assert.equal(row.uri, `at://${row.did}/${row.collection}/${row.rkey}`);
@@ -74,6 +77,28 @@ test('fixtures have consistent full AT-URIs, valid DID/TID/CID identifiers, type
     assert.equal(cid.digest.contents.length, 32);
     assert.equal(row.indexedAt, '2025-01-02T03:04:05.000Z');
   }
+});
+
+test('activity HTTP fixture repositories do not collide with activity, follow, funding, or badge fixtures', () => {
+  const existingRows = [
+    ...locationRecords, ...profileRecords, ...organizationRecords,
+    ...actorFollowRecords, ...actorFollowProfileRecords, ...actorFollowOrganizationRecords,
+    ...activityFixtureRows, ...fundingHttpFixtureRows, ...badgeHttpFixtureRows,
+  ];
+  const existingDids = new Set(existingRows.map(({ did }) => did));
+  const activityHttpDids = new Set(activityHttpFixtureRows.map(({ did }) => did));
+  assert.deepEqual([...activityHttpDids].filter((did) => existingDids.has(did)), []);
+  assert.equal(new Set(activityHttpFixtureRows.map(({ uri }) => uri)).size, activityHttpFixtureRows.length);
+});
+
+test('shared and HTTP fixture rows do not reuse record URIs', () => {
+  const rows = [
+    ...locationRecords, ...profileRecords, ...organizationRecords,
+    ...actorFollowRecords, ...actorFollowProfileRecords, ...actorFollowOrganizationRecords,
+    ...activityFixtureRows, ...activityHttpFixtureRows, ...badgeHttpFixtureRows, ...fundingHttpFixtureRows,
+  ];
+  const uris = rows.map(({ uri }) => uri);
+  assert.equal(new Set(uris).size, uris.length, 'duplicate fixture URIs silently overwrite earlier seeded records');
 });
 
 test('actor-follow fixtures isolate publishers and cover date precedence, URI ties, and sparse sidecars', async () => {

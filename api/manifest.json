@@ -5,6 +5,9 @@
   "runtimeCompatibility": "compatible-at-target-revision",
   "status": "handlers-implemented; location-and-actor-follow-runtime-validated-at-target-revision; other-query-runtime-validation-pending",
   "handlerStatus": {
+    "getActivity": "implemented",
+    "listActivities": "implemented",
+    "searchActivities": "implemented",
     "getFollow": "implemented",
     "listActorFollowers": "implemented",
     "listActorFollowing": "implemented",
@@ -12,12 +15,12 @@
     "listEntityFollowers": "implemented",
     "listEntityFollowing": "implemented",
     "listRecentFollows": "implemented",
-    "getLocation": "implemented",
-    "listLocations": "implemented",
     "getReceipt": "implemented",
     "listReceipts": "implemented",
     "getBadgeDefinition": "implemented",
-    "listBadgeDefinitions": "implemented"
+    "listBadgeDefinitions": "implemented",
+    "getLocation": "implemented",
+    "listLocations": "implemented"
   },
   "authentication": {
     "decision": "public",
@@ -88,6 +91,14 @@
     {
       "id": "org.hypercerts.context.evaluation",
       "packagePath": "lexicons/org/hypercerts/context/evaluation.json"
+    },
+    {
+      "id": "org.hypercerts.claim.listActivities",
+      "path": "lexicons/org.hypercerts.claim.listActivities.json"
+    },
+    {
+      "id": "org.hypercerts.claim.searchActivities",
+      "path": "lexicons/org.hypercerts.claim.searchActivities.json"
     },
     {
       "id": "org.hypercerts.collection.getCollection",
@@ -277,6 +288,7 @@
   "modules": [
     "modules/shared/manifest.json",
     "modules/badge-definitions/manifest.json",
+    "modules/activity/manifest.json",
     "modules/actor-follow/manifest.json",
     "modules/entity-follow/manifest.json",
     "modules/recent-follows/manifest.json",
