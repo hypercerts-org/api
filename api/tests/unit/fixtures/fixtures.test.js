@@ -10,10 +10,12 @@ import { locationRecords, profileRecords, organizationRecords, seedSql } from '.
 import { activityContributorInformationVersions, activityFixtureRows } from '../../fixtures/activities.js';
 import { seedRows as activityHttpFixtureRows } from '../../http/fixtures/activity.fixture.js';
 import { seedRows as badgeHttpFixtureRows } from '../../http/fixtures/badge-definitions.fixture.js';
+import { seedRows as collectionHttpFixtureRows } from '../../http/fixtures/collections.fixture.js';
 import { seedRows as contextAttachmentHttpFixtureRows } from '../../http/fixtures/context-attachments.fixture.js';
 import { seedRows as contextEvaluationHttpFixtureRows } from '../../http/fixtures/context-evaluations.fixture.js';
 import { seedRows as fundingHttpFixtureRows } from '../../http/fixtures/funding-receipts.fixture.js';
 import { seedRows as graphFollowHttpFixtureRows } from '../../http/fixtures/graph-follows.fixture.js';
+import { seedRows as locationHttpFixtureRows } from '../../http/fixtures/location.fixture.js';
 import {
   actorFollowDids,
   actorFollowOrganizationRecords,
@@ -72,7 +74,7 @@ test('fixtures have consistent full AT-URIs, valid DID/TID/CID identifiers, type
   }
 });
 
-test('shared and recursively discovered HTTP seed rows are unique against shared fixtures and use CBOR-derived CIDs', async () => {
+test('shared and recursively discovered HTTP seed rows are nonempty, unique against shared fixtures, and use CBOR-derived CIDs', async () => {
   const sharedRows = [
     ...locationRecords, ...profileRecords, ...organizationRecords,
     ...actorFollowRecords, ...actorFollowProfileRecords, ...actorFollowOrganizationRecords,
@@ -84,7 +86,7 @@ test('shared and recursively discovered HTTP seed rows are unique against shared
   const httpRows = [];
   for (const file of fixtureFiles) {
     const fixture = await import(pathToFileURL(file).href);
-    assert.ok(Array.isArray(fixture.seedRows), `${path.relative(httpFixtureRoot, file)} must export seedRows`);
+    assert.ok(Array.isArray(fixture.seedRows) && fixture.seedRows.length > 0, `${path.relative(httpFixtureRoot, file)} must export nonempty seedRows`);
     httpRows.push(...fixture.seedRows);
   }
 
@@ -99,6 +101,7 @@ test('shared and recursively discovered HTTP seed rows are unique against shared
     'seed rows must not reuse another record identity',
   );
   for (const row of allRows) {
+    assert.equal(row.record.$type, row.collection);
     assert.equal(CID.toString(await CID.create(0x71, encode(row.record))), row.cid, `CBOR-derived CID mismatch for ${row.uri}`);
   }
 });
@@ -109,6 +112,7 @@ test('activity HTTP fixture repositories do not collide with other fixture repos
     ...actorFollowRecords, ...actorFollowProfileRecords, ...actorFollowOrganizationRecords,
     ...activityFixtureRows, ...contextAttachmentHttpFixtureRows, ...contextEvaluationHttpFixtureRows,
     ...graphFollowHttpFixtureRows, ...fundingHttpFixtureRows, ...badgeHttpFixtureRows,
+    ...collectionHttpFixtureRows, ...locationHttpFixtureRows,
   ];
   const existingDids = new Set(existingRows.map(({ did }) => did));
   const activityHttpDids = new Set(activityHttpFixtureRows.map(({ did }) => did));
