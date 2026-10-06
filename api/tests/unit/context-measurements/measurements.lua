@@ -164,6 +164,18 @@ local profile_row = {
   record = '{"$type":"app.certified.actor.profile","displayName":"Measurement publisher"}',
 }
 record_json[profile_row.record] = { ["$type"] = "app.certified.actor.profile", displayName = "Measurement publisher" }
+local organization_row = {
+  uri = "at://did:plc:measurements.test/app.certified.actor.organization/self",
+  did = DID_A,
+  cid = "bafy-organization-a",
+  indexed_at = "2025-01-02T00:00:00.000Z",
+  record = '{"$type":"app.certified.actor.organization","organizationType":["nonprofit"],"visibility":"public"}',
+}
+record_json[organization_row.record] = {
+  ["$type"] = "app.certified.actor.organization",
+  organizationType = { "nonprofit" },
+  visibility = "public",
+}
 
 local function expect_error(callback, prefix)
   local ok, message = pcall(callback)
@@ -191,9 +203,30 @@ assert(exact.uri == GET_URI and exact.cid == row_a.cid and exact.did == DID_A)
 assert(exact.record.value == "00012.3400", "numeric-string value must be preserved verbatim")
 assert(#exact.record.subjects == 2 and exact.record.subjects[2].cid == "bafy-another-cid")
 assert(exact.author.did == DID_A and exact.author.profile.record.displayName == "Measurement publisher")
+assert(exact.author.profile.indexedAt == profile_row.indexed_at, "populated profile timestamps must remain unchanged")
 assert(exact.author.organization == NULL, "missing organization sidecar must be nullable")
 assert(db.calls[1].values[1] == MEASUREMENT and db.calls[1].values[2] == GET_URI)
 assert(db.calls[1].sql:find("uri = %$2", 1) ~= nil, "lookup must compare the exact supplied URI")
+
+reset_db()
+db.exactRows = { row_a }
+db.sidecars["app.certified.actor.profile"] = { profile_row }
+db.sidecars["app.certified.actor.organization"] = { organization_row }
+local get_with_populated_sidecars = call_get({ uri = GET_URI }).measurement
+assert(get_with_populated_sidecars.author.profile.indexedAt == profile_row.indexed_at)
+assert(get_with_populated_sidecars.author.organization.indexedAt == organization_row.indexed_at)
+
+local profile_indexed_at, organization_indexed_at = profile_row.indexed_at, organization_row.indexed_at
+profile_row.indexed_at, organization_row.indexed_at = nil, nil
+reset_db()
+db.exactRows = { row_a }
+db.sidecars["app.certified.actor.profile"] = { profile_row }
+db.sidecars["app.certified.actor.organization"] = { organization_row }
+local get_with_nil_sidecar_timestamps = call_get({ uri = GET_URI }).measurement
+assert(rawget(get_with_nil_sidecar_timestamps.author.profile, "indexedAt") == nil, "SQL-NULL profile indexedAt must be omitted")
+assert(rawget(get_with_nil_sidecar_timestamps.author.organization, "indexedAt") == nil, "SQL-NULL organization indexedAt must be omitted")
+
+profile_row.indexed_at, organization_row.indexed_at = profile_indexed_at, organization_indexed_at
 
 local indexed_at = row_a.indexed_at
 row_a.indexed_at = nil
@@ -224,6 +257,24 @@ expect_error(function() call_get({ uri = GET_URI }) end, "test database unavaila
 
 -- listMeasurements includes subjectless rows without filters and defaults to a 25-item descending page.
 dofile("lua/endpoints/listMeasurements.lua")
+reset_db()
+db.listRows = { row_a }
+db.sidecars["app.certified.actor.profile"] = { profile_row }
+db.sidecars["app.certified.actor.organization"] = { organization_row }
+local list_with_populated_sidecars = call_list({}).measurements[1]
+assert(list_with_populated_sidecars.author.profile.indexedAt == profile_indexed_at)
+assert(list_with_populated_sidecars.author.organization.indexedAt == organization_indexed_at)
+
+profile_row.indexed_at, organization_row.indexed_at = nil, nil
+reset_db()
+db.listRows = { row_a }
+db.sidecars["app.certified.actor.profile"] = { profile_row }
+db.sidecars["app.certified.actor.organization"] = { organization_row }
+local list_with_nil_sidecar_timestamps = call_list({}).measurements[1]
+assert(rawget(list_with_nil_sidecar_timestamps.author.profile, "indexedAt") == nil, "listMeasurements must omit SQL-NULL profile indexedAt")
+assert(rawget(list_with_nil_sidecar_timestamps.author.organization, "indexedAt") == nil, "listMeasurements must omit SQL-NULL organization indexedAt")
+profile_row.indexed_at, organization_row.indexed_at = profile_indexed_at, organization_indexed_at
+
 for _, malformed_did in ipairs({ "did:plc:publisher%ZZ", "did:plc:publisher%A" }) do
   for _, filters in ipairs({
     { authors = { malformed_did } },
@@ -234,6 +285,19 @@ for _, malformed_did in ipairs({ "did:plc:publisher%ZZ", "did:plc:publisher%A" }
     assert(#db.calls == 0, "malformed DID escapes in a list filter must fail before SQL")
   end
 end
+
+-- Well-formed percent escapes remain valid DIDs after using the generic validator.
+reset_db()
+db.listRows = { row_a }
+local escaped_author = "did:plc:publisher%20one"
+assert(#call_list({ authors = { escaped_author } }).measurements == 1)
+assert(db.calls[1].values[2] == escaped_author, "valid DID escapes must remain a bound author value")
+
+-- Measurement subject URIs still require a syntactically valid collection NSID.
+reset_db()
+expect_error(function() call_list({ subjects = { "at://did:plc:subject-a/invalid/3jzfcijpj2z2d" } }) end, "InvalidRequest:")
+assert(#db.calls == 0, "invalid collection NSID must be rejected before SQL")
+
 reset_db()
 db.listRows = { row_c, row_b }
 local global = call_list({})

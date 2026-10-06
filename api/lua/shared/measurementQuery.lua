@@ -14,9 +14,8 @@ local function measurement_valid_did(value)
 end
 
 local function measurement_valid_record_uri(value)
-  local valid, collection = valid_record_uri(value)
+  local valid, collection, authority = valid_record_uri(value)
   if not valid then return false end
-  local authority = value:match("^at://([^/]+)/")
   return measurement_valid_did(authority), collection
 end
 
@@ -38,8 +37,19 @@ local function measurement_view(row)
   return view
 end
 
+local function omit_null_sidecar_indexed_at(sidecar)
+  if type(sidecar) == "table" and sidecar.indexedAt == MEASUREMENT_NULL then
+    sidecar.indexedAt = nil
+  end
+end
+
 local function hydrate_measurement_views(views)
   local authors = {}
   for _, view in ipairs(views) do authors[#authors + 1] = view.author end
   hydrate_actor_views(authors, measurement_query)
+  -- Measurement sidecars historically omitted SQL-NULL timestamps; top-level views retain JSON null.
+  for _, author in ipairs(authors) do
+    omit_null_sidecar_indexed_at(author.profile)
+    omit_null_sidecar_indexed_at(author.organization)
+  end
 end

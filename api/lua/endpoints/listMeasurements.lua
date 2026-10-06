@@ -2,9 +2,11 @@ local function invalid(message)
   error("InvalidRequest: " .. message, 0)
 end
 
-local function keys_only(values, allowed)
+local function keys_only(values, allowed, unknown_message_prefix)
   for key in pairs(values) do
-    if not allowed[key] then invalid("unknown query parameter") end
+    if not allowed[key] then
+      invalid(unknown_message_prefix and (unknown_message_prefix .. key) or "unknown query parameter")
+    end
   end
 end
 
@@ -18,7 +20,7 @@ local function scalar(params, key)
 end
 
 local function valid_did(value)
-  if #value > 2048 then return false end
+  if type(value) ~= "string" or #value > 2048 then return false end
   local method, specific = value:match("^did:([a-z]+):(.+)$")
   if not method or not specific or specific:sub(-1) == ":" or specific:sub(-1) == "%"
     or value:find("[^%w%.:_%%%-]") then return false end
@@ -34,10 +36,11 @@ local function valid_record_uri(value)
   if type(value) ~= "string" or value:find("[?#]") then return false end
   local authority, collection, rkey = value:match("^at://([^/]+)/([^/]+)/([^/]+)$")
   if not authority or not valid_did(authority) or not valid_record_key(rkey) then return false end
-  return true, collection
+  return true, collection, authority
 end
 
 local function valid_datetime(value)
+  if type(value) ~= "string" then return false end
   local year, month, day, hour, minute, second, suffix = value:match(
     "^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)(.*)$")
   if not year then return false end
@@ -84,7 +87,7 @@ local function record_view(row)
   return {
     uri = row.uri,
     cid = row.cid,
-    indexedAt = row.indexed_at,
+    indexedAt = row.indexed_at == nil and NULL or row.indexed_at,
     did = row.did,
     record = json.decode(row.record),
   }
@@ -136,9 +139,8 @@ local function measurement_valid_did(value)
 end
 
 local function measurement_valid_record_uri(value)
-  local valid, collection = valid_record_uri(value)
+  local valid, collection, authority = valid_record_uri(value)
   if not valid then return false end
-  local authority = value:match("^at://([^/]+)/")
   return measurement_valid_did(authority), collection
 end
 
@@ -160,10 +162,21 @@ local function measurement_view(row)
   return view
 end
 
+local function omit_null_sidecar_indexed_at(sidecar)
+  if type(sidecar) == "table" and sidecar.indexedAt == MEASUREMENT_NULL then
+    sidecar.indexedAt = nil
+  end
+end
+
 local function hydrate_measurement_views(views)
   local authors = {}
   for _, view in ipairs(views) do authors[#authors + 1] = view.author end
   hydrate_actor_views(authors, measurement_query)
+  -- Measurement sidecars historically omitted SQL-NULL timestamps; top-level views retain JSON null.
+  for _, author in ipairs(authors) do
+    omit_null_sidecar_indexed_at(author.profile)
+    omit_null_sidecar_indexed_at(author.organization)
+  end
 end
 
 local function valid_nsid(value)

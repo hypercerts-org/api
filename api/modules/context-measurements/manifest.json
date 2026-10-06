@@ -21,6 +21,7 @@
       "sourcePath": "../../lua/src/getMeasurement.lua",
       "sharedSourcePaths": [
         "../../lua/shared/query.lua",
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",
@@ -51,7 +52,9 @@
       "sourcePath": "../../lua/src/listMeasurements.lua",
       "sharedSourcePaths": [
         "../../lua/shared/query.lua",
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/listValidation.lua",
         "../../lua/shared/listQuery.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",

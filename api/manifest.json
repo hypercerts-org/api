@@ -143,6 +143,14 @@
       "packagePath": "lexicons/app/certified/badge/definition.json"
     },
     {
+      "id": "app.certified.badge.getBadgeDefinition",
+      "path": "lexicons/app.certified.badge.getBadgeDefinition.json"
+    },
+    {
+      "id": "app.certified.badge.listBadgeDefinitions",
+      "path": "lexicons/app.certified.badge.listBadgeDefinitions.json"
+    },
+    {
       "id": "org.hypercerts.funding.receipt",
       "packagePath": "lexicons/org/hypercerts/funding/receipt.json"
     },
