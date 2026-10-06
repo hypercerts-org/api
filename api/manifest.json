@@ -39,6 +39,8 @@
     "listFeatures": "implemented",
     "getContribution": "implemented",
     "listContributions": "implemented",
+    "getAcknowledgement": "implemented",
+    "listAcknowledgements": "implemented",
     "getVocabTag": "implemented",
     "listVocabTags": "implemented",
     "getLocation": "implemented",
@@ -336,6 +338,18 @@
       "path": "lexicons/app.certified.location.listLocations.json"
     },
     {
+      "id": "org.hypercerts.context.acknowledgement",
+      "packagePath": "lexicons/org/hypercerts/context/acknowledgement.json"
+    },
+    {
+      "id": "org.hypercerts.context.getAcknowledgement",
+      "path": "lexicons/org.hypercerts.context.getAcknowledgement.json"
+    },
+    {
+      "id": "org.hypercerts.context.listAcknowledgements",
+      "path": "lexicons/org.hypercerts.context.listAcknowledgements.json"
+    },
+    {
       "id": "app.certified.graph.getEntityFollow",
       "path": "lexicons/app.certified.graph.getEntityFollow.json"
     },
@@ -445,6 +459,7 @@
     "modules/funding/manifest.json",
     "modules/features/manifest.json",
     "modules/contribution/manifest.json",
+    "modules/acknowledgements/manifest.json",
     "modules/location/manifest.json"
   ],
   "luaBuild": {
