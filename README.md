@@ -9,6 +9,7 @@ Included query endpoints:
 - Badge definitions: `app.certified.badge.getBadgeDefinition`, `app.certified.badge.listBadgeDefinitions`
 - Badge queries: `app.certified.badge.searchBadgeDefinitions`, `app.certified.badge.getBadgeAward`, `app.certified.badge.listBadgeAwards`, `app.certified.badge.getBadgeResponse`, `app.certified.badge.listBadgeResponses`
 - Funding receipts: `org.hypercerts.funding.getReceipt`, `org.hypercerts.funding.listReceipts`
+- Acknowledgements: `org.hypercerts.context.getAcknowledgement`, `org.hypercerts.context.listAcknowledgements`
 - Contributions: `org.hypercerts.claim.getContribution`, `org.hypercerts.claim.listContributions`
 - Contributor information: `org.hypercerts.claim.getContributorInformation`, `org.hypercerts.claim.listContributorInformation`
 - Vocabulary tags: `org.hypercerts.vocab.getVocabTag`, `org.hypercerts.vocab.listVocabTags`

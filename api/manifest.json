@@ -278,6 +278,18 @@
       "path": "lexicons/app.certified.location.listLocations.json"
     },
     {
+      "id": "org.hypercerts.context.acknowledgement",
+      "packagePath": "lexicons/org/hypercerts/context/acknowledgement.json"
+    },
+    {
+      "id": "org.hypercerts.context.getAcknowledgement",
+      "path": "lexicons/org.hypercerts.context.getAcknowledgement.json"
+    },
+    {
+      "id": "org.hypercerts.context.listAcknowledgements",
+      "path": "lexicons/org.hypercerts.context.listAcknowledgements.json"
+    },
+    {
       "id": "app.certified.graph.getEntityFollow",
       "path": "lexicons/app.certified.graph.getEntityFollow.json"
     },
@@ -387,6 +399,7 @@
     "modules/funding/manifest.json",
     "modules/contributor-information/manifest.json",
     "modules/contribution/manifest.json",
+    "modules/acknowledgements/manifest.json",
     "modules/location/manifest.json"
   ],
   "authentication": {
@@ -395,6 +408,8 @@
     "note": "Badge query endpoints expose public indexed record reads; all query endpoints expose public record reads and require no caller authentication."
   },
   "handlerStatus": {
+    "getAcknowledgement": "implemented",
+    "listAcknowledgements": "implemented",
     "searchBadgeDefinitions": "implemented",
     "getBadgeAward": "implemented",
     "listBadgeAwards": "implemented",
