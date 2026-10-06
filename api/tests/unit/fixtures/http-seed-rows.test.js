@@ -12,9 +12,15 @@ import {
   actorFollowProfileRecords,
   actorFollowRecords,
 } from '../../fixtures/actor-follows.js';
+import { graphDids } from '../../http/fixtures/graph-follows.fixture.js';
 
 const apiRoot = fileURLToPath(new URL('../../../', import.meta.url));
 const httpFixtureRoot = path.join(apiRoot, 'tests', 'http', 'fixtures');
+const sharedSeedRows = [
+  ...locationRecords, ...profileRecords, ...organizationRecords,
+  ...actorFollowRecords, ...actorFollowProfileRecords, ...actorFollowOrganizationRecords,
+  ...activityFixtureRows,
+];
 
 async function findFixtureModules(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -54,15 +60,40 @@ function duplicateDetails(previous, current) {
   };
 }
 
-test('shared and recursively discovered HTTP seed rows have unique identities and CBOR-derived CIDs', async () => {
+test('shared and discovered HTTP seed rows preserve acknowledgement sidecar isolation, unique identities, and CBOR-derived CIDs', async () => {
   const rows = [
-    ...[
-      ...locationRecords, ...profileRecords, ...organizationRecords,
-      ...actorFollowRecords, ...actorFollowProfileRecords, ...actorFollowOrganizationRecords,
-      ...activityFixtureRows,
-    ].map((row) => ({ row, source: 'shared seed rows' })),
+    ...sharedSeedRows.map((row) => ({ row, source: 'shared seed rows' })),
     ...await loadHttpSeedRows(),
   ];
+  const acknowledgementRows = rows.filter(({ row }) => row.collection === 'org.hypercerts.context.acknowledgement');
+  const acknowledgementDids = new Set(acknowledgementRows.map(({ row }) => row.did));
+  const acknowledgementSources = new Set(acknowledgementRows.map(({ source }) => source));
+  const sharedAcknowledgementSidecars = rows
+    .filter(({ row, source }) => acknowledgementDids.has(row.did)
+      && !acknowledgementSources.has(source)
+      && ['app.certified.actor.profile', 'app.certified.actor.organization'].includes(row.collection))
+    .map(({ row, source }) => ({ did: row.did, collection: row.collection, uri: row.uri, source }));
+  assert.deepEqual(sharedAcknowledgementSidecars, [],
+    'acknowledgement publishers must not share actor-sidecar DIDs with other fixture sources because seed upserts can overwrite those rows');
+
+  for (const rkey of ['ack-middle-b', 'ack-author-negative']) {
+    const acknowledgement = rows.find(({ row }) =>
+      row.collection === 'org.hypercerts.context.acknowledgement' && row.rkey === rkey);
+    assert.ok(acknowledgement, `expected acknowledgement fixture ${rkey}`);
+    const sidecars = rows.filter(({ row }) => row.did === acknowledgement.row.did
+      && ['app.certified.actor.profile', 'app.certified.actor.organization'].includes(row.collection));
+    assert.deepEqual(sidecars.map(({ row }) => row.uri), [],
+      `${rkey} publisher must have no profile or organization sidecars in shared or HTTP fixtures`);
+  }
+
+  const measurementWithoutSidecars = rows.find(({ row }) =>
+    row.collection === 'org.hypercerts.context.measurement' && row.rkey === '3jzfcijpj2z2d');
+  assert.ok(measurementWithoutSidecars, 'expected a measurement fixture with absent publisher sidecars');
+  const measurementSidecars = rows.filter(({ row }) => row.did === measurementWithoutSidecars.row.did
+    && ['app.certified.actor.profile', 'app.certified.actor.organization'].includes(row.collection));
+  assert.deepEqual(measurementSidecars.map(({ row }) => row.uri), [],
+    'the measurement fixture without sidecars must not share its publisher DID with another fixture');
+
   const byUri = new Map();
   const byIdentity = new Map();
   const duplicateUris = [];
@@ -88,4 +119,15 @@ test('shared and recursively discovered HTTP seed rows have unique identities an
     { duplicateUris: [], duplicateIdentities: [] },
     'shared and HTTP seed rows must not overwrite one another by canonical URI or repository identity',
   );
+});
+
+test('graph fixture third subject stays unhydrated across the complete seed set', async () => {
+  const rows = [
+    ...sharedSeedRows,
+    ...(await loadHttpSeedRows()).map(({ row }) => row),
+  ];
+  const actorSidecars = rows.filter(({ did, collection }) => did === graphDids.thirdSubject
+    && ['app.certified.actor.profile', 'app.certified.actor.organization'].includes(collection));
+
+  assert.deepEqual(actorSidecars.map(({ uri }) => uri), []);
 });
