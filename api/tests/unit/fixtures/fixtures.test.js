@@ -9,6 +9,7 @@ import { isValidDid, isValidTid } from '@atproto/syntax';
 import { locationRecords, profileRecords, organizationRecords, seedSql } from '../../fixtures/records.js';
 import { activityContributorInformationVersions, activityFixtureRows } from '../../fixtures/activities.js';
 import { seedRows as activityHttpFixtureRows } from '../../http/fixtures/activity.fixture.js';
+import { seedRows as acknowledgementHttpFixtureRows } from '../../http/fixtures/acknowledgements.fixture.js';
 import { seedRows as actorsHttpFixtureRows } from '../../http/fixtures/actors.fixture.js';
 import { seedRows as badgeHttpFixtureRows } from '../../http/fixtures/badge-definitions.fixture.js';
 import { seedRows as collectionHttpFixtureRows } from '../../http/fixtures/collections.fixture.js';
@@ -92,6 +93,15 @@ test('shared and recursively discovered HTTP seed rows are nonempty, unique agai
   }
 
   const allRows = [...sharedRows, ...httpRows];
+  for (const rkey of ['ack-middle-b', 'ack-author-negative']) {
+    const acknowledgement = acknowledgementHttpFixtureRows.find((row) => row.rkey === rkey);
+    assert.ok(acknowledgement, `expected acknowledgement fixture ${rkey}`);
+    const sidecars = allRows.filter(({ did, collection }) => did === acknowledgement.did
+      && ['app.certified.actor.profile', 'app.certified.actor.organization'].includes(collection));
+    assert.deepEqual(sidecars.map(({ uri }) => uri), [],
+      `${rkey} publisher must have no profile or organization sidecars in shared or HTTP fixtures`);
+  }
+
   for (const row of allRows) {
     assert.equal(row.uri, `at://${row.did}/${row.collection}/${row.rkey}`);
   }
