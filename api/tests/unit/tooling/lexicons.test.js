@@ -124,6 +124,30 @@ if (hasModule('modules/actor-follow/manifest.json')) test('follow query Lexicons
   });
 });
 
+if (hasModule('modules/entity-follow/manifest.json')) test('entity-follow view refs resolve from their endpoint-owned Lexicons', async () => {
+  const { lexicons, documents } = await validatePackageLexicons();
+  const byId = new Map(documents.map((document) => [document.id, document]));
+  const shared = byId.get('org.hypercerts.api.defs');
+  const get = byId.get('app.certified.graph.getEntityFollow');
+  const followers = byId.get('app.certified.graph.listEntityFollowers');
+  const following = byId.get('app.certified.graph.listEntityFollowing');
+
+  for (const name of ['entityFollowRecordView', 'entityFollowerView', 'entityFollowingItem']) {
+    assert.equal(shared.defs[name], undefined, `${name} is owned by its endpoint Lexicon`);
+  }
+  for (const [owner, name] of [
+    ['app.certified.graph.getEntityFollow', 'entityFollowRecordView'],
+    ['app.certified.graph.listEntityFollowers', 'entityFollowerView'],
+    ['app.certified.graph.listEntityFollowing', 'entityFollowingItem'],
+  ]) assert.equal(lexicons.getDefOrThrow(`${owner}#${name}`).type, 'object');
+
+  assert.equal(get.defs.output.properties.follow.ref, 'lex:app.certified.graph.getEntityFollow#entityFollowRecordView');
+  assert.equal(followers.defs.output.properties.followers.items.ref, 'lex:app.certified.graph.listEntityFollowers#entityFollowerView');
+  assert.equal(followers.defs.entityFollowerView.properties.follow.ref, 'lex:app.certified.graph.getEntityFollow#entityFollowRecordView');
+  assert.equal(following.defs.output.properties.entities.items.ref, 'lex:app.certified.graph.listEntityFollowing#entityFollowingItem');
+  assert.equal(following.defs.entityFollowingItem.properties.follow.ref, 'lex:app.certified.graph.getEntityFollow#entityFollowRecordView');
+});
+
 test('installed ATProto validator accepts package language, transitive refs, and real fixture records', async () => {
   const { lexicons, isValidDid, isValidTid } = await validatePackageLexicons();
   const { jsonToLex, lexToJson } = await import('@atproto/lexicon');

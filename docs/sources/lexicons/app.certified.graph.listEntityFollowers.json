@@ -18,11 +18,23 @@
       "output": { "encoding": "application/json", "schema": { "type": "ref", "ref": "#output" } },
       "errors": [{ "name": "InvalidRequest", "description": "The entity AT-URI, sort direction, page bound, cursor, or query parameters are invalid." }]
     },
+    "entityFollowerView": {
+      "type": "object",
+      "description": "The follower actor and the raw entity-follow record representing its relationship.",
+      "required": ["did", "profile", "organization", "follow"],
+      "nullable": ["profile", "organization"],
+      "properties": {
+        "did": { "type": "string", "format": "did" },
+        "profile": { "type": "ref", "ref": "org.hypercerts.api.defs#profileView" },
+        "organization": { "type": "ref", "ref": "org.hypercerts.api.defs#organizationView" },
+        "follow": { "type": "ref", "ref": "app.certified.graph.getEntityFollow#entityFollowRecordView" }
+      }
+    },
     "output": {
       "type": "object",
       "required": ["followers"],
       "properties": {
-        "followers": { "type": "array", "items": { "type": "ref", "ref": "org.hypercerts.api.defs#entityFollowerView" } },
+        "followers": { "type": "array", "items": { "type": "ref", "ref": "#entityFollowerView" } },
         "cursor": { "type": "string", "description": "Opaque cursor for the next page; omitted when there are no more relationships." }
       }
     }

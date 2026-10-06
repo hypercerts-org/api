@@ -530,7 +530,7 @@ local function entity_follow_sort_key()
   return "CASE WHEN jsonb_typeof(record::jsonb->'createdAt') = 'string' AND " .. created .. " ~ '" .. zoned .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created .. ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE COALESCE(indexed_at::timestamptz, created_at::timestamptz) END"
 end
 
-local function entity_follow_record_view(row)
+local function entity_follow_indexed_record_view(row)
   return {
     uri = row.uri,
     cid = row.cid,
@@ -538,6 +538,12 @@ local function entity_follow_record_view(row)
     did = row.did,
     record = json.decode(row.record),
   }
+end
+
+local function entity_follow_record_view(row)
+  local view = entity_follow_indexed_record_view(row)
+  view["$type"] = "app.certified.graph.getEntityFollow#entityFollowRecordView"
+  return view
 end
 
 local function entity_follow_decode_cursor(token, direction)
@@ -679,6 +685,7 @@ local function entity_follow_resolve_entities(rows, subjects_by_row)
   for index, row in ipairs(rows) do
     local uri = row_uris[row]
     entities[index] = {
+      ["$type"] = "app.certified.graph.listEntityFollowing#entityFollowingItem",
       uri = uri,
       entity = views_by_uri[uri] or ENTITY_FOLLOW_NULL,
       follow = entity_follow_record_view(row),
