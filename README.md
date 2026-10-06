@@ -6,6 +6,8 @@ This checkout is one of the additive local sibling branches used to compose the 
 
 Included query endpoints:
 
+- Rights: `org.hypercerts.claim.getRights`, `org.hypercerts.claim.listRights`
+
 - Badge definitions: `app.certified.badge.getBadgeDefinition`, `app.certified.badge.listBadgeDefinitions`
 - Badge queries: `app.certified.badge.searchBadgeDefinitions`, `app.certified.badge.getBadgeAward`, `app.certified.badge.listBadgeAwards`, `app.certified.badge.getBadgeResponse`, `app.certified.badge.listBadgeResponses`
 - Certified EVM links: `app.certified.link.getEvmLink`, `app.certified.link.listEvmLinks`
@@ -16,6 +18,8 @@ Included query endpoints:
 - Vocabulary tags: `org.hypercerts.vocab.getVocabTag`, `org.hypercerts.vocab.listVocabTags`
 
 `api/manifest.json` is authoritative for the modules and validation Lexicons included in this checkout. The `docs/` workspace contains the endpoint explorer and full schema snapshots.
+
+## Checks
 
 ```sh
 pnpm install --frozen-lockfile
@@ -31,6 +35,7 @@ pnpm build
 
 | Capability | XRPC endpoints | HTTP contracts |
 | --- | --- | --- |
+| Rights | `org.hypercerts.claim.getRights`, `org.hypercerts.claim.listRights` | Exact retrieval, author filters, nullable sidecars, stable pagination, and named errors |
 | Funding receipts | `org.hypercerts.funding.getReceipt`, `org.hypercerts.funding.listReceipts` | Record retrieval, repeated filters, stable pagination, and named runtime errors |
 | Badge definitions | `app.certified.badge.getBadgeDefinition`, `app.certified.badge.listBadgeDefinitions` | Record/CID retrieval, publisher sidecars, filters, tied pagination, and named runtime errors |
 | Badge queries | `app.certified.badge.searchBadgeDefinitions`, `app.certified.badge.getBadgeAward`, `app.certified.badge.listBadgeAwards`, `app.certified.badge.getBadgeResponse`, `app.certified.badge.listBadgeResponses` | Baseline-aware definition search, exact-version award/response lookups, recipient status, raw response history, filters, and cursor pagination |

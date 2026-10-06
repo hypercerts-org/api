@@ -57,7 +57,9 @@
     "getMeasurement": "implemented",
     "listMeasurements": "implemented",
     "getEvmLink": "implemented",
-    "listEvmLinks": "implemented"
+    "listEvmLinks": "implemented",
+    "getRights": "implemented",
+    "listRights": "implemented"
   },
   "authentication": {
     "decision": "public",
@@ -492,6 +494,18 @@
     {
       "id": "app.certified.link.listEvmLinks",
       "path": "lexicons/app.certified.link.listEvmLinks.json"
+    },
+    {
+      "id": "org.hypercerts.claim.getRights",
+      "path": "lexicons/org.hypercerts.claim.getRights.json"
+    },
+    {
+      "id": "org.hypercerts.claim.listRights",
+      "path": "lexicons/org.hypercerts.claim.listRights.json"
+    },
+    {
+      "id": "org.hypercerts.claim.rights",
+      "packagePath": "lexicons/org/hypercerts/claim/rights.json"
     }
   ],
   "modules": [
@@ -516,7 +530,8 @@
     "modules/location/manifest.json",
     "modules/features/manifest.json",
     "modules/context-measurements/manifest.json",
-    "modules/evm-links/manifest.json"
+    "modules/evm-links/manifest.json",
+    "modules/rights/manifest.json"
   ],
   "luaBuild": {
     "endpointSources": [
