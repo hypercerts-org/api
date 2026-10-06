@@ -38,7 +38,9 @@
     "getEntityFollow": "implemented",
     "listEntityFollowers": "implemented",
     "listEntityFollowing": "implemented",
-    "listRecentFollows": "implemented"
+    "listRecentFollows": "implemented",
+    "getContribution": "implemented",
+    "listContributions": "implemented"
   },
   "authentication": {
     "decision": "public",
@@ -311,6 +313,18 @@
       "path": "lexicons/app.certified.link.listEvmLinks.json"
     },
     {
+      "id": "org.hypercerts.claim.getContribution",
+      "path": "lexicons/org.hypercerts.claim.getContribution.json"
+    },
+    {
+      "id": "org.hypercerts.claim.listContributions",
+      "path": "lexicons/org.hypercerts.claim.listContributions.json"
+    },
+    {
+      "id": "org.hypercerts.claim.contribution",
+      "packagePath": "lexicons/org/hypercerts/claim/contribution.json"
+    },
+    {
       "id": "app.certified.location.getLocation",
       "path": "lexicons/app.certified.location.getLocation.json"
     },
@@ -385,6 +399,7 @@
     "modules/entity-follow/manifest.json",
     "modules/recent-follows/manifest.json",
     "modules/context-evaluation/manifest.json",
-    "modules/context-attachments/manifest.json"
+    "modules/context-attachments/manifest.json",
+    "modules/contribution/manifest.json"
   ]
 }
