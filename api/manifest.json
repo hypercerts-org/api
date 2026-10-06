@@ -220,13 +220,22 @@
     {
       "id": "org.hypercerts.funding.listReceipts",
       "path": "lexicons/org.hypercerts.funding.listReceipts.json"
+    },
+    {
+      "id": "app.certified.location.getLocation",
+      "path": "lexicons/app.certified.location.getLocation.json"
+    },
+    {
+      "id": "app.certified.location.listLocations",
+      "path": "lexicons/app.certified.location.listLocations.json"
     }
   ],
   "modules": [
     "modules/shared/manifest.json",
     "modules/vocab/manifest.json",
     "modules/badge-definitions/manifest.json",
-    "modules/funding/manifest.json"
+    "modules/funding/manifest.json",
+    "modules/location/manifest.json"
   ],
   "authentication": {
     "unresolved": false,
@@ -239,7 +248,9 @@
     "getBadgeDefinition": "implemented",
     "listBadgeDefinitions": "implemented",
     "getReceipt": "implemented",
-    "listReceipts": "implemented"
+    "listReceipts": "implemented",
+    "getLocation": "implemented",
+    "listLocations": "implemented"
   },
   "collection": "app.certified.location",
   "targetHappyViewRevision": "a2f347e605d7cd9c11669b320e43c10dbfe982e3",
