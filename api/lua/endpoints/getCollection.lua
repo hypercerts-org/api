@@ -1,3 +1,23 @@
+local function valid_did(value)
+  if type(value) ~= "string" or #value > 2048 then return false end
+  local method, specific = value:match("^did:([a-z]+):(.+)$")
+  if not method or not specific or specific:sub(-1) == ":" or specific:sub(-1) == "%"
+    or value:find("[^%w%.:_%%%-]") then return false end
+  return true
+end
+
+local function valid_record_key(value)
+  return #value >= 1 and #value <= 512 and value ~= "." and value ~= ".."
+    and not value:find("[^%w_~%.:%-]")
+end
+
+local function valid_record_uri(value)
+  if type(value) ~= "string" or value:find("[?#]") then return false end
+  local authority, collection, rkey = value:match("^at://([^/]+)/([^/]+)/([^/]+)$")
+  if not authority or not valid_did(authority) or not valid_record_key(rkey) then return false end
+  return true, collection, authority
+end
+
 local COLLECTION_PROJECTION_PROFILE = "app.certified.actor.profile"
 local COLLECTION_PROJECTION_ORGANIZATION = "app.certified.actor.organization"
 local COLLECTION_PROJECTION_LOCATION = "app.certified.location"
@@ -184,4 +204,69 @@ local function collection_projection_hydrate(views, omit_invalid)
       view.tags = toarray(projected_tags)
     end
   end
+end
+
+local COLLECTION = "org.hypercerts.collection"
+
+local function collection_invalid(message)
+  error("InvalidRequest: " .. message, 0)
+end
+
+local function collection_keys_only(values, allowed)
+  for key in pairs(values) do
+    if not allowed[key] then collection_invalid("unknown query parameter: " .. key) end
+  end
+end
+
+local function collection_scalar(values, key)
+  local value = values[key]
+  if value == nil then return nil end
+  if key == "hasOrganizationRecord" and type(value) == "boolean" then return tostring(value) end
+  if type(value) ~= "string" and type(value) ~= "number" then
+    collection_invalid(key .. " must occur once")
+  end
+  return tostring(value)
+end
+
+local function collection_valid_record_uri(value)
+  if type(value) ~= "string" or #value > 8192 then return false end
+  return valid_record_uri(value)
+end
+
+local function collection_query(sql, values)
+  if db.backend() ~= "postgres" then
+    error("CollectionQueryFailed: collection API requires PostgreSQL", 0)
+  end
+  local ok, result = pcall(db.raw, sql, values)
+  if not ok or type(result) ~= "table" then
+    error("CollectionQueryFailed: collection lookup failed", 0)
+  end
+  return result
+end
+
+local function collection_view(row)
+  return collection_projection_view(row)
+end
+
+local function collection_hydrate(views, omit_invalid)
+  return collection_projection_hydrate(views, omit_invalid)
+end
+
+function handle()
+  collection_keys_only(params, { uri = true })
+  local uri = collection_scalar(params, "uri")
+  local valid, collection = collection_valid_record_uri(uri)
+  if not uri or not valid or collection ~= COLLECTION then
+    collection_invalid("uri must be a full org.hypercerts.collection AT-URI with a DID authority")
+  end
+
+  local rows = collection_query(
+    "SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record " ..
+      "FROM happyview_records WHERE collection = $1 AND uri = $2 LIMIT 1",
+    { COLLECTION, uri })
+  if #rows == 0 then error("RecordNotFound: collection record is not indexed", 0) end
+
+  local view = collection_view(rows[1])
+  collection_hydrate({ view })
+  return { collection = view }
 end
