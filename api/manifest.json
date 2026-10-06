@@ -12,7 +12,21 @@
     "getEvmLink": "implemented",
     "listEvmLinks": "implemented",
     "getLocation": "implemented",
-    "listLocations": "implemented"
+    "listLocations": "implemented",
+    "getEvaluation": "implemented",
+    "listEvaluations": "implemented",
+    "getAttachment": "implemented",
+    "listAttachments": "implemented",
+    "getActivity": "implemented",
+    "listActivities": "implemented",
+    "searchActivities": "implemented",
+    "getFollow": "implemented",
+    "listActorFollowers": "implemented",
+    "listActorFollowing": "implemented",
+    "getEntityFollow": "implemented",
+    "listEntityFollowers": "implemented",
+    "listEntityFollowing": "implemented",
+    "listRecentFollows": "implemented"
   },
   "authentication": {
     "decision": "public",
@@ -251,6 +265,58 @@
     {
       "id": "app.certified.location.listLocations",
       "path": "lexicons/app.certified.location.listLocations.json"
+    },
+    {
+      "id": "app.certified.graph.getEntityFollow",
+      "path": "lexicons/app.certified.graph.getEntityFollow.json"
+    },
+    {
+      "id": "app.certified.graph.listEntityFollowers",
+      "path": "lexicons/app.certified.graph.listEntityFollowers.json"
+    },
+    {
+      "id": "app.certified.graph.listEntityFollowing",
+      "path": "lexicons/app.certified.graph.listEntityFollowing.json"
+    },
+    {
+      "id": "app.certified.graph.getFollow",
+      "path": "lexicons/app.certified.graph.getFollow.json"
+    },
+    {
+      "id": "app.certified.graph.listActorFollowers",
+      "path": "lexicons/app.certified.graph.listActorFollowers.json"
+    },
+    {
+      "id": "app.certified.graph.listActorFollowing",
+      "path": "lexicons/app.certified.graph.listActorFollowing.json"
+    },
+    {
+      "id": "app.certified.graph.listRecentFollows",
+      "path": "lexicons/app.certified.graph.listRecentFollows.json"
+    },
+    {
+      "id": "org.hypercerts.context.getEvaluation",
+      "path": "lexicons/org.hypercerts.context.getEvaluation.json"
+    },
+    {
+      "id": "org.hypercerts.context.listEvaluations",
+      "path": "lexicons/org.hypercerts.context.listEvaluations.json"
+    },
+    {
+      "id": "org.hypercerts.claim.listActivities",
+      "path": "lexicons/org.hypercerts.claim.listActivities.json"
+    },
+    {
+      "id": "org.hypercerts.claim.searchActivities",
+      "path": "lexicons/org.hypercerts.claim.searchActivities.json"
+    },
+    {
+      "id": "org.hypercerts.context.getAttachment",
+      "path": "lexicons/org.hypercerts.context.getAttachment.json"
+    },
+    {
+      "id": "org.hypercerts.context.listAttachments",
+      "path": "lexicons/org.hypercerts.context.listAttachments.json"
     }
   ],
   "modules": [
@@ -258,6 +324,12 @@
     "modules/badge-definitions/manifest.json",
     "modules/funding/manifest.json",
     "modules/evm-links/manifest.json",
-    "modules/location/manifest.json"
+    "modules/location/manifest.json",
+    "modules/activity/manifest.json",
+    "modules/actor-follow/manifest.json",
+    "modules/entity-follow/manifest.json",
+    "modules/recent-follows/manifest.json",
+    "modules/context-evaluation/manifest.json",
+    "modules/context-attachments/manifest.json"
   ]
 }
