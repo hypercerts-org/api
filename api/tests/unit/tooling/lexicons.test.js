@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { locationRecords, profileRecords, organizationRecords } from '../../fixtures/records.js';
+import { seedRows as activityHttpFixtureRows } from '../../http/fixtures/activity.fixture.js';
 import { validatePackageLexicons } from '../../../tooling/validate-lexicons.js';
 import { readLexiconSource } from '../../../tooling/lexicon-source.js';
 import { loadAssets } from '../../../tooling/installer.js';
@@ -141,19 +142,19 @@ if (hasModule('modules/actor-follow/manifest.json')) test('follow query Lexicons
 test('installed ATProto validator accepts package language, transitive refs, and real fixture records', async () => {
   const { lexicons, isValidDid, isValidTid } = await validatePackageLexicons();
   const { jsonToLex, lexToJson } = await import('@atproto/lexicon');
-  for (const record of [...locationRecords, ...profileRecords, ...organizationRecords]) {
+  for (const record of [...locationRecords, ...profileRecords, ...organizationRecords, ...activityHttpFixtureRows]) {
     const decoded = jsonToLex(record.record);
     lexicons.assertValidRecord(record.collection, decoded);
     assert.deepEqual(lexToJson(decoded), record.record);
     assert.equal(isValidDid(record.did), true);
-    if (record.collection === 'app.certified.location') assert.equal(isValidTid(record.rkey), true);
+    if (['app.certified.location', 'org.hypercerts.claim.activity'].includes(record.collection)) assert.equal(isValidTid(record.rkey), true);
   }
 });
 
 test('fixture CIDs match their DAG-CBOR record contents', async () => {
   const { encode } = await import('@atcute/cbor');
   const CID = await import('@atcute/cid');
-  for (const record of [...locationRecords, ...profileRecords, ...organizationRecords]) {
+  for (const record of [...locationRecords, ...profileRecords, ...organizationRecords, ...activityHttpFixtureRows]) {
     assert.equal(CID.toString(await CID.create(0x71, encode(record.record))), record.cid);
   }
 });

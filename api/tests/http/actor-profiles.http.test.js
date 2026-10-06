@@ -5,6 +5,7 @@ import { actorFixtureDids } from './fixtures/actors.fixture.js';
 
 const endpoint = 'app.certified.actor.getProfile';
 const profileCollection = 'app.certified.actor.profile';
+const missingProfileDid = 'did:plc:zzzzzzzzzzzzzzzzzzzzzzzz';
 
 async function requestActorEndpoint(nsid, params = {}) {
   const url = contractUrl(requireContractTarget(), nsid, params);
@@ -43,7 +44,7 @@ test('getProfile returns a seeded indexed profile with its independently checked
 
 test('getProfile reports a missing indexed profile using the pinned runtime error response', async () => {
   const { response, body } = await requestActorEndpoint(endpoint, {
-    actor: 'did:plc:rrrrrrrrrrrrrrrrrrrrrrrr',
+    actor: missingProfileDid,
   });
   assert.equal(response.status, 500, JSON.stringify(body));
   assert.equal(body.error, 'script_error');
@@ -53,7 +54,7 @@ test('getProfile reports a missing indexed profile using the pinned runtime erro
 });
 
 test('getProfiles preserves repeated actor occurrences and returns null for a missing profile', async () => {
-  const absentActor = 'did:plc:rrrrrrrrrrrrrrrrrrrrrrrr';
+  const absentActor = missingProfileDid;
   const requested = [actorFixtureDids.forest, absentActor, actorFixtureDids.alpine, actorFixtureDids.forest];
   const { response, body } = await requestActorEndpoint('app.certified.actor.getProfiles', { actors: requested });
   assert.equal(response.status, 200, JSON.stringify(body));

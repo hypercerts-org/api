@@ -58,6 +58,7 @@
       "path": "../../lua/endpoints/getProfile.lua",
       "sourcePath": "../../lua/src/getProfile.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/profile.lua",
         "../../lua/shared/profileLookup.lua"
@@ -76,6 +77,7 @@
       "path": "../../lua/endpoints/getProfiles.lua",
       "sourcePath": "../../lua/src/getProfiles.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/profile.lua"
       ],
@@ -93,6 +95,7 @@
       "path": "../../lua/endpoints/searchProfiles.lua",
       "sourcePath": "../../lua/src/searchProfiles.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/profile.lua",
         "../../lua/shared/profileList.lua"
@@ -111,6 +114,7 @@
       "path": "../../lua/endpoints/listProfiles.lua",
       "sourcePath": "../../lua/src/listProfiles.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/profile.lua",
         "../../lua/shared/profileList.lua"

@@ -56,6 +56,7 @@
       "path": "../../lua/endpoints/getOrganization.lua",
       "sourcePath": "../../lua/src/getOrganization.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/organization.lua"
       ],
@@ -73,6 +74,7 @@
       "path": "../../lua/endpoints/getOrganizations.lua",
       "sourcePath": "../../lua/src/getOrganizations.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/organization.lua"
       ],
@@ -90,6 +92,7 @@
       "path": "../../lua/endpoints/listOrganizations.lua",
       "sourcePath": "../../lua/src/listOrganizations.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/organization.lua",
         "../../lua/shared/organizationList.lua"
@@ -108,6 +111,7 @@
       "path": "../../lua/endpoints/searchOrganizations.lua",
       "sourcePath": "../../lua/src/searchOrganizations.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/organization.lua",
         "../../lua/shared/organizationList.lua"
