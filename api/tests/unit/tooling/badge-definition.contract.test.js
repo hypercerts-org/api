@@ -130,6 +130,31 @@ assert(calls[3].values[1] == '${organizationCollection}' and calls[3].values[2] 
   });
 });
 
+test('badge definition endpoints serialize absent indexed_at as explicit JSON null', () => {
+  const single = definitionRow(author, 'nil-indexed-at', {
+    title: 'Null timestamp', badgeType: 'award', createdAt: '2025-02-01T00:00:00Z',
+  });
+  delete single.indexed_at;
+  runLua({
+    endpoint: 'getBadgeDefinition', params: { uri: single.uri }, queryResults: [[single], [], []],
+    assertions: `
+assert(rawget(result.badgeDefinition, 'indexedAt') == NULL, 'getBadgeDefinition must include indexedAt as JSON null')
+`,
+  });
+
+  const listed = definitionRow(author, 'nil-indexed-at-list', {
+    title: 'Null timestamp list', badgeType: 'award', createdAt: '2025-02-01T00:00:00Z',
+  });
+  delete listed.indexed_at;
+  runLua({
+    endpoint: 'listBadgeDefinitions', params: { sortDirection: 'asc' }, queryResults: [[listed], [], []],
+    assertions: `
+assert(#result.badgeDefinitions == 1)
+assert(rawget(result.badgeDefinitions[1], 'indexedAt') == NULL, 'listBadgeDefinitions must include indexedAt as JSON null')
+`,
+  });
+});
+
 test('listBadgeDefinitions combines author and exact badgeType filters, preserves records, and hydrates only the page', () => {
   const icon = { $type: 'blob', ref: { $link: 'baf-icon' }, mimeType: 'image/webp', size: 7 };
   const first = definitionRow(author, 'first', {

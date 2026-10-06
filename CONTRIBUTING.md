@@ -15,7 +15,7 @@ pnpm build
 
 ## HTTP runtime tests
 
-`pnpm test:http` runs the suites in `api/tests/http` against the activity, collection, funding, badge-definition, profile, organization, contributor-information, context attachment and evaluation, location, and graph query XRPC endpoints installed from this checkout, including `org.hypercerts.claim.getContributorInformation` and `org.hypercerts.claim.listContributorInformation`. These tests exercise real HTTP behavior against PostgreSQL, not only Lua handlers with a fake database.
+`pnpm test:http` runs the suites in `api/tests/http` against the activity, collection, funding, badge-definition, profile, organization, contributor-information, context attachment and evaluation, location, graph, and contribution XRPC endpoints installed from this checkout, including `org.hypercerts.claim.getContributorInformation` and `org.hypercerts.claim.listContributorInformation`. These tests exercise real HTTP behavior against PostgreSQL, not only Lua handlers with a fake database.
 
 The local runner requires a local Docker Compose daemon, `psql`, and the pinned PostgreSQL and HappyView images already cached locally. Set `PSQL_PATH` to the absolute path of a trusted `psql` executable:
 
@@ -39,6 +39,8 @@ The HTTP gate fails if it discovers no suites, executes no `node:test` cases, or
 - Activity retrieval with contributor-sidecar hydration, author/organization/contributor/URI filters, tied timestamp pagination, and literal wildcard search.
 - Collection retrieval with CBOR-derived CIDs, location/tag projections, author, organization, item and tag filters, title/shortDescription search, `createdAt`/URI pagination ties, and source-order item pagination with exact-version resolution.
 - Graph actor/entity lookups and lists, tied-key pagination, nullable profile/organization sidecars, entity target resolution, and the global recent-follows `before` filter.
+- Contribution exact-record retrieval, repeated publisher filters, tied ascending/descending cursor pagination, nullable publisher sidecars, and named errors.
+- Badge and contribution fixtures with CBOR-derived record CIDs; contribution DIDs are distinct from baseline fixture identities.
 - Location retrieval with nullable sidecars, repeated author/URI/location-type filters, unsupported-search errors, tied pagination in both directions, malformed/absent `createdAt` handling, and named errors.
 - HTTP fixtures for activity, collection, funding, badge-definition, actor, context attachment and evaluation, graph, and location records use CBOR-derived CIDs.
 
