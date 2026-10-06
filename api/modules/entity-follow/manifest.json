@@ -9,8 +9,7 @@
         "target_collection": "app.certified.graph.entityFollow"
       },
       "dependsOn": [
-        "app.certified.graph.entityFollow",
-        "org.hypercerts.api.defs"
+        "app.certified.graph.entityFollow"
       ]
     },
     {
@@ -22,7 +21,8 @@
         "target_collection": "app.certified.graph.entityFollow"
       },
       "dependsOn": [
-        "app.certified.graph.getEntityFollow"
+        "app.certified.graph.getEntityFollow",
+        "org.hypercerts.api.defs"
       ]
     },
     {

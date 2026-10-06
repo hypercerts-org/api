@@ -5,7 +5,7 @@ import { contractUrl, requireContractTarget } from './helpers.js';
 const getEndpoint = 'org.hypercerts.entity.getFeature';
 const listEndpoint = 'org.hypercerts.entity.listFeatures';
 const featureCollection = 'org.hypercerts.entity.feature';
-const featureAuthor = 'did:plc:xxxxxxxxxxxxxxxxxxxxxxxx';
+const featureAuthor = 'did:plc:777777777777777777777777';
 const profileOnlyAuthor = 'did:plc:yyyyyyyyyyyyyyyyyyyyyyyy';
 const unhydratedAuthor = 'did:plc:zzzzzzzzzzzzzzzzzzzzzzzz';
 const featureUris = {

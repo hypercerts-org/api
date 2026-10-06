@@ -4,7 +4,7 @@ import * as CID from '@atcute/cid';
 const featureCollection = 'org.hypercerts.entity.feature';
 const profileCollection = 'app.certified.actor.profile';
 const organizationCollection = 'app.certified.actor.organization';
-const featureAuthor = 'did:plc:xxxxxxxxxxxxxxxxxxxxxxxx';
+const featureAuthor = 'did:plc:777777777777777777777777';
 const profileOnlyAuthor = 'did:plc:yyyyyyyyyyyyyyyyyyyyyyyy';
 const unhydratedAuthor = 'did:plc:zzzzzzzzzzzzzzzzzzzzzzzz';
 const indexedAt = '2025-03-03T04:05:06.000Z';
