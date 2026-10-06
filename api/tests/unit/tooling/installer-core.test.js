@@ -26,6 +26,34 @@ test('installer preflights every asset before writing and refuses conflicts', as
   assert.deepEqual(written, []);
 });
 
+test('installer reports compact per-asset check and install progress', async () => {
+  const events = [];
+  const assets = [
+    { id: 'existing', kind: 'script', config: {}, body: 'same' },
+    { id: 'new', kind: 'script', config: {}, body: 'incoming' },
+  ];
+
+  const result = await applyAssets(assets, {
+    read: async ({ id }) => {
+      events.push(`read:${id}`);
+      return id === 'existing' ? { config: {}, body: 'same' } : null;
+    },
+    write: async ({ id }) => { events.push(`write:${id}`); },
+  }, {
+    onProgress: (message) => events.push(`progress:${message}`),
+  });
+
+  assert.deepEqual(events, [
+    'progress:[check 1/2] existing',
+    'read:existing',
+    'progress:[check 2/2] new',
+    'read:new',
+    'progress:[install 1/1] new',
+    'write:new',
+  ]);
+  assert.deepEqual(result, { changed: ['new'], unchanged: ['existing'] });
+});
+
 test('override replaces differing declared assets only after preflighting the complete bundle', async () => {
   const lexicon = {
     id: 'org.example.query',
@@ -136,6 +164,46 @@ test('unchanged assets are skipped and partial failures report completed and rem
     return /disk full/.test(error.message);
   });
   assert.deepEqual(written, ['new']);
+});
+
+test('installer confirms a write after its response is lost when read-back matches', async (t) => {
+  const installed = new Map();
+  const id = 'org.example.recovered';
+  const asset = { id, kind: 'script', config: { script_type: 'lua' }, body: 'return true' };
+  const server = createServer((request, response) => {
+    if (request.method === 'POST' && request.url === '/admin/scripts') {
+      const chunks = [];
+      request.on('data', (chunk) => chunks.push(chunk));
+      request.on('end', () => {
+        const payload = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+        installed.set(payload.id, payload);
+        response.destroy();
+      });
+      return;
+    }
+
+    if (request.method === 'GET' && request.url === `/admin/scripts/${id}`) {
+      const payload = installed.get(id);
+      if (!payload) {
+        response.writeHead(404).end();
+        return;
+      }
+      response.writeHead(200, { 'content-type': 'application/json' });
+      response.end(JSON.stringify({ script_type: payload.script_type, description: null, body: payload.body }));
+      return;
+    }
+
+    response.writeHead(404).end();
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve())));
+  const { port } = server.address();
+  const admin = createAdminClient({ baseUrl: `http://127.0.0.1:${port}`, token: 'hv_local-test-token' });
+
+  const result = await applyAssets([asset], admin);
+
+  assert.deepEqual(result, { changed: [id], unchanged: [] });
+  assert.equal(installed.get(id).body, asset.body);
 });
 
 test('apply reports an all-unchanged result without writing', async () => {
@@ -342,4 +410,23 @@ test('admin client preserves action and token_cost when writing lexicons', async
     action: 'create',
     token_cost: 7,
   });
+});
+
+test('admin client accepts a successful write when its unused response body terminates', async () => {
+  let calls = 0;
+  const response = new Response(new ReadableStream({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode('{"updated":'));
+      controller.error(new TypeError('terminated'));
+    },
+  }), { status: 200 });
+  const admin = createAdminClient({
+    baseUrl: 'http://localhost:8080',
+    token: 'hv_write-secret',
+    fetchImpl: async () => { calls++; return response; },
+  });
+
+  await admin.write({ id: 'org.example.script', kind: 'script', config: { script_type: 'lua' }, body: 'return true' });
+
+  assert.equal(calls, 1);
 });
