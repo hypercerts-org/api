@@ -61,7 +61,7 @@
           "maxLength": 100,
           "items": {
             "type": "ref",
-            "ref": "org.hypercerts.api.defs#workscopeTagView"
+            "ref": "org.hypercerts.workscope.getWorkscopeTag#workscopeTagView"
           }
         },
         "cursor": {

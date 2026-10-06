@@ -278,18 +278,23 @@ test("invalid list parameters are rejected before querying", function()
   assert_equal(#db.calls, 0, "invalid requests do not reach the database")
 end)
 
-test("missing indexedAt remains present as JSON null in exact and list views", function()
+test("tag timestamps stay explicit null while missing sidecar timestamps stay omitted", function()
   reset_database()
+  db.actor_rows[PROFILE] = { row(profile_a.uri, did_a, profile_a.cid, "profile-a", nil) }
   db.lookup_rows[uri_a] = row(uri_a, did_a, "bafyreitag-a", "tag-a", nil)
   params = { uri = uri_a }
   local exact = get_workscope_tag().workscopeTag
   assert_equal(exact.indexedAt, NULL)
+  assert_equal(exact.author.profile.indexedAt, nil, "missing sidecar indexedAt must remain omitted")
+  assert_equal(exact.author.organization.indexedAt, "2025-01-03T00:00:00Z", "present sidecar indexedAt must remain unchanged")
 
   db.calls = {}
   db.list_rows = { row(uri_a, did_a, "bafyreitag-a", "tag-a", nil, "2025-01-02T00:00:00.000000Z") }
   params = {}
   local listed = list_workscope_tags().workscopeTags[1]
   assert_equal(listed.indexedAt, NULL)
+  assert_equal(listed.author.profile.indexedAt, nil, "list sidecar indexedAt must remain omitted")
+  assert_equal(listed.author.organization.indexedAt, "2025-01-03T00:00:00Z", "list sidecar timestamp must remain unchanged")
 end)
 
 test("malformed percent DIDs and year-zero cursors are rejected before querying", function()

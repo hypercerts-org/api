@@ -111,7 +111,7 @@ if (hasModule('modules/organization/manifest.json')) test('organization query Le
   assert.equal(lexicons.getDefOrThrow(searchOrganizations.defs.output.properties.actors.items.ref).type, 'object');
 });
 
-if (hasModule('modules/workscope-tags/manifest.json')) test('work-scope tag queries share the indexed record view and declare pagination bounds', async () => {
+if (hasModule('modules/workscope-tags/manifest.json')) test('work-scope tag queries keep their result view with getWorkscopeTag and declare pagination bounds', async () => {
   const { lexicons, documents } = await validatePackageLexicons();
   const byId = new Map(documents.map((document) => [document.id, document]));
   const shared = byId.get('org.hypercerts.api.defs');
@@ -119,22 +119,23 @@ if (hasModule('modules/workscope-tags/manifest.json')) test('work-scope tag quer
   const get = byId.get('org.hypercerts.workscope.getWorkscopeTag');
   const list = byId.get('org.hypercerts.workscope.listWorkscopeTags');
   assert.ok(shared && tag && get && list);
+  assert.equal(shared.defs.workscopeTagView, undefined, 'the workscope-specific view is not part of shared API defs');
 
-  const view = lexicons.getDefOrThrow('org.hypercerts.api.defs#workscopeTagView');
+  const view = lexicons.getDefOrThrow('org.hypercerts.workscope.getWorkscopeTag#workscopeTagView');
   assert.deepEqual(view.required, ['uri', 'cid', 'indexedAt', 'did', 'author', 'record']);
   assert.deepEqual(view.nullable, ['indexedAt']);
   assert.equal(view.properties.author.ref, 'lex:org.hypercerts.api.defs#actorView');
   assert.equal(view.properties.record.ref, 'lex:org.hypercerts.workscope.tag');
   assert.deepEqual(get.defs.main.parameters.required, ['uri']);
   assert.equal(get.defs.main.parameters.properties.uri.format, 'at-uri');
-  assert.equal(get.defs.output.properties.workscopeTag.ref, 'lex:org.hypercerts.api.defs#workscopeTagView');
+  assert.equal(get.defs.output.properties.workscopeTag.ref, 'lex:org.hypercerts.workscope.getWorkscopeTag#workscopeTagView');
   assert.equal(list.defs.main.parameters.properties.authors.maxLength, 100);
   assert.equal(list.defs.main.parameters.properties.authors.items.format, 'did');
   assert.equal(list.defs.main.parameters.properties.sortDirection.default, 'desc');
   assert.equal(list.defs.main.parameters.properties.limit.default, 25);
   assert.equal(list.defs.main.parameters.properties.limit.minimum, 1);
   assert.equal(list.defs.main.parameters.properties.limit.maximum, 100);
-  assert.equal(list.defs.output.properties.workscopeTags.items.ref, 'lex:org.hypercerts.api.defs#workscopeTagView');
+  assert.equal(list.defs.output.properties.workscopeTags.items.ref, 'lex:org.hypercerts.workscope.getWorkscopeTag#workscopeTagView');
   assert.deepEqual(get.defs.main.errors.map(({ name }) => name), ['InvalidRequest', 'RecordNotFound', 'WorkscopeTagQueryFailed']);
   assert.deepEqual(list.defs.main.errors.map(({ name }) => name), ['InvalidRequest', 'WorkscopeTagQueryFailed']);
 });

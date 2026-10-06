@@ -14,8 +14,7 @@ local function workscope_tag_valid_did(value)
 end
 
 local function workscope_tag_valid_record_uri(value)
-  local valid, collection = valid_record_uri(value)
-  local authority = type(value) == "string" and value:match("^at://([^/]+)/")
+  local valid, collection, authority = valid_record_uri(value)
   return valid and workscope_tag_valid_did(authority), collection
 end
 

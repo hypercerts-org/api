@@ -19,9 +19,10 @@
       "path": "../../lua/endpoints/getWorkscopeTag.lua",
       "sourcePath": "../../lua/src/getWorkscopeTag.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
-        "../../lua/shared/recordView.lua",
+        "../../lua/shared/workscopeRecordView.lua",
         "../../lua/shared/actorView.lua",
         "../../lua/shared/workscopeTag.lua"
       ],
@@ -40,8 +41,7 @@
         "target_collection": "org.hypercerts.workscope.tag"
       },
       "dependsOn": [
-        "org.hypercerts.workscope.tag",
-        "org.hypercerts.api.defs"
+        "org.hypercerts.workscope.getWorkscopeTag"
       ]
     },
     {
@@ -50,10 +50,12 @@
       "path": "../../lua/endpoints/listWorkscopeTags.lua",
       "sourcePath": "../../lua/src/listWorkscopeTags.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/listValidation.lua",
         "../../lua/shared/listQuery.lua",
-        "../../lua/shared/recordView.lua",
+        "../../lua/shared/workscopeRecordView.lua",
         "../../lua/shared/actorView.lua",
         "../../lua/shared/workscopeTag.lua",
         "../../lua/shared/workscopeTagList.lua"

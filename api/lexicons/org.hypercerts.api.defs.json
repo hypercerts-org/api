@@ -40,20 +40,6 @@
         "organization": { "type": "ref", "ref": "#organizationView" }
       }
     },
-    "workscopeTagView": {
-      "type": "object",
-      "description": "Work-scope tag view with its hydrated publisher, unchanged record, and nullable index timestamp.",
-      "required": ["uri", "cid", "indexedAt", "did", "author", "record"],
-      "nullable": ["indexedAt"],
-      "properties": {
-        "uri": { "type": "string", "format": "at-uri" },
-        "cid": { "type": "string", "format": "cid" },
-        "indexedAt": { "type": "string", "format": "datetime" },
-        "did": { "type": "string", "format": "did" },
-        "author": { "type": "ref", "ref": "#actorView" },
-        "record": { "type": "ref", "ref": "org.hypercerts.workscope.tag" }
-      }
-    },
     "entityFollowRecordView": {
       "type": "object",
       "description": "Raw indexed entity-follow record view, including the DID that published the relationship.",
