@@ -2,50 +2,12 @@ local ACCOUNT_FOLLOW = "app.certified.graph.follow"
 local ENTITY_FOLLOW = "app.certified.graph.entityFollow"
 local NULL = json.decode("null")
 
-local function recent_valid_record_key(value)
-  return #value >= 1 and #value <= 512 and value ~= "." and value ~= ".."
-    and not value:find("[^%w_~%.:%-]")
-end
-
 local function recent_valid_record_uri(value)
-  if type(value) ~= "string" or value:find("[?#]") then return false end
-  local authority, collection, rkey = value:match("^at://([^/]+)/([^/]+)/([^/]+)$")
-  if not authority or not valid_did(authority) or not recent_valid_record_key(rkey) then return false end
-  return collection == ACCOUNT_FOLLOW or collection == ENTITY_FOLLOW
+  local valid, collection = valid_record_uri(value)
+  return valid and (collection == ACCOUNT_FOLLOW or collection == ENTITY_FOLLOW)
 end
 
-local function recent_valid_datetime(value)
-  if type(value) ~= "string" then return false end
-  local year, month, day, hour, minute, second, suffix = value:match(
-    "^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)(.*)$")
-  if not year then return false end
-  year, month, day = tonumber(year), tonumber(month), tonumber(day)
-  hour, minute, second = tonumber(hour), tonumber(minute), tonumber(second)
-  if month < 1 or month > 12 or hour > 23 or minute > 59 or second > 59 then return false end
-  local leap = year % 4 == 0 and (year % 100 ~= 0 or year % 400 == 0)
-  local month_days = { 31, leap and 29 or 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
-  if day < 1 or day > month_days[month] then return false end
-  local fraction, zone = suffix:match("^(%.%d+)(Z)$")
-  if not fraction then fraction, zone = suffix:match("^(%.%d+)([+-]%d%d:%d%d)$") end
-  if not fraction then zone = suffix:match("^(Z)$") end
-  if not zone then zone = suffix:match("^([+-]%d%d:%d%d)$") end
-  if not zone or zone == "-00:00" then return false end
-  if zone ~= "Z" then
-    local zh, zm = zone:match("^[+-](%d%d):(%d%d)$")
-    if not zh or tonumber(zh) > 23 or tonumber(zm) > 59 then return false end
-  end
-  return true
-end
-
-local function recent_parse_limit(request_params)
-  local value = scalar(request_params, "limit")
-  if value and not value:match("^%d+$") then invalid("limit must be an integer from 1 through 100") end
-  local limit = value and tonumber(value) or 25
-  if not limit or limit % 1 ~= 0 or limit < 1 or limit > 100 then
-    invalid("limit must be an integer from 1 through 100")
-  end
-  return limit
-end
+local recent_valid_datetime = valid_datetime
 
 local function recent_cursor_encode(value)
   local encoded = json.encode(value)
@@ -109,7 +71,7 @@ local function recent_follows_response()
   if before and not recent_valid_datetime(before) then
     invalid("before must be a valid datetime")
   end
-  local limit = recent_parse_limit(request_params)
+  local limit = parse_list_limit(request_params)
   local cursor = recent_cursor_decode(scalar(request_params, "cursor"), before)
 
   local predicates = { "sort_at IS NOT NULL" }

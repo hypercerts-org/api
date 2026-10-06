@@ -1,5 +1,5 @@
 function handle()
-  keys_only(params, { uri = true })
+  keys_only(params, { uri = true }, "unknown query parameter: ")
   local uri = scalar(params, "uri")
   local valid, collection = valid_record_uri(uri)
   if not uri or not valid or collection ~= ACTIVITY then

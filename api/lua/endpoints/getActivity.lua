@@ -1,3 +1,23 @@
+local function valid_did(value)
+  if type(value) ~= "string" or #value > 2048 then return false end
+  local method, specific = value:match("^did:([a-z]+):(.+)$")
+  if not method or not specific or specific:sub(-1) == ":" or specific:sub(-1) == "%"
+    or value:find("[^%w%.:_%%%-]") then return false end
+  return true
+end
+
+local function valid_record_key(value)
+  return #value >= 1 and #value <= 512 and value ~= "." and value ~= ".."
+    and not value:find("[^%w_~%.:%-]")
+end
+
+local function valid_record_uri(value)
+  if type(value) ~= "string" or value:find("[?#]") then return false end
+  local authority, collection, rkey = value:match("^at://([^/]+)/([^/]+)/([^/]+)$")
+  if not authority or not valid_did(authority) or not valid_record_key(rkey) then return false end
+  return true, collection, authority
+end
+
 local ACTIVITY_PROJECTION_CONTRIBUTOR_INFORMATION = "org.hypercerts.claim.contributorInformation"
 local ACTIVITY_PROJECTION_PROFILE = "app.certified.actor.profile"
 local ACTIVITY_PROJECTION_ORGANIZATION = "app.certified.actor.organization"
@@ -12,27 +32,6 @@ local function activity_projection_query(sql, values)
   return result
 end
 
-local function activity_projection_valid_did(value)
-  if type(value) ~= "string" or #value > 2048 then return false end
-  local method, specific = value:match("^did:([a-z]+):(.+)$")
-  if not method or not specific or specific:sub(-1) == ":" or specific:sub(-1) == "%"
-    or value:find("[^%w%.:_%%%-]") then return false end
-  return true
-end
-
-local function activity_projection_valid_record_key(value)
-  return #value >= 1 and #value <= 512 and value ~= "." and value ~= ".."
-    and not value:find("[^%w_~%.:%-]")
-end
-
-local function activity_projection_valid_record_uri(value)
-  if type(value) ~= "string" or value:find("[?#]") then return false end
-  local authority, collection, rkey = value:match("^at://([^/]+)/([^/]+)/([^/]+)$")
-  if not authority or not activity_projection_valid_did(authority)
-    or not activity_projection_valid_record_key(rkey) then return false end
-  return true, collection, authority
-end
-
 local function activity_projection_record_view(row, nullable_indexed_at)
   return {
     uri = row.uri,
@@ -44,8 +43,8 @@ local function activity_projection_record_view(row, nullable_indexed_at)
 end
 
 local function activity_projection_identity_did(identifier)
-  if activity_projection_valid_did(identifier) then return identifier end
-  local valid, _, authority = activity_projection_valid_record_uri(identifier)
+  if valid_did(identifier) then return identifier end
+  local valid, _, authority = valid_record_uri(identifier)
   if valid then return authority end
   return nil
 end
@@ -195,46 +194,28 @@ local function activity_projection_hydrate_views(views)
   end
 end
 
-local ACTIVITY = "org.hypercerts.claim.activity"
 local function invalid(message)
   error("InvalidRequest: " .. message, 0)
 end
 
-local function keys_only(values, allowed)
+local function keys_only(values, allowed, unknown_message_prefix)
   for key in pairs(values) do
-    if not allowed[key] then invalid("unknown query parameter: " .. key) end
+    if not allowed[key] then
+      invalid(unknown_message_prefix and (unknown_message_prefix .. key) or "unknown query parameter")
+    end
   end
 end
 
-local function scalar(values, key)
-  local value = values[key]
+local function scalar(params, key)
+  local value = params[key]
   if value == nil then return nil end
-  if key == "hasOrganizationRecord" and type(value) == "boolean" then return tostring(value) end
   if type(value) ~= "string" and type(value) ~= "number" then
     invalid(key .. " must occur once")
   end
   return tostring(value)
 end
 
-local function valid_did(value)
-  if type(value) ~= "string" or #value > 2048 then return false end
-  local method, specific = value:match("^did:([a-z]+):(.+)$")
-  if not method or not specific or specific:sub(-1) == ":" or specific:sub(-1) == "%"
-    or value:find("[^%w%.:_%%%-]") then return false end
-  return true
-end
-
-local function valid_record_key(value)
-  return #value >= 1 and #value <= 512 and value ~= "." and value ~= ".."
-    and not value:find("[^%w_~%.:%-]")
-end
-
-local function valid_record_uri(value)
-  if type(value) ~= "string" or value:find("[?#]") then return false end
-  local authority, collection, rkey = value:match("^at://([^/]+)/([^/]+)/([^/]+)$")
-  if not authority or not valid_did(authority) or not valid_record_key(rkey) then return false end
-  return true, collection, authority
-end
+local ACTIVITY = "org.hypercerts.claim.activity"
 
 local function query(sql, values)
   if db.backend() ~= "postgres" then error("ActivityQueryFailed: activity API requires PostgreSQL", 0) end
@@ -254,7 +235,7 @@ local function hydrate_activity_views(views)
 end
 
 function handle()
-  keys_only(params, { uri = true })
+  keys_only(params, { uri = true }, "unknown query parameter: ")
   local uri = scalar(params, "uri")
   local valid, collection = valid_record_uri(uri)
   if not uri or not valid or collection ~= ACTIVITY then

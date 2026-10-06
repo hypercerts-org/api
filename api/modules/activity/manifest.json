@@ -6,7 +6,10 @@
       "path": "../../lua/endpoints/getActivity.lua",
       "sourcePath": "../../lua/src/getActivity.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/activityProjection.lua",
+        "../../lua/shared/query.lua",
         "../../lua/shared/activity.lua"
       ],
       "config": {
@@ -47,7 +50,10 @@
       "path": "../../lua/endpoints/listActivities.lua",
       "sourcePath": "../../lua/src/listActivities.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/activityProjection.lua",
+        "../../lua/shared/query.lua",
         "../../lua/shared/activity.lua",
         "../../lua/shared/activityList.lua"
       ],
@@ -65,7 +71,10 @@
       "path": "../../lua/endpoints/searchActivities.lua",
       "sourcePath": "../../lua/src/searchActivities.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/activityProjection.lua",
+        "../../lua/shared/query.lua",
         "../../lua/shared/activity.lua",
         "../../lua/shared/activityList.lua"
       ],

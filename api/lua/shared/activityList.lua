@@ -1,3 +1,10 @@
+local function activity_scalar(values, key)
+  if key == "hasOrganizationRecord" and type(values[key]) == "boolean" then
+    return tostring(values[key])
+  end
+  return scalar(values, key)
+end
+
 local function activity_array(key, format)
   local value = params[key]
   if value == nil then return nil end
@@ -220,10 +227,10 @@ local function activity_list_response(search_enabled)
     cursor = true,
   }
   if search_enabled then allowed.search = true end
-  keys_only(params, allowed)
+  keys_only(params, allowed, "unknown query parameter: ")
 
   local authors = activity_array("authors", "did")
-  local has_organization_record = scalar(params, "hasOrganizationRecord")
+  local has_organization_record = activity_scalar(params, "hasOrganizationRecord")
   if has_organization_record ~= nil then
     if has_organization_record == "true" then
       has_organization_record = true

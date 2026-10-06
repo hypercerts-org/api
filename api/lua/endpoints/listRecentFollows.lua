@@ -1,10 +1,20 @@
+local function valid_did(value)
+  if type(value) ~= "string" or #value > 2048 then return false end
+  local method, specific = value:match("^did:([a-z]+):(.+)$")
+  if not method or not specific or specific:sub(-1) == ":" or specific:sub(-1) == "%"
+    or value:find("[^%w%.:_%%%-]") then return false end
+  return true
+end
+
 local function invalid(message)
   error("InvalidRequest: " .. message, 0)
 end
 
-local function keys_only(values, allowed)
+local function keys_only(values, allowed, unknown_message_prefix)
   for key in pairs(values) do
-    if not allowed[key] then invalid("unknown query parameter") end
+    if not allowed[key] then
+      invalid(unknown_message_prefix and (unknown_message_prefix .. key) or "unknown query parameter")
+    end
   end
 end
 
@@ -17,31 +27,19 @@ local function scalar(params, key)
   return tostring(value)
 end
 
-local function valid_did(value)
-  if #value > 2048 then return false end
-  local method, specific = value:match("^did:([a-z]+):(.+)$")
-  if not method or not specific or specific:sub(-1) == ":" or specific:sub(-1) == "%"
-    or value:find("[^%w%.:_%%%-]") then return false end
-  return true
-end
-
-local ACCOUNT_FOLLOW = "app.certified.graph.follow"
-local ENTITY_FOLLOW = "app.certified.graph.entityFollow"
-local NULL = json.decode("null")
-
-local function recent_valid_record_key(value)
+local function valid_record_key(value)
   return #value >= 1 and #value <= 512 and value ~= "." and value ~= ".."
     and not value:find("[^%w_~%.:%-]")
 end
 
-local function recent_valid_record_uri(value)
+local function valid_record_uri(value)
   if type(value) ~= "string" or value:find("[?#]") then return false end
   local authority, collection, rkey = value:match("^at://([^/]+)/([^/]+)/([^/]+)$")
-  if not authority or not valid_did(authority) or not recent_valid_record_key(rkey) then return false end
-  return collection == ACCOUNT_FOLLOW or collection == ENTITY_FOLLOW
+  if not authority or not valid_did(authority) or not valid_record_key(rkey) then return false end
+  return true, collection, authority
 end
 
-local function recent_valid_datetime(value)
+local function valid_datetime(value)
   if type(value) ~= "string" then return false end
   local year, month, day, hour, minute, second, suffix = value:match(
     "^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)(.*)$")
@@ -64,15 +62,24 @@ local function recent_valid_datetime(value)
   return true
 end
 
-local function recent_parse_limit(request_params)
-  local value = scalar(request_params, "limit")
-  if value and not value:match("^%d+$") then invalid("limit must be an integer from 1 through 100") end
-  local limit = value and tonumber(value) or 25
-  if not limit or limit % 1 ~= 0 or limit < 1 or limit > 100 then
-    invalid("limit must be an integer from 1 through 100")
-  end
+local function parse_list_limit(params)
+  local limit_value = scalar(params, "limit")
+  if limit_value and not limit_value:match("^%d+$") then invalid("limit must be an integer from 1 through 100") end
+  local limit = limit_value and tonumber(limit_value) or 25
+  if not limit or limit % 1 ~= 0 or limit < 1 or limit > 100 then invalid("limit must be an integer from 1 through 100") end
   return limit
 end
+
+local ACCOUNT_FOLLOW = "app.certified.graph.follow"
+local ENTITY_FOLLOW = "app.certified.graph.entityFollow"
+local NULL = json.decode("null")
+
+local function recent_valid_record_uri(value)
+  local valid, collection = valid_record_uri(value)
+  return valid and (collection == ACCOUNT_FOLLOW or collection == ENTITY_FOLLOW)
+end
+
+local recent_valid_datetime = valid_datetime
 
 local function recent_cursor_encode(value)
   local encoded = json.encode(value)
@@ -136,7 +143,7 @@ local function recent_follows_response()
   if before and not recent_valid_datetime(before) then
     invalid("before must be a valid datetime")
   end
-  local limit = recent_parse_limit(request_params)
+  local limit = parse_list_limit(request_params)
   local cursor = recent_cursor_decode(scalar(request_params, "cursor"), before)
 
   local predicates = { "sort_at IS NOT NULL" }
