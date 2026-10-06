@@ -91,6 +91,7 @@ local function source(path)
 end
 local handler = table.concat({
   source("lua/shared/query.lua"),
+  source("lua/shared/didValidation.lua"),
   source("lua/shared/recentFollows.lua"),
   source("lua/src/listRecentFollows.lua"),
 }, "\n\n")

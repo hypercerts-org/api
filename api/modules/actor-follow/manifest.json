@@ -44,6 +44,7 @@
       "sourcePath": "../../lua/src/getFollow.lua",
       "sharedSourcePaths": [
         "../../lua/shared/query.lua",
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorFollow.lua",
         "../../lua/shared/actorFollowLookup.lua"
@@ -63,7 +64,9 @@
       "sourcePath": "../../lua/src/listActorFollowers.lua",
       "sharedSourcePaths": [
         "../../lua/shared/query.lua",
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/listValidation.lua",
         "../../lua/shared/listQuery.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",
@@ -85,7 +88,9 @@
       "sourcePath": "../../lua/src/listActorFollowing.lua",
       "sharedSourcePaths": [
         "../../lua/shared/query.lua",
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/listValidation.lua",
         "../../lua/shared/listQuery.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",

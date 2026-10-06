@@ -20,6 +20,7 @@
       "sourcePath": "../../lua/src/getReceipt.lua",
       "sharedSourcePaths": [
         "../../lua/shared/query.lua",
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",
@@ -52,6 +53,7 @@
       "sourcePath": "../../lua/src/listReceipts.lua",
       "sharedSourcePaths": [
         "../../lua/shared/query.lua",
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",

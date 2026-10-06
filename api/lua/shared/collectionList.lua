@@ -25,7 +25,7 @@ local function collection_array(key, kind)
 
   local unique, seen = {}, {}
   for _, item in ipairs(supplied) do
-    if kind == "did" and not collection_valid_did(item) then
+    if kind == "did" and not valid_did(item) then
       collection_invalid("each authors value must be a valid DID; resolve handles to DIDs first")
     elseif kind == "collectionUri" then
       local valid, collection = collection_valid_record_uri(item)

@@ -6,6 +6,8 @@
       "path": "../../lua/endpoints/getCollection.lua",
       "sourcePath": "../../lua/src/getCollection.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/collectionProjection.lua",
         "../../lua/shared/collection.lua"
       ],
@@ -35,6 +37,8 @@
       "path": "../../lua/endpoints/listCollections.lua",
       "sourcePath": "../../lua/src/listCollections.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/collectionProjection.lua",
         "../../lua/shared/collection.lua",
         "../../lua/shared/collectionList.lua"
@@ -65,6 +69,8 @@
       "path": "../../lua/endpoints/searchCollections.lua",
       "sourcePath": "../../lua/src/searchCollections.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/collectionProjection.lua",
         "../../lua/shared/collection.lua",
         "../../lua/shared/collectionList.lua"
@@ -84,6 +90,7 @@
       "sourcePath": "../../lua/src/listCollectionItems.lua",
       "sharedSourcePaths": [
         "../../lua/shared/query.lua",
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/activityProjection.lua",
         "../../lua/shared/featureProjection.lua",

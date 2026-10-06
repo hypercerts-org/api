@@ -1,10 +1,4 @@
-local COLLECTION_PROJECTION_PROFILE = "app.certified.actor.profile"
-local COLLECTION_PROJECTION_ORGANIZATION = "app.certified.actor.organization"
-local COLLECTION_PROJECTION_LOCATION = "app.certified.location"
-local COLLECTION_PROJECTION_TAG = "org.hypercerts.vocab.tag"
-local COLLECTION_PROJECTION_NULL = json.decode("null")
-
-local function collection_projection_valid_did(value)
+local function valid_did(value)
   if type(value) ~= "string" or #value > 2048 then return false end
   local method, specific = value:match("^did:([a-z]+):(.+)$")
   if not method or not specific or specific:sub(-1) == ":" or specific:sub(-1) == "%"
@@ -12,17 +6,27 @@ local function collection_projection_valid_did(value)
   return true
 end
 
-local function collection_projection_valid_record_key(value)
+local function valid_record_key(value)
   return #value >= 1 and #value <= 512 and value ~= "." and value ~= ".."
     and not value:find("[^%w_~%.:%-]")
 end
 
-local function collection_projection_valid_record_uri(value)
-  if type(value) ~= "string" or #value > 8192 or value:find("[?#]") then return false end
+local function valid_record_uri(value)
+  if type(value) ~= "string" or value:find("[?#]") then return false end
   local authority, collection, rkey = value:match("^at://([^/]+)/([^/]+)/([^/]+)$")
-  if not authority or not collection_projection_valid_did(authority)
-    or not collection_projection_valid_record_key(rkey) then return false end
+  if not authority or not valid_did(authority) or not valid_record_key(rkey) then return false end
   return true, collection, authority
+end
+
+local COLLECTION_PROJECTION_PROFILE = "app.certified.actor.profile"
+local COLLECTION_PROJECTION_ORGANIZATION = "app.certified.actor.organization"
+local COLLECTION_PROJECTION_LOCATION = "app.certified.location"
+local COLLECTION_PROJECTION_TAG = "org.hypercerts.vocab.tag"
+local COLLECTION_PROJECTION_NULL = json.decode("null")
+
+local function collection_projection_valid_record_uri(value)
+  if type(value) ~= "string" or #value > 8192 then return false end
+  return valid_record_uri(value)
 end
 
 local function collection_projection_query(sql, values)
@@ -218,24 +222,9 @@ local function collection_scalar(values, key)
   return tostring(value)
 end
 
-local function collection_valid_did(value)
-  if type(value) ~= "string" or #value > 2048 then return false end
-  local method, specific = value:match("^did:([a-z]+):(.+)$")
-  if not method or not specific or specific:sub(-1) == ":" or specific:sub(-1) == "%"
-    or value:find("[^%w%.:_%%%-]") then return false end
-  return true
-end
-
-local function collection_valid_record_key(value)
-  return #value >= 1 and #value <= 512 and value ~= "." and value ~= ".."
-    and not value:find("[^%w_~%.:%-]")
-end
-
 local function collection_valid_record_uri(value)
-  if type(value) ~= "string" or #value > 8192 or value:find("[?#]") then return false end
-  local authority, collection, rkey = value:match("^at://([^/]+)/([^/]+)/([^/]+)$")
-  if not authority or not collection_valid_did(authority) or not collection_valid_record_key(rkey) then return false end
-  return true, collection, authority
+  if type(value) ~= "string" or #value > 8192 then return false end
+  return valid_record_uri(value)
 end
 
 local function collection_query(sql, values)
@@ -284,7 +273,7 @@ local function collection_array(key, kind)
 
   local unique, seen = {}, {}
   for _, item in ipairs(supplied) do
-    if kind == "did" and not collection_valid_did(item) then
+    if kind == "did" and not valid_did(item) then
       collection_invalid("each authors value must be a valid DID; resolve handles to DIDs first")
     elseif kind == "collectionUri" then
       local valid, collection = collection_valid_record_uri(item)

@@ -8,10 +8,7 @@ local function collection_items_invalid(message)
 end
 
 local function collection_items_keys_only(values, allowed)
-  for key in pairs(values) do
-    if not allowed[key] then collection_items_invalid("unknown query parameter: " .. key) end
-  end
-  keys_only(values, allowed)
+  keys_only(values, allowed, "unknown query parameter: ")
 end
 
 local function collection_items_limit()
