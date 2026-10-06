@@ -40,6 +40,6 @@ local function collection_view(row)
   return collection_projection_view(row)
 end
 
-local function collection_hydrate(views)
-  return collection_projection_hydrate(views)
+local function collection_hydrate(views, omit_invalid)
+  return collection_projection_hydrate(views, omit_invalid)
 end

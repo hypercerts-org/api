@@ -124,7 +124,7 @@ local function collection_bind_values(values, items)
   return placeholders
 end
 
-local function collection_list_query(filters, search, limit, cursor, direction)
+local function collection_list_filters(filters, search)
   local where, values = { "collection.collection = $1" }, { COLLECTION }
 
   if filters.authors then
@@ -182,6 +182,10 @@ local function collection_list_query(filters, search, limit, cursor, direction)
     where[#where + 1] = "(strpos(lower(COALESCE(collection.record::jsonb->>'title', '')), lower(" .. text .. ")) > 0 " ..
       "OR strpos(lower(COALESCE(collection.record::jsonb->>'shortDescription', '')), lower(" .. text .. ")) > 0)"
   end
+  return where, values
+end
+
+local function collection_list_apply_cursor(where, values, cursor, direction)
   if cursor then
     values[#values + 1] = cursor.t
     local timestamp = "$" .. #values
@@ -191,7 +195,9 @@ local function collection_list_query(filters, search, limit, cursor, direction)
     where[#where + 1] = "(sorted.sort_at, collection.uri) " .. operator ..
       " ((" .. timestamp .. ")::timestamptz, " .. uri .. ")"
   end
+end
 
+local function collection_list_sql(where, values, limit, direction)
   values[#values + 1] = limit + 1
   local ordering = direction == "asc" and "ASC" or "DESC"
   local created = "collection.record::jsonb->>'createdAt'"
@@ -200,20 +206,22 @@ local function collection_list_query(filters, search, limit, cursor, direction)
     " ~ '" .. zoned .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created ..
     ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE " ..
     "COALESCE(collection.indexed_at::timestamptz, collection.created_at::timestamptz) END"
-  local sql = "SELECT collection.uri, collection.did, collection.cid, collection.indexed_at::text AS indexed_at, " ..
+  return "SELECT collection.uri, collection.did, collection.cid, collection.indexed_at::text AS indexed_at, " ..
     "collection.record::text AS record, to_char(sorted.sort_at AT TIME ZONE 'UTC', " ..
     "'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp " ..
     "FROM happyview_records AS collection CROSS JOIN LATERAL (SELECT " .. sort_key .. " AS sort_at) AS sorted " ..
     "WHERE " .. table.concat(where, " AND ") .. " ORDER BY sorted.sort_at " .. ordering ..
     ", collection.uri " .. ordering .. " LIMIT $" .. #values
+end
 
-  local rows = collection_query(sql, values)
+local function collection_list_page(rows, limit, direction)
   local more = #rows > limit
   if more then rows[#rows] = nil end
 
   local views = {}
   for _, row in ipairs(rows) do views[#views + 1] = collection_view(row) end
-  collection_hydrate(views)
+  -- A malformed sidecar reference must not discard a collection page or its cursor.
+  collection_hydrate(views, true)
 
   local next_cursor
   if more then
@@ -221,6 +229,13 @@ local function collection_list_query(filters, search, limit, cursor, direction)
     next_cursor = collection_cursor_encode({ v = 1, d = direction, t = last.sort_timestamp, u = last.uri })
   end
   return views, next_cursor
+end
+
+local function collection_list_query(filters, search, limit, cursor, direction)
+  local where, values = collection_list_filters(filters, search)
+  collection_list_apply_cursor(where, values, cursor, direction)
+  local sql = collection_list_sql(where, values, limit, direction)
+  return collection_list_page(collection_query(sql, values), limit, direction)
 end
 
 local function collection_list_response(search_enabled)

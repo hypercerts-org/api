@@ -101,12 +101,14 @@ local function collection_projection_load_exact_refs(collection, references)
   return rows_by_version
 end
 
-local function collection_projection_reference(value, field, expected_collection)
+local function collection_projection_reference(value, field, expected_collection, omit_invalid)
   if type(value) ~= "table" or type(value.uri) ~= "string" or type(value.cid) ~= "string" then
+    if omit_invalid then return nil end
     error("CollectionQueryFailed: indexed collection has an invalid " .. field .. " reference", 0)
   end
   local valid, collection = collection_projection_valid_record_uri(value.uri)
   if not valid then
+    if omit_invalid then return nil end
     error("CollectionQueryFailed: indexed collection has an invalid " .. field .. " reference", 0)
   end
   return {
@@ -128,7 +130,7 @@ local function collection_projection_view(row)
   }
 end
 
-local function collection_projection_hydrate(views)
+local function collection_projection_hydrate(views, omit_invalid)
   if #views == 0 then return end
 
   local author_dids, seen_authors = {}, {}
@@ -137,8 +139,8 @@ local function collection_projection_hydrate(views)
   for _, view in ipairs(views) do
     collection_projection_add_unique(author_dids, seen_authors, view.did)
     if view.record.location ~= nil then
-      local reference = collection_projection_reference(view.record.location, "location", COLLECTION_PROJECTION_LOCATION)
-      if reference.matches_collection then
+      local reference = collection_projection_reference(view.record.location, "location", COLLECTION_PROJECTION_LOCATION, omit_invalid)
+      if reference and reference.matches_collection then
         local key = collection_projection_ref_key(reference.uri, reference.cid)
         if not seen_locations[key] then
           seen_locations[key] = true
@@ -151,8 +153,8 @@ local function collection_projection_hydrate(views)
         error("CollectionQueryFailed: indexed collection tags are not an array", 0)
       end
       for _, source in ipairs(view.record.tags) do
-        local reference = collection_projection_reference(source, "tag", COLLECTION_PROJECTION_TAG)
-        if reference.matches_collection then
+        local reference = collection_projection_reference(source, "tag", COLLECTION_PROJECTION_TAG, omit_invalid)
+        if reference and reference.matches_collection then
           local key = collection_projection_ref_key(reference.uri, reference.cid)
           if not seen_tags[key] then
             seen_tags[key] = true
@@ -173,7 +175,8 @@ local function collection_projection_hydrate(views)
     view.author.profile = profiles[view.did] and collection_projection_record_view(profiles[view.did]) or COLLECTION_PROJECTION_NULL
     view.author.organization = organizations[view.did] and collection_projection_record_view(organizations[view.did]) or COLLECTION_PROJECTION_NULL
 
-    local source_location = view.record.location
+    local source_location = view.record.location ~= nil and
+      collection_projection_reference(view.record.location, "location", COLLECTION_PROJECTION_LOCATION, omit_invalid) or nil
     if source_location ~= nil then
       local key = collection_projection_ref_key(source_location.uri, source_location.cid)
       local row = locations[key]
@@ -187,13 +190,16 @@ local function collection_projection_hydrate(views)
     local source_tags = view.record.tags
     if source_tags ~= nil then
       local projected_tags = {}
-      for index, source in ipairs(source_tags) do
-        local row = tags[collection_projection_ref_key(source.uri, source.cid)]
-        projected_tags[index] = {
-          uri = source.uri,
-          cid = source.cid,
-          record = row and collection_projection_record_view(row) or COLLECTION_PROJECTION_NULL,
-        }
+      for _, source in ipairs(source_tags) do
+        local reference = collection_projection_reference(source, "tag", COLLECTION_PROJECTION_TAG, omit_invalid)
+        if reference then
+          local row = tags[collection_projection_ref_key(reference.uri, reference.cid)]
+          projected_tags[#projected_tags + 1] = {
+            uri = reference.uri,
+            cid = reference.cid,
+            record = row and collection_projection_record_view(row) or COLLECTION_PROJECTION_NULL,
+          }
+        end
       end
       view.tags = toarray(projected_tags)
     end
@@ -242,8 +248,8 @@ local function collection_view(row)
   return collection_projection_view(row)
 end
 
-local function collection_hydrate(views)
-  return collection_projection_hydrate(views)
+local function collection_hydrate(views, omit_invalid)
+  return collection_projection_hydrate(views, omit_invalid)
 end
 
 function handle()

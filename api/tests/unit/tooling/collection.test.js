@@ -339,6 +339,44 @@ assert(not ok and tostring(message):find('CollectionQueryFailed: indexed collect
   }
 });
 
+test('list/search omit malformed reference projections without losing rows or cursors', () => {
+  const validLocation = `at://${did}/app.certified.location/valid`;
+  const malformed = [7, { cid: 'cid' }, { uri: validLocation }, { uri: validLocation, cid: 7 }, { uri: 'invalid', cid: 'cid' }];
+  for (const endpoint of ['listCollections', 'searchCollections']) {
+    for (const reference of malformed) {
+      const source = `
+local NULL = {}
+local record = { location = ${lua(reference)}, tags = { ${lua(reference)}, { uri = ${JSON.stringify(tagUris[0])}, cid = 'tag-cid' } } }
+local row = { uri = ${JSON.stringify(collectionUri)}, did = ${JSON.stringify(did)}, cid = 'collection-cid', record = 'record', sort_timestamp = '2025-01-01T00:00:00Z' }
+json = {
+  decode = function(value) if value == 'null' then return NULL end; if value == 'record' then return record end end,
+  encode = function(value)
+    assert(value.u == row.uri and value.t == row.sort_timestamp, 'cursor must use the retained row')
+    return 'page-cursor'
+  end,
+}
+toarray = function(values) return values end
+params = { limit = '1', ${endpoint === 'searchCollections' ? "search = 'Collection'," : ''} }
+db = { backend = function() return 'postgres' end, raw = function(sql, values)
+  if values[1] == '${COLLECTION}' then return { row, row } end
+  return {}
+end }
+dofile('lua/endpoints/${endpoint}.lua')
+local result = handle()
+assert(#result.collections == 1 and result.collections[1].uri == row.uri)
+assert(result.cursor == '706167652d637572736f72')
+local view = result.collections[1]
+assert(view.location == nil, 'malformed location projection must be omitted')
+assert(#view.tags == 1 and view.tags[1].uri == ${JSON.stringify(tagUris[0])}, 'valid tags after malformed entries must survive without holes')
+assert(view.tags[1].record == NULL)
+assert(view.record.location == record.location and #view.record.tags == 2, 'source references must remain unchanged')
+`;
+      const result = spawnSync('lua5.4', ['-e', source], { cwd: root, encoding: 'utf8' });
+      assert.equal(result.status, 0, `${endpoint}, ${JSON.stringify(reference)}: ${result.stderr}${result.stdout}`);
+    }
+  }
+});
+
 test('searchCollections binds complete trimmed search text literally', () => {
   const searchInput = '  Forest %_ Initiative  ';
   const search = 'Forest %_ Initiative';
