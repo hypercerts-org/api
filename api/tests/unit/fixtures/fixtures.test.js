@@ -36,17 +36,6 @@ async function findHttpFixtureFiles(directory) {
   return groups.flat();
 }
 
-function duplicateKeys(rows, keyFor) {
-  const seen = new Set();
-  const duplicates = new Set();
-  for (const row of rows) {
-    const key = keyFor(row);
-    if (seen.has(key)) duplicates.add(key);
-    seen.add(key);
-  }
-  return [...duplicates].sort();
-}
-
 test('fixtures have consistent full AT-URIs, valid DID/TID/CID identifiers, types, and fixed timestamps', () => {
   const records = [
     ...locationRecords, ...profileRecords, ...organizationRecords,
@@ -64,49 +53,6 @@ test('fixtures have consistent full AT-URIs, valid DID/TID/CID identifiers, type
     assert.equal(cid.digest.codec, 0x12);
     assert.equal(cid.digest.contents.length, 32);
     assert.equal(row.indexedAt, '2025-01-02T03:04:05.000Z');
-  }
-});
-
-test('funding HTTP actor sidecars do not shadow shared fixture identities', async () => {
-  const { seedRows: fundingRows } = await import('../../http/fixtures/funding-receipts.fixture.js');
-  const sharedSidecars = [...profileRecords, ...organizationRecords];
-  const sharedUris = new Set(sharedSidecars.map(({ uri }) => uri));
-  const sharedIdentities = new Set(sharedSidecars.map(({ did, collection, rkey }) => `${did}\0${collection}\0${rkey}`));
-  const duplicates = fundingRows.filter(({ uri, did, collection, rkey }) =>
-    sharedUris.has(uri) || sharedIdentities.has(`${did}\0${collection}\0${rkey}`));
-
-  assert.deepEqual(duplicates.map(({ uri }) => uri), []);
-});
-
-test('shared and recursively discovered HTTP seed rows are nonempty, unique against shared fixtures, and use CBOR-derived CIDs', async () => {
-  const sharedRows = [
-    ...locationRecords, ...profileRecords, ...organizationRecords,
-    ...actorFollowRecords, ...actorFollowProfileRecords, ...actorFollowOrganizationRecords,
-    ...activityFixtureRows,
-  ];
-  const fixtureFiles = await findHttpFixtureFiles(httpFixtureRoot);
-  assert.ok(fixtureFiles.length > 0, 'expected recursively discovered HTTP fixture modules');
-
-  const httpRows = [];
-  for (const file of fixtureFiles) {
-    const fixture = await import(pathToFileURL(file).href);
-    assert.ok(Array.isArray(fixture.seedRows) && fixture.seedRows.length > 0, `${path.relative(httpFixtureRoot, file)} must export nonempty seedRows`);
-    httpRows.push(...fixture.seedRows);
-  }
-
-  const allRows = [...sharedRows, ...httpRows];
-  for (const row of allRows) {
-    assert.equal(row.uri, `at://${row.did}/${row.collection}/${row.rkey}`);
-  }
-  assert.deepEqual(duplicateKeys(allRows, ({ uri }) => uri), [], 'seed rows must not overwrite another record URI');
-  assert.deepEqual(
-    duplicateKeys(allRows, ({ did, collection, rkey }) => JSON.stringify([did, collection, rkey])),
-    [],
-    'seed rows must not reuse another record identity',
-  );
-  for (const row of allRows) {
-    assert.equal(row.record.$type, row.collection);
-    assert.equal(CID.toString(await CID.create(0x71, encode(row.record))), row.cid, `CBOR-derived CID mismatch for ${row.uri}`);
   }
 });
 

@@ -39,6 +39,8 @@
     "listWorkscopeTags": "implemented",
     "getContribution": "implemented",
     "listContributions": "implemented",
+    "getVocabTag": "implemented",
+    "listVocabTags": "implemented",
     "getLocation": "implemented",
     "listLocations": "implemented",
     "searchBadgeDefinitions": "implemented",
@@ -382,6 +384,14 @@
       "packagePath": "lexicons/org/hypercerts/claim/contribution.json"
     },
     {
+      "id": "org.hypercerts.vocab.getVocabTag",
+      "path": "lexicons/org.hypercerts.vocab.getVocabTag.json"
+    },
+    {
+      "id": "org.hypercerts.vocab.listVocabTags",
+      "path": "lexicons/org.hypercerts.vocab.listVocabTags.json"
+    },
+    {
       "id": "app.certified.location.getLocation",
       "path": "lexicons/app.certified.location.getLocation.json"
     },
@@ -434,6 +444,7 @@
     "modules/funding/manifest.json",
     "modules/workscope-tags/manifest.json",
     "modules/contribution/manifest.json",
+    "modules/vocab/manifest.json",
     "modules/location/manifest.json"
   ]
 }

@@ -1,6 +1,8 @@
 # Hypercerts API workspace
 
-This repository combines the shared HappyView installer, pinned Lexicon dependencies, reusable Lua projections, fixtures, offline checks, and independently owned capability modules. This composed checkout includes public query modules for actor profiles and organizations, activity, badge definitions and queries, collections, context attachments and evaluations, actor and entity follows, recent follows, funding receipts, locations, work-scope tags, and contribution records.
+This repository combines the shared HappyView installer, pinned Lexicon dependencies, reusable Lua projections, fixtures, offline checks, and independently owned capability modules. This composed checkout includes public query modules for actor profiles and organizations, activity, badge definitions and queries, collections, context attachments and evaluations, actor and entity follows, recent follows, funding receipts, locations, work-scope tags, contribution records, and vocabulary tags. The `org.hypercerts.vocab.getVocabTag` and `org.hypercerts.vocab.listVocabTags` handlers are bundled and registered through `api/modules/vocab/manifest.json`.
+
+This checkout is one of the additive local sibling branches used to compose the API:
 
 - `tooling/api-foundation` owns the shared installer, pinned schemas, projections, fixtures, and offline checks.
 - Capability branches add their independently owned endpoint modules.
@@ -27,6 +29,7 @@ pnpm build
 | Badge queries | `app.certified.badge.searchBadgeDefinitions`, `app.certified.badge.getBadgeAward`, `app.certified.badge.listBadgeAwards`, `app.certified.badge.getBadgeResponse`, `app.certified.badge.listBadgeResponses` | Baseline-aware definition search, exact-version award/response lookups, recipient status, raw response history, filters, and cursor pagination |
 | Work-scope tags | `org.hypercerts.workscope.getWorkscopeTag`, `org.hypercerts.workscope.listWorkscopeTags` | Exact-URI retrieval, author filters, hydrated and null sidecars, middle-position `indexedAt` fallback, tied pagination in both directions, and named runtime errors |
 | Contributions | `org.hypercerts.claim.getContribution`, `org.hypercerts.claim.listContributions` | Exact-record retrieval, publisher filters, hydrated and null sidecars, createdAt/indexedAt fallback, tied pagination in both directions, and named runtime errors |
+| Vocabulary tags | `org.hypercerts.vocab.getVocabTag`, `org.hypercerts.vocab.listVocabTags` | Exact-URI retrieval, publisher filters, hydrated and nullable sidecars, timestamp/URI pagination, and named errors |
 | Actor profiles | `app.certified.actor.getProfile`, `app.certified.actor.getProfiles`, `app.certified.actor.listProfiles`, `app.certified.actor.searchProfiles` | Single and batch retrieval, batch null results, profile-sidecar hydration, filters, `createdAt`/URI pagination ties, and named errors |
 | Actor organizations | `app.certified.actor.getOrganization`, `app.certified.actor.getOrganizations`, `app.certified.actor.listOrganizations`, `app.certified.actor.searchOrganizations` | Single and batch retrieval, batch null results, profile-sidecar hydration, filters, `createdAt`/URI pagination ties, and named errors |
 | Activity | `org.hypercerts.claim.getActivity`, `org.hypercerts.claim.listActivities`, `org.hypercerts.claim.searchActivities` | Contributor-sidecar hydration, author/organization/contributor/URI filters, tied timestamp pagination, and literal wildcard search |
