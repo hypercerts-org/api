@@ -31,12 +31,14 @@
     "listEntityFollowers": "implemented",
     "listEntityFollowing": "implemented",
     "listRecentFollows": "implemented",
-    "getReceipt": "implemented",
-    "listReceipts": "implemented",
     "getBadgeDefinition": "implemented",
     "listBadgeDefinitions": "implemented",
+    "getReceipt": "implemented",
+    "listReceipts": "implemented",
     "getMeasurement": "implemented",
     "listMeasurements": "implemented",
+    "getContribution": "implemented",
+    "listContributions": "implemented",
     "getLocation": "implemented",
     "listLocations": "implemented"
   },
@@ -363,6 +365,18 @@
       "packagePath": "lexicons/pub/leaflet/theme/color.json"
     },
     {
+      "id": "org.hypercerts.claim.getContribution",
+      "path": "lexicons/org.hypercerts.claim.getContribution.json"
+    },
+    {
+      "id": "org.hypercerts.claim.listContributions",
+      "path": "lexicons/org.hypercerts.claim.listContributions.json"
+    },
+    {
+      "id": "org.hypercerts.claim.contribution",
+      "packagePath": "lexicons/org/hypercerts/claim/contribution.json"
+    },
+    {
       "id": "app.certified.location.getLocation",
       "path": "lexicons/app.certified.location.getLocation.json"
     },
@@ -386,6 +400,7 @@
     "modules/context-evaluation/manifest.json",
     "modules/context-attachments/manifest.json",
     "modules/funding/manifest.json",
+    "modules/contribution/manifest.json",
     "modules/location/manifest.json"
   ]
 }
