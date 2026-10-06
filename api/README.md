@@ -2,6 +2,8 @@
 
 This package owns the shared API installer and build tooling, pinned upstream Lexicons, common view definitions, reusable Lua projections, and offline fixture/test utilities. The `modules/shared/manifest.json` contains record schemas and query Lexicons used as shared view types; it contains no Lua endpoint scripts. The `badge-queries` module installs five public badge query Lexicons and their Lua handlers. A foundation-only install therefore does not implement those queries.
 
+For local development, checks, and HTTP runtime test requirements, see [CONTRIBUTING.md](../CONTRIBUTING.md).
+
 ## Install a released API bundle
 
 Releases version the installable API bundle in this package; they do not publish to npm or deploy to a HappyView instance. This public repository's GitHub Releases and tagged source archives are the distribution channel. Choose an `@hypercerts-org/hypercerts-api@X.Y.Z` release tag, clone that snapshot, install its pinned workspace dependencies from the repository root, then run the installer from `api/`:
