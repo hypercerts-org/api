@@ -2,6 +2,34 @@
   "name": "hypercerts-api-foundation",
   "validationLexicons": [
     {
+      "id": "app.certified.badge.award",
+      "packagePath": "lexicons/app/certified/badge/award.json"
+    },
+    {
+      "id": "app.certified.badge.response",
+      "packagePath": "lexicons/app/certified/badge/response.json"
+    },
+    {
+      "id": "app.certified.badge.searchBadgeDefinitions",
+      "path": "lexicons/app.certified.badge.searchBadgeDefinitions.json"
+    },
+    {
+      "id": "app.certified.badge.getBadgeAward",
+      "path": "lexicons/app.certified.badge.getBadgeAward.json"
+    },
+    {
+      "id": "app.certified.badge.listBadgeAwards",
+      "path": "lexicons/app.certified.badge.listBadgeAwards.json"
+    },
+    {
+      "id": "app.certified.badge.getBadgeResponse",
+      "path": "lexicons/app.certified.badge.getBadgeResponse.json"
+    },
+    {
+      "id": "app.certified.badge.listBadgeResponses",
+      "path": "lexicons/app.certified.badge.listBadgeResponses.json"
+    },
+    {
       "id": "org.hypercerts.claim.contribution",
       "packagePath": "lexicons/org/hypercerts/claim/contribution.json"
     },
@@ -338,6 +366,7 @@
     "modules/shared/manifest.json",
     "modules/vocab/manifest.json",
     "modules/badge-definitions/manifest.json",
+    "modules/badge-queries/manifest.json",
     "modules/profile/manifest.json",
     "modules/organization/manifest.json",
     "modules/activity/manifest.json",
@@ -354,9 +383,14 @@
   "authentication": {
     "unresolved": false,
     "decision": "public",
-    "note": "The query endpoints expose public record reads and require no caller authentication."
+    "note": "Badge query endpoints expose public indexed record reads; all query endpoints expose public record reads and require no caller authentication."
   },
   "handlerStatus": {
+    "searchBadgeDefinitions": "implemented",
+    "getBadgeAward": "implemented",
+    "listBadgeAwards": "implemented",
+    "getBadgeResponse": "implemented",
+    "listBadgeResponses": "implemented",
     "getContribution": "implemented",
     "listContributions": "implemented",
     "getVocabTag": "implemented",

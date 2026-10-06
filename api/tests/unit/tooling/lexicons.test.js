@@ -23,7 +23,9 @@ test('the full validation Lexicon closure resolves locally while only selected p
   assert.deepEqual(deployedPackageAssets.map(({ id }) => id).sort(), [
     'app.certified.actor.organization',
     'app.certified.actor.profile',
+    'app.certified.badge.award',
     'app.certified.badge.definition',
+    'app.certified.badge.response',
     'app.certified.defs',
     'app.certified.graph.entityFollow',
     'app.certified.graph.follow',
