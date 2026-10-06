@@ -5,6 +5,13 @@
   "runtimeCompatibility": "compatible-at-target-revision",
   "status": "handlers-implemented; location-and-actor-follow-runtime-validated-at-target-revision; other-query-runtime-validation-pending",
   "handlerStatus": {
+    "getFollow": "implemented",
+    "listActorFollowers": "implemented",
+    "listActorFollowing": "implemented",
+    "getEntityFollow": "implemented",
+    "listEntityFollowers": "implemented",
+    "listEntityFollowing": "implemented",
+    "listRecentFollows": "implemented",
     "getLocation": "implemented",
     "listLocations": "implemented",
     "getReceipt": "implemented",
@@ -33,6 +40,34 @@
     {
       "id": "app.certified.graph.entityFollow",
       "packagePath": "lexicons/app/certified/graph/entityFollow.json"
+    },
+    {
+      "id": "app.certified.graph.getEntityFollow",
+      "path": "lexicons/app.certified.graph.getEntityFollow.json"
+    },
+    {
+      "id": "app.certified.graph.listEntityFollowers",
+      "path": "lexicons/app.certified.graph.listEntityFollowers.json"
+    },
+    {
+      "id": "app.certified.graph.listEntityFollowing",
+      "path": "lexicons/app.certified.graph.listEntityFollowing.json"
+    },
+    {
+      "id": "app.certified.graph.getFollow",
+      "path": "lexicons/app.certified.graph.getFollow.json"
+    },
+    {
+      "id": "app.certified.graph.listActorFollowers",
+      "path": "lexicons/app.certified.graph.listActorFollowers.json"
+    },
+    {
+      "id": "app.certified.graph.listActorFollowing",
+      "path": "lexicons/app.certified.graph.listActorFollowing.json"
+    },
+    {
+      "id": "app.certified.graph.listRecentFollows",
+      "path": "lexicons/app.certified.graph.listRecentFollows.json"
     },
     {
       "id": "app.certified.location.getLocation",
@@ -81,14 +116,6 @@
     {
       "id": "org.hypercerts.funding.receipt",
       "packagePath": "lexicons/org/hypercerts/funding/receipt.json"
-    },
-    {
-      "id": "org.hypercerts.funding.getReceipt",
-      "path": "lexicons/org.hypercerts.funding.getReceipt.json"
-    },
-    {
-      "id": "org.hypercerts.funding.listReceipts",
-      "path": "lexicons/org.hypercerts.funding.listReceipts.json"
     },
     {
       "id": "app.certified.actor.organization",
@@ -237,11 +264,22 @@
     {
       "id": "pub.leaflet.theme.color",
       "packagePath": "lexicons/pub/leaflet/theme/color.json"
+    },
+    {
+      "id": "org.hypercerts.funding.getReceipt",
+      "path": "lexicons/org.hypercerts.funding.getReceipt.json"
+    },
+    {
+      "id": "org.hypercerts.funding.listReceipts",
+      "path": "lexicons/org.hypercerts.funding.listReceipts.json"
     }
   ],
   "modules": [
     "modules/shared/manifest.json",
     "modules/badge-definitions/manifest.json",
+    "modules/actor-follow/manifest.json",
+    "modules/entity-follow/manifest.json",
+    "modules/recent-follows/manifest.json",
     "modules/location/manifest.json",
     "modules/funding/manifest.json"
   ]
