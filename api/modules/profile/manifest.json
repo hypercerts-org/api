@@ -97,6 +97,7 @@
       "sharedSourcePaths": [
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
+        "../../lua/shared/listValidation.lua",
         "../../lua/shared/profile.lua",
         "../../lua/shared/profileList.lua"
       ],
@@ -116,6 +117,7 @@
       "sharedSourcePaths": [
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
+        "../../lua/shared/listValidation.lua",
         "../../lua/shared/profile.lua",
         "../../lua/shared/profileList.lua"
       ],
