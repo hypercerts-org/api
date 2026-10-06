@@ -174,6 +174,30 @@ if (hasModule('modules/actor-follow/manifest.json')) test('follow query Lexicons
   });
 });
 
+test('contributor-information view is owned by getContributorInformation and keeps nullable indexedAt required', async () => {
+  const { lexicons, documents } = await validatePackageLexicons();
+  const byId = new Map(documents.map((document) => [document.id, document]));
+  const shared = byId.get('org.hypercerts.api.defs');
+  const getContributorInformation = byId.get('org.hypercerts.claim.getContributorInformation');
+  const listContributorInformation = byId.get('org.hypercerts.claim.listContributorInformation');
+  assert.ok(shared && getContributorInformation && listContributorInformation);
+  assert.equal(Object.hasOwn(shared.defs, 'contributorInformationView'), false);
+  assert.equal(
+    getContributorInformation.defs.output.properties.contributorInformation.ref,
+    'lex:org.hypercerts.claim.getContributorInformation#contributorInformationView',
+  );
+  assert.equal(
+    listContributorInformation.defs.output.properties.contributorInformation.items.ref,
+    'lex:org.hypercerts.claim.getContributorInformation#contributorInformationView',
+  );
+
+  const view = lexicons.getDefOrThrow('org.hypercerts.claim.getContributorInformation#contributorInformationView');
+  assert.ok(view.required.includes('indexedAt'));
+  assert.ok(view.nullable.includes('indexedAt'));
+  assert.equal(view.properties.author.ref, 'lex:org.hypercerts.api.defs#actorView');
+  assert.equal(view.properties.record.ref, 'lex:org.hypercerts.claim.contributorInformation');
+});
+
 test('contribution query Lexicons expose exact lookup and publisher-based paging contracts', async () => {
   const { lexicons, documents } = await validatePackageLexicons();
   const byId = new Map(documents.map((document) => [document.id, document]));
