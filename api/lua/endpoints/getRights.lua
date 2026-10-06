@@ -1,3 +1,11 @@
+local function valid_did(value)
+  if type(value) ~= "string" or #value > 2048 then return false end
+  local method, specific = value:match("^did:([a-z]+):(.+)$")
+  if not method or not specific or specific:sub(-1) == ":" or specific:sub(-1) == "%"
+    or value:find("[^%w%.:_%%%-]") then return false end
+  return true
+end
+
 local function invalid(message)
   error("InvalidRequest: " .. message, 0)
 end
@@ -32,7 +40,7 @@ local function valid_record_uri(value)
 end
 
 local function rights_valid_did(value)
-  if type(value) ~= "string" or not valid_did(value) then return false end
+  if not valid_did(value) then return false end
   local position = 1
   while true do
     local percent = value:find("%", position, true)
@@ -45,9 +53,8 @@ local function rights_valid_did(value)
 end
 
 local function rights_valid_record_uri(value)
-  local valid, collection = valid_record_uri(value)
+  local valid, collection, authority = valid_record_uri(value)
   if not valid then return false end
-  local authority = value:match("^at://([^/]+)/")
   return rights_valid_did(authority), collection
 end
 

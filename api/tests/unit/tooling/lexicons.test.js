@@ -134,19 +134,20 @@ if (hasModule('modules/rights/manifest.json')) test('rights queries preserve the
   const listRights = byId.get('org.hypercerts.claim.listRights');
   assert.ok(shared && rights && getRights && listRights);
 
-  const rightsView = lexicons.getDefOrThrow('org.hypercerts.api.defs#rightsView');
+  const rightsView = lexicons.getDefOrThrow('org.hypercerts.claim.getRights#rightsView');
+  assert.equal(shared.defs.rightsView, undefined, 'rightsView is owned by getRights, not shared API defs');
   assert.deepEqual(rightsView.required, ['uri', 'cid', 'indexedAt', 'did', 'author', 'record']);
   assert.deepEqual(rightsView.nullable, ['indexedAt']);
   assert.equal(rightsView.properties.author.ref, 'lex:org.hypercerts.api.defs#actorView');
   assert.equal(rightsView.properties.record.ref, 'lex:org.hypercerts.claim.rights');
-  assert.equal(getRights.defs.output.properties.rights.ref, 'lex:org.hypercerts.api.defs#rightsView');
+  assert.equal(getRights.defs.output.properties.rights.ref, 'lex:org.hypercerts.claim.getRights#rightsView');
   assert.deepEqual(getRights.defs.main.errors.map(({ name }) => name), ['InvalidRequest', 'RecordNotFound']);
   assert.equal(listRights.defs.main.parameters.properties.authors.type, 'array');
   assert.equal(listRights.defs.main.parameters.properties.authors.maxLength, 100);
   assert.equal(listRights.defs.main.parameters.properties.authors.items.format, 'did');
   assert.equal(listRights.defs.main.parameters.properties.limit.minimum, 1);
   assert.equal(listRights.defs.main.parameters.properties.limit.maximum, 100);
-  assert.equal(listRights.defs.output.properties.rights.items.ref, 'lex:org.hypercerts.api.defs#rightsView');
+  assert.equal(listRights.defs.output.properties.rights.items.ref, 'lex:org.hypercerts.claim.getRights#rightsView');
 });
 
 test('installed ATProto validator accepts package language, transitive refs, and real fixture records', async () => {

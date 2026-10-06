@@ -1,3 +1,11 @@
+local function valid_did(value)
+  if type(value) ~= "string" or #value > 2048 then return false end
+  local method, specific = value:match("^did:([a-z]+):(.+)$")
+  if not method or not specific or specific:sub(-1) == ":" or specific:sub(-1) == "%"
+    or value:find("[^%w%.:_%%%-]") then return false end
+  return true
+end
+
 local function invalid(message)
   error("InvalidRequest: " .. message, 0)
 end
@@ -32,7 +40,7 @@ local function valid_record_uri(value)
 end
 
 local function rights_valid_did(value)
-  if type(value) ~= "string" or not valid_did(value) then return false end
+  if not valid_did(value) then return false end
   local position = 1
   while true do
     local percent = value:find("%", position, true)
@@ -45,9 +53,8 @@ local function rights_valid_did(value)
 end
 
 local function rights_valid_record_uri(value)
-  local valid, collection = valid_record_uri(value)
+  local valid, collection, authority = valid_record_uri(value)
   if not valid then return false end
-  local authority = value:match("^at://([^/]+)/")
   return rights_valid_did(authority), collection
 end
 
@@ -110,6 +117,37 @@ local function rights_hydrate_actor_views(actors, run_query)
       end
     end
   end
+end
+
+local function valid_datetime(value)
+  if type(value) ~= "string" then return false end
+  local year, month, day, hour, minute, second, suffix = value:match(
+    "^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)(.*)$")
+  if not year then return false end
+  year, month, day = tonumber(year), tonumber(month), tonumber(day)
+  hour, minute, second = tonumber(hour), tonumber(minute), tonumber(second)
+  if month < 1 or month > 12 or hour > 23 or minute > 59 or second > 59 then return false end
+  local leap = year % 4 == 0 and (year % 100 ~= 0 or year % 400 == 0)
+  local month_days = { 31, leap and 29 or 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
+  if day < 1 or day > month_days[month] then return false end
+  local fraction, zone = suffix:match("^(%.%d+)(Z)$")
+  if not fraction then fraction, zone = suffix:match("^(%.%d+)([+-]%d%d:%d%d)$") end
+  if not fraction then zone = suffix:match("^(Z)$") end
+  if not zone then zone = suffix:match("^([+-]%d%d:%d%d)$") end
+  if not zone or zone == "-00:00" then return false end
+  if zone ~= "Z" then
+    local zh, zm = zone:match("^[+-](%d%d):(%d%d)$")
+    if not zh or tonumber(zh) > 23 or tonumber(zm) > 59 then return false end
+  end
+  return true
+end
+
+local function parse_list_limit(params)
+  local limit_value = scalar(params, "limit")
+  if limit_value and not limit_value:match("^%d+$") then invalid("limit must be an integer from 1 through 100") end
+  local limit = limit_value and tonumber(limit_value) or 25
+  if not limit or limit % 1 ~= 0 or limit < 1 or limit > 100 then invalid("limit must be an integer from 1 through 100") end
+  return limit
 end
 
 local function parse_sort_direction(params)

@@ -9,6 +9,7 @@ const read = (relative) => readFile(path.resolve(root, relative), 'utf8');
 
 async function endpointSources(name) {
   const shared = [
+    'lua/shared/didValidation.lua',
     'lua/shared/query.lua',
     'lua/shared/recordIdentifier.lua',
     'lua/shared/rightsIdentifier.lua',
@@ -16,7 +17,7 @@ async function endpointSources(name) {
     'lua/shared/actorView.lua',
     'lua/shared/rightsView.lua',
   ];
-  if (name === 'listRights') shared.push('lua/shared/listQuery.lua');
+  if (name === 'listRights') shared.push('lua/shared/listValidation.lua', 'lua/shared/listQuery.lua');
   return Promise.all([...shared, `lua/src/${name}.lua`].map(read));
 }
 

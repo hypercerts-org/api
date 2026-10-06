@@ -56,7 +56,7 @@
           "type": "array",
           "items": {
             "type": "ref",
-            "ref": "org.hypercerts.api.defs#rightsView"
+            "ref": "org.hypercerts.claim.getRights#rightsView"
           }
         },
         "cursor": {

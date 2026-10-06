@@ -13,6 +13,7 @@
       "path": "../../lua/endpoints/getRights.lua",
       "sourcePath": "../../lua/src/getRights.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/rightsIdentifier.lua",
@@ -28,7 +29,7 @@
       "id": "org.hypercerts.claim.listRights",
       "path": "../../lexicons/org.hypercerts.claim.listRights.json",
       "config": { "backfill": false, "target_collection": "org.hypercerts.claim.rights" },
-      "dependsOn": ["org.hypercerts.claim.rights", "org.hypercerts.api.defs"]
+      "dependsOn": ["org.hypercerts.claim.getRights"]
     },
     {
       "kind": "script",
@@ -36,12 +37,14 @@
       "path": "../../lua/endpoints/listRights.lua",
       "sourcePath": "../../lua/src/listRights.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/rightsIdentifier.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",
         "../../lua/shared/rightsView.lua",
+        "../../lua/shared/listValidation.lua",
         "../../lua/shared/listQuery.lua"
       ],
       "config": { "script_type": "lua", "description": "List rights records" },

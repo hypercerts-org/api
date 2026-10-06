@@ -23,7 +23,7 @@ Review that release's notes and target only an explicitly approved HappyView ins
 - `org.hypercerts.claim.getRights` accepts the exact rights-record AT-URI with a DID authority. An unindexed record returns `RecordNotFound`.
 - `org.hypercerts.claim.listRights` accepts up to 100 repeated, unbracketed `authors` keys; values use OR. Pages default to 25 and cap at 100. Ordering uses `(createdAt, uri)`; missing or malformed record timestamps fall back to `indexed_at`, then row creation time. Cursors are opaque and bound to sort direction; a terminal page omits `cursor`.
 - Both queries preserve the full indexed record and hydrate the publisher's Certified profile and raw organization sidecar. Missing author records are `null`; SQL `NULL` `indexed_at` is returned as JSON `null` without inventing a timestamp. Query or hydration failures return errors. Attachments and activities referencing rights are not expanded.
-- `RightsView.indexedAt` is required but nullable to match indexed rows. Older proposal prose that describes it as non-nullable is stale.
+- The unpublished `rightsView` response definition is local to `org.hypercerts.claim.getRights`; `listRights` references that definition. Its `indexedAt` property is required but nullable to match indexed rows. Older proposal prose that describes it as non-nullable is stale.
 - Rights listing uses PostgreSQL 16+ `pg_input_is_valid` timestamp validation; the canonical HappyView deployment and test configurations default to PostgreSQL 17.
 
 The shared module registers the pinned rights-record Lexicon with backfill enabled, so an approved install can index existing rights records.
