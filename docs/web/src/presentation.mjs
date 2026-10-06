@@ -106,12 +106,6 @@ export function createPresentationSpec(source) {
     { url: LOCAL_SERVER_URL, description: 'Local (127.0.0.1:8080)' },
   ];
 
-  for (const schema of Object.values(spec.components?.schemas ?? {})) {
-    if (Object.hasOwn(schema, 'x-lexicon-ref')) {
-      delete schema.description;
-    }
-  }
-
   stripPresentationExtensions(spec);
   return spec;
 }

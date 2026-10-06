@@ -1,6 +1,6 @@
 # HappyView API toolkit and query modules
 
-This package owns the shared API installer and build tooling, pinned upstream Lexicons, common view definitions, reusable Lua projections, offline fixture/test utilities, and the EVM-link, feature, contribution, rights, badge-query, vocabulary-tag, and acknowledgement modules. The `modules/shared/manifest.json` contains record schemas and shared query/view Lexicons; it contains no Lua endpoint scripts. A foundation-only install does not implement those queries. Capability modules listed in the root manifest register their endpoint Lexicons and Lua handlers separately; the `badge-queries` module installs five public badge query Lexicons and their Lua handlers.
+This package owns the shared API installer and build tooling, pinned upstream Lexicons, common view definitions, reusable Lua projections, offline fixture/test utilities, and independently registered query modules. The root `api/manifest.json` selects the modules included in this checkout; each module manifest declares its assets and dependencies. The `modules/shared/manifest.json` contains record schemas and shared query/view Lexicons; it contains no Lua endpoint scripts. A foundation-only install does not implement those queries. The exact explorer operation inventory is generated in [the docs coverage report](../docs/coverage.json); its inclusion labels describe manifest registration, not runtime or deployment validation.
 
 ## EVM-link queries
 
@@ -140,6 +140,13 @@ HAPPYVIEW_BASE_URL='https://your-happyview.example' HAPPYVIEW_ADMIN_TOKEN='<scop
 
 Review that release's notes and target only an explicitly approved HappyView instance.
 
+For a bundle that registers `app.certified.actor.getProfile`, handle lookups require the HappyView script variable `HYPERCERTS_HANDLE_RESOLVER_URL`. It has no built-in default and must be an HTTPS resolver origin without credentials, a path, query, or fragment. When the setting is missing, an interactive install prompts for it. For a noninteractive install, set it in the environment:
+
+```sh
+HYPERCERTS_HANDLE_RESOLVER_URL='https://resolver.example' HAPPYVIEW_BASE_URL='https://your-happyview.example' HAPPYVIEW_ADMIN_TOKEN='<scoped-admin-token>' pnpm install:api
+```
+
+The installer inspects script variables before writing assets, so the admin token needs `script-variables:read`; if the resolver setting is absent, creating it also requires `script-variables:create`. An existing setting is retained without prompting or overwriting it. HappyView exposes only a masked preview, so the installer cannot verify its actual value. If the installer creates the setting and a later asset write fails, the setting remains on the instance; installation writes are not rolled back.
 ## Rights queries
 
 - `org.hypercerts.claim.getRights` accepts the exact rights-record AT-URI with a DID authority. An unindexed record returns `RecordNotFound`.

@@ -4,10 +4,12 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Public lookup of one indexed Certified profile by DID or handle. Handles are resolved through the configured resolver's com.atproto.identity.resolveHandle response; the response DID is validated, but no DID document is fetched for independent verification. Operators trust the resolver configured for their HappyView instance. Authentication is not required.",
+      "description": "Gets an indexed Certified profile by DID or handle. Handles resolve through the configured resolver's com.atproto.identity.resolveHandle endpoint; no DID document is fetched for independent verification. Authentication is not required.",
       "parameters": {
         "type": "params",
-        "required": ["actor"],
+        "required": [
+          "actor"
+        ],
         "properties": {
           "actor": {
             "type": "string",
@@ -18,24 +20,44 @@
       },
       "output": {
         "encoding": "application/json",
-        "schema": { "type": "ref", "ref": "#output" }
+        "schema": {
+          "type": "ref",
+          "ref": "#output"
+        }
       },
       "errors": [
-        { "name": "InvalidRequest", "description": "The actor is neither a valid DID nor a valid handle, or an unknown parameter was supplied." },
-        { "name": "HandleResolverConfigError", "description": "HYPERCERTS_HANDLE_RESOLVER_URL is missing or invalid; configure an HTTPS resolver base URL for this HappyView instance." },
-        { "name": "HandleResolutionFailed", "description": "The configured resolver request failed or returned a response without a valid DID." },
-        { "name": "RecordNotFound", "description": "The actor was identified, but no indexed Certified profile exists." },
-        { "name": "ProfileQueryFailed", "description": "The indexed profile could not be queried." }
+        {
+          "name": "InvalidRequest",
+          "description": "The actor is not a valid DID or handle, or an unsupported parameter was supplied."
+        },
+        {
+          "name": "HandleResolverConfigError",
+          "description": "HYPERCERTS_HANDLE_RESOLVER_URL is missing or invalid."
+        },
+        {
+          "name": "HandleResolutionFailed",
+          "description": "The handle could not be resolved to a valid DID."
+        },
+        {
+          "name": "RecordNotFound",
+          "description": "The actor was identified, but no indexed Certified profile exists."
+        },
+        {
+          "name": "ProfileQueryFailed",
+          "description": "The indexed profile could not be queried."
+        }
       ]
     },
     "output": {
       "type": "object",
-      "required": ["profile"],
+      "required": [
+        "profile"
+      ],
       "properties": {
         "profile": {
           "type": "ref",
           "ref": "org.hypercerts.api.defs#profileView",
-          "description": "The complete indexed Certified profile record with record metadata and its repository DID."
+          "description": "Indexed Certified profile record with its AT-URI, CID, repository DID, and indexing time."
         }
       }
     }

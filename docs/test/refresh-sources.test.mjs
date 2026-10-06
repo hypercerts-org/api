@@ -6,11 +6,13 @@ import test from 'node:test';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-test('source refresh gives an actionable usage error when no checkout root is supplied', () => {
-  const result = spawnSync(process.execPath, ['scripts/refresh-sources.mjs'], {
+test('source refresh help describes the manifest-driven workspace command', () => {
+  const result = spawnSync(process.execPath, ['scripts/refresh-sources.mjs', '--help'], {
     cwd: root,
     encoding: 'utf8',
   });
-  assert.equal(result.status, 2);
-  assert.match(result.stderr, /Usage: node scripts\/refresh-sources\.mjs <happyview-worktrees-root>/);
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /Usage: pnpm docs:sync/);
+  assert.match(result.stdout, /api\/manifest\.json/);
+  assert.equal(result.stderr, '');
 });

@@ -8,6 +8,7 @@
     "test:http": "pnpm --filter @hypercerts-org/hypercerts-api run test:http",
     "build": "pnpm --filter @hypercerts-org/hypercerts-api run build:lua && pnpm --filter hypercerts-api-endpoints build",
     "docs:dev": "pnpm --filter hypercerts-api-endpoints dev",
+    "docs:sync": "node docs/scripts/refresh-sources.mjs",
     "changeset": "changeset",
     "changeset:status": "changeset status",
     "version:packages": "changeset version && pnpm install --lockfile-only"

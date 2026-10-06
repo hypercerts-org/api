@@ -23,6 +23,18 @@ VITE_HAPPYVIEW_SERVERS='[{"label":"Staging","url":"https://staging.api.hypercert
 
 The value must be a nonempty JSON array of labeled, distinct http(s) base URLs without credentials, query, or fragment. The first entry is the default; Local and Custom remain available. These URLs are public in the browser bundle, so do not include secrets. Changing a deployed site's configuration requires a rebuild and redeploy.
 
+## Refresh the committed API reference
+
+From the workspace root, run:
+
+```sh
+pnpm docs:sync
+```
+
+The command reads `api/manifest.json`, the registered module manifests, local API Lexicons, and the pinned `@hypercerts-org/lexicon` package. It refreshes the endpoint index, committed Lexicon snapshots, `openapi.json`, and `coverage.json`. Schema references are resolved locally; the command does not fetch remote Lexicons or contact HappyView. Install the repository-pinned dependencies first with `pnpm install --frozen-lockfile`.
+
+The exact explorer operations and their module inclusion come from the manifest. `coverage.json` describes manifest inclusion only; it does not claim runtime or deployment validation. The endpoint test suite, also run by the workspace-root `pnpm check`, performs a read-only freshness check of the full index metadata, every referenced snapshot (including pinned package schemas), OpenAPI, and coverage against the current API sources. That check requires the pinned Lexicon dependency, but the explorer build and runtime still use committed snapshots without needing an API checkout.
+
 ## Build and check
 
 ```sh

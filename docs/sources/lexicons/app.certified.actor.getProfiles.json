@@ -4,47 +4,79 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Returns one profile result for each supplied actor DID, preserving input order and duplicates. Authentication is not required. actors is a required nonempty array of 1..100 DIDs, counted before deduplication, encoded as repeated unbracketed query keys. Handles are not resolved. Missing indexed profiles are returned as null. This endpoint does not paginate.",
+      "description": "Returns an indexed Certified profile for each supplied actor DID. Authentication is not required.",
       "parameters": {
         "type": "params",
-        "required": ["actors"],
+        "required": [
+          "actors"
+        ],
         "properties": {
           "actors": {
             "type": "array",
-            "description": "Actor DIDs to look up; repeated unbracketed values preserve their original order and duplicates.",
+            "description": "Actor DIDs to look up, supplied as repeated unbracketed query values.",
             "minLength": 1,
             "maxLength": 100,
-            "items": { "type": "string", "format": "did" }
+            "items": {
+              "type": "string",
+              "format": "did"
+            }
           }
         }
       },
       "output": {
         "encoding": "application/json",
-        "schema": { "type": "ref", "ref": "#output" }
+        "schema": {
+          "type": "ref",
+          "ref": "#output"
+        }
       },
       "errors": [
-        { "name": "InvalidRequest", "description": "actors must contain 1 through 100 valid DIDs; unknown query parameters are not accepted." },
-        { "name": "ProfileQueryFailed", "description": "The indexed profiles could not be queried." }
+        {
+          "name": "InvalidRequest",
+          "description": "An actor DID or query parameter is invalid."
+        },
+        {
+          "name": "ProfileQueryFailed",
+          "description": "The indexed profiles could not be queried."
+        }
       ]
     },
     "output": {
       "type": "object",
-      "required": ["profiles"],
+      "required": [
+        "profiles"
+      ],
       "properties": {
         "profiles": {
           "type": "array",
-          "description": "One result per supplied actor occurrence, in input order. The profile is null when no indexed profile exists.",
-          "items": { "type": "ref", "ref": "#profileResult" }
+          "description": "One result per supplied actor occurrence, in request order.",
+          "items": {
+            "type": "ref",
+            "ref": "#profileResult"
+          }
         }
       }
     },
     "profileResult": {
       "type": "object",
-      "required": ["actor", "profile"],
-      "nullable": ["profile"],
+      "required": [
+        "actor",
+        "profile"
+      ],
+      "nullable": [
+        "profile"
+      ],
       "properties": {
-        "actor": { "type": "string", "format": "did" },
-        "profile": { "type": "ref", "ref": "org.hypercerts.api.defs#profileView" }
+        "actor": {
+          "type": "string",
+          "format": "did",
+          "description": "Actor DID from the corresponding request occurrence."
+        },
+        "profile": {
+          "type": "ref",
+          "ref": "org.hypercerts.api.defs#profileView",
+          "description": "Indexed profile view, or null when none is indexed."
+        }
       }
     }
   }
