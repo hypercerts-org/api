@@ -1,6 +1,3 @@
-local PROFILE = "app.certified.actor.profile"
-local NULL = json.decode("null")
-
 local function invalid(message)
   error("InvalidRequest: " .. message, 0)
 end
@@ -11,8 +8,8 @@ local function keys_only(values, allowed)
   end
 end
 
-local function scalar(values, key)
-  local value = values[key]
+local function scalar(params, key)
+  local value = params[key]
   if value == nil then return nil end
   if type(value) ~= "string" and type(value) ~= "number" then
     invalid(key .. " must occur once")
@@ -27,6 +24,9 @@ local function valid_did(value)
     or value:find("[^%w%.:_%%%-]") then return false end
   return true
 end
+
+local PROFILE = "app.certified.actor.profile"
+local NULL = json.decode("null")
 
 local function query(sql, values)
   if db.backend() ~= "postgres" then error("ProfileQueryFailed: profile API requires PostgreSQL", 0) end
