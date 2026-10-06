@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { contractUrl, requireContractTarget } from './helpers.js';
 
 const endpoint = 'org.hypercerts.claim.listContributorInformation';
-const authorA = 'did:plc:mmmmmmmmmmmmmmmmmmmmmmmm';
-const authorB = 'did:plc:nnnnnnnnnnnnnnnnnnnnnnnn';
-const authorC = 'did:plc:oooooooooooooooooooooooo';
+const authorA = 'did:web:contributor-http-author-a.invalid';
+const authorB = 'did:web:contributor-http-author-b.invalid';
+const authorC = 'did:web:contributor-http-author-c.invalid';
 const uris = {
   baseline: 'at://did:plc:gggggggggggggggggggggggg/org.hypercerts.claim.contributorInformation/3jzfcijpj2z2h',
   a: `at://${authorA}/org.hypercerts.claim.contributorInformation/3jzfcijpj2z2a`,

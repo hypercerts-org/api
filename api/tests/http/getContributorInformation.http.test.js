@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { contractUrl, requireContractTarget } from './helpers.js';
 
-const contributorUri = 'at://did:plc:mmmmmmmmmmmmmmmmmmmmmmmm/org.hypercerts.claim.contributorInformation/3jzfcijpj2z2a';
+const contributorUri = 'at://did:web:contributor-http-author-a.invalid/org.hypercerts.claim.contributorInformation/3jzfcijpj2z2a';
 const collection = 'org.hypercerts.claim.contributorInformation';
 
 async function getContributorInformation(uri) {
@@ -27,7 +27,7 @@ test('getContributorInformation fetches by AT-URI without supplying its pinned C
 
   const view = body.contributorInformation;
   assert.equal(view.uri, contributorUri);
-  assert.equal(view.did, 'did:plc:mmmmmmmmmmmmmmmmmmmmmmmm');
+  assert.equal(view.did, 'did:web:contributor-http-author-a.invalid');
   assert.equal(view.record.$type, collection);
   assert.equal(view.record.identifier, 'manual:cedar-restorer');
   assert.equal(view.record.displayName, 'Cedar Restorer');
@@ -36,13 +36,13 @@ test('getContributorInformation fetches by AT-URI without supplying its pinned C
     'bafyreicjb36r5phxdx46gn5m75zk7csjqs6j47xnstvxoerdfy7jvkajxy',
     'the AT-URI lookup returns its known CBOR-derived CID without supplying that CID in the request',
   );
-  assert.equal(view.author.did, 'did:plc:mmmmmmmmmmmmmmmmmmmmmmmm');
+  assert.equal(view.author.did, 'did:web:contributor-http-author-a.invalid');
   assert.equal(view.author.profile.record.displayName, 'Cedar Watershed Group');
   assert.deepEqual(view.author.organization.record.organizationType, ['nonprofit']);
 });
 
 test('getContributorInformation returns null for absent publisher sidecars', async () => {
-  const missingSidecarUri = 'at://did:plc:nnnnnnnnnnnnnnnnnnnnnnnn/org.hypercerts.claim.contributorInformation/3jzfcijpj2z2b';
+  const missingSidecarUri = 'at://did:web:contributor-http-author-b.invalid/org.hypercerts.claim.contributorInformation/3jzfcijpj2z2b';
   const { response, body } = await getContributorInformation(missingSidecarUri);
   assert.equal(response.status, 200, JSON.stringify(body));
   assert.equal(body.contributorInformation.author.profile, null);
@@ -50,7 +50,7 @@ test('getContributorInformation returns null for absent publisher sidecars', asy
 });
 
 test('getContributorInformation exposes RecordNotFound as the pinned HappyView runtime error', async () => {
-  const missingUri = 'at://did:plc:mmmmmmmmmmmmmmmmmmmmmmmm/org.hypercerts.claim.contributorInformation/3jzfcijpj2z2d';
+  const missingUri = 'at://did:web:contributor-http-author-a.invalid/org.hypercerts.claim.contributorInformation/3jzfcijpj2z2d';
   const { response, body } = await getContributorInformation(missingUri);
   assert.equal(response.status, 500, JSON.stringify(body));
   assert.equal(body.error, 'script_error');

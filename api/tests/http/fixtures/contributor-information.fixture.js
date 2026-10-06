@@ -4,9 +4,9 @@ import * as CID from '@atcute/cid';
 const contributorCollection = 'org.hypercerts.claim.contributorInformation';
 const profileCollection = 'app.certified.actor.profile';
 const organizationCollection = 'app.certified.actor.organization';
-const authorA = 'did:plc:mmmmmmmmmmmmmmmmmmmmmmmm';
-const authorB = 'did:plc:nnnnnnnnnnnnnnnnnnnnnnnn';
-const authorC = 'did:plc:oooooooooooooooooooooooo';
+const authorA = 'did:web:contributor-http-author-a.invalid';
+const authorB = 'did:web:contributor-http-author-b.invalid';
+const authorC = 'did:web:contributor-http-author-c.invalid';
 const createdAt = '2025-03-01T00:00:00.000Z';
 const indexedAt = '2025-03-02T00:00:00.000Z';
 

@@ -46,7 +46,7 @@
       "properties": {
         "contributorInformation": {
           "type": "array",
-          "items": { "type": "ref", "ref": "org.hypercerts.api.defs#contributorInformationView" }
+          "items": { "type": "ref", "ref": "org.hypercerts.claim.getContributorInformation#contributorInformationView" }
         },
         "cursor": {
           "type": "string",

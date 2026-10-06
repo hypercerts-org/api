@@ -11,7 +11,9 @@ const read = (relative) => readFile(path.resolve(root, relative), 'utf8');
 test('getContributorInformation preserves the exact record and hydrates its publisher sidecars', async () => {
   const sources = await Promise.all([
     read('lua/shared/query.lua'),
+    read('lua/shared/didValidation.lua'),
     read('lua/shared/recordIdentifier.lua'),
+    read('lua/shared/contributorInformationValidation.lua'),
     read('lua/shared/recordView.lua'),
     read('lua/shared/actorView.lua'),
     read('lua/src/getContributorInformation.lua'),
@@ -76,6 +78,23 @@ local bad_uri_ok, bad_uri_error = pcall(function()
 end)
 assert(not bad_uri_ok and tostring(bad_uri_error):find("InvalidRequest:", 1, true) ~= nil)
 assert(#calls == 3, "invalid DID authority must be rejected before querying")
+local wrong_collection_ok, wrong_collection_error = pcall(function()
+  params = { uri = "at://did:plc:publisher/org.hypercerts.claim.activity/tid" }
+  return handle()
+end)
+assert(not wrong_collection_ok and tostring(wrong_collection_error) == "InvalidRequest: uri must be a full org.hypercerts.claim.contributorInformation AT-URI with a DID authority")
+assert(#calls == 3, "a different collection must be rejected before querying")
+local unknown_parameter_ok, unknown_parameter_error = pcall(function()
+  params = { uri = uri, extra = "unsupported" }
+  return handle()
+end)
+assert(not unknown_parameter_ok and tostring(unknown_parameter_error) == "InvalidRequest: unknown query parameter")
+local repeated_uri_ok, repeated_uri_error = pcall(function()
+  params = { uri = { uri, uri } }
+  return handle()
+end)
+assert(not repeated_uri_ok and tostring(repeated_uri_error) == "InvalidRequest: uri must occur once")
+assert(#calls == 3, "invalid query parameters must be rejected before querying")
 recordRow.indexed_at = nil
 params = { uri = uri }
 local null_timestamp = handle().contributorInformation.indexedAt

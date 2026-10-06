@@ -12,7 +12,7 @@
       "id": "org.hypercerts.claim.listContributorInformation",
       "path": "../../lexicons/org.hypercerts.claim.listContributorInformation.json",
       "config": { "backfill": false, "target_collection": "org.hypercerts.claim.contributorInformation" },
-      "dependsOn": ["org.hypercerts.claim.contributorInformation", "org.hypercerts.api.defs"]
+      "dependsOn": ["org.hypercerts.claim.contributorInformation", "org.hypercerts.claim.getContributorInformation", "org.hypercerts.api.defs"]
     },
     {
       "kind": "script",
@@ -21,7 +21,9 @@
       "sourcePath": "../../lua/src/getContributorInformation.lua",
       "sharedSourcePaths": [
         "../../lua/shared/query.lua",
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/contributorInformationValidation.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua"
       ],
@@ -38,9 +40,12 @@
       "sourcePath": "../../lua/src/listContributorInformation.lua",
       "sharedSourcePaths": [
         "../../lua/shared/query.lua",
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/contributorInformationValidation.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",
+        "../../lua/shared/listValidation.lua",
         "../../lua/shared/listQuery.lua"
       ],
       "config": {

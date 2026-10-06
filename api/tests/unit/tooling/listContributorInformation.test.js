@@ -11,9 +11,12 @@ const read = (relative) => readFile(path.resolve(root, relative), 'utf8');
 test('listContributorInformation filters repeated authors and resumes in the selected order', async () => {
   const sources = await Promise.all([
     read('lua/shared/query.lua'),
+    read('lua/shared/didValidation.lua'),
     read('lua/shared/recordIdentifier.lua'),
+    read('lua/shared/contributorInformationValidation.lua'),
     read('lua/shared/recordView.lua'),
     read('lua/shared/actorView.lua'),
+    read('lua/shared/listValidation.lua'),
     read('lua/shared/listQuery.lua'),
     read('lua/src/listContributorInformation.lua'),
   ]);
@@ -91,11 +94,35 @@ params = { authors = { "did:plc:publisher%GG" } }
 local bad_author_ok, bad_author_error = pcall(function() return handle() end)
 assert(not bad_author_ok and tostring(bad_author_error):find("InvalidRequest:", 1, true) ~= nil)
 assert(page == completed_pages, "invalid author DID must be rejected before querying")
+params = { authors = { "did:plc:publisher%2Fid" } }
+local escaped_author_result = handle()
+assert(#escaped_author_result.contributorInformation == 0)
+assert(page == completed_pages + 1 and record_queries[page].values[2] == "did:plc:publisher%2Fid",
+  "a well-formed percent escape in a DID must remain accepted")
+completed_pages = page
+params = { limit = "101" }
+local invalid_limit_ok, invalid_limit_error = pcall(function() return handle() end)
+assert(not invalid_limit_ok and tostring(invalid_limit_error) == "InvalidRequest: limit must be an integer from 1 through 100")
+params = { limit = { "1", "2" } }
+local repeated_limit_ok, repeated_limit_error = pcall(function() return handle() end)
+assert(not repeated_limit_ok and tostring(repeated_limit_error) == "InvalidRequest: limit must occur once")
+assert(page == completed_pages, "invalid list limits must be rejected before querying")
+JSON_VALUES.cursor = { v = 1, d = "asc", t = "2026-01-01T00:00:00Z", u = "at://did:plc:publisher/org.hypercerts.claim.activity/tid1" }
+params = { sortDirection = "asc", limit = "1", cursor = "637572736f72" }
+local wrong_collection_cursor_ok, wrong_collection_cursor_error = pcall(function() return handle() end)
+assert(not wrong_collection_cursor_ok and tostring(wrong_collection_cursor_error) == "InvalidRequest: cursor is malformed")
+assert(page == completed_pages, "a cursor for another collection must be rejected before querying")
 JSON_VALUES.cursor = { v = 1, d = "asc", t = "0000-01-01T00:00:00Z", u = first_uri }
 params = { sortDirection = "asc", limit = "1", cursor = "637572736f72" }
 local bad_cursor_ok, bad_cursor_error = pcall(function() return handle() end)
-assert(not bad_cursor_ok and tostring(bad_cursor_error):find("InvalidRequest:", 1, true) ~= nil)
+assert(not bad_cursor_ok and tostring(bad_cursor_error) == "InvalidRequest: cursor is malformed")
 assert(page == completed_pages, "year-zero cursor must be rejected before PostgreSQL sees it")
+local oversized_decoded_cursor = string.rep(" ", 4097)
+JSON_VALUES[oversized_decoded_cursor] = { v = 1, d = "asc", t = "2026-01-01T00:00:00Z", u = first_uri }
+params = { sortDirection = "asc", limit = "1", cursor = string.rep("20", 4097) }
+local oversized_cursor_ok, oversized_cursor_error = pcall(function() return handle() end)
+assert(not oversized_cursor_ok and tostring(oversized_cursor_error) == "InvalidRequest: cursor is malformed")
+assert(page == completed_pages, "a cursor larger than 8192 hex characters must be rejected before decoding or querying")
 `;
   const result = spawnSync('lua', ['-e', program], { encoding: 'utf8' });
   assert.equal(result.error, undefined, result.error?.message);
