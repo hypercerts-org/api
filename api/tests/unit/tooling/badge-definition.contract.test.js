@@ -97,6 +97,15 @@ test('getBadgeDefinition reports RecordNotFound when the exact indexed URI is ab
   runLua({ endpoint: 'getBadgeDefinition', params: { uri }, expectError: 'RecordNotFound:', expectedCalls: 1 });
 });
 
+test('getBadgeDefinition rejects invalid authorities and other collections before querying', () => {
+  for (const invalidUri of [
+    'at://alice.example/app.certified.badge.definition/3jzfcijpj2z2z',
+    'at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.location/3jzfcijpj2z2z',
+  ]) {
+    runLua({ endpoint: 'getBadgeDefinition', params: { uri: invalidUri }, expectError: 'InvalidRequest:', expectedCalls: 0 });
+  }
+});
+
 test('getBadgeDefinition emits explicit JSON null when indexed_at is SQL NULL', () => {
   const definition = definitionRow(author, 'unindexed', { title: 'Unindexed badge' });
   delete definition.indexed_at;

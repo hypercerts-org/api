@@ -51,7 +51,9 @@
     "getBadgeAward": "implemented",
     "listBadgeAwards": "implemented",
     "getBadgeResponse": "implemented",
-    "listBadgeResponses": "implemented"
+    "listBadgeResponses": "implemented",
+    "getFeature": "implemented",
+    "listFeatures": "implemented"
   },
   "authentication": {
     "decision": "public",
@@ -450,6 +452,18 @@
     {
       "id": "app.certified.badge.listBadgeResponses",
       "path": "lexicons/app.certified.badge.listBadgeResponses.json"
+    },
+    {
+      "id": "org.hypercerts.entity.defs",
+      "path": "lexicons/org.hypercerts.entity.defs.json"
+    },
+    {
+      "id": "org.hypercerts.entity.getFeature",
+      "path": "lexicons/org.hypercerts.entity.getFeature.json"
+    },
+    {
+      "id": "org.hypercerts.entity.listFeatures",
+      "path": "lexicons/org.hypercerts.entity.listFeatures.json"
     }
   ],
   "modules": [
@@ -471,6 +485,13 @@
     "modules/workscope-tags/manifest.json",
     "modules/contribution/manifest.json",
     "modules/vocab/manifest.json",
-    "modules/location/manifest.json"
-  ]
+    "modules/location/manifest.json",
+    "modules/features/manifest.json"
+  ],
+  "luaBuild": {
+    "endpointSources": [
+      "lua/src/getFeature.lua",
+      "lua/src/listFeatures.lua"
+    ]
+  }
 }
