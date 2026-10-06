@@ -8,7 +8,7 @@ const collections = {
   organization: 'app.certified.actor.organization',
 };
 
-export const locationAuthorDid = 'did:plc:llllllllllllllllllllllll';
+export const locationAuthorDid = 'did:web:location-http-publisher.invalid';
 export const noRelationsDid = 'did:web:location-no-relations.example';
 export const profileOnlyDid = 'did:web:location-profile-only.example';
 export const organizationOnlyDid = 'did:web:location-organization-only.example';

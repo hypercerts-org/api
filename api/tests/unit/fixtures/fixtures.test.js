@@ -23,12 +23,20 @@ import {
   actorFollowRecords,
 } from '../../fixtures/actor-follows.js';
 
-async function findFixtureModules(directory) {
+const httpFixtureRoot = fileURLToPath(new URL('../../http/fixtures/', import.meta.url));
+
+function compareEntryNames(left, right) {
+  if (left.name < right.name) return -1;
+  if (left.name > right.name) return 1;
+  return 0;
+}
+
+async function findHttpFixtureFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
-  entries.sort((left, right) => left.name.localeCompare(right.name));
+  entries.sort(compareEntryNames);
   const groups = await Promise.all(entries.map(async (entry) => {
     const entryPath = path.join(directory, entry.name);
-    if (entry.isDirectory()) return findFixtureModules(entryPath);
+    if (entry.isDirectory()) return findHttpFixtureFiles(entryPath);
     if (entry.isFile() && entry.name.endsWith('.fixture.js')) return [entryPath];
     return [];
   }));
@@ -65,24 +73,26 @@ test('fixtures have consistent full AT-URIs, valid DID/TID/CID identifiers, type
   }
 });
 
-test('discovered HTTP fixture rows are nonempty, unique against shared fixtures, and use CBOR-derived CIDs', async () => {
+test('shared and recursively discovered HTTP seed rows are nonempty, unique against shared fixtures, and use CBOR-derived CIDs', async () => {
   const sharedRows = [
     ...locationRecords, ...profileRecords, ...organizationRecords,
     ...actorFollowRecords, ...actorFollowProfileRecords, ...actorFollowOrganizationRecords,
     ...activityFixtureRows,
   ];
-  const fixtureRoot = fileURLToPath(new URL('../../http/fixtures/', import.meta.url));
-  const fixtureModules = await findFixtureModules(fixtureRoot);
-  assert.ok(fixtureModules.length > 0, 'expected HTTP fixture modules to be discovered');
+  const fixtureFiles = await findHttpFixtureFiles(httpFixtureRoot);
+  assert.ok(fixtureFiles.length > 0, 'expected recursively discovered HTTP fixture modules');
 
   const httpRows = [];
-  for (const file of fixtureModules) {
-    const { seedRows } = await import(pathToFileURL(file).href);
-    assert.ok(Array.isArray(seedRows) && seedRows.length > 0, `${path.relative(fixtureRoot, file)} must export nonempty seedRows`);
-    httpRows.push(...seedRows);
+  for (const file of fixtureFiles) {
+    const fixture = await import(pathToFileURL(file).href);
+    assert.ok(Array.isArray(fixture.seedRows) && fixture.seedRows.length > 0, `${path.relative(httpFixtureRoot, file)} must export nonempty seedRows`);
+    httpRows.push(...fixture.seedRows);
   }
-  const allRows = [...sharedRows, ...httpRows];
 
+  const allRows = [...sharedRows, ...httpRows];
+  for (const row of allRows) {
+    assert.equal(row.uri, `at://${row.did}/${row.collection}/${row.rkey}`);
+  }
   assert.deepEqual(duplicateKeys(allRows, ({ uri }) => uri), [], 'seed rows must not overwrite another record URI');
   assert.deepEqual(
     duplicateKeys(allRows, ({ did, collection, rkey }) => JSON.stringify([did, collection, rkey])),
@@ -90,9 +100,8 @@ test('discovered HTTP fixture rows are nonempty, unique against shared fixtures,
     'seed rows must not reuse another record identity',
   );
   for (const row of allRows) {
-    assert.equal(row.uri, `at://${row.did}/${row.collection}/${row.rkey}`);
     assert.equal(row.record.$type, row.collection);
-    assert.equal(CID.toString(await CID.create(0x71, encode(row.record))), row.cid, `incorrect CID for ${row.uri}`);
+    assert.equal(CID.toString(await CID.create(0x71, encode(row.record))), row.cid, `CBOR-derived CID mismatch for ${row.uri}`);
   }
 });
 test('activity HTTP fixture repositories do not collide with other fixture repositories', () => {
@@ -108,7 +117,6 @@ test('activity HTTP fixture repositories do not collide with other fixture repos
   assert.deepEqual([...activityHttpDids].filter((did) => existingDids.has(did)), []);
   assert.equal(new Set(activityHttpFixtureRows.map(({ uri }) => uri)).size, activityHttpFixtureRows.length);
 });
-
 test('actor-follow fixtures isolate publishers and cover date precedence, URI ties, and sparse sidecars', async () => {
   const publishers = new Set([actorFollowDids.publisher, actorFollowDids.otherPublisher]);
   assert.equal(publishers.size, 2);
