@@ -1,10 +1,20 @@
+local function valid_did(value)
+  if type(value) ~= "string" or #value > 2048 then return false end
+  local method, specific = value:match("^did:([a-z]+):(.+)$")
+  if not method or not specific or specific:sub(-1) == ":" or specific:sub(-1) == "%"
+    or value:find("[^%w%.:_%%%-]") then return false end
+  return true
+end
+
 local function invalid(message)
   error("InvalidRequest: " .. message, 0)
 end
 
-local function keys_only(values, allowed)
+local function keys_only(values, allowed, unknown_message_prefix)
   for key in pairs(values) do
-    if not allowed[key] then invalid("unknown query parameter") end
+    if not allowed[key] then
+      invalid(unknown_message_prefix and (unknown_message_prefix .. key) or "unknown query parameter")
+    end
   end
 end
 
@@ -17,14 +27,6 @@ local function scalar(params, key)
   return tostring(value)
 end
 
-local function valid_did(value)
-  if #value > 2048 then return false end
-  local method, specific = value:match("^did:([a-z]+):(.+)$")
-  if not method or not specific or specific:sub(-1) == ":" or specific:sub(-1) == "%"
-    or value:find("[^%w%.:_%%%-]") then return false end
-  return true
-end
-
 local function valid_record_key(value)
   return #value >= 1 and #value <= 512 and value ~= "." and value ~= ".."
     and not value:find("[^%w_~%.:%-]")
@@ -34,10 +36,11 @@ local function valid_record_uri(value)
   if type(value) ~= "string" or value:find("[?#]") then return false end
   local authority, collection, rkey = value:match("^at://([^/]+)/([^/]+)/([^/]+)$")
   if not authority or not valid_did(authority) or not valid_record_key(rkey) then return false end
-  return true, collection
+  return true, collection, authority
 end
 
 local function valid_datetime(value)
+  if type(value) ~= "string" then return false end
   local year, month, day, hour, minute, second, suffix = value:match(
     "^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)(.*)$")
   if not year then return false end
@@ -76,6 +79,27 @@ end
 local function cursor_encode(value)
   local encoded = json.encode(value)
   return (encoded:gsub(".", function(char) return string.format("%02x", string.byte(char)) end))
+end
+
+local FEATURE_COLLECTION = "org.hypercerts.entity.feature"
+
+local function feature_valid_did(value)
+  if not valid_did(value) then return false end
+  local position = 1
+  while true do
+    local escape_start = value:find("%", position, true)
+    if not escape_start then return true end
+    local escape = value:sub(escape_start + 1, escape_start + 2)
+    if not escape:match("^[0-9a-fA-F][0-9a-fA-F]$") then return false end
+    position = escape_start + 3
+  end
+end
+
+local function feature_valid_uri(value)
+  if type(value) ~= "string" or #value > 8192 then return false end
+  local valid, collection, authority = valid_record_uri(value)
+  if not valid or collection ~= FEATURE_COLLECTION then return false end
+  return feature_valid_did(authority)
 end
 
 local FEATURE_PROJECTION_PROFILE = "app.certified.actor.profile"
@@ -148,28 +172,7 @@ local function feature_projection_hydrate(views)
   end
 end
 
-local FEATURE_COLLECTION = "org.hypercerts.entity.feature"
 local FEATURE_VIEW_TYPE = "org.hypercerts.entity.defs#featureView"
-
-local function feature_valid_did(value)
-  if not valid_did(value) then return false end
-  local position = 1
-  while true do
-    local escape_start = value:find("%", position, true)
-    if not escape_start then return true end
-    local escape = value:sub(escape_start + 1, escape_start + 2)
-    if not escape:match("^[0-9a-fA-F][0-9a-fA-F]$") then return false end
-    position = escape_start + 3
-  end
-end
-
-local function feature_valid_uri(value)
-  if type(value) ~= "string" or #value > 8192 then return false end
-  local valid, collection = valid_record_uri(value)
-  if not valid or collection ~= FEATURE_COLLECTION then return false end
-  local authority = value:match("^at://([^/]+)/")
-  return feature_valid_did(authority)
-end
 
 local function feature_array(params, key, validate, description, max_bytes)
   local value = params[key]

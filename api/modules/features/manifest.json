@@ -27,8 +27,10 @@
       "path": "../../lua/endpoints/getFeature.lua",
       "sourcePath": "../../lua/src/getFeature.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/featureValidation.lua",
         "../../lua/shared/featureProjection.lua"
       ],
       "config": { "script_type": "lua", "description": "Feature lookup API handler" },
@@ -40,9 +42,12 @@
       "path": "../../lua/endpoints/listFeatures.lua",
       "sourcePath": "../../lua/src/listFeatures.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/listValidation.lua",
         "../../lua/shared/listQuery.lua",
+        "../../lua/shared/featureValidation.lua",
         "../../lua/shared/featureProjection.lua"
       ],
       "config": { "script_type": "lua", "description": "Feature listing API handler" },

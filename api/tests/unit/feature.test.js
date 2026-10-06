@@ -35,12 +35,14 @@ function lua(value) {
 
 async function runGetFeature({ params = { uri: FEATURE_URI }, queryResults = null, expectedError = null, expectedCalls = 0, assertions = '' } = {}) {
   const shared = await Promise.all([
+    'lua/shared/didValidation.lua',
     'lua/shared/query.lua',
     'lua/shared/recordIdentifier.lua',
+    'lua/shared/featureValidation.lua',
     'lua/shared/recordView.lua',
     'lua/shared/featureProjection.lua',
   ].map((relative) => readFile(new URL(`../../${relative}`, import.meta.url), 'utf8')));
-  const endpoint = await readFile(new URL('../../lua/endpoints/getFeature.lua', import.meta.url), 'utf8');
+  const endpoint = await readFile(new URL('../../lua/src/getFeature.lua', import.meta.url), 'utf8');
   const databaseRows = queryResults ?? [
     [{ uri: FEATURE_URI, did: FEATURE_DID, cid: 'bafyreicccccccccccccccccccccccccccccccccccccccccccccccccccc', indexed_at: null, record: 'feature-record' }],
     [{ uri: PROFILE_URI, did: FEATURE_DID, cid: 'bafyreidddddddddddddddddddddddddddddddddddddddddddddddddddd', indexed_at: '2025-01-03T00:00:00Z', record: 'profile-record' }],
@@ -83,13 +85,16 @@ end
 
 async function runListFeatures(params, queryResults, records = { 'feature-record': FEATURE_RECORD }, assertions = '', expectedError = null, expectedCalls = 0) {
   const shared = await Promise.all([
+    'lua/shared/didValidation.lua',
     'lua/shared/query.lua',
     'lua/shared/recordIdentifier.lua',
+    'lua/shared/listValidation.lua',
     'lua/shared/listQuery.lua',
+    'lua/shared/featureValidation.lua',
     'lua/shared/recordView.lua',
     'lua/shared/featureProjection.lua',
   ].map((relative) => readFile(new URL(`../../${relative}`, import.meta.url), 'utf8')));
-  const endpoint = await readFile(new URL('../../lua/endpoints/listFeatures.lua', import.meta.url), 'utf8');
+  const endpoint = await readFile(new URL('../../lua/src/listFeatures.lua', import.meta.url), 'utf8');
   const source = `
 local NULL = {}
 local RESULTS = ${lua(queryResults)}
@@ -265,6 +270,15 @@ assert(calls[1].sql:find('EXISTS (SELECT 1 FROM happyview_records AS organizatio
 assert(calls[1].sql:find("organization.rkey = 'self'", 1, true))
 assert(calls[1].sql:find('organization.did = feature.did', 1, true))
 assert(not calls[1].sql:find('app.certified.actor.profile', 1, true))
+`);
+  assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
+});
+
+test('listFeatures accepts well-formed percent escapes in DID identifiers', async () => {
+  const author = 'did:web:example.org%2Fteam';
+  const result = await runListFeatures({ authors: [author] }, [[]], undefined, `
+assert(#result.features == 0 and result.cursor == nil and #calls == 1)
+assert(calls[1].values[1] == '${FEATURE}' and calls[1].values[2] == '${author}')
 `);
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
