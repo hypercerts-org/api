@@ -122,6 +122,7 @@ test('listVocabTags paginates timestamp ties in both directions without repeats 
     let cursor;
     for (const [index, expectedUris] of pages.entries()) {
       const { response, body } = await listVocabTags({
+        authors: [primaryAuthor, secondaryAuthor, 'did:web:vocab-author-c.example'],
         sortDirection: direction,
         limit: 2,
         ...(cursor ? { cursor } : {}),
