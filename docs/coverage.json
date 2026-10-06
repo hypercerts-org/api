@@ -1,485 +1,348 @@
 {
-  "primarySource": {
-    "worktree": "happyview-profile-history-rewrite",
-    "branch": "api/profile-queries",
-    "commit": "134b24d020a01876e51f857e32726ccdf670200d",
-    "manifestPath": "hypercerts-api/manifest.json"
+  "source": {
+    "apiManifest": "api/manifest.json",
+    "pinnedLexiconPackage": "1.4.0"
   },
-  "endpointCount": 32,
+  "runtimeValidation": "not-assessed",
+  "deploymentValidation": "not-assessed",
+  "endpointCount": 55,
   "methods": {
-    "GET": 32
+    "GET": 55
   },
-  "coverage": {
-    "primary": 9,
-    "branch-only": 19,
-    "unmanifested-unsupported": 4
+  "inclusion": {
+    "manifest-registered": 55
   },
-  "unresolvedReferences": [
-    {
-      "component": "app.certified.actor.organization.main",
-      "reference": "app.certified.actor.organization"
-    },
-    {
-      "component": "app.certified.actor.profile.main",
-      "reference": "app.certified.actor.profile"
-    },
-    {
-      "component": "app.certified.badge.definition.main",
-      "reference": "app.certified.badge.definition"
-    },
-    {
-      "component": "app.certified.graph.entityFollow.main",
-      "reference": "app.certified.graph.entityFollow"
-    },
-    {
-      "component": "app.certified.graph.follow.main",
-      "reference": "app.certified.graph.follow"
-    },
-    {
-      "component": "app.certified.location.main",
-      "reference": "app.certified.location"
-    },
-    {
-      "component": "com.atproto.repo.strongRef.main",
-      "reference": "com.atproto.repo.strongRef"
-    },
-    {
-      "component": "org.hypercerts.api.defs.actorView",
-      "reference": "org.hypercerts.api.defs#actorView"
-    },
-    {
-      "component": "org.hypercerts.api.defs.organizationView",
-      "reference": "org.hypercerts.api.defs#organizationView"
-    },
-    {
-      "component": "org.hypercerts.api.defs.profileView",
-      "reference": "org.hypercerts.api.defs#profileView"
-    },
-    {
-      "component": "org.hypercerts.claim.activity.main",
-      "reference": "org.hypercerts.claim.activity"
-    },
-    {
-      "component": "org.hypercerts.claim.activity.contributorIdentity",
-      "reference": "org.hypercerts.claim.activity#contributorIdentity"
-    },
-    {
-      "component": "org.hypercerts.claim.activity.contributorRole",
-      "reference": "org.hypercerts.claim.activity#contributorRole"
-    },
-    {
-      "component": "org.hypercerts.claim.contributorInformation.main",
-      "reference": "org.hypercerts.claim.contributorInformation"
-    },
-    {
-      "component": "org.hypercerts.collection.main",
-      "reference": "org.hypercerts.collection"
-    },
-    {
-      "component": "org.hypercerts.context.attachment.main",
-      "reference": "org.hypercerts.context.attachment"
-    },
-    {
-      "component": "org.hypercerts.context.evaluation.main",
-      "reference": "org.hypercerts.context.evaluation"
-    },
-    {
-      "component": "org.hypercerts.entity.feature.main",
-      "reference": "org.hypercerts.entity.feature"
-    },
-    {
-      "component": "org.hypercerts.funding.receipt.main",
-      "reference": "org.hypercerts.funding.receipt"
-    },
-    {
-      "component": "org.hypercerts.vocab.tag.main",
-      "reference": "org.hypercerts.vocab.tag"
-    }
-  ],
+  "unresolvedReferences": [],
   "endpoints": [
     {
       "id": "app.certified.actor.getOrganization",
       "method": "GET",
-      "coverage": "branch-only",
-      "source": {
-        "activeModule": "modules/organization/manifest.json",
-        "branch": "api/organization-queries",
-        "commit": "918a72afabd987110ab9eaaa06e1e8eb51a0b916",
-        "path": "hypercerts-api/lexicons/app.certified.actor.getOrganization.json",
-        "worktree": "happyview-organization-queries"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/organization/manifest.json"
     },
     {
       "id": "app.certified.actor.getOrganizations",
       "method": "GET",
-      "coverage": "branch-only",
-      "source": {
-        "activeModule": "modules/organization/manifest.json",
-        "branch": "api/organization-queries",
-        "commit": "918a72afabd987110ab9eaaa06e1e8eb51a0b916",
-        "path": "hypercerts-api/lexicons/app.certified.actor.getOrganizations.json",
-        "worktree": "happyview-organization-queries"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/organization/manifest.json"
     },
     {
       "id": "app.certified.actor.getProfile",
       "method": "GET",
-      "coverage": "primary",
-      "source": {
-        "activeModule": "modules/profile/manifest.json",
-        "branch": "api/profile-queries",
-        "commit": "134b24d020a01876e51f857e32726ccdf670200d",
-        "path": "hypercerts-api/lexicons/app.certified.actor.getProfile.json",
-        "worktree": "happyview-profile-history-rewrite"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/profile/manifest.json"
     },
     {
       "id": "app.certified.actor.getProfiles",
       "method": "GET",
-      "coverage": "primary",
-      "source": {
-        "activeModule": "modules/profile/manifest.json",
-        "branch": "api/profile-queries",
-        "commit": "134b24d020a01876e51f857e32726ccdf670200d",
-        "path": "hypercerts-api/lexicons/app.certified.actor.getProfiles.json",
-        "worktree": "happyview-profile-history-rewrite"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/profile/manifest.json"
     },
     {
       "id": "app.certified.actor.listOrganizations",
       "method": "GET",
-      "coverage": "branch-only",
-      "source": {
-        "activeModule": "modules/organization/manifest.json",
-        "branch": "api/organization-queries",
-        "commit": "918a72afabd987110ab9eaaa06e1e8eb51a0b916",
-        "path": "hypercerts-api/lexicons/app.certified.actor.listOrganizations.json",
-        "worktree": "happyview-organization-queries"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/organization/manifest.json"
     },
     {
       "id": "app.certified.actor.listProfiles",
       "method": "GET",
-      "coverage": "primary",
-      "source": {
-        "activeModule": "modules/profile/manifest.json",
-        "branch": "api/profile-queries",
-        "commit": "134b24d020a01876e51f857e32726ccdf670200d",
-        "path": "hypercerts-api/lexicons/app.certified.actor.listProfiles.json",
-        "worktree": "happyview-profile-history-rewrite"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/profile/manifest.json"
     },
     {
       "id": "app.certified.actor.searchOrganizations",
       "method": "GET",
-      "coverage": "branch-only",
-      "source": {
-        "activeModule": "modules/organization/manifest.json",
-        "branch": "api/organization-queries",
-        "commit": "918a72afabd987110ab9eaaa06e1e8eb51a0b916",
-        "path": "hypercerts-api/lexicons/app.certified.actor.searchOrganizations.json",
-        "worktree": "happyview-organization-queries"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/organization/manifest.json"
     },
     {
       "id": "app.certified.actor.searchProfiles",
       "method": "GET",
-      "coverage": "primary",
-      "source": {
-        "activeModule": "modules/profile/manifest.json",
-        "branch": "api/profile-queries",
-        "commit": "134b24d020a01876e51f857e32726ccdf670200d",
-        "path": "hypercerts-api/lexicons/app.certified.actor.searchProfiles.json",
-        "worktree": "happyview-profile-history-rewrite"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/profile/manifest.json"
+    },
+    {
+      "id": "app.certified.badge.getBadgeAward",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/badge-queries/manifest.json"
     },
     {
       "id": "app.certified.badge.getBadgeDefinition",
       "method": "GET",
-      "coverage": "unmanifested-unsupported",
-      "source": {
-        "activeModule": null,
-        "branch": "api/badge-definitions",
-        "commit": "a0455e92881077b3da33c7753fdb4486712d8f5b",
-        "path": "hypercerts-api/lexicons/app.certified.badge.getBadgeDefinition.json",
-        "worktree": "happyview-badge-definitions-queries"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/badge-definitions/manifest.json"
+    },
+    {
+      "id": "app.certified.badge.getBadgeResponse",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/badge-queries/manifest.json"
+    },
+    {
+      "id": "app.certified.badge.listBadgeAwards",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/badge-queries/manifest.json"
     },
     {
       "id": "app.certified.badge.listBadgeDefinitions",
       "method": "GET",
-      "coverage": "unmanifested-unsupported",
-      "source": {
-        "activeModule": null,
-        "branch": "api/badge-definitions",
-        "commit": "a0455e92881077b3da33c7753fdb4486712d8f5b",
-        "path": "hypercerts-api/lexicons/app.certified.badge.listBadgeDefinitions.json",
-        "worktree": "happyview-badge-definitions-queries"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/badge-definitions/manifest.json"
+    },
+    {
+      "id": "app.certified.badge.listBadgeResponses",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/badge-queries/manifest.json"
+    },
+    {
+      "id": "app.certified.badge.searchBadgeDefinitions",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/badge-queries/manifest.json"
     },
     {
       "id": "app.certified.graph.getEntityFollow",
       "method": "GET",
-      "coverage": "branch-only",
-      "source": {
-        "activeModule": "modules/entity-follow/manifest.json",
-        "branch": "api/entity-follow-queries",
-        "commit": "81bab9cfc1fdf7ee52bc892274b2d016a519c0bc",
-        "path": "hypercerts-api/lexicons/app.certified.graph.getEntityFollow.json",
-        "worktree": "happyview-entity-follow-queries"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/entity-follow/manifest.json"
     },
     {
       "id": "app.certified.graph.getFollow",
       "method": "GET",
-      "coverage": "primary",
-      "source": {
-        "activeModule": "modules/actor-follow/manifest.json",
-        "branch": "api/profile-queries",
-        "commit": "134b24d020a01876e51f857e32726ccdf670200d",
-        "path": "hypercerts-api/lexicons/app.certified.graph.getFollow.json",
-        "worktree": "happyview-profile-history-rewrite"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/actor-follow/manifest.json"
     },
     {
       "id": "app.certified.graph.listActorFollowers",
       "method": "GET",
-      "coverage": "primary",
-      "source": {
-        "activeModule": "modules/actor-follow/manifest.json",
-        "branch": "api/profile-queries",
-        "commit": "134b24d020a01876e51f857e32726ccdf670200d",
-        "path": "hypercerts-api/lexicons/app.certified.graph.listActorFollowers.json",
-        "worktree": "happyview-profile-history-rewrite"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/actor-follow/manifest.json"
     },
     {
       "id": "app.certified.graph.listActorFollowing",
       "method": "GET",
-      "coverage": "primary",
-      "source": {
-        "activeModule": "modules/actor-follow/manifest.json",
-        "branch": "api/profile-queries",
-        "commit": "134b24d020a01876e51f857e32726ccdf670200d",
-        "path": "hypercerts-api/lexicons/app.certified.graph.listActorFollowing.json",
-        "worktree": "happyview-profile-history-rewrite"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/actor-follow/manifest.json"
     },
     {
       "id": "app.certified.graph.listEntityFollowers",
       "method": "GET",
-      "coverage": "branch-only",
-      "source": {
-        "activeModule": "modules/entity-follow/manifest.json",
-        "branch": "api/entity-follow-queries",
-        "commit": "81bab9cfc1fdf7ee52bc892274b2d016a519c0bc",
-        "path": "hypercerts-api/lexicons/app.certified.graph.listEntityFollowers.json",
-        "worktree": "happyview-entity-follow-queries"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/entity-follow/manifest.json"
     },
     {
       "id": "app.certified.graph.listEntityFollowing",
       "method": "GET",
-      "coverage": "branch-only",
-      "source": {
-        "activeModule": "modules/entity-follow/manifest.json",
-        "branch": "api/entity-follow-queries",
-        "commit": "81bab9cfc1fdf7ee52bc892274b2d016a519c0bc",
-        "path": "hypercerts-api/lexicons/app.certified.graph.listEntityFollowing.json",
-        "worktree": "happyview-entity-follow-queries"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/entity-follow/manifest.json"
     },
     {
       "id": "app.certified.graph.listRecentFollows",
       "method": "GET",
-      "coverage": "branch-only",
-      "source": {
-        "activeModule": "modules/recent-follows/manifest.json",
-        "branch": "api/recent-follows",
-        "commit": "0503116f5d1b63d493ccdd2a7aa721da67caf875",
-        "path": "hypercerts-api/lexicons/app.certified.graph.listRecentFollows.json",
-        "worktree": "happyview-recent-follows-queries"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/recent-follows/manifest.json"
+    },
+    {
+      "id": "app.certified.link.getEvmLink",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/evm-links/manifest.json"
+    },
+    {
+      "id": "app.certified.link.listEvmLinks",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/evm-links/manifest.json"
     },
     {
       "id": "app.certified.location.getLocation",
       "method": "GET",
-      "coverage": "primary",
-      "source": {
-        "activeModule": "modules/location/manifest.json",
-        "branch": "api/profile-queries",
-        "commit": "134b24d020a01876e51f857e32726ccdf670200d",
-        "path": "hypercerts-api/lexicons/app.certified.location.getLocation.json",
-        "worktree": "happyview-profile-history-rewrite"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/location/manifest.json"
     },
     {
       "id": "app.certified.location.listLocations",
       "method": "GET",
-      "coverage": "primary",
-      "source": {
-        "activeModule": "modules/location/manifest.json",
-        "branch": "api/profile-queries",
-        "commit": "134b24d020a01876e51f857e32726ccdf670200d",
-        "path": "hypercerts-api/lexicons/app.certified.location.listLocations.json",
-        "worktree": "happyview-profile-history-rewrite"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/location/manifest.json"
     },
     {
       "id": "org.hypercerts.claim.getActivity",
       "method": "GET",
-      "coverage": "branch-only",
-      "source": {
-        "activeModule": "modules/activity/manifest.json",
-        "branch": "api/activity-queries",
-        "commit": "43ac93be85747e09b8b5f6fa4aafb27d536f9367",
-        "path": "hypercerts-api/lexicons/org.hypercerts.claim.getActivity.json",
-        "worktree": "happyview-activity-queries-worktree"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/shared/manifest.json"
+    },
+    {
+      "id": "org.hypercerts.claim.getContribution",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/contribution/manifest.json"
+    },
+    {
+      "id": "org.hypercerts.claim.getContributorInformation",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/contributor-information/manifest.json"
+    },
+    {
+      "id": "org.hypercerts.claim.getRights",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/rights/manifest.json"
     },
     {
       "id": "org.hypercerts.claim.listActivities",
       "method": "GET",
-      "coverage": "branch-only",
-      "source": {
-        "activeModule": "modules/activity/manifest.json",
-        "branch": "api/activity-queries",
-        "commit": "43ac93be85747e09b8b5f6fa4aafb27d536f9367",
-        "path": "hypercerts-api/lexicons/org.hypercerts.claim.listActivities.json",
-        "worktree": "happyview-activity-queries-worktree"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/activity/manifest.json"
+    },
+    {
+      "id": "org.hypercerts.claim.listContributions",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/contribution/manifest.json"
+    },
+    {
+      "id": "org.hypercerts.claim.listContributorInformation",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/contributor-information/manifest.json"
+    },
+    {
+      "id": "org.hypercerts.claim.listRights",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/rights/manifest.json"
     },
     {
       "id": "org.hypercerts.claim.searchActivities",
       "method": "GET",
-      "coverage": "branch-only",
-      "source": {
-        "activeModule": "modules/activity/manifest.json",
-        "branch": "api/activity-queries",
-        "commit": "43ac93be85747e09b8b5f6fa4aafb27d536f9367",
-        "path": "hypercerts-api/lexicons/org.hypercerts.claim.searchActivities.json",
-        "worktree": "happyview-activity-queries-worktree"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/activity/manifest.json"
     },
     {
       "id": "org.hypercerts.collection.getCollection",
       "method": "GET",
-      "coverage": "branch-only",
-      "source": {
-        "activeModule": "modules/collection/manifest.json",
-        "branch": "api/collection-queries",
-        "commit": "2b3162b785299d2362af7f725eff4ca5e47ce609",
-        "path": "hypercerts-api/lexicons/org.hypercerts.collection.getCollection.json",
-        "worktree": "happyview-activity-queries-phase1"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/shared/manifest.json"
     },
     {
       "id": "org.hypercerts.collection.listCollectionItems",
       "method": "GET",
-      "coverage": "branch-only",
-      "source": {
-        "activeModule": "modules/collection/manifest.json",
-        "branch": "api/collection-queries",
-        "commit": "2b3162b785299d2362af7f725eff4ca5e47ce609",
-        "path": "hypercerts-api/lexicons/org.hypercerts.collection.listCollectionItems.json",
-        "worktree": "happyview-activity-queries-phase1"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/shared/manifest.json"
     },
     {
       "id": "org.hypercerts.collection.listCollections",
       "method": "GET",
-      "coverage": "branch-only",
-      "source": {
-        "activeModule": "modules/collection/manifest.json",
-        "branch": "api/collection-queries",
-        "commit": "2b3162b785299d2362af7f725eff4ca5e47ce609",
-        "path": "hypercerts-api/lexicons/org.hypercerts.collection.listCollections.json",
-        "worktree": "happyview-activity-queries-phase1"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/collection/manifest.json"
     },
     {
       "id": "org.hypercerts.collection.searchCollections",
       "method": "GET",
-      "coverage": "branch-only",
-      "source": {
-        "activeModule": "modules/collection/manifest.json",
-        "branch": "api/collection-queries",
-        "commit": "2b3162b785299d2362af7f725eff4ca5e47ce609",
-        "path": "hypercerts-api/lexicons/org.hypercerts.collection.searchCollections.json",
-        "worktree": "happyview-activity-queries-phase1"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/collection/manifest.json"
+    },
+    {
+      "id": "org.hypercerts.context.getAcknowledgement",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/acknowledgements/manifest.json"
     },
     {
       "id": "org.hypercerts.context.getAttachment",
       "method": "GET",
-      "coverage": "branch-only",
-      "source": {
-        "activeModule": "modules/context-attachments/manifest.json",
-        "branch": "api/context-attachments",
-        "commit": "43bafb3ef58c0bcb6b627f1b8bd905aa579d4e00",
-        "path": "hypercerts-api/lexicons/org.hypercerts.context.getAttachment.json",
-        "worktree": "happyview-context-attachments-queries"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/context-attachments/manifest.json"
     },
     {
       "id": "org.hypercerts.context.getEvaluation",
       "method": "GET",
-      "coverage": "branch-only",
-      "source": {
-        "activeModule": "modules/context-evaluation/manifest.json",
-        "branch": "api/context-evaluations",
-        "commit": "52014876cadf9d01b06507cf06ae6649a1d42dfa",
-        "path": "hypercerts-api/lexicons/org.hypercerts.context.getEvaluation.json",
-        "worktree": "happyview-context-evaluations-queries"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/context-evaluation/manifest.json"
+    },
+    {
+      "id": "org.hypercerts.context.getMeasurement",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/context-measurements/manifest.json"
+    },
+    {
+      "id": "org.hypercerts.context.listAcknowledgements",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/acknowledgements/manifest.json"
     },
     {
       "id": "org.hypercerts.context.listAttachments",
       "method": "GET",
-      "coverage": "branch-only",
-      "source": {
-        "activeModule": "modules/context-attachments/manifest.json",
-        "branch": "api/context-attachments",
-        "commit": "43bafb3ef58c0bcb6b627f1b8bd905aa579d4e00",
-        "path": "hypercerts-api/lexicons/org.hypercerts.context.listAttachments.json",
-        "worktree": "happyview-context-attachments-queries"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/context-attachments/manifest.json"
     },
     {
       "id": "org.hypercerts.context.listEvaluations",
       "method": "GET",
-      "coverage": "branch-only",
-      "source": {
-        "activeModule": "modules/context-evaluation/manifest.json",
-        "branch": "api/context-evaluations",
-        "commit": "52014876cadf9d01b06507cf06ae6649a1d42dfa",
-        "path": "hypercerts-api/lexicons/org.hypercerts.context.listEvaluations.json",
-        "worktree": "happyview-context-evaluations-queries"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/context-evaluation/manifest.json"
+    },
+    {
+      "id": "org.hypercerts.context.listMeasurements",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/context-measurements/manifest.json"
+    },
+    {
+      "id": "org.hypercerts.entity.getFeature",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/features/manifest.json"
+    },
+    {
+      "id": "org.hypercerts.entity.listFeatures",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/features/manifest.json"
     },
     {
       "id": "org.hypercerts.funding.getReceipt",
       "method": "GET",
-      "coverage": "unmanifested-unsupported",
-      "source": {
-        "activeModule": null,
-        "branch": "api/funding-receipts",
-        "commit": "d3643a26c0bab24972b847fbf3e07794702aea04",
-        "path": "hypercerts-api/lexicons/org.hypercerts.funding.getReceipt.json",
-        "worktree": "happyview-funding-receipts-queries"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/funding/manifest.json"
     },
     {
       "id": "org.hypercerts.funding.listReceipts",
       "method": "GET",
-      "coverage": "unmanifested-unsupported",
-      "source": {
-        "activeModule": null,
-        "branch": "api/funding-receipts",
-        "commit": "d3643a26c0bab24972b847fbf3e07794702aea04",
-        "path": "hypercerts-api/lexicons/org.hypercerts.funding.listReceipts.json",
-        "worktree": "happyview-funding-receipts-queries"
-      }
+      "inclusion": "manifest-registered",
+      "module": "modules/funding/manifest.json"
+    },
+    {
+      "id": "org.hypercerts.vocab.getVocabTag",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/vocab/manifest.json"
+    },
+    {
+      "id": "org.hypercerts.vocab.listVocabTags",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/vocab/manifest.json"
+    },
+    {
+      "id": "org.hypercerts.workscope.getWorkscopeTag",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/workscope-tags/manifest.json"
+    },
+    {
+      "id": "org.hypercerts.workscope.listWorkscopeTags",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/workscope-tags/manifest.json"
     }
   ]
 }

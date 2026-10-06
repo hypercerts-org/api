@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Lists actors with indexed organization sidecars. organizationTypes accepts at most 100 repeated unbracketed values and uses OR within that filter; distinct filters use AND. Omitted visibility imposes no restriction, including public, unlisted, and unspecified values; supplied visibility is an exact string match. Results sort by (createdAt, uri), default desc, with a direction-bound opaque cursor. Keep other parameters unchanged between pages. Authentication is not required.",
+      "description": "Lists actors with indexed organization sidecars matching the supplied filters. Filters combine with AND, and values within each array filter are ORed. Authentication is not required.",
       "parameters": {
         "type": "params",
         "properties": {
@@ -12,44 +12,65 @@
             "type": "array",
             "maxLength": 100,
             "description": "Exact organizationType values; OR within this filter.",
-            "items": { "type": "string", "maxLength": 128 }
+            "items": {
+              "type": "string",
+              "maxLength": 128
+            }
           },
           "visibility": {
             "type": "string",
-            "description": "Exact match against the sidecar visibility value. Omission adds no visibility restriction; missing values do not match a supplied value."
+            "description": "Exact visibility match; omission is unrestricted, but records with no visibility value do not match."
           },
           "sortDirection": {
             "type": "string",
-            "enum": ["asc", "desc"],
-            "description": "Sort direction for (createdAt, uri); default desc."
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "description": "Sort by a valid zoned createdAt, otherwise indexedAt, falling back to row creation time; URI breaks ties. Default desc."
           },
           "limit": {
             "type": "integer",
             "minimum": 1,
             "maximum": 100,
-            "description": "Maximum actors in the page; default 25."
+            "description": "Page size; default 25."
           },
           "cursor": {
             "type": "string",
-            "description": "Opaque pagination cursor, bound to sortDirection."
+            "description": "Opaque cursor bound to sortDirection; keep other parameters unchanged between pages."
           }
         }
       },
       "output": {
         "encoding": "application/json",
-        "schema": { "type": "ref", "ref": "#output" }
+        "schema": {
+          "type": "ref",
+          "ref": "#output"
+        }
       },
       "errors": [
-        { "name": "InvalidRequest", "description": "A filter value, page bound, cursor, repeated scalar, or query parameter is invalid." }
+        {
+          "name": "InvalidRequest",
+          "description": "A filter or scalar parameter is invalid or repeated, or an unsupported parameter was supplied."
+        },
+        {
+          "name": "OrganizationQueryFailed",
+          "description": "The indexed organization sidecar or associated profile could not be queried."
+        }
       ]
     },
     "output": {
       "type": "object",
-      "required": ["actors"],
+      "required": [
+        "actors"
+      ],
       "properties": {
         "actors": {
           "type": "array",
-          "items": { "type": "ref", "ref": "app.certified.actor.getOrganization#organizationActorView" }
+          "items": {
+            "type": "ref",
+            "ref": "app.certified.actor.getOrganization#organizationActorView"
+          }
         },
         "cursor": {
           "type": "string",

@@ -13,6 +13,16 @@ pnpm build
 
 `pnpm test:unit` runs the discovered tests under `api/tests/unit`; unit tests use local fixtures and fake process/network adapters, and do not seed a database or contact HappyView. `pnpm check` also checks generated-source freshness, JavaScript and Lua lint, types, and endpoint tests. `pnpm build` emits Lua handlers declared by the root and module manifests. Shared Lua files are bundled into capability handlers rather than installed independently.
 
+## API reference snapshots
+
+When a change affects registered query Lexicons or their schemas, refresh the committed explorer artifacts from the current API manifest:
+
+```sh
+pnpm docs:sync
+```
+
+This updates `docs/sources/index.json`, the committed Lexicon snapshots, `docs/openapi.json`, and `docs/coverage.json`. It uses the repository-pinned `@hypercerts-org/lexicon` dependency and makes no HappyView requests. Coverage reports manifest inclusion only; it does not validate runtime behavior or deployment. See [docs/README.md](docs/README.md) for the source and snapshot policy.
+
 ## HTTP runtime tests
 
 `pnpm test:http` runs the suites in `api/tests/http` against the activity, badge-definition, badge-query, EVM-link, acknowledgement, collection, context-measurement, context attachment and evaluation, contributor-information, funding, location, profile, organization, feature, work-scope-tag, rights, vocabulary-tag, graph, and contribution query XRPC endpoints installed from this checkout. These tests exercise real HTTP behavior against PostgreSQL, not only Lua handlers with a fake database.
@@ -56,4 +66,6 @@ For the pinned HappyView release, ordinary Lua `error()` exceptions return HTTP 
 
 ## Operations with external effects
 
-`pnpm install:api` sends admin requests to a HappyView instance and uploads declared assets. By default, conflicting declared assets stop the install before asset writes; `pnpm install:api --override` explicitly replaces only those conflicts. Override does not bypass source/dependency validation, authentication, or profile resolver-setting requirements, and writes are not rolled back if a later asset fails. Run the installer only for an explicitly approved target with an approved token. Review the target and release notes before installing a released bundle; see [api/README.md](api/README.md).
+For pull requests that change the installable API bundle or operator-visible behavior, add a release note following the [Changesets guidance](.changeset/README.md). Documentation-only or endpoint-explorer-only changes do not need a Changeset.
+
+`pnpm install:api` sends admin requests to a HappyView instance and uploads declared assets. By default, conflicting declared assets stop the install before asset writes; `pnpm install:api --override` explicitly replaces only those conflicts. Override does not bypass source/dependency validation, authentication, or profile resolver-setting requirements, and writes are not rolled back if a later asset fails. Run the installer only for an explicitly approved target with an approved token. Review the target and release notes before installing a released bundle; see [api/README.md](api/README.md) for release installation and `HYPERCERTS_HANDLE_RESOLVER_URL` setup, permission requirements, and retained-setting behavior.

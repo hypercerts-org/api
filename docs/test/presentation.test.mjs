@@ -10,7 +10,7 @@ const { createPresentationSpec, normalizeBaseUrl } = presentationModule;
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const source = JSON.parse(await readFile(path.join(root, 'openapi.json'), 'utf8'));
 
-test('presentation keeps the endpoint contract but hides provenance and incomplete-ref annotations', () => {
+test('presentation preserves endpoint contracts and explains unresolved schema references', () => {
   const original = structuredClone(source);
   const presentation = createPresentationSpec(source);
   const endpointPath = '/xrpc/org.hypercerts.claim.listActivities';
@@ -39,11 +39,17 @@ test('presentation keeps the endpoint contract but hides provenance and incomple
     'the Lexicon grapheme constraint remains in the presentation schema',
   );
 
-  const placeholderName = Object.keys(source.components.schemas).find((name) =>
-    Object.hasOwn(source.components.schemas[name], 'x-lexicon-ref'),
-  );
-  assert.ok(placeholderName, 'the source snapshot contains an unresolved response reference');
-  assert.deepEqual(presentation.components.schemas[placeholderName], {});
+  assert.deepEqual(source['x-hypercerts-unresolved-references'], [], 'committed snapshots resolve every schema reference');
+
+  const incomplete = structuredClone(source);
+  incomplete.components.schemas['demo.external.record'] = {
+    description: 'Schema reference demo.external.record is outside the committed local Lexicon snapshot.',
+    'x-lexicon-ref': 'demo.external.record',
+  };
+  const incompletePresentation = createPresentationSpec(incomplete);
+  assert.deepEqual(incompletePresentation.components.schemas['demo.external.record'], {
+    description: 'Schema reference demo.external.record is outside the committed local Lexicon snapshot.',
+  });
 });
 
 test('build-time HappyView server config keeps an ordered default and rejects invalid settings', () => {

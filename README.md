@@ -1,23 +1,8 @@
 # Hypercerts API workspace
 
-This repository combines the shared HappyView installer, pinned Lexicon dependencies, reusable Lua projections, fixtures, offline checks, and independently owned capability modules. This composed checkout includes public query modules for actor profiles and organizations, activity, badge definitions and queries, collections, context measurements, attachments and evaluations, actor and entity follows, recent follows, funding receipts, Certified EVM links, locations, features, work-scope tags, contribution records, contributor information, vocabulary tags, and acknowledgements. The `org.hypercerts.vocab.getVocabTag` and `org.hypercerts.vocab.listVocabTags` handlers are bundled and registered through `api/modules/vocab/manifest.json`.
+This repository combines the shared HappyView installer, pinned Lexicon dependencies, reusable Lua projections, fixtures, offline checks, and independently owned capability modules. `api/manifest.json` is authoritative for the modules included in this checkout. The endpoint explorer and its generated OpenAPI and coverage artifacts derive their operations from the query and procedure Lexicons registered by those modules; referenced schemas come from local API Lexicons and the pinned `@hypercerts-org/lexicon` package.
 
-This checkout is one of the additive local sibling branches used to compose the API:
-
-Included query endpoints:
-
-- Rights: `org.hypercerts.claim.getRights`, `org.hypercerts.claim.listRights`
-
-- Badge definitions: `app.certified.badge.getBadgeDefinition`, `app.certified.badge.listBadgeDefinitions`
-- Badge queries: `app.certified.badge.searchBadgeDefinitions`, `app.certified.badge.getBadgeAward`, `app.certified.badge.listBadgeAwards`, `app.certified.badge.getBadgeResponse`, `app.certified.badge.listBadgeResponses`
-- Certified EVM links: `app.certified.link.getEvmLink`, `app.certified.link.listEvmLinks`
-- Funding receipts: `org.hypercerts.funding.getReceipt`, `org.hypercerts.funding.listReceipts`
-- Acknowledgements: `org.hypercerts.context.getAcknowledgement`, `org.hypercerts.context.listAcknowledgements`
-- Contributions: `org.hypercerts.claim.getContribution`, `org.hypercerts.claim.listContributions`
-- Contributor information: `org.hypercerts.claim.getContributorInformation`, `org.hypercerts.claim.listContributorInformation`
-- Vocabulary tags: `org.hypercerts.vocab.getVocabTag`, `org.hypercerts.vocab.listVocabTags`
-
-`api/manifest.json` is authoritative for the modules and validation Lexicons included in this checkout. The `docs/` workspace contains the endpoint explorer and full schema snapshots.
+The explorer runs from committed Lexicon snapshots and does not require an API checkout or HappyView service. See [docs/README.md](docs/README.md) for local use and the `pnpm docs:sync` command. The generated [coverage report](docs/coverage.json) lists the exact manifest-registered operation IDs and distinguishes source inclusion from runtime or deployment validation.
 
 ## Checks
 
@@ -27,7 +12,7 @@ pnpm check
 pnpm build
 ```
 
-`pnpm check` validates generated handlers, lint, types, and unit tests. `pnpm build` refreshes declared Lua handler bundles. These checks do not deploy or contact a HappyView instance. `pnpm install:api` sends admin requests and requires an explicitly approved target and token. See [CONTRIBUTING.md](CONTRIBUTING.md) for local development and HTTP test guidance, and [api/README.md](api/README.md) for API bundle, badge-query, and release installation details.
+`pnpm check` validates generated handlers, lint, types, API unit tests, and endpoint-explorer tests, including read-only freshness checks for the committed docs artifacts. `pnpm build` refreshes declared Lua handler bundles. These checks do not deploy or contact a HappyView instance. `pnpm install:api` sends admin requests and requires an explicitly approved target and token. See [CONTRIBUTING.md](CONTRIBUTING.md) for local development, HTTP test guidance, and release-note requirements, and [api/README.md](api/README.md) for bundle installation and operator guidance.
 
 ## Installed HTTP endpoint inventory
 

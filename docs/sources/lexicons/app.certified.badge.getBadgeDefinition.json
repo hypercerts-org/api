@@ -4,51 +4,89 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Public lookup of one indexed badge definition by exact AT-URI and DID authority. The original record is preserved and only its publisher actor is hydrated. Authentication is not required.",
+      "description": "Returns an indexed badge definition and its publisher actor. Authentication is not required.",
       "parameters": {
         "type": "params",
-        "required": ["uri"],
+        "required": [
+          "uri"
+        ],
         "properties": {
           "uri": {
             "type": "string",
             "format": "at-uri",
-            "description": "Full AT-URI of the badge-definition record using a DID authority."
+            "description": "AT-URI of a badge definition with a DID authority; lookup matches the URI, not a record CID."
           }
         }
       },
       "output": {
         "encoding": "application/json",
-        "schema": { "type": "ref", "ref": "#output" }
+        "schema": {
+          "type": "ref",
+          "ref": "#output"
+        }
       },
       "errors": [
         {
           "name": "InvalidRequest",
-          "description": "The URI is invalid or is not a badge-definition record AT-URI with a DID authority."
+          "description": "The URI is invalid or does not identify a badge-definition AT-URI with a DID authority."
         },
         {
           "name": "RecordNotFound",
-          "description": "No indexed badge definition exists at this exact AT-URI."
+          "description": "No indexed badge definition matches this AT-URI."
         }
       ]
     },
     "output": {
       "type": "object",
-      "required": ["badgeDefinition"],
+      "required": [
+        "badgeDefinition"
+      ],
       "properties": {
-        "badgeDefinition": { "type": "ref", "ref": "#badgeDefinitionView" }
+        "badgeDefinition": {
+          "type": "ref",
+          "ref": "#badgeDefinitionView"
+        }
       }
     },
     "badgeDefinitionView": {
       "type": "object",
-      "description": "Full indexed badge-definition record view with hydrated publisher actor.",
-      "required": ["uri", "cid", "indexedAt", "did", "author", "record"],
+      "description": "Full indexed badge-definition record with its publisher actor.",
+      "required": [
+        "uri",
+        "cid",
+        "indexedAt",
+        "did",
+        "author",
+        "record"
+      ],
+      "nullable": [
+        "indexedAt"
+      ],
       "properties": {
-        "uri": { "type": "string", "format": "at-uri" },
-        "cid": { "type": "string", "format": "cid" },
-        "indexedAt": { "type": "string", "format": "datetime" },
-        "did": { "type": "string", "format": "did" },
-        "author": { "type": "ref", "ref": "org.hypercerts.api.defs#actorView" },
-        "record": { "type": "ref", "ref": "app.certified.badge.definition" }
+        "uri": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "cid": {
+          "type": "string",
+          "format": "cid"
+        },
+        "indexedAt": {
+          "type": "string",
+          "format": "datetime"
+        },
+        "did": {
+          "type": "string",
+          "format": "did"
+        },
+        "author": {
+          "type": "ref",
+          "ref": "org.hypercerts.api.defs#actorView"
+        },
+        "record": {
+          "type": "ref",
+          "ref": "app.certified.badge.definition"
+        }
       }
     }
   }

@@ -57,7 +57,7 @@ test('OpenAPI generation preserves query contract and marks unresolved refs', ()
   assert.equal(typeof generator?.buildOpenApi, 'function', 'openapi.mjs exports buildOpenApi');
 
   const document = generator.buildOpenApi([searchLexicon], {
-    coverage: { 'app.certified.demo.search': 'branch-only' },
+    coverage: { 'app.certified.demo.search': 'manifest-registered' },
     sources: { 'app.certified.demo.search': { branch: 'api/demo', commit: 'abc123' } },
   });
   const operation = document.paths['/xrpc/app.certified.demo.search'].get;
@@ -70,7 +70,7 @@ test('OpenAPI generation preserves query contract and marks unresolved refs', ()
     { url: 'https://api.test.hypercerts.dev', description: 'API test server (default)' },
   ]);
   assert.equal(operation.description, 'Search demo records.');
-  assert.equal(operation['x-hypercerts-coverage'], 'branch-only');
+  assert.equal(operation['x-hypercerts-coverage'], 'manifest-registered');
   assert.deepEqual(operation['x-hypercerts-source'], { branch: 'api/demo', commit: 'abc123' });
   assert.equal(search.required, true);
   assert.equal(search.description, 'Literal search text.');

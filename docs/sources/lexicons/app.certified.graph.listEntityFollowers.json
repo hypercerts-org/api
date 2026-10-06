@@ -4,38 +4,101 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Lists actors following one entity URI. Duplicate (actor, entity) relationships are collapsed before pagination using the earliest-created record and URI ascending tie-breaker. Results sort by each representative follow's (createdAt, uri) in sortDirection, default desc, with an opaque direction-bound cursor. Only the returned page is hydrated; missing profiles or organization sidecars remain explicit nulls. Operational failures return errors, not partial pages. Authentication is not required.",
+      "description": "Lists actors following an entity AT-URI. No authentication is required; duplicate actor–entity relationships use the earliest createdAt, with URI ascending on ties. Only the returned page is hydrated: missing profile and organization sidecars are null, while lookup failures return errors rather than partial pages.",
       "parameters": {
         "type": "params",
-        "required": ["entity"],
+        "required": [
+          "entity"
+        ],
         "properties": {
-          "entity": { "type": "string", "format": "at-uri", "description": "Full DID-authority AT-URI of the followed record identity; matching does not pin a CID or restrict the target collection." },
-          "sortDirection": { "type": "string", "enum": ["asc", "desc"], "description": "Sort direction for representative follow (createdAt, uri); default desc." },
-          "limit": { "type": "integer", "minimum": 1, "maximum": 100, "description": "Maximum relationships in the page; default 25." },
-          "cursor": { "type": "string", "description": "Opaque cursor bound to sortDirection; keep all other query parameters unchanged." }
+          "entity": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "Full AT-URI of the followed record using a DID authority; any target collection is accepted, and matching is by URI, not CID."
+          },
+          "sortDirection": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "description": "Sorts by representative follow createdAt and URI; defaults to desc."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "description": "Maximum relationships per page; defaults to 25."
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Opaque next-page cursor bound to sortDirection; keep the other query parameters unchanged between pages."
+          }
         }
       },
-      "output": { "encoding": "application/json", "schema": { "type": "ref", "ref": "#output" } },
-      "errors": [{ "name": "InvalidRequest", "description": "The entity AT-URI, sort direction, page bound, cursor, or query parameters are invalid." }]
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "ref",
+          "ref": "#output"
+        }
+      },
+      "errors": [
+        {
+          "name": "InvalidRequest",
+          "description": "The entity AT-URI or another query parameter is invalid."
+        }
+      ]
     },
     "entityFollowerView": {
       "type": "object",
       "description": "The follower actor and the raw entity-follow record representing its relationship.",
-      "required": ["did", "profile", "organization", "follow"],
-      "nullable": ["profile", "organization"],
+      "required": [
+        "did",
+        "profile",
+        "organization",
+        "follow"
+      ],
+      "nullable": [
+        "profile",
+        "organization"
+      ],
       "properties": {
-        "did": { "type": "string", "format": "did" },
-        "profile": { "type": "ref", "ref": "org.hypercerts.api.defs#profileView" },
-        "organization": { "type": "ref", "ref": "org.hypercerts.api.defs#organizationView" },
-        "follow": { "type": "ref", "ref": "app.certified.graph.getEntityFollow#entityFollowRecordView" }
+        "did": {
+          "type": "string",
+          "format": "did"
+        },
+        "profile": {
+          "type": "ref",
+          "ref": "org.hypercerts.api.defs#profileView"
+        },
+        "organization": {
+          "type": "ref",
+          "ref": "org.hypercerts.api.defs#organizationView"
+        },
+        "follow": {
+          "type": "ref",
+          "ref": "app.certified.graph.getEntityFollow#entityFollowRecordView"
+        }
       }
     },
     "output": {
       "type": "object",
-      "required": ["followers"],
+      "required": [
+        "followers"
+      ],
       "properties": {
-        "followers": { "type": "array", "items": { "type": "ref", "ref": "#entityFollowerView" } },
-        "cursor": { "type": "string", "description": "Opaque cursor for the next page; omitted when there are no more relationships." }
+        "followers": {
+          "type": "array",
+          "items": {
+            "type": "ref",
+            "ref": "#entityFollowerView"
+          }
+        },
+        "cursor": {
+          "type": "string",
+          "description": "Next-page cursor; omitted when no more results are available."
+        }
       }
     }
   }

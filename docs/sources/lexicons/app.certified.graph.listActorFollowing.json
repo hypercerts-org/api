@@ -4,58 +4,75 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Lists actors named as subjects by the requested actor's indexed follow records. Authentication is not required. Duplicate relationships are collapsed before pagination.",
+      "description": "Lists actors named as subjects by the requested DID's follow records. No authentication is required; duplicate relationships are collapsed before pagination, and only the returned actors are hydrated.",
       "parameters": {
         "type": "params",
-        "required": ["actor"],
+        "required": [
+          "actor"
+        ],
         "properties": {
           "actor": {
             "type": "string",
             "format": "did",
-            "description": "DID of the actor whose outgoing follows are listed. Required."
+            "description": "DID whose outgoing follows are listed."
           },
           "sortDirection": {
             "type": "string",
-            "enum": ["asc", "desc"],
-            "description": "Sort by each representative follow's createdAt and URI in this direction; the default is desc."
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "description": "Sorts by representative follow createdAt and URI; defaults to desc."
           },
           "limit": {
             "type": "integer",
             "minimum": 1,
             "maximum": 100,
-            "description": "Maximum relationships returned; the handler default is 25."
+            "description": "Maximum relationships per page; defaults to 25."
           },
           "cursor": {
             "type": "string",
-            "description": "Opaque cursor from the previous page, bound to sortDirection. Keep other query parameters unchanged between pages."
+            "description": "Opaque next-page cursor bound to sortDirection; keep the other query parameters unchanged between pages."
           }
         }
       },
       "output": {
         "encoding": "application/json",
-        "schema": { "type": "ref", "ref": "#output" }
+        "schema": {
+          "type": "ref",
+          "ref": "#output"
+        }
       },
       "errors": [
-        { "name": "InvalidRequest", "description": "A required DID, sort direction, limit, cursor, or query parameter is invalid." }
+        {
+          "name": "InvalidRequest",
+          "description": "A DID or query parameter is invalid."
+        }
       ]
     },
     "output": {
       "type": "object",
-      "required": ["following", "totalCount"],
+      "required": [
+        "following",
+        "totalCount"
+      ],
       "properties": {
         "following": {
           "type": "array",
-          "items": { "type": "ref", "ref": "app.certified.graph.getFollow#actorFollowView" },
-          "description": "Outgoing relationships, with each displayed DID identifying the actor named as the follow subject."
+          "items": {
+            "type": "ref",
+            "ref": "app.certified.graph.getFollow#actorFollowView"
+          },
+          "description": "Outgoing relationships; each displayed DID identifies the actor named as the follow subject."
         },
         "totalCount": {
           "type": "integer",
           "minimum": 0,
-          "description": "Number of matching relationships after duplicate relationships are collapsed, before cursor and limit are applied."
+          "description": "Count of deduplicated relationships before cursor and limit are applied."
         },
         "cursor": {
           "type": "string",
-          "description": "Opaque cursor for the next page; omitted when there are no more relationships."
+          "description": "Next-page cursor; omitted when no more results are available."
         }
       }
     }

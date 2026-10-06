@@ -4,44 +4,68 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Returns one organization result for each supplied actor DID, preserving input order and duplicates. Authentication is not required. actors is a required nonempty array of 1..100 DIDs, counted before deduplication and encoded as repeated unbracketed query keys. Handles are not resolved; the query uses indexed records only and makes no network calls. A missing organization sidecar is returned as null, and present sidecars include the associated profile or null. This endpoint does not paginate.",
+      "description": "Returns an indexed organization sidecar and associated profile for each supplied actor DID. Authentication is not required.",
       "parameters": {
         "type": "params",
-        "required": ["actors"],
+        "required": [
+          "actors"
+        ],
         "properties": {
           "actors": {
             "type": "array",
-            "description": "Actor DIDs to look up; repeated unbracketed values preserve their original order and duplicates.",
+            "description": "Actor DIDs to look up, supplied as repeated unbracketed query values.",
             "minLength": 1,
             "maxLength": 100,
-            "items": { "type": "string", "format": "did" }
+            "items": {
+              "type": "string",
+              "format": "did"
+            }
           }
         }
       },
       "output": {
         "encoding": "application/json",
-        "schema": { "type": "ref", "ref": "#output" }
+        "schema": {
+          "type": "ref",
+          "ref": "#output"
+        }
       },
       "errors": [
-        { "name": "InvalidRequest", "description": "actors must contain 1 through 100 valid DIDs; unknown query parameters are not accepted." },
-        { "name": "OrganizationQueryFailed", "description": "The indexed organization sidecars or associated profiles could not be queried." }
+        {
+          "name": "InvalidRequest",
+          "description": "An actor DID or query parameter is invalid."
+        },
+        {
+          "name": "OrganizationQueryFailed",
+          "description": "The indexed organization sidecars or associated profiles could not be queried."
+        }
       ]
     },
     "output": {
       "type": "object",
-      "required": ["organizations"],
+      "required": [
+        "organizations"
+      ],
       "properties": {
         "organizations": {
           "type": "array",
-          "description": "One result per supplied actor occurrence, in input order. The organization is null when no indexed sidecar exists.",
-          "items": { "type": "ref", "ref": "#organizationResult" }
+          "description": "One result per supplied actor occurrence, in request order.",
+          "items": {
+            "type": "ref",
+            "ref": "#organizationResult"
+          }
         }
       }
     },
     "organizationResult": {
       "type": "object",
-      "required": ["actor", "organization"],
-      "nullable": ["organization"],
+      "required": [
+        "actor",
+        "organization"
+      ],
+      "nullable": [
+        "organization"
+      ],
       "properties": {
         "actor": {
           "type": "string",
@@ -51,7 +75,7 @@
         "organization": {
           "type": "ref",
           "ref": "app.certified.actor.getOrganization#organizationActorView",
-          "description": "Hydrated actor view when this DID has an indexed organization sidecar; otherwise null."
+          "description": "Hydrated actor view, or null when no indexed organization sidecar exists."
         }
       }
     }
