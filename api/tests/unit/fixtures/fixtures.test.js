@@ -1,5 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readdir } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { encode } from '@atcute/cbor';
 import * as CID from '@atcute/cid';
 import { isValidDid, isValidTid } from '@atproto/syntax';
@@ -14,6 +17,47 @@ import {
   actorFollowProfileRecords,
   actorFollowRecords,
 } from '../../fixtures/actor-follows.js';
+
+const httpFixturesRoot = fileURLToPath(new URL('../../http/fixtures/', import.meta.url));
+
+async function findHttpFixtureModules(directory) {
+  const entries = await readdir(directory, { withFileTypes: true });
+  entries.sort((left, right) => left.name < right.name ? -1 : left.name > right.name ? 1 : 0);
+  const fileGroups = await Promise.all(entries.map(async (entry) => {
+    const entryPath = path.join(directory, entry.name);
+    if (entry.isDirectory()) return findHttpFixtureModules(entryPath);
+    if (entry.isFile() && entry.name.endsWith('.fixture.js')) return [entryPath];
+    return [];
+  }));
+  return fileGroups.flat();
+}
+
+test('shared and discovered HTTP fixtures have unique identities and CBOR-derived CIDs', async () => {
+  const sharedRows = [
+    ...locationRecords, ...profileRecords, ...organizationRecords,
+    ...actorFollowRecords, ...actorFollowProfileRecords, ...actorFollowOrganizationRecords,
+    ...activityFixtureRows,
+  ];
+  const fixtureModules = await findHttpFixtureModules(httpFixturesRoot);
+  assert.ok(fixtureModules.length > 0, 'expected discovered HTTP fixture modules');
+  const httpRows = (await Promise.all(fixtureModules.map(async (file) => {
+    const fixture = await import(pathToFileURL(file).href);
+    assert.ok(Array.isArray(fixture.seedRows) && fixture.seedRows.length > 0, `${file} must export nonempty seedRows`);
+    return fixture.seedRows;
+  }))).flat();
+  const seenUris = new Set();
+  const seenIdentities = new Set();
+
+  for (const row of [...sharedRows, ...httpRows]) {
+    const identity = `${row.did}\0${row.collection}\0${row.rkey}`;
+    assert.equal(row.uri, `at://${row.did}/${row.collection}/${row.rkey}`);
+    assert.equal(seenUris.has(row.uri), false, `duplicate fixture URI: ${row.uri}`);
+    assert.equal(seenIdentities.has(identity), false, `duplicate fixture identity: ${identity.replaceAll('\0', '/')}`);
+    seenUris.add(row.uri);
+    seenIdentities.add(identity);
+    assert.equal(CID.toString(await CID.create(0x71, encode(row.record))), row.cid, `incorrect record CID: ${row.uri}`);
+  }
+});
 
 test('fixtures have consistent full AT-URIs, valid DID/TID/CID identifiers, types, and fixed timestamps', () => {
   const records = [

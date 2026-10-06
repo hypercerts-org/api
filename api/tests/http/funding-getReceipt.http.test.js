@@ -48,7 +48,7 @@ test('getReceipt returns the indexed record and hydrates its publisher sidecars'
 });
 
 test('getReceipt exposes RecordNotFound using the pinned HappyView runtime error response', async () => {
-  const missingUri = 'at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.funding.receipt/not-indexed';
+  const missingUri = `at://${publisherDid}/org.hypercerts.funding.receipt/not-indexed`;
   const { response, body } = await getReceipt(missingUri);
   // The pinned HappyView release serializes ordinary Lua errors as runtime script_error responses.
   assert.equal(response.status, 500, JSON.stringify(body));
