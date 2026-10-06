@@ -140,7 +140,9 @@ HAPPYVIEW_BASE_URL='https://your-happyview.example' HAPPYVIEW_ADMIN_TOKEN='<scop
 
 Review that release's notes and target only an explicitly approved HappyView instance.
 
-The reusable installer validates every local asset and dependency before making admin requests. `pnpm install:api` contacts a HappyView instance and uploads declared assets; do not run it without an explicitly approved target and token. It does not roll back writes if a later asset fails.
+The installer validates all local assets and dependencies before making admin requests, then checks installed versions before writing. By default, any conflicting declared asset stops the install before asset writes. Pass `--override` to replace only conflicting assets declared by this bundle; it does not affect undeclared assets or bypass source/dependency validation, admin authentication, or the profile resolver-setting requirements. Use `--debug` to include incoming and installed values in conflict errors, or `--help` to list the options.
+
+`pnpm install:api` contacts a HappyView instance and uploads declared assets; do not run it without an explicitly approved target and token. Writes are not rolled back if a later asset fails.
 
 Fixture SQL helpers require an explicit disposable loopback database opt-in. Unit tests use local fixture data and fake process/network adapters; they do not seed a database or call an external HappyView service.
 
