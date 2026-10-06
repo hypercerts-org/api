@@ -20,6 +20,7 @@
       "path": "../../lua/endpoints/getEvmLink.lua",
       "sourcePath": "../../lua/src/getEvmLink.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/recordView.lua",
@@ -45,9 +46,11 @@
       "path": "../../lua/endpoints/listEvmLinks.lua",
       "sourcePath": "../../lua/src/listEvmLinks.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
-        "../../lua/shared/listQuery.lua",
         "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/listValidation.lua",
+        "../../lua/shared/listQuery.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/evmLinkIdentifier.lua",
         "../../lua/shared/actorView.lua"
