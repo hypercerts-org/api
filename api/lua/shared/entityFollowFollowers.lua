@@ -28,15 +28,19 @@ local function entity_follow_hydrate_followers(followers)
   local profiles = entity_follow_load_actor_records(ENTITY_FOLLOW_FOLLOWER_PROFILE, dids)
   local organizations = entity_follow_load_actor_records(ENTITY_FOLLOW_FOLLOWER_ORGANIZATION, dids)
   for _, follower in ipairs(followers) do
-    follower.profile = profiles[follower.did] and entity_follow_record_view(profiles[follower.did]) or ENTITY_FOLLOW_NULL
-    follower.organization = organizations[follower.did] and entity_follow_record_view(organizations[follower.did]) or ENTITY_FOLLOW_NULL
+    follower.profile = profiles[follower.did] and entity_follow_indexed_record_view(profiles[follower.did]) or ENTITY_FOLLOW_NULL
+    follower.organization = organizations[follower.did] and entity_follow_indexed_record_view(organizations[follower.did]) or ENTITY_FOLLOW_NULL
   end
 end
 
 local function entity_follow_follower_views(rows)
   local followers = {}
   for _, row in ipairs(rows) do
-    followers[#followers + 1] = { did = row.did, follow = entity_follow_record_view(row) }
+    followers[#followers + 1] = {
+      ["$type"] = "app.certified.graph.listEntityFollowers#entityFollowerView",
+      did = row.did,
+      follow = entity_follow_record_view(row),
+    }
   end
   entity_follow_hydrate_followers(followers)
   return followers

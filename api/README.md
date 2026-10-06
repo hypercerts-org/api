@@ -10,7 +10,7 @@ The root manifest declares the EVM-link record Lexicon and handlers, so `pnpm bu
 
 EVM-link HTTP coverage exercises `getEvmLink` record retrieval, combined actor/address filters, tied pagination in both directions, nullable sidecar hydration, and named errors. Its fixtures use CBOR-derived record CIDs. See the root [CONTRIBUTING.md](../CONTRIBUTING.md) for local validation commands and HTTP runtime requirements.
 
-For local development, checks, and HTTP runtime test requirements, see [CONTRIBUTING.md](../CONTRIBUTING.md).
+For local development checks and HTTP runtime test requirements, see [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Install a released API bundle
 

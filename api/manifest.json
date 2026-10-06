@@ -13,6 +13,14 @@
     "listEvmLinks": "implemented",
     "getLocation": "implemented",
     "listLocations": "implemented",
+    "getProfile": "implemented",
+    "getProfiles": "implemented",
+    "searchProfiles": "implemented",
+    "listProfiles": "implemented",
+    "getOrganization": "implemented",
+    "getOrganizations": "implemented",
+    "listOrganizations": "implemented",
+    "searchOrganizations": "implemented",
     "getEvaluation": "implemented",
     "listEvaluations": "implemented",
     "getAttachment": "implemented",
@@ -20,6 +28,10 @@
     "getActivity": "implemented",
     "listActivities": "implemented",
     "searchActivities": "implemented",
+    "getCollection": "implemented",
+    "listCollections": "implemented",
+    "searchCollections": "implemented",
+    "listCollectionItems": "implemented",
     "getFollow": "implemented",
     "listActorFollowers": "implemented",
     "listActorFollowing": "implemented",
@@ -55,6 +67,38 @@
       "packagePath": "lexicons/app/certified/actor/profile.json"
     },
     {
+      "id": "app.certified.actor.getProfile",
+      "path": "lexicons/app.certified.actor.getProfile.json"
+    },
+    {
+      "id": "app.certified.actor.getProfiles",
+      "path": "lexicons/app.certified.actor.getProfiles.json"
+    },
+    {
+      "id": "app.certified.actor.listProfiles",
+      "path": "lexicons/app.certified.actor.listProfiles.json"
+    },
+    {
+      "id": "app.certified.actor.searchProfiles",
+      "path": "lexicons/app.certified.actor.searchProfiles.json"
+    },
+    {
+      "id": "app.certified.actor.getOrganization",
+      "path": "lexicons/app.certified.actor.getOrganization.json"
+    },
+    {
+      "id": "app.certified.actor.getOrganizations",
+      "path": "lexicons/app.certified.actor.getOrganizations.json"
+    },
+    {
+      "id": "app.certified.actor.listOrganizations",
+      "path": "lexicons/app.certified.actor.listOrganizations.json"
+    },
+    {
+      "id": "app.certified.actor.searchOrganizations",
+      "path": "lexicons/app.certified.actor.searchOrganizations.json"
+    },
+    {
       "id": "org.hypercerts.claim.getActivity",
       "path": "lexicons/org.hypercerts.claim.getActivity.json"
     },
@@ -65,6 +109,14 @@
     {
       "id": "org.hypercerts.collection.getCollection",
       "path": "lexicons/org.hypercerts.collection.getCollection.json"
+    },
+    {
+      "id": "org.hypercerts.collection.listCollections",
+      "path": "lexicons/org.hypercerts.collection.listCollections.json"
+    },
+    {
+      "id": "org.hypercerts.collection.searchCollections",
+      "path": "lexicons/org.hypercerts.collection.searchCollections.json"
     },
     {
       "id": "org.hypercerts.collection.listCollectionItems",
@@ -325,7 +377,10 @@
     "modules/funding/manifest.json",
     "modules/evm-links/manifest.json",
     "modules/location/manifest.json",
+    "modules/profile/manifest.json",
+    "modules/organization/manifest.json",
     "modules/activity/manifest.json",
+    "modules/collection/manifest.json",
     "modules/actor-follow/manifest.json",
     "modules/entity-follow/manifest.json",
     "modules/recent-follows/manifest.json",
