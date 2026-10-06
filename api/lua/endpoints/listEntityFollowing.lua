@@ -95,27 +95,6 @@ local function activity_projection_query(sql, values)
   return result
 end
 
-local function activity_projection_valid_did(value)
-  if type(value) ~= "string" or #value > 2048 then return false end
-  local method, specific = value:match("^did:([a-z]+):(.+)$")
-  if not method or not specific or specific:sub(-1) == ":" or specific:sub(-1) == "%"
-    or value:find("[^%w%.:_%%%-]") then return false end
-  return true
-end
-
-local function activity_projection_valid_record_key(value)
-  return #value >= 1 and #value <= 512 and value ~= "." and value ~= ".."
-    and not value:find("[^%w_~%.:%-]")
-end
-
-local function activity_projection_valid_record_uri(value)
-  if type(value) ~= "string" or value:find("[?#]") then return false end
-  local authority, collection, rkey = value:match("^at://([^/]+)/([^/]+)/([^/]+)$")
-  if not authority or not activity_projection_valid_did(authority)
-    or not activity_projection_valid_record_key(rkey) then return false end
-  return true, collection, authority
-end
-
 local function activity_projection_record_view(row, nullable_indexed_at)
   return {
     uri = row.uri,
@@ -127,8 +106,8 @@ local function activity_projection_record_view(row, nullable_indexed_at)
 end
 
 local function activity_projection_identity_did(identifier)
-  if activity_projection_valid_did(identifier) then return identifier end
-  local valid, _, authority = activity_projection_valid_record_uri(identifier)
+  if valid_did(identifier) then return identifier end
+  local valid, _, authority = valid_record_uri(identifier)
   if valid then return authority end
   return nil
 end
@@ -162,18 +141,20 @@ local function activity_projection_load_contributor_information(references)
 end
 
 local function activity_projection_load_actor_records(collection, dids)
-  if #dids == 0 then return {} end
-  local values, placeholders = { collection }, {}
-  for _, did in ipairs(dids) do
-    values[#values + 1] = did
-    placeholders[#placeholders + 1] = "$" .. #values
-  end
-  local rows = activity_projection_query(
-    "SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record " ..
-      "FROM happyview_records WHERE collection = $1 AND rkey = 'self' AND did IN (" .. table.concat(placeholders, ", ") .. ")",
-    values)
   local by_did = {}
-  for _, row in ipairs(rows) do by_did[row.did] = row end
+  for first = 1, #dids, 500 do
+    local values, placeholders = { collection }, {}
+    local last = math.min(first + 499, #dids)
+    for index = first, last do
+      values[#values + 1] = dids[index]
+      placeholders[#placeholders + 1] = "$" .. #values
+    end
+    local rows = activity_projection_query(
+      "SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record " ..
+        "FROM happyview_records WHERE collection = $1 AND rkey = 'self' AND did IN (" .. table.concat(placeholders, ", ") .. ")",
+      values)
+    for _, row in ipairs(rows) do by_did[row.did] = row end
+  end
   return by_did
 end
 
@@ -282,25 +263,9 @@ local COLLECTION_PROJECTION_LOCATION = "app.certified.location"
 local COLLECTION_PROJECTION_TAG = "org.hypercerts.vocab.tag"
 local COLLECTION_PROJECTION_NULL = json.decode("null")
 
-local function collection_projection_valid_did(value)
-  if type(value) ~= "string" or #value > 2048 then return false end
-  local method, specific = value:match("^did:([a-z]+):(.+)$")
-  if not method or not specific or specific:sub(-1) == ":" or specific:sub(-1) == "%"
-    or value:find("[^%w%.:_%%%-]") then return false end
-  return true
-end
-
-local function collection_projection_valid_record_key(value)
-  return #value >= 1 and #value <= 512 and value ~= "." and value ~= ".."
-    and not value:find("[^%w_~%.:%-]")
-end
-
 local function collection_projection_valid_record_uri(value)
-  if type(value) ~= "string" or #value > 8192 or value:find("[?#]") then return false end
-  local authority, collection, rkey = value:match("^at://([^/]+)/([^/]+)/([^/]+)$")
-  if not authority or not collection_projection_valid_did(authority)
-    or not collection_projection_valid_record_key(rkey) then return false end
-  return true, collection, authority
+  if type(value) ~= "string" or #value > 8192 then return false end
+  return valid_record_uri(value)
 end
 
 local function collection_projection_query(sql, values)
@@ -375,12 +340,14 @@ local function collection_projection_load_exact_refs(collection, references)
   return rows_by_version
 end
 
-local function collection_projection_reference(value, field, expected_collection)
+local function collection_projection_reference(value, field, expected_collection, omit_invalid)
   if type(value) ~= "table" or type(value.uri) ~= "string" or type(value.cid) ~= "string" then
+    if omit_invalid then return nil end
     error("CollectionQueryFailed: indexed collection has an invalid " .. field .. " reference", 0)
   end
   local valid, collection = collection_projection_valid_record_uri(value.uri)
   if not valid then
+    if omit_invalid then return nil end
     error("CollectionQueryFailed: indexed collection has an invalid " .. field .. " reference", 0)
   end
   return {
@@ -402,7 +369,7 @@ local function collection_projection_view(row)
   }
 end
 
-local function collection_projection_hydrate(views)
+local function collection_projection_hydrate(views, omit_invalid)
   if #views == 0 then return end
 
   local author_dids, seen_authors = {}, {}
@@ -411,8 +378,8 @@ local function collection_projection_hydrate(views)
   for _, view in ipairs(views) do
     collection_projection_add_unique(author_dids, seen_authors, view.did)
     if view.record.location ~= nil then
-      local reference = collection_projection_reference(view.record.location, "location", COLLECTION_PROJECTION_LOCATION)
-      if reference.matches_collection then
+      local reference = collection_projection_reference(view.record.location, "location", COLLECTION_PROJECTION_LOCATION, omit_invalid)
+      if reference and reference.matches_collection then
         local key = collection_projection_ref_key(reference.uri, reference.cid)
         if not seen_locations[key] then
           seen_locations[key] = true
@@ -425,8 +392,8 @@ local function collection_projection_hydrate(views)
         error("CollectionQueryFailed: indexed collection tags are not an array", 0)
       end
       for _, source in ipairs(view.record.tags) do
-        local reference = collection_projection_reference(source, "tag", COLLECTION_PROJECTION_TAG)
-        if reference.matches_collection then
+        local reference = collection_projection_reference(source, "tag", COLLECTION_PROJECTION_TAG, omit_invalid)
+        if reference and reference.matches_collection then
           local key = collection_projection_ref_key(reference.uri, reference.cid)
           if not seen_tags[key] then
             seen_tags[key] = true
@@ -447,7 +414,8 @@ local function collection_projection_hydrate(views)
     view.author.profile = profiles[view.did] and collection_projection_record_view(profiles[view.did]) or COLLECTION_PROJECTION_NULL
     view.author.organization = organizations[view.did] and collection_projection_record_view(organizations[view.did]) or COLLECTION_PROJECTION_NULL
 
-    local source_location = view.record.location
+    local source_location = view.record.location ~= nil and
+      collection_projection_reference(view.record.location, "location", COLLECTION_PROJECTION_LOCATION, omit_invalid) or nil
     if source_location ~= nil then
       local key = collection_projection_ref_key(source_location.uri, source_location.cid)
       local row = locations[key]
@@ -461,13 +429,16 @@ local function collection_projection_hydrate(views)
     local source_tags = view.record.tags
     if source_tags ~= nil then
       local projected_tags = {}
-      for index, source in ipairs(source_tags) do
-        local row = tags[collection_projection_ref_key(source.uri, source.cid)]
-        projected_tags[index] = {
-          uri = source.uri,
-          cid = source.cid,
-          record = row and collection_projection_record_view(row) or COLLECTION_PROJECTION_NULL,
-        }
+      for _, source in ipairs(source_tags) do
+        local reference = collection_projection_reference(source, "tag", COLLECTION_PROJECTION_TAG, omit_invalid)
+        if reference then
+          local row = tags[collection_projection_ref_key(reference.uri, reference.cid)]
+          projected_tags[#projected_tags + 1] = {
+            uri = reference.uri,
+            cid = reference.cid,
+            record = row and collection_projection_record_view(row) or COLLECTION_PROJECTION_NULL,
+          }
+        end
       end
       view.tags = toarray(projected_tags)
     end
@@ -565,7 +536,7 @@ local function entity_follow_sort_key()
   return "CASE WHEN jsonb_typeof(record::jsonb->'createdAt') = 'string' AND " .. created .. " ~ '" .. zoned .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created .. ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE COALESCE(indexed_at::timestamptz, created_at::timestamptz) END"
 end
 
-local function entity_follow_record_view(row)
+local function entity_follow_indexed_record_view(row)
   return {
     uri = row.uri,
     cid = row.cid,
@@ -573,6 +544,12 @@ local function entity_follow_record_view(row)
     did = row.did,
     record = json.decode(row.record),
   }
+end
+
+local function entity_follow_record_view(row)
+  local view = entity_follow_indexed_record_view(row)
+  view["$type"] = "app.certified.graph.getEntityFollow#entityFollowRecordView"
+  return view
 end
 
 local function entity_follow_decode_cursor(token, direction)
@@ -714,19 +691,13 @@ local function entity_follow_resolve_entities(rows, subjects_by_row)
   for index, row in ipairs(rows) do
     local uri = row_uris[row]
     entities[index] = {
+      ["$type"] = "app.certified.graph.listEntityFollowing#entityFollowingItem",
       uri = uri,
       entity = views_by_uri[uri] or ENTITY_FOLLOW_NULL,
       follow = entity_follow_record_view(row),
     }
   end
   return entities
-end
-
-local function list_entity_following_keys_only(values, allowed)
-  for key in pairs(values) do
-    if not allowed[key] then invalid("unknown query parameter: " .. key) end
-  end
-  keys_only(values, allowed)
 end
 
 local function list_entity_following_page(actor, limit, cursor, direction)
@@ -764,7 +735,7 @@ local function list_entity_following_page(actor, limit, cursor, direction)
 end
 
 local function list_entity_following()
-  list_entity_following_keys_only(params, { actor = true, sortDirection = true, limit = true, cursor = true })
+  keys_only(params, { actor = true, sortDirection = true, limit = true, cursor = true }, "unknown query parameter: ")
   local actor = scalar(params, "actor")
   if not actor or not valid_did(actor) then invalid("actor must be a valid DID") end
 

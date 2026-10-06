@@ -20,6 +20,8 @@
       "sharedSourcePaths": [
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/listValidation.lua",
         "../../lua/shared/recentFollows.lua"
       ],
       "config": {

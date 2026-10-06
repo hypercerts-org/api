@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { locationRecords, profileRecords, organizationRecords } from '../../fixtures/records.js';
+import { seedRows as activityHttpFixtureRows } from '../../http/fixtures/activity.fixture.js';
 import { validatePackageLexicons } from '../../../tooling/validate-lexicons.js';
 import { readLexiconSource } from '../../../tooling/lexicon-source.js';
 import { loadAssets } from '../../../tooling/installer.js';
@@ -30,6 +31,7 @@ test('the full validation Lexicon closure resolves locally while only selected p
     'app.certified.signature.defs',
     'com.atproto.repo.strongRef',
     'org.hypercerts.claim.activity',
+    'org.hypercerts.claim.contribution',
     'org.hypercerts.claim.contributorInformation',
     'org.hypercerts.collection',
     'org.hypercerts.context.acknowledgement',
@@ -98,12 +100,27 @@ if (hasModule('modules/organization/manifest.json')) test('organization query Le
   assert.equal(actorView.properties.profile.ref, 'lex:org.hypercerts.api.defs#profileView');
   assert.equal(actorView.properties.organization.ref, 'lex:org.hypercerts.api.defs#organizationView');
   assert.equal(getOrganization.defs.output.properties.actor.ref, 'lex:app.certified.actor.getOrganization#organizationActorView');
-  assert.deepEqual(getOrganization.defs.main.errors.map(({ name }) => name), ['InvalidRequest', 'RecordNotFound']);
+  const organizationQueryFailed = {
+    name: 'OrganizationQueryFailed',
+    description: 'The indexed organization sidecar or associated profile could not be queried.',
+  };
+  assert.deepEqual(getOrganization.defs.main.errors.map(({ name }) => name), [
+    'InvalidRequest', 'RecordNotFound', 'OrganizationQueryFailed',
+  ]);
+  assert.deepEqual(
+    getOrganization.defs.main.errors.find(({ name }) => name === 'OrganizationQueryFailed'),
+    organizationQueryFailed,
+  );
 
   assert.equal(lexicons.getDefOrThrow(getOrganizations.defs.output.properties.organizations.items.ref).type, 'object');
   assert.equal(lexicons.getDefOrThrow(getOrganizations.defs.organizationResult.properties.organization.ref).type, 'object');
 
   for (const query of [listOrganizations, searchOrganizations]) {
+    assert.deepEqual(query.defs.main.errors.map(({ name }) => name), ['InvalidRequest', 'OrganizationQueryFailed']);
+    assert.deepEqual(
+      query.defs.main.errors.find(({ name }) => name === 'OrganizationQueryFailed'),
+      organizationQueryFailed,
+    );
     assert.equal(query.defs.main.parameters.properties.organizationTypes.maxLength, 100);
     assert.equal(query.defs.output.properties.actors.items.ref, 'lex:app.certified.actor.getOrganization#organizationActorView');
   }
@@ -125,22 +142,81 @@ if (hasModule('modules/actor-follow/manifest.json')) test('follow query Lexicons
   });
 });
 
+test('contribution query Lexicons expose exact lookup and publisher-based paging contracts', async () => {
+  const { lexicons, documents } = await validatePackageLexicons();
+  const byId = new Map(documents.map((document) => [document.id, document]));
+  const getContribution = byId.get('org.hypercerts.claim.getContribution');
+  const listContributions = byId.get('org.hypercerts.claim.listContributions');
+  const shared = byId.get('org.hypercerts.api.defs');
+  assert.ok(getContribution && listContributions && shared);
+
+  const getParams = getContribution.defs.main.parameters;
+  assert.deepEqual(getParams.required, ['uri']);
+  assert.deepEqual(Object.keys(getParams.properties), ['uri']);
+  assert.equal(getParams.properties.uri.format, 'at-uri');
+  assert.equal(getContribution.defs.output.properties.contribution.ref, 'lex:org.hypercerts.claim.getContribution#contributionView');
+
+  const listParams = listContributions.defs.main.parameters.properties;
+  assert.deepEqual(Object.keys(listParams).sort(), ['authors', 'cursor', 'limit', 'sortDirection']);
+  assert.equal(listParams.authors.maxLength, 100);
+  assert.equal(listParams.authors.items.format, 'did');
+  assert.deepEqual(listParams.sortDirection.enum, ['asc', 'desc']);
+  assert.equal(listParams.sortDirection.default, 'desc');
+  assert.equal(listParams.limit.minimum, 1);
+  assert.equal(listParams.limit.maximum, 100);
+  assert.equal(listParams.limit.default, 25);
+  assert.equal(listContributions.defs.output.properties.contributions.items.ref, 'lex:org.hypercerts.claim.getContribution#contributionView');
+
+  assert.equal(shared.defs.contributionView, undefined, 'contribution views belong to the owning query Lexicon');
+  const view = getContribution.defs.contributionView;
+  assert.deepEqual(view.required, ['uri', 'cid', 'indexedAt', 'did', 'author', 'record']);
+  assert.deepEqual(view.nullable, ['indexedAt']);
+  assert.equal(view.properties.author.ref, 'lex:org.hypercerts.api.defs#actorView');
+  assert.equal(lexicons.getDefOrThrow('org.hypercerts.claim.getContribution#contributionView').properties.record.ref,
+    'lex:org.hypercerts.claim.contribution');
+  assert.deepEqual(shared.defs.actorView.nullable, ['profile', 'organization']);
+});
+
+if (hasModule('modules/entity-follow/manifest.json')) test('entity-follow view refs resolve from their endpoint-owned Lexicons', async () => {
+  const { lexicons, documents } = await validatePackageLexicons();
+  const byId = new Map(documents.map((document) => [document.id, document]));
+  const shared = byId.get('org.hypercerts.api.defs');
+  const get = byId.get('app.certified.graph.getEntityFollow');
+  const followers = byId.get('app.certified.graph.listEntityFollowers');
+  const following = byId.get('app.certified.graph.listEntityFollowing');
+
+  for (const name of ['entityFollowRecordView', 'entityFollowerView', 'entityFollowingItem']) {
+    assert.equal(shared.defs[name], undefined, `${name} is owned by its endpoint Lexicon`);
+  }
+  for (const [owner, name] of [
+    ['app.certified.graph.getEntityFollow', 'entityFollowRecordView'],
+    ['app.certified.graph.listEntityFollowers', 'entityFollowerView'],
+    ['app.certified.graph.listEntityFollowing', 'entityFollowingItem'],
+  ]) assert.equal(lexicons.getDefOrThrow(`${owner}#${name}`).type, 'object');
+
+  assert.equal(get.defs.output.properties.follow.ref, 'lex:app.certified.graph.getEntityFollow#entityFollowRecordView');
+  assert.equal(followers.defs.output.properties.followers.items.ref, 'lex:app.certified.graph.listEntityFollowers#entityFollowerView');
+  assert.equal(followers.defs.entityFollowerView.properties.follow.ref, 'lex:app.certified.graph.getEntityFollow#entityFollowRecordView');
+  assert.equal(following.defs.output.properties.entities.items.ref, 'lex:app.certified.graph.listEntityFollowing#entityFollowingItem');
+  assert.equal(following.defs.entityFollowingItem.properties.follow.ref, 'lex:app.certified.graph.getEntityFollow#entityFollowRecordView');
+});
+
 test('installed ATProto validator accepts package language, transitive refs, and real fixture records', async () => {
   const { lexicons, isValidDid, isValidTid } = await validatePackageLexicons();
   const { jsonToLex, lexToJson } = await import('@atproto/lexicon');
-  for (const record of [...locationRecords, ...profileRecords, ...organizationRecords]) {
+  for (const record of [...locationRecords, ...profileRecords, ...organizationRecords, ...activityHttpFixtureRows]) {
     const decoded = jsonToLex(record.record);
     lexicons.assertValidRecord(record.collection, decoded);
     assert.deepEqual(lexToJson(decoded), record.record);
     assert.equal(isValidDid(record.did), true);
-    if (record.collection === 'app.certified.location') assert.equal(isValidTid(record.rkey), true);
+    if (['app.certified.location', 'org.hypercerts.claim.activity'].includes(record.collection)) assert.equal(isValidTid(record.rkey), true);
   }
 });
 
 test('fixture CIDs match their DAG-CBOR record contents', async () => {
   const { encode } = await import('@atcute/cbor');
   const CID = await import('@atcute/cid');
-  for (const record of [...locationRecords, ...profileRecords, ...organizationRecords]) {
+  for (const record of [...locationRecords, ...profileRecords, ...organizationRecords, ...activityHttpFixtureRows]) {
     assert.equal(CID.toString(await CID.create(0x71, encode(record.record))), record.cid);
   }
 });
