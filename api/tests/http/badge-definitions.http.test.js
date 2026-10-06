@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { contractUrl, requireContractTarget } from './helpers.js';
+import { canonicalRecords } from './fixtures/badge-queries.fixture.js';
 
 const getEndpoint = 'app.certified.badge.getBadgeDefinition';
 const listEndpoint = 'app.certified.badge.listBadgeDefinitions';
@@ -115,8 +116,40 @@ test('listBadgeDefinitions paginates createdAt ties by URI without repeats or om
     sortDirection: 'asc', limit: 2, cursor: second.body.cursor,
   });
   assert.equal(third.response.status, 200, JSON.stringify(third.body));
-  assert.deepEqual(third.body.badgeDefinitions.map(({ uri }) => uri), [badgeUris.later]);
-  assert.equal(Object.hasOwn(third.body, 'cursor'), false);
+  assert.deepEqual(third.body.badgeDefinitions.map(({ uri }) => uri), [
+    badgeUris.later,
+    canonicalRecords.definitionA.uri,
+  ]);
+  assert.equal(typeof third.body.cursor, 'string');
+
+  const fourth = await requestBadgeEndpoint(listEndpoint, {
+    sortDirection: 'asc', limit: 2, cursor: third.body.cursor,
+  });
+  assert.equal(fourth.response.status, 200, JSON.stringify(fourth.body));
+  assert.deepEqual(fourth.body.badgeDefinitions.map(({ uri }) => uri), [
+    canonicalRecords.definitionB.uri,
+    canonicalRecords.definitionC.uri,
+  ]);
+  assert.equal(typeof fourth.body.cursor, 'string');
+
+  const fifth = await requestBadgeEndpoint(listEndpoint, {
+    sortDirection: 'asc', limit: 2, cursor: fourth.body.cursor,
+  });
+  assert.equal(fifth.response.status, 200, JSON.stringify(fifth.body));
+  assert.deepEqual(fifth.body.badgeDefinitions.map(({ uri }) => uri), [
+    canonicalRecords.definitionD.uri,
+    canonicalRecords.definitionPartner.uri,
+  ]);
+  assert.equal(typeof fifth.body.cursor, 'string');
+
+  const sixth = await requestBadgeEndpoint(listEndpoint, {
+    sortDirection: 'asc', limit: 2, cursor: fifth.body.cursor,
+  });
+  assert.equal(sixth.response.status, 200, JSON.stringify(sixth.body));
+  assert.deepEqual(sixth.body.badgeDefinitions.map(({ uri }) => uri), [
+    canonicalRecords.definitionUnlisted.uri,
+  ]);
+  assert.equal(Object.hasOwn(sixth.body, 'cursor'), false);
 });
 
 test('listBadgeDefinitions exposes InvalidRequest using the pinned HappyView runtime error response', async () => {
