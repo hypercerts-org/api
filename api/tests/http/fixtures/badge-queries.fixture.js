@@ -10,11 +10,11 @@ const collections = {
 };
 
 export const badgeQueryDids = {
-  publisher: 'did:plc:llllllllllllllllllllllll',
-  partner: 'did:plc:rrrrrrrrrrrrrrrrrrrrrrrr',
-  unlistedAuthor: 'did:plc:nnnnnnnnnnnnnnnnnnnnnnnn',
-  recipient: 'did:plc:ssssssssssssssssssssssss',
-  recordRecipient: 'did:plc:pppppppppppppppppppppppp',
+  publisher: 'did:web:badge-query-publisher.invalid',
+  partner: 'did:web:badge-query-partner.invalid',
+  unlistedAuthor: 'did:web:badge-query-unlisted-author.invalid',
+  recipient: 'did:web:badge-query-recipient.invalid',
+  recordRecipient: 'did:web:badge-query-record-recipient.invalid',
 };
 
 const definitionCreatedAt = '2025-03-01T00:00:00.000Z';
