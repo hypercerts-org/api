@@ -15,7 +15,7 @@ pnpm build
 
 ## HTTP runtime tests
 
-`pnpm test:http` runs the suites in `api/tests/http` against the funding, badge-definition, and acknowledgement XRPC endpoints installed from this checkout. These tests exercise real HTTP behavior against PostgreSQL, not only Lua handlers with a fake database.
+`pnpm test:http` runs the suites in `api/tests/http` against the funding, badge-definition, and acknowledgement and location XRPC endpoints installed from this checkout. These tests exercise real HTTP behavior against PostgreSQL, not only Lua handlers with a fake database.
 
 The local runner requires a local Docker Compose daemon, `psql`, and the pinned PostgreSQL and HappyView images already cached locally. Set `PSQL_PATH` to the absolute path of a trusted `psql` executable:
 
@@ -35,6 +35,8 @@ The HTTP gate fails if it discovers no suites, executes no `node:test` cases, or
 - Badge-definition retrieval with an icon and allowed-issuer list, publisher-sidecar hydration, author and badge-type filters, `createdAt`/URI pagination ties, and named error responses.
 - Acknowledgement exact retrieval and full-record preservation, hydrated and absent publisher sidecars, repeated author/subject filters, ascending and descending pagination across timestamp ties, and named errors.
 - Funding, badge, and acknowledgement fixtures with CBOR-derived record CIDs; acknowledgement publisher DIDs are distinct from baseline fixture identities.
+- Location retrieval with nullable sidecars, repeated author/URI/location-type filters, unsupported-search errors, tied pagination in both directions, malformed/absent `createdAt` handling, and named errors.
+- Funding and location fixtures use CBOR-derived record CIDs.
 
 For the pinned HappyView release, ordinary Lua `error()` exceptions return HTTP 500 JSON with `error: "script_error"` and `errorType: "runtime"`; the error name appears in `message`. Negative HTTP tests assert this observed behavior. It is not a statement of the ideal public HTTP status contract, and does not guarantee 4xx mapping for `RecordNotFound` or `InvalidRequest`.
 
