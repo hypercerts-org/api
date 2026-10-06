@@ -12,7 +12,9 @@
     "getReceipt": "implemented",
     "listReceipts": "implemented",
     "getBadgeDefinition": "implemented",
-    "listBadgeDefinitions": "implemented"
+    "listBadgeDefinitions": "implemented",
+    "getLocation": "implemented",
+    "listLocations": "implemented"
   },
   "authentication": {
     "decision": "public",
@@ -247,6 +249,14 @@
     {
       "id": "pub.leaflet.theme.color",
       "packagePath": "lexicons/pub/leaflet/theme/color.json"
+    },
+    {
+      "id": "app.certified.location.getLocation",
+      "path": "lexicons/app.certified.location.getLocation.json"
+    },
+    {
+      "id": "app.certified.location.listLocations",
+      "path": "lexicons/app.certified.location.listLocations.json"
     }
   ],
   "modules": [
@@ -254,6 +264,7 @@
     "modules/badge-definitions/manifest.json",
     "modules/context-evaluation/manifest.json",
     "modules/context-attachments/manifest.json",
-    "modules/funding/manifest.json"
+    "modules/funding/manifest.json",
+    "modules/location/manifest.json"
   ]
 }
