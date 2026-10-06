@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { contractUrl, requireContractTarget } from './helpers.js';
 
-const publisher = 'did:plc:llllllllllllllllllllllll';
+const publisher = 'did:web:acknowledgements-primary.invalid';
 const secondPublisher = 'did:web:acknowledgements-secondary.example';
 const thirdPublisher = 'did:web:acknowledgements-tertiary.example';
 const subjectUri = 'at://did:plc:mmmmmmmmmmmmmmmmmmmmmmmm/org.hypercerts.claim.activity/ack-subject';
@@ -12,12 +12,12 @@ const acknowledgementCollection = 'org.hypercerts.context.acknowledgement';
 const getMethod = 'org.hypercerts.context.getAcknowledgement';
 const listMethod = 'org.hypercerts.context.listAcknowledgements';
 const uris = {
-  one: 'at://did:plc:llllllllllllllllllllllll/org.hypercerts.context.acknowledgement/ack-one',
-  middleA: 'at://did:plc:llllllllllllllllllllllll/org.hypercerts.context.acknowledgement/ack-middle-a',
+  one: 'at://did:web:acknowledgements-primary.invalid/org.hypercerts.context.acknowledgement/ack-one',
+  middleA: 'at://did:web:acknowledgements-primary.invalid/org.hypercerts.context.acknowledgement/ack-middle-a',
   middleB: 'at://did:web:acknowledgements-secondary.example/org.hypercerts.context.acknowledgement/ack-middle-b',
   late: 'at://did:web:acknowledgements-secondary.example/org.hypercerts.context.acknowledgement/ack-late',
   authorNegative: 'at://did:web:acknowledgements-tertiary.example/org.hypercerts.context.acknowledgement/ack-author-negative',
-  subjectNegative: 'at://did:plc:llllllllllllllllllllllll/org.hypercerts.context.acknowledgement/ack-subject-negative',
+  subjectNegative: 'at://did:web:acknowledgements-primary.invalid/org.hypercerts.context.acknowledgement/ack-subject-negative',
 };
 
 async function query(method, params = {}) {
@@ -67,7 +67,7 @@ test('getAcknowledgement returns the indexed record and hydrates its publisher s
 });
 
 test('getAcknowledgement reports a missing record as a named pinned-runtime error', async () => {
-  const missingUri = 'at://did:plc:llllllllllllllllllllllll/org.hypercerts.context.acknowledgement/not-indexed';
+  const missingUri = 'at://did:web:acknowledgements-primary.invalid/org.hypercerts.context.acknowledgement/not-indexed';
   const { response, body } = await query(getMethod, { uri: missingUri });
   assert.equal(response.status, 500, JSON.stringify(body));
   assert.equal(body.error, 'script_error');

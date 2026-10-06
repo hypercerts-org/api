@@ -26,6 +26,66 @@ test('installer preflights every asset before writing and refuses conflicts', as
   assert.deepEqual(written, []);
 });
 
+test('override replaces differing declared assets only after preflighting the complete bundle', async () => {
+  const lexicon = {
+    id: 'org.example.query',
+    kind: 'lexicon',
+    config: { backfill: false },
+    lexicon_json: { lexicon: 1, id: 'org.example.query', defs: { main: { type: 'query', description: 'incoming' } } },
+  };
+  const conflictingScript = { id: 'conflicting-script', kind: 'script', config: { script_type: 'lua' }, body: 'incoming script' };
+  const unchangedScript = { id: 'unchanged-script', kind: 'script', config: { script_type: 'lua' }, body: 'same script' };
+  const missingScript = { id: 'missing-script', kind: 'script', config: { script_type: 'lua' }, body: 'new script' };
+  const installed = new Map([
+    [lexicon.id, {
+      config: { backfill: true },
+      lexicon_json: { lexicon: 1, id: lexicon.id, defs: { main: { type: 'query', description: 'installed' } } },
+    }],
+    [conflictingScript.id, { config: conflictingScript.config, body: 'installed script' }],
+    [unchangedScript.id, { config: unchangedScript.config, body: unchangedScript.body }],
+  ]);
+  const events = [];
+  const writes = [];
+
+  const result = await applyAssets([lexicon, conflictingScript, unchangedScript, missingScript], {
+    read: async ({ id }) => { events.push(`read:${id}`); return installed.get(id) ?? null; },
+    write: async (asset) => { events.push(`write:${asset.id}`); writes.push(asset); },
+  }, { override: true });
+
+  assert.deepEqual(events, [
+    'read:org.example.query',
+    'read:conflicting-script',
+    'read:unchanged-script',
+    'read:missing-script',
+    'write:org.example.query',
+    'write:conflicting-script',
+    'write:missing-script',
+  ]);
+  assert.equal(writes[0].lexicon_json.defs.main.description, 'incoming');
+  assert.equal(writes[1].body, 'incoming script');
+  assert.deepEqual(result, {
+    changed: ['org.example.query', 'conflicting-script', 'missing-script'],
+    unchanged: ['unchanged-script'],
+  });
+});
+
+test('override does not bypass later asset preflight errors or write partial results', async () => {
+  const events = [];
+  await assert.rejects(() => applyAssets([
+    { id: 'conflict', kind: 'script', config: {}, body: 'incoming' },
+    { id: 'unavailable', kind: 'script', config: {}, body: 'incoming' },
+  ], {
+    read: async ({ id }) => {
+      events.push(`read:${id}`);
+      if (id === 'conflict') return { config: {}, body: 'installed' };
+      throw new Error('HappyView GET /admin/scripts/unavailable returned HTTP 403');
+    },
+    write: async ({ id }) => { events.push(`write:${id}`); },
+  }, { override: true }), /HTTP 403/);
+
+  assert.deepEqual(events, ['read:conflict', 'read:unavailable']);
+});
+
 test('debug conflict shows differing config and canonical Lexicon paths without writing', async () => {
   const asset = {
     id: 'org.example.query', kind: 'lexicon', config: { backfill: false },

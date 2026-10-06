@@ -1,0 +1,65 @@
+{
+  "assets": [
+    {
+      "kind": "lexicon",
+      "id": "app.certified.link.evm",
+      "packagePath": "lexicons/app/certified/link/evm.json",
+      "config": { "backfill": true },
+      "dependsOn": ["app.certified.signature.defs"]
+    },
+    {
+      "kind": "lexicon",
+      "id": "app.certified.link.getEvmLink",
+      "path": "../../lexicons/app.certified.link.getEvmLink.json",
+      "config": { "backfill": false, "target_collection": "app.certified.link.evm" },
+      "dependsOn": ["app.certified.link.evm", "org.hypercerts.api.defs"]
+    },
+    {
+      "kind": "script",
+      "id": "xrpc.query:app.certified.link.getEvmLink",
+      "path": "../../lua/endpoints/getEvmLink.lua",
+      "sourcePath": "../../lua/src/getEvmLink.lua",
+      "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/query.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/recordView.lua",
+        "../../lua/shared/evmLinkIdentifier.lua",
+        "../../lua/shared/actorView.lua"
+      ],
+      "config": {
+        "script_type": "lua",
+        "description": "Certified EVM-link lookup handler"
+      },
+      "dependsOn": ["app.certified.link.getEvmLink"]
+    },
+    {
+      "kind": "lexicon",
+      "id": "app.certified.link.listEvmLinks",
+      "path": "../../lexicons/app.certified.link.listEvmLinks.json",
+      "config": { "backfill": false, "target_collection": "app.certified.link.evm" },
+      "dependsOn": ["app.certified.link.getEvmLink"]
+    },
+    {
+      "kind": "script",
+      "id": "xrpc.query:app.certified.link.listEvmLinks",
+      "path": "../../lua/endpoints/listEvmLinks.lua",
+      "sourcePath": "../../lua/src/listEvmLinks.lua",
+      "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/query.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/listValidation.lua",
+        "../../lua/shared/listQuery.lua",
+        "../../lua/shared/recordView.lua",
+        "../../lua/shared/evmLinkIdentifier.lua",
+        "../../lua/shared/actorView.lua"
+      ],
+      "config": {
+        "script_type": "lua",
+        "description": "Certified EVM-link listing handler"
+      },
+      "dependsOn": ["app.certified.link.listEvmLinks"]
+    }
+  ]
+}

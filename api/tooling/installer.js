@@ -18,7 +18,7 @@ import { readLexiconSource } from './lexicon-source.js';
 /** @typedef {ScriptManifestAsset & { path: string; body: string }} LoadedScriptAsset */
 /** @typedef {LoadedLexiconAsset | LoadedScriptAsset} LoadedAsset */
 /** @typedef {{ id: string; kind?: 'lexicon' | 'script'; dependsOn?: string[] }} OrderableAsset */
-/** @typedef {'missing' | 'unchanged'} InstallState */
+/** @typedef {'missing' | 'conflict' | 'unchanged'} InstallState */
 /** @typedef {{ asset: LoadedAsset; state: InstallState }} AssetInstallState */
 /** @typedef {{ config?: AssetConfig | null; lexicon_json?: unknown; body?: unknown }} InstalledAsset */
 /** External GET /admin/lexicons/:id response assertion; response.json() is not runtime-validated. @typedef {{ backfill: boolean; target_collection: string | null; action: string | null; token_cost: number | null; lexicon_json: unknown }} LexiconAdminRow */
@@ -26,7 +26,7 @@ import { readLexiconSource } from './lexicon-source.js';
 /** @typedef {{ read: (asset: LoadedAsset) => Promise<InstalledAsset | null>; write: (asset: LoadedAsset) => Promise<void>; listScriptVariables?: () => Promise<unknown>; createScriptVariable?: (key: string, value: string) => Promise<void> }} AdminClient */
 /** @typedef {{ changed: string[]; unchanged: string[] }} InstallResult */
 /** @typedef {{ key: string; status: 'exists-unverified' | 'created' }} ResolverSetting */
-/** @typedef {{ env?: Record<string, string | undefined>; isTTY?: boolean; ask?: (prompt: string) => Promise<string>; onNotice?: (message: string) => void; debug?: boolean }} ApplyAssetsOptions */
+/** @typedef {{ env?: Record<string, string | undefined>; isTTY?: boolean; ask?: (prompt: string) => Promise<string>; onNotice?: (message: string) => void; debug?: boolean; override?: boolean }} ApplyAssetsOptions */
 /** @typedef {InstallResult & { resolverSetting?: ResolverSetting }} ApplyAssetsResult */
 /** @typedef {Error & { completed: string[]; remaining: string[]; resolverSetting?: ResolverSetting }} PartialInstallError */
 
@@ -223,13 +223,13 @@ export function orderAssets(assets) {
 }
 
 /** @param {LoadedAsset[]} ordered @param {AdminClient} client @param {ApplyAssetsOptions} [options] @returns {Promise<AssetInstallState[]>} */
-async function preflightAssets(ordered, client, { debug = false } = {}) {
+async function preflightAssets(ordered, client, { debug = false, override = false } = {}) {
   const states = [];
   for (const asset of ordered) {
     const installed = await client.read(asset);
     const state = compareAsset(asset, installed);
-    if (state === 'conflict') {
-      const detail = debug ? `\n${describeAssetConflict(asset, /** @type {InstalledAsset} */ (installed))}` : ' (rerun with --debug to see the difference)';
+    if (state === 'conflict' && !override) {
+      const detail = debug ? `\n${describeAssetConflict(asset, /** @type {InstalledAsset} */ (installed))}` : ' (use --override to replace it, or rerun with --debug to see the difference)';
       throw new Error(`Refusing ${asset.id}: unexpected installed difference; inspect and resolve manually before retrying${detail}`);
     }
     states.push({ asset, state });
@@ -238,7 +238,7 @@ async function preflightAssets(ordered, client, { debug = false } = {}) {
 }
 
 /** @param {AssetInstallState[]} states @param {AdminClient} client @returns {Promise<InstallResult>} */
-async function writeMissingAssets(states, client) {
+async function writeAssets(states, client) {
   const changed = [];
   for (let i = 0; i < states.length; i++) {
     const { asset, state } = states[i];
@@ -346,7 +346,7 @@ export async function applyAssets(assets, client, options = {}) {
   const ordered = orderAssets(assets);
   const states = await preflightAssets(ordered, client, options);
   if (!ordered.some(({ id }) => PROFILE_LOOKUP_ASSET_IDS.has(id))) {
-    return writeMissingAssets(states, client);
+    return writeAssets(states, client);
   }
 
   const resolverSetting = await installResolverSetting(client, {
@@ -356,7 +356,7 @@ export async function applyAssets(assets, client, options = {}) {
     onNotice: options.onNotice ?? ((message) => console.log(message)),
   });
   try {
-    const result = await writeMissingAssets(states, client);
+    const result = await writeAssets(states, client);
     return { ...result, resolverSetting };
   } catch (cause) {
     if (resolverSetting.status !== 'created') throw cause;
@@ -659,14 +659,28 @@ export async function resolveInstallConfig({
   };
 }
 
+const INSTALLER_USAGE = `Usage: pnpm install:api [--override] [--debug] [--help]
+
+Options:
+  --override  Replace differing installed assets declared by this bundle.
+              Without it, conflicts are refused before any asset writes.
+  --debug     Include incoming and installed values in conflict errors.
+  --help      Show this help and exit.`;
+
 async function main() {
   const args = process.argv.slice(2);
-  if (args.some((arg) => arg !== '--debug')) throw new Error('Unknown installer option; use --debug to print conflicting asset values');
+  const unknown = args.find((arg) => !['--debug', '--override', '--help'].includes(arg));
+  if (unknown) throw new Error(`Unknown installer option ${unknown}; use --help to see supported options`);
   const debug = args.includes('--debug');
+  const override = args.includes('--override');
+  if (args.includes('--help')) {
+    console.log(INSTALLER_USAGE);
+    return;
+  }
   const { baseUrl: rawBaseUrl, token } = await resolveInstallConfig();
   const client = createAdminClient({ baseUrl: rawBaseUrl, token });
   const { assets } = await loadAssets(fileURLToPath(new URL('../manifest.json', import.meta.url)));
-  const result = await applyAssets(assets, client, { debug });
+  const result = await applyAssets(assets, client, { debug, override });
   console.log(JSON.stringify(result, null, 2));
 }
 

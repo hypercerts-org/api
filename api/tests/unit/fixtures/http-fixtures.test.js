@@ -2,19 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readdir } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
 import { encode } from '@atcute/cbor';
 import * as CID from '@atcute/cid';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { locationRecords, profileRecords, organizationRecords } from '../../fixtures/records.js';
-import {
-  actorFollowRecords,
-  actorFollowProfileRecords,
-  actorFollowOrganizationRecords,
-} from '../../fixtures/actor-follows.js';
+import { actorFollowRecords, actorFollowProfileRecords, actorFollowOrganizationRecords } from '../../fixtures/actor-follows.js';
 import { activityFixtureRows } from '../../fixtures/activities.js';
 
 const httpFixtureRoot = fileURLToPath(new URL('../../http/fixtures/', import.meta.url));
-const sharedRows = [
+const sharedSeedRows = [
   ...locationRecords,
   ...profileRecords,
   ...organizationRecords,
@@ -36,38 +32,35 @@ async function findFixtureModules(directory) {
   const groups = await Promise.all(entries.map(async (entry) => {
     const entryPath = path.join(directory, entry.name);
     if (entry.isDirectory()) return findFixtureModules(entryPath);
-    if (entry.isFile() && entry.name.endsWith('.fixture.js')) return [entryPath];
-    return [];
+    return entry.isFile() && entry.name.endsWith('.fixture.js') ? [entryPath] : [];
   }));
   return groups.flat();
 }
 
-test('shared and recursively discovered HTTP fixture rows have unique identities and CBOR-derived CIDs', async () => {
-  const records = sharedRows.map((row) => ({ source: 'shared fixtures', row }));
+test('shared and recursively discovered HTTP seed rows have consistent URIs, unique identities, and matching CBOR CIDs', async () => {
   const fixtureModules = await findFixtureModules(httpFixtureRoot);
-  assert.ok(fixtureModules.length > 0, 'expected HTTP fixture modules under tests/http/fixtures');
+  assert.ok(fixtureModules.length > 0, 'expected recursively discovered HTTP fixture modules');
 
+  const records = sharedSeedRows.map((row) => ({ source: 'shared fixtures', row }));
   for (const file of fixtureModules) {
     const fixture = await import(pathToFileURL(file).href);
-    const source = path.relative(httpFixtureRoot, file);
-    assert.ok(Array.isArray(fixture.seedRows) && fixture.seedRows.length > 0,
-      `${source} must export nonempty seedRows`);
-    records.push(...fixture.seedRows.map((row) => ({ source, row })));
+    assert.ok(Array.isArray(fixture.seedRows) && fixture.seedRows.length > 0, `${file} must export nonempty seedRows`);
+    records.push(...fixture.seedRows.map((row) => ({ source: file, row })));
   }
 
   const uris = new Map();
   const identities = new Map();
+  const identityTuples = new Set();
   for (const { source, row } of records) {
-    const identity = JSON.stringify([row.did, row.collection, row.rkey]);
-    assert.equal(row.uri, `at://${row.did}/${row.collection}/${row.rkey}`, `${source} has an inconsistent URI`);
+    const identity = `${row.did}/${row.collection}/${row.rkey}`;
+    const identityTuple = JSON.stringify([row.did, row.collection, row.rkey]);
+    assert.equal(row.uri, `at://${identity}`, `${source} has an inconsistent URI for ${identity}`);
     assert.equal(uris.has(row.uri), false, `${row.uri} is seeded by both ${uris.get(row.uri)} and ${source}`);
     assert.equal(identities.has(identity), false, `${identity} is seeded by both ${identities.get(identity)} and ${source}`);
+    assert.equal(identityTuples.has(identityTuple), false, `Duplicate fixture identity: ${identityTuple}`);
     uris.set(row.uri, source);
     identities.set(identity, source);
-  }
-
-  for (const { source, row } of records) {
-    const expectedCid = CID.toString(await CID.create(0x71, encode(row.record)));
-    assert.equal(row.cid, expectedCid, `${source} has a non-CBOR-derived CID for ${row.uri}`);
+    identityTuples.add(identityTuple);
+    assert.equal(CID.toString(await CID.create(0x71, encode(row.record))), row.cid, `${source} has a non-CBOR-derived CID for ${row.uri}`);
   }
 });

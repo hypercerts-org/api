@@ -1,9 +1,4 @@
-local COLLECTION = "app.certified.badge.definition"
-
-local function valid_badge_definition_uri(value)
-  local valid, collection = valid_record_uri(value)
-  return valid and collection == COLLECTION
-end
+local COLLECTION = BADGE_DEFINITION_COLLECTION
 
 local function query(sql, values)
   local ok, result = pcall(db.raw, sql, values)
