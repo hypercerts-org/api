@@ -10,7 +10,12 @@ import { locationRecords, profileRecords, organizationRecords, seedSql } from '.
 import { activityContributorInformationVersions, activityFixtureRows } from '../../fixtures/activities.js';
 import { seedRows as activityHttpFixtureRows } from '../../http/fixtures/activity.fixture.js';
 import { seedRows as badgeHttpFixtureRows } from '../../http/fixtures/badge-definitions.fixture.js';
+import { seedRows as collectionHttpFixtureRows } from '../../http/fixtures/collections.fixture.js';
+import { seedRows as contextAttachmentHttpFixtureRows } from '../../http/fixtures/context-attachments.fixture.js';
+import { seedRows as contextEvaluationHttpFixtureRows } from '../../http/fixtures/context-evaluations.fixture.js';
 import { seedRows as fundingHttpFixtureRows } from '../../http/fixtures/funding-receipts.fixture.js';
+import { seedRows as graphFollowHttpFixtureRows } from '../../http/fixtures/graph-follows.fixture.js';
+import { seedRows as locationHttpFixtureRows } from '../../http/fixtures/location.fixture.js';
 import {
   actorFollowDids,
   actorFollowOrganizationRecords,
@@ -18,18 +23,27 @@ import {
   actorFollowRecords,
 } from '../../fixtures/actor-follows.js';
 
-const packageRoot = fileURLToPath(new URL('../../../', import.meta.url));
-
-async function findFiles(directory, suffix) {
+async function findFixtureModules(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
   entries.sort((left, right) => left.name.localeCompare(right.name));
   const groups = await Promise.all(entries.map(async (entry) => {
     const entryPath = path.join(directory, entry.name);
-    if (entry.isDirectory()) return findFiles(entryPath, suffix);
-    if (entry.isFile() && entry.name.endsWith(suffix)) return [entryPath];
+    if (entry.isDirectory()) return findFixtureModules(entryPath);
+    if (entry.isFile() && entry.name.endsWith('.fixture.js')) return [entryPath];
     return [];
   }));
   return groups.flat();
+}
+
+function duplicateKeys(rows, keyFor) {
+  const seen = new Set();
+  const duplicates = new Set();
+  for (const row of rows) {
+    const key = keyFor(row);
+    if (seen.has(key)) duplicates.add(key);
+    seen.add(key);
+  }
+  return [...duplicates].sort();
 }
 
 test('fixtures have consistent full AT-URIs, valid DID/TID/CID identifiers, types, and fixed timestamps', () => {
@@ -52,50 +66,49 @@ test('fixtures have consistent full AT-URIs, valid DID/TID/CID identifiers, type
   }
 });
 
-test('activity HTTP fixture repositories do not collide with activity, follow, funding, or badge fixtures', () => {
+test('discovered HTTP fixture rows are nonempty, unique against shared fixtures, and use CBOR-derived CIDs', async () => {
+  const sharedRows = [
+    ...locationRecords, ...profileRecords, ...organizationRecords,
+    ...actorFollowRecords, ...actorFollowProfileRecords, ...actorFollowOrganizationRecords,
+    ...activityFixtureRows,
+  ];
+  const fixtureRoot = fileURLToPath(new URL('../../http/fixtures/', import.meta.url));
+  const fixtureModules = await findFixtureModules(fixtureRoot);
+  assert.ok(fixtureModules.length > 0, 'expected HTTP fixture modules to be discovered');
+
+  const httpRows = [];
+  for (const file of fixtureModules) {
+    const { seedRows } = await import(pathToFileURL(file).href);
+    assert.ok(Array.isArray(seedRows) && seedRows.length > 0, `${path.relative(fixtureRoot, file)} must export nonempty seedRows`);
+    httpRows.push(...seedRows);
+  }
+  const allRows = [...sharedRows, ...httpRows];
+
+  assert.deepEqual(duplicateKeys(allRows, ({ uri }) => uri), [], 'seed rows must not overwrite another record URI');
+  assert.deepEqual(
+    duplicateKeys(allRows, ({ did, collection, rkey }) => JSON.stringify([did, collection, rkey])),
+    [],
+    'seed rows must not reuse another record identity',
+  );
+  for (const row of allRows) {
+    assert.equal(row.uri, `at://${row.did}/${row.collection}/${row.rkey}`);
+    assert.equal(row.record.$type, row.collection);
+    assert.equal(CID.toString(await CID.create(0x71, encode(row.record))), row.cid, `incorrect CID for ${row.uri}`);
+  }
+});
+
+test('activity HTTP fixture repositories do not collide with other fixture repositories', () => {
   const existingRows = [
     ...locationRecords, ...profileRecords, ...organizationRecords,
     ...actorFollowRecords, ...actorFollowProfileRecords, ...actorFollowOrganizationRecords,
-    ...activityFixtureRows, ...fundingHttpFixtureRows, ...badgeHttpFixtureRows,
+    ...activityFixtureRows, ...contextAttachmentHttpFixtureRows, ...contextEvaluationHttpFixtureRows,
+    ...graphFollowHttpFixtureRows, ...fundingHttpFixtureRows, ...badgeHttpFixtureRows,
+    ...collectionHttpFixtureRows, ...locationHttpFixtureRows,
   ];
   const existingDids = new Set(existingRows.map(({ did }) => did));
   const activityHttpDids = new Set(activityHttpFixtureRows.map(({ did }) => did));
   assert.deepEqual([...activityHttpDids].filter((did) => existingDids.has(did)), []);
-});
-
-test('shared and discovered HTTP fixture rows have unique identities and record CIDs', async () => {
-  const httpFixtureFiles = await findFiles(path.join(packageRoot, 'tests', 'http', 'fixtures'), '.fixture.js');
-  const httpRows = [];
-  for (const file of httpFixtureFiles) {
-    const { seedRows } = await import(pathToFileURL(file).href);
-    assert.ok(Array.isArray(seedRows) && seedRows.length > 0, `${path.relative(packageRoot, file)} must export nonempty seedRows`);
-    httpRows.push(...seedRows);
-  }
-
-  const rows = [
-    ...locationRecords, ...profileRecords, ...organizationRecords,
-    ...actorFollowRecords, ...actorFollowProfileRecords, ...actorFollowOrganizationRecords,
-    ...activityFixtureRows, ...httpRows,
-  ];
-  const seenUris = new Set();
-  const seenIdentities = new Set();
-  const duplicateUris = [];
-  const duplicateIdentities = [];
-  for (const row of rows) {
-    const identity = JSON.stringify([row.did, row.collection, row.rkey]);
-    if (seenUris.has(row.uri)) duplicateUris.push(row.uri);
-    if (seenIdentities.has(identity)) duplicateIdentities.push(identity);
-    seenUris.add(row.uri);
-    seenIdentities.add(identity);
-  }
-  assert.deepEqual(duplicateUris, [], 'shared and HTTP fixture rows must not overwrite one another by URI');
-  assert.deepEqual(duplicateIdentities, [], 'shared and HTTP fixture rows must not reuse repository record identities');
-
-  for (const row of rows) {
-    assert.equal(row.uri, `at://${row.did}/${row.collection}/${row.rkey}`);
-    assert.equal(row.record.$type, row.collection);
-    assert.equal(CID.toString(await CID.create(0x71, encode(row.record))), row.cid, row.uri);
-  }
+  assert.equal(new Set(activityHttpFixtureRows.map(({ uri }) => uri)).size, activityHttpFixtureRows.length);
 });
 
 test('actor-follow fixtures isolate publishers and cover date precedence, URI ties, and sparse sidecars', async () => {

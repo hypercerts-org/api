@@ -5,6 +5,10 @@
   "runtimeCompatibility": "compatible-at-target-revision",
   "status": "handlers-implemented; location-and-actor-follow-runtime-validated-at-target-revision; other-query-runtime-validation-pending",
   "handlerStatus": {
+    "getEvaluation": "implemented",
+    "listEvaluations": "implemented",
+    "getAttachment": "implemented",
+    "listAttachments": "implemented",
     "getActivity": "implemented",
     "listActivities": "implemented",
     "searchActivities": "implemented",
@@ -77,14 +81,6 @@
       "path": "lexicons/app.certified.graph.listRecentFollows.json"
     },
     {
-      "id": "app.certified.location.getLocation",
-      "path": "lexicons/app.certified.location.getLocation.json"
-    },
-    {
-      "id": "app.certified.location.listLocations",
-      "path": "lexicons/app.certified.location.listLocations.json"
-    },
-    {
       "id": "app.certified.actor.profile",
       "packagePath": "lexicons/app/certified/actor/profile.json"
     },
@@ -95,6 +91,14 @@
     {
       "id": "org.hypercerts.context.evaluation",
       "packagePath": "lexicons/org/hypercerts/context/evaluation.json"
+    },
+    {
+      "id": "org.hypercerts.context.getEvaluation",
+      "path": "lexicons/org.hypercerts.context.getEvaluation.json"
+    },
+    {
+      "id": "org.hypercerts.context.listEvaluations",
+      "path": "lexicons/org.hypercerts.context.listEvaluations.json"
     },
     {
       "id": "org.hypercerts.claim.listActivities",
@@ -119,6 +123,14 @@
     {
       "id": "org.hypercerts.collection.listCollectionItems",
       "path": "lexicons/org.hypercerts.collection.listCollectionItems.json"
+    },
+    {
+      "id": "org.hypercerts.context.getAttachment",
+      "path": "lexicons/org.hypercerts.context.getAttachment.json"
+    },
+    {
+      "id": "org.hypercerts.context.listAttachments",
+      "path": "lexicons/org.hypercerts.context.listAttachments.json"
     },
     {
       "id": "org.hypercerts.context.attachment",
@@ -289,6 +301,14 @@
       "packagePath": "lexicons/pub/leaflet/theme/color.json"
     },
     {
+      "id": "app.certified.location.getLocation",
+      "path": "lexicons/app.certified.location.getLocation.json"
+    },
+    {
+      "id": "app.certified.location.listLocations",
+      "path": "lexicons/app.certified.location.listLocations.json"
+    },
+    {
       "id": "org.hypercerts.funding.getReceipt",
       "path": "lexicons/org.hypercerts.funding.getReceipt.json"
     },
@@ -305,7 +325,9 @@
     "modules/actor-follow/manifest.json",
     "modules/entity-follow/manifest.json",
     "modules/recent-follows/manifest.json",
-    "modules/location/manifest.json",
-    "modules/funding/manifest.json"
+    "modules/context-evaluation/manifest.json",
+    "modules/context-attachments/manifest.json",
+    "modules/funding/manifest.json",
+    "modules/location/manifest.json"
   ]
 }
