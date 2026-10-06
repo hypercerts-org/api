@@ -88,15 +88,15 @@ test('listActorFollowers ranks the earliest duplicate before asc pagination and 
         hasNext: true,
       },
       {
-        did: graphDids.publisher,
-        publisher: graphDids.publisher,
-        uri: `at://${graphDids.publisher}/${followCollection}/3jzfcijpj2z2a`,
-        hasNext: true,
-      },
-      {
         did: graphDids.thirdFollower,
         publisher: graphDids.thirdFollower,
         uri: `at://${graphDids.thirdFollower}/${followCollection}/3jzfcijpj2z2g`,
+        hasNext: true,
+      },
+      {
+        did: graphDids.publisher,
+        publisher: graphDids.publisher,
+        uri: `at://${graphDids.publisher}/${followCollection}/3jzfcijpj2z2a`,
         hasNext: false,
       },
     ],
@@ -104,15 +104,15 @@ test('listActorFollowers ranks the earliest duplicate before asc pagination and 
 
   assert.deepEqual(pages, [
     actorView(graphDids.secondPublisher, `at://${graphDids.secondPublisher}/${followCollection}/3jzfcijpj2z2f`),
-    actorView(graphDids.publisher, `at://${graphDids.publisher}/${followCollection}/3jzfcijpj2z2a`),
     actorView(graphDids.thirdFollower, `at://${graphDids.thirdFollower}/${followCollection}/3jzfcijpj2z2g`),
+    actorView(graphDids.publisher, `at://${graphDids.publisher}/${followCollection}/3jzfcijpj2z2a`),
   ]);
   assert.equal(pages[0].profile, null);
   assert.equal(pages[0].organization, null);
-  assert.equal(pages[1].profile.record.displayName, 'Graph Fixture Publisher');
-  assert.deepEqual(pages[1].organization.record.organizationType, ['nonprofit']);
-  assert.equal(pages[2].profile, null);
-  assert.equal(pages[2].organization, null);
+  assert.equal(pages[1].profile, null);
+  assert.equal(pages[1].organization, null);
+  assert.equal(pages[2].profile.record.displayName, 'Graph Fixture Publisher');
+  assert.deepEqual(pages[2].organization.record.organizationType, ['nonprofit']);
 });
 
 test('listActorFollowing filters by publisher and keyset-pages tied relationships without losing subject identity', async () => {
@@ -163,11 +163,11 @@ test('actor follower and following lists apply descending URI tie-breaks through
       outputKey: 'followers',
       actor: graphDids.primarySubject,
       expectedUris: [
-        `at://${graphDids.thirdFollower}/${followCollection}/3jzfcijpj2z2g`,
         `at://${graphDids.publisher}/${followCollection}/3jzfcijpj2z2a`,
+        `at://${graphDids.thirdFollower}/${followCollection}/3jzfcijpj2z2g`,
         `at://${graphDids.secondPublisher}/${followCollection}/3jzfcijpj2z2f`,
       ],
-      expectedDids: [graphDids.thirdFollower, graphDids.publisher, graphDids.secondPublisher],
+      expectedDids: [graphDids.publisher, graphDids.thirdFollower, graphDids.secondPublisher],
     },
     {
       nsid: 'app.certified.graph.listActorFollowing',

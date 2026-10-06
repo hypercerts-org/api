@@ -10,10 +10,12 @@ import { locationRecords, profileRecords, organizationRecords, seedSql } from '.
 import { activityContributorInformationVersions, activityFixtureRows } from '../../fixtures/activities.js';
 import { seedRows as activityHttpFixtureRows } from '../../http/fixtures/activity.fixture.js';
 import { seedRows as badgeHttpFixtureRows } from '../../http/fixtures/badge-definitions.fixture.js';
+import { seedRows as collectionHttpFixtureRows } from '../../http/fixtures/collections.fixture.js';
 import { seedRows as contextAttachmentHttpFixtureRows } from '../../http/fixtures/context-attachments.fixture.js';
 import { seedRows as contextEvaluationHttpFixtureRows } from '../../http/fixtures/context-evaluations.fixture.js';
 import { seedRows as fundingHttpFixtureRows } from '../../http/fixtures/funding-receipts.fixture.js';
 import { seedRows as graphFollowHttpFixtureRows } from '../../http/fixtures/graph-follows.fixture.js';
+import { seedRows as locationHttpFixtureRows } from '../../http/fixtures/location.fixture.js';
 import {
   actorFollowDids,
   actorFollowOrganizationRecords,
@@ -23,14 +25,14 @@ import {
 
 async function findFixtureModules(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
-  entries.sort((left, right) => left.name < right.name ? -1 : left.name > right.name ? 1 : 0);
-  const fileGroups = await Promise.all(entries.map(async (entry) => {
+  entries.sort((left, right) => left.name.localeCompare(right.name));
+  const groups = await Promise.all(entries.map(async (entry) => {
     const entryPath = path.join(directory, entry.name);
     if (entry.isDirectory()) return findFixtureModules(entryPath);
     if (entry.isFile() && entry.name.endsWith('.fixture.js')) return [entryPath];
     return [];
   }));
-  return fileGroups.flat();
+  return groups.flat();
 }
 
 function duplicateKeys(rows, keyFor) {
@@ -64,7 +66,7 @@ test('fixtures have consistent full AT-URIs, valid DID/TID/CID identifiers, type
   }
 });
 
-test('HTTP seed rows are unique against shared fixtures and use CBOR-derived CIDs', async () => {
+test('discovered HTTP fixture rows are nonempty, unique against shared fixtures, and use CBOR-derived CIDs', async () => {
   const sharedRows = [
     ...locationRecords, ...profileRecords, ...organizationRecords,
     ...actorFollowRecords, ...actorFollowProfileRecords, ...actorFollowOrganizationRecords,
@@ -72,10 +74,14 @@ test('HTTP seed rows are unique against shared fixtures and use CBOR-derived CID
   ];
   const fixtureRoot = fileURLToPath(new URL('../../http/fixtures/', import.meta.url));
   const fixtureModules = await findFixtureModules(fixtureRoot);
-  const httpRows = (await Promise.all(fixtureModules.map(async (file) => {
-    const fixture = await import(pathToFileURL(file).href);
-    return fixture.seedRows;
-  }))).flat();
+  assert.ok(fixtureModules.length > 0, 'expected HTTP fixture modules to be discovered');
+
+  const httpRows = [];
+  for (const file of fixtureModules) {
+    const { seedRows } = await import(pathToFileURL(file).href);
+    assert.ok(Array.isArray(seedRows) && seedRows.length > 0, `${path.relative(fixtureRoot, file)} must export nonempty seedRows`);
+    httpRows.push(...seedRows);
+  }
   const allRows = [...sharedRows, ...httpRows];
 
   assert.deepEqual(duplicateKeys(allRows, ({ uri }) => uri), [], 'seed rows must not overwrite another record URI');
@@ -85,6 +91,8 @@ test('HTTP seed rows are unique against shared fixtures and use CBOR-derived CID
     'seed rows must not reuse another record identity',
   );
   for (const row of allRows) {
+    assert.equal(row.uri, `at://${row.did}/${row.collection}/${row.rkey}`);
+    assert.equal(row.record.$type, row.collection);
     assert.equal(CID.toString(await CID.create(0x71, encode(row.record))), row.cid, `incorrect CID for ${row.uri}`);
   }
 });
@@ -95,6 +103,7 @@ test('activity HTTP fixture repositories do not collide with other fixture repos
     ...actorFollowRecords, ...actorFollowProfileRecords, ...actorFollowOrganizationRecords,
     ...activityFixtureRows, ...contextAttachmentHttpFixtureRows, ...contextEvaluationHttpFixtureRows,
     ...graphFollowHttpFixtureRows, ...fundingHttpFixtureRows, ...badgeHttpFixtureRows,
+    ...collectionHttpFixtureRows, ...locationHttpFixtureRows,
   ];
   const existingDids = new Set(existingRows.map(({ did }) => did));
   const activityHttpDids = new Set(activityHttpFixtureRows.map(({ did }) => did));
