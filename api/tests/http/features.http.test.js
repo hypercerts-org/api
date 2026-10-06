@@ -133,7 +133,12 @@ test('listFeatures paginates createdAt and URI ties in both directions without o
     let cursor;
     const collected = [];
     for (let offset = 0; offset < expected.length; offset += 2) {
-      const params = { sortDirection, limit: 2, ...(cursor === undefined ? {} : { cursor }) };
+      const params = {
+        sortDirection,
+        limit: 2,
+        authors: [featureAuthor, profileOnlyAuthor, unhydratedAuthor],
+        ...(cursor === undefined ? {} : { cursor }),
+      };
       const { response, body } = await request(listEndpoint, params);
       assert.equal(response.status, 200, JSON.stringify(body));
       const page = expected.slice(offset, offset + 2);
