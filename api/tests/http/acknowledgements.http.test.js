@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { contractUrl, requireContractTarget } from './helpers.js';
 
 const publisher = 'did:plc:llllllllllllllllllllllll';
-const secondPublisher = 'did:plc:oooooooooooooooooooooooo';
-const thirdPublisher = 'did:plc:pppppppppppppppppppppppp';
+const secondPublisher = 'did:web:acknowledgements-secondary.example';
+const thirdPublisher = 'did:web:acknowledgements-tertiary.example';
 const subjectUri = 'at://did:plc:mmmmmmmmmmmmmmmmmmmmmmmm/org.hypercerts.claim.activity/ack-subject';
 const secondSubjectUri = 'at://did:plc:nnnnnnnnnnnnnnnnnnnnnnnn/org.hypercerts.claim.activity/ack-subject-two';
 const thirdSubjectUri = 'at://did:plc:qqqqqqqqqqqqqqqqqqqqqqqq/org.hypercerts.claim.activity/ack-subject-three';
@@ -14,9 +14,9 @@ const listMethod = 'org.hypercerts.context.listAcknowledgements';
 const uris = {
   one: 'at://did:plc:llllllllllllllllllllllll/org.hypercerts.context.acknowledgement/ack-one',
   middleA: 'at://did:plc:llllllllllllllllllllllll/org.hypercerts.context.acknowledgement/ack-middle-a',
-  middleB: 'at://did:plc:oooooooooooooooooooooooo/org.hypercerts.context.acknowledgement/ack-middle-b',
-  late: 'at://did:plc:oooooooooooooooooooooooo/org.hypercerts.context.acknowledgement/ack-late',
-  authorNegative: 'at://did:plc:pppppppppppppppppppppppp/org.hypercerts.context.acknowledgement/ack-author-negative',
+  middleB: 'at://did:web:acknowledgements-secondary.example/org.hypercerts.context.acknowledgement/ack-middle-b',
+  late: 'at://did:web:acknowledgements-secondary.example/org.hypercerts.context.acknowledgement/ack-late',
+  authorNegative: 'at://did:web:acknowledgements-tertiary.example/org.hypercerts.context.acknowledgement/ack-author-negative',
   subjectNegative: 'at://did:plc:llllllllllllllllllllllll/org.hypercerts.context.acknowledgement/ack-subject-negative',
 };
 
