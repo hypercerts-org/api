@@ -1,0 +1,70 @@
+{
+  "assets": [
+    {
+      "kind": "lexicon",
+      "id": "org.hypercerts.workscope.getWorkscopeTag",
+      "path": "../../lexicons/org.hypercerts.workscope.getWorkscopeTag.json",
+      "config": {
+        "backfill": false,
+        "target_collection": "org.hypercerts.workscope.tag"
+      },
+      "dependsOn": [
+        "org.hypercerts.workscope.tag",
+        "org.hypercerts.api.defs"
+      ]
+    },
+    {
+      "kind": "script",
+      "id": "xrpc.query:org.hypercerts.workscope.getWorkscopeTag",
+      "path": "../../lua/endpoints/getWorkscopeTag.lua",
+      "sourcePath": "../../lua/src/getWorkscopeTag.lua",
+      "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/query.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/workscopeRecordView.lua",
+        "../../lua/shared/actorView.lua",
+        "../../lua/shared/workscopeTag.lua"
+      ],
+      "config": {
+        "script_type": "lua",
+        "description": "Work-scope tag lookup handler"
+      },
+      "dependsOn": ["org.hypercerts.workscope.getWorkscopeTag"]
+    },
+    {
+      "kind": "lexicon",
+      "id": "org.hypercerts.workscope.listWorkscopeTags",
+      "path": "../../lexicons/org.hypercerts.workscope.listWorkscopeTags.json",
+      "config": {
+        "backfill": false,
+        "target_collection": "org.hypercerts.workscope.tag"
+      },
+      "dependsOn": [
+        "org.hypercerts.workscope.getWorkscopeTag"
+      ]
+    },
+    {
+      "kind": "script",
+      "id": "xrpc.query:org.hypercerts.workscope.listWorkscopeTags",
+      "path": "../../lua/endpoints/listWorkscopeTags.lua",
+      "sourcePath": "../../lua/src/listWorkscopeTags.lua",
+      "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/query.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/listValidation.lua",
+        "../../lua/shared/listQuery.lua",
+        "../../lua/shared/workscopeRecordView.lua",
+        "../../lua/shared/actorView.lua",
+        "../../lua/shared/workscopeTag.lua",
+        "../../lua/shared/workscopeTagList.lua"
+      ],
+      "config": {
+        "script_type": "lua",
+        "description": "Work-scope tag listing handler"
+      },
+      "dependsOn": ["org.hypercerts.workscope.listWorkscopeTags"]
+    }
+  ]
+}
