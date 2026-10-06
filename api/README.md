@@ -2,7 +2,7 @@
 
 This package contains the shared API installer and tooling, pinned upstream Lexicons, common view definitions, reusable Lua projections, and the public `org.hypercerts.claim.getRights` and `org.hypercerts.claim.listRights` query handlers. The rights handlers are registered in `modules/rights/manifest.json`; the shared module registers their record and actor-view dependencies. Local validation and HTTP runtime test instructions are in [CONTRIBUTING.md](../CONTRIBUTING.md).
 
-For local development, checks, and HTTP runtime test requirements, see [CONTRIBUTING.md](../CONTRIBUTING.md).
+For local development checks and HTTP runtime test requirements, see [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Install a released API bundle
 
