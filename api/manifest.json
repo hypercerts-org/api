@@ -41,6 +41,8 @@
     "listWorkscopeTags": "implemented",
     "getContribution": "implemented",
     "listContributions": "implemented",
+    "getContributorInformation": "implemented",
+    "listContributorInformation": "implemented",
     "getVocabTag": "implemented",
     "listVocabTags": "implemented",
     "getLocation": "implemented",
@@ -49,7 +51,9 @@
     "getBadgeAward": "implemented",
     "listBadgeAwards": "implemented",
     "getBadgeResponse": "implemented",
-    "listBadgeResponses": "implemented"
+    "listBadgeResponses": "implemented",
+    "getFeature": "implemented",
+    "listFeatures": "implemented"
   },
   "authentication": {
     "decision": "public",
@@ -140,6 +144,14 @@
     {
       "id": "org.hypercerts.claim.getActivity",
       "path": "lexicons/org.hypercerts.claim.getActivity.json"
+    },
+    {
+      "id": "org.hypercerts.claim.getContributorInformation",
+      "path": "lexicons/org.hypercerts.claim.getContributorInformation.json"
+    },
+    {
+      "id": "org.hypercerts.claim.listContributorInformation",
+      "path": "lexicons/org.hypercerts.claim.listContributorInformation.json"
     },
     {
       "id": "org.hypercerts.workscope.getWorkscopeTag",
@@ -440,6 +452,18 @@
     {
       "id": "app.certified.badge.listBadgeResponses",
       "path": "lexicons/app.certified.badge.listBadgeResponses.json"
+    },
+    {
+      "id": "org.hypercerts.entity.defs",
+      "path": "lexicons/org.hypercerts.entity.defs.json"
+    },
+    {
+      "id": "org.hypercerts.entity.getFeature",
+      "path": "lexicons/org.hypercerts.entity.getFeature.json"
+    },
+    {
+      "id": "org.hypercerts.entity.listFeatures",
+      "path": "lexicons/org.hypercerts.entity.listFeatures.json"
     }
   ],
   "modules": [
@@ -455,11 +479,19 @@
     "modules/recent-follows/manifest.json",
     "modules/context-evaluation/manifest.json",
     "modules/context-attachments/manifest.json",
+    "modules/contributor-information/manifest.json",
     "modules/acknowledgements/manifest.json",
     "modules/funding/manifest.json",
     "modules/workscope-tags/manifest.json",
     "modules/contribution/manifest.json",
     "modules/vocab/manifest.json",
-    "modules/location/manifest.json"
-  ]
+    "modules/location/manifest.json",
+    "modules/features/manifest.json"
+  ],
+  "luaBuild": {
+    "endpointSources": [
+      "lua/src/getFeature.lua",
+      "lua/src/listFeatures.lua"
+    ]
+  }
 }

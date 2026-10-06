@@ -14,7 +14,7 @@ export const graphDids = {
   secondPublisher: 'did:plc:vvvvvvvvvvvvvvvvvvvvvvvv',
   primarySubject: 'did:plc:wwwwwwwwwwwwwwwwwwwwwwww',
   secondSubject: 'did:plc:xxxxxxxxxxxxxxxxxxxxxxxx',
-  thirdSubject: 'did:plc:yyyyyyyyyyyyyyyyyyyyyyyy',
+  thirdSubject: 'did:plc:666666666666666666666666',
   entityAuthor: 'did:plc:rrrrrrrrrrrrrrrrrrrrrrrr',
   curator: 'did:plc:ssssssssssssssssssssssss',
   thirdFollower: 'did:plc:tttttttttttttttttttttttt',

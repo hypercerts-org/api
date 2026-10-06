@@ -101,7 +101,7 @@ async function withFakeExecutables(run) {
   const selected = path.join(root, 'selected');
   const competing = path.join(root, 'psql');
   try {
-    await writeFile(selected, '#!/bin/sh\nprintf "selected executable\\n" >&2\n', { mode: 0o700 });
+    await writeFile(selected, '#!/bin/sh\nwhile IFS= read -r line; do :; done\nprintf "selected executable\\n" >&2\n', { mode: 0o700 });
     await writeFile(competing, '#!/bin/sh\nprintf "PATH executable\\n" >&2\n', { mode: 0o700 });
     return await run({ selected, competing, root });
   } finally {
