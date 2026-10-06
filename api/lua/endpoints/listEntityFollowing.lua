@@ -654,11 +654,11 @@ local function entity_follow_subject_uri(row)
   local subject = type(record) == "table" and record.subject or nil
   local uri = type(subject) == "table" and subject.uri or nil
   local valid, collection = valid_record_uri(uri)
-  if not valid then error("EntityFollowQueryFailed: indexed follow has an invalid subject URI", 0) end
+  if not valid then return nil end
   return uri, collection
 end
 
-local function entity_follow_resolve_entities(rows)
+local function entity_follow_resolve_entities(rows, subjects_by_row)
   local supported = {
     [ENTITY_FOLLOW_ACTIVITY] = { uris = {}, seen = {} },
     [ENTITY_FOLLOW_COLLECTION] = { uris = {}, seen = {} },
@@ -666,7 +666,8 @@ local function entity_follow_resolve_entities(rows)
   }
   local row_uris = {}
   for _, row in ipairs(rows) do
-    local uri, collection = entity_follow_subject_uri(row)
+    local subject = subjects_by_row[row]
+    local uri, collection = subject.uri, subject.collection
     row_uris[row] = uri
     local group = supported[collection]
     if group and not group.seen[uri] then
@@ -725,6 +726,40 @@ local function list_entity_following_keys_only(values, allowed)
   keys_only(values, allowed)
 end
 
+local function list_entity_following_page(actor, limit, cursor, direction)
+  local candidates, subjects_by_row = {}, {}
+  local scan_cursor = cursor
+  local scan_limit = limit + 1
+
+  while #candidates < limit + 1 do
+    local batch, batch_cursor = entity_follow_query_page("following", actor, scan_limit, scan_cursor, direction)
+    for _, row in ipairs(batch) do
+      local uri, collection = entity_follow_subject_uri(row)
+      if uri then
+        candidates[#candidates + 1] = row
+        subjects_by_row[row] = { uri = uri, collection = collection }
+        if #candidates == limit + 1 then break end
+      end
+    end
+
+    if #candidates == limit + 1 or not batch_cursor then break end
+    scan_cursor = entity_follow_decode_cursor(batch_cursor, direction)
+  end
+
+  local rows = {}
+  for index = 1, math.min(limit, #candidates) do rows[index] = candidates[index] end
+
+  local next_cursor
+  if #candidates > limit then
+    local last = rows[#rows]
+    if not last or type(last.sort_timestamp) ~= "string" or type(last.uri) ~= "string" then
+      error("EntityFollowQueryFailed: next-page cursor fields unavailable", 0)
+    end
+    next_cursor = cursor_encode({ v = 1, d = direction, t = last.sort_timestamp, u = last.uri })
+  end
+  return rows, next_cursor, subjects_by_row
+end
+
 local function list_entity_following()
   list_entity_following_keys_only(params, { actor = true, sortDirection = true, limit = true, cursor = true })
   local actor = scalar(params, "actor")
@@ -733,8 +768,8 @@ local function list_entity_following()
   local limit = parse_list_limit(params)
   local direction = parse_sort_direction(params)
   local cursor = entity_follow_decode_cursor(scalar(params, "cursor"), direction)
-  local rows, next_cursor = entity_follow_query_page("following", actor, limit, cursor, direction)
-  local response = { entities = toarray(entity_follow_resolve_entities(rows)) }
+  local rows, next_cursor, subjects_by_row = list_entity_following_page(actor, limit, cursor, direction)
+  local response = { entities = toarray(entity_follow_resolve_entities(rows, subjects_by_row)) }
   if next_cursor then response.cursor = next_cursor end
   return response
 end

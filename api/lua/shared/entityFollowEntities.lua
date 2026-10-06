@@ -19,11 +19,11 @@ local function entity_follow_subject_uri(row)
   local subject = type(record) == "table" and record.subject or nil
   local uri = type(subject) == "table" and subject.uri or nil
   local valid, collection = valid_record_uri(uri)
-  if not valid then error("EntityFollowQueryFailed: indexed follow has an invalid subject URI", 0) end
+  if not valid then return nil end
   return uri, collection
 end
 
-local function entity_follow_resolve_entities(rows)
+local function entity_follow_resolve_entities(rows, subjects_by_row)
   local supported = {
     [ENTITY_FOLLOW_ACTIVITY] = { uris = {}, seen = {} },
     [ENTITY_FOLLOW_COLLECTION] = { uris = {}, seen = {} },
@@ -31,7 +31,8 @@ local function entity_follow_resolve_entities(rows)
   }
   local row_uris = {}
   for _, row in ipairs(rows) do
-    local uri, collection = entity_follow_subject_uri(row)
+    local subject = subjects_by_row[row]
+    local uri, collection = subject.uri, subject.collection
     row_uris[row] = uri
     local group = supported[collection]
     if group and not group.seen[uri] then

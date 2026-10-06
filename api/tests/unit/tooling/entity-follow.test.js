@@ -135,7 +135,7 @@ assert(item.entity.record.tags[1].uri == FIXTURE.feature.feature_record.tags[1].
 assert(item.entity.record.sameAs[1] == FIXTURE.feature.feature_record.sameAs[1])
 assert(item.entity.location == nil and item.entity.tags == nil, 'feature references remain unexpanded')
 assert(#calls == 4, 'only the page target and its two author sidecars should be hydrated')
-assert(calls[1].values[1] == FIXTURE.entityFollow and calls[1].values[2] == FIXTURE.actor and calls[1].values[3] == 2)
+assert(calls[1].values[1] == FIXTURE.entityFollow and calls[1].values[2] == FIXTURE.actor, 'query targets the entity-follow collection and actor')
 assert(calls[1].sql:find('did = $2', 1, true), 'actor filter is bound in SQL')
 assert(calls[2].values[1] == FIXTURE.featureCollection and calls[2].values[2] == FIXTURE.entityUri)
 assert(calls[2].values[2] ~= FIXTURE.nextEntityUri, 'lookahead targets must not be hydrated')
@@ -145,6 +145,100 @@ local token_json = result.cursor:gsub('..', function(pair) return string.char(to
 local token = decode_cursor(token_json)
 assert(token.v == 1 and token.d == 'desc' and token.t == '2025-01-03T00:00:00.000000Z')
 assert(token.u == FIXTURE.follows[1].uri)
+`;
+  runLua('listEntityFollowing', source);
+});
+
+test('listEntityFollowing skips malformed subjects and refills descending pages without skipping the lookahead', () => {
+  const unsupportedCollection = 'org.example.unsupported';
+  const follows = [
+    { key: 'valid-1', timestamp: '2025-01-06T00:00:00.000000Z', subject: { uri: `at://${author}/${unsupportedCollection}/entity-1` } },
+    { key: 'malformed-1', timestamp: '2025-01-05T00:00:00.000000Z', subject: { uri: 'not-an-at-uri' } },
+    { key: 'valid-2', timestamp: '2025-01-04T00:00:00.000000Z', subject: { uri: `at://${author}/${unsupportedCollection}/entity-2` } },
+    { key: 'malformed-non-string', timestamp: '2025-01-03T12:00:00.000000Z', subject: { uri: 17 } },
+    { key: 'malformed-2', timestamp: '2025-01-03T00:00:00.000000Z', subject: {} },
+    { key: 'valid-3', timestamp: '2025-01-02T00:00:00.000000Z', subject: { uri: `at://${author}/${unsupportedCollection}/entity-3` } },
+    { key: 'valid-4', timestamp: '2025-01-01T00:00:00.000000Z', subject: { uri: `at://${author}/${unsupportedCollection}/entity-4` } },
+  ].map(({ key, timestamp, subject }) => ({
+    uri: `at://${actor}/${entityFollow}/${key}`,
+    did: actor,
+    cid: `bafy-${key}`,
+    indexed_at: null,
+    record: `record-${key}`,
+    sort_timestamp: timestamp,
+    follow_record: { $type: entityFollow, subject, createdAt: timestamp },
+  }));
+  const records = Object.fromEntries(follows.map(({ record, follow_record }) => [record, follow_record]));
+  const source = `
+local FIXTURE = ${lua({ actor, author, entityFollow, follows, records })}
+local NULL_VALUE, calls = {}, {}
+local function decode_cursor(value)
+  local version = tonumber(value:match('"v":(%d+)'))
+  local direction = value:match('"d":"([^"]*)"')
+  local timestamp = value:match('"t":"([^"]*)"')
+  local uri = value:match('"u":"([^"]*)"')
+  if not version or not direction or not timestamp or not uri then error('invalid cursor JSON') end
+  return { v = version, d = direction, t = timestamp, u = uri }
+end
+json = {
+  decode = function(value)
+    if value == 'null' then return NULL_VALUE end
+    if FIXTURE.records[value] then return FIXTURE.records[value] end
+    if value:sub(1, 1) == '{' then return decode_cursor(value) end
+    local decoded = value:gsub('..', function(pair) return string.char(tonumber(pair, 16)) end)
+    return decode_cursor(decoded)
+  end,
+  encode = function(value)
+    return string.format('{"v":%d,"d":"%s","t":"%s","u":"%s"}', value.v, value.d, value.t, value.u)
+  end,
+}
+toarray = function(value) return value end
+params = { actor = FIXTURE.actor, limit = '2', sortDirection = 'desc' }
+db = {
+  backend = function() return 'postgres' end,
+  raw = function(sql, values)
+    calls[#calls + 1] = { sql = sql, values = values }
+    if values[1] ~= FIXTURE.entityFollow then error('unexpected query collection ' .. tostring(values[1])) end
+
+    local cursor_timestamp = #values >= 5 and values[3] or nil
+    local cursor_uri = #values >= 5 and values[4] or nil
+    local query_limit = values[#values]
+    local rows = {}
+    for _, row in ipairs(FIXTURE.follows) do
+      local after_cursor = not cursor_timestamp
+        or row.sort_timestamp < cursor_timestamp
+        or (row.sort_timestamp == cursor_timestamp and row.uri < cursor_uri)
+      if after_cursor then
+        rows[#rows + 1] = row
+        if #rows == query_limit then break end
+      end
+    end
+    return rows
+  end,
+}
+dofile('lua/endpoints/listEntityFollowing.lua')
+local ok, first_page = pcall(handle)
+assert(ok, tostring(first_page))
+assert(#first_page.entities == 2 and first_page.cursor ~= nil)
+assert(first_page.entities[1].follow.uri == FIXTURE.follows[1].uri)
+assert(first_page.entities[2].follow.uri == FIXTURE.follows[3].uri)
+assert(first_page.entities[1].uri == FIXTURE.follows[1].follow_record.subject.uri)
+assert(first_page.entities[2].uri == FIXTURE.follows[3].follow_record.subject.uri)
+assert(first_page.entities[1].entity == NULL_VALUE and first_page.entities[2].entity == NULL_VALUE)
+local first_cursor_json = first_page.cursor:gsub('..', function(pair) return string.char(tonumber(pair, 16)) end)
+local first_cursor = decode_cursor(first_cursor_json)
+assert(first_cursor.v == 1 and first_cursor.d == 'desc')
+assert(first_cursor.t == FIXTURE.follows[3].sort_timestamp and first_cursor.u == FIXTURE.follows[3].uri)
+
+params.cursor = first_page.cursor
+calls = {}
+local next_ok, second_page = pcall(handle)
+assert(next_ok, tostring(second_page))
+assert(#second_page.entities == 2 and second_page.cursor == nil)
+assert(second_page.entities[1].follow.uri == FIXTURE.follows[6].uri)
+assert(second_page.entities[2].follow.uri == FIXTURE.follows[7].uri)
+assert(second_page.entities[1].uri == FIXTURE.follows[6].follow_record.subject.uri)
+assert(second_page.entities[2].uri == FIXTURE.follows[7].follow_record.subject.uri)
 `;
   runLua('listEntityFollowing', source);
 });
