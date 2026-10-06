@@ -48,18 +48,6 @@
       "reference": "org.hypercerts.api.defs#actorView"
     },
     {
-      "component": "org.hypercerts.api.defs.entityFollowerView",
-      "reference": "org.hypercerts.api.defs#entityFollowerView"
-    },
-    {
-      "component": "org.hypercerts.api.defs.entityFollowingItem",
-      "reference": "org.hypercerts.api.defs#entityFollowingItem"
-    },
-    {
-      "component": "org.hypercerts.api.defs.entityFollowRecordView",
-      "reference": "org.hypercerts.api.defs#entityFollowRecordView"
-    },
-    {
       "component": "org.hypercerts.api.defs.organizationView",
       "reference": "org.hypercerts.api.defs#organizationView"
     },

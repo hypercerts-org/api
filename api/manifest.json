@@ -2,6 +2,18 @@
   "name": "hypercerts-api-foundation",
   "validationLexicons": [
     {
+      "id": "org.hypercerts.claim.contribution",
+      "packagePath": "lexicons/org/hypercerts/claim/contribution.json"
+    },
+    {
+      "id": "org.hypercerts.claim.getContribution",
+      "path": "lexicons/org.hypercerts.claim.getContribution.json"
+    },
+    {
+      "id": "org.hypercerts.claim.listContributions",
+      "path": "lexicons/org.hypercerts.claim.listContributions.json"
+    },
+    {
       "id": "app.certified.location",
       "packagePath": "lexicons/app/certified/location.json"
     },
@@ -336,6 +348,7 @@
     "modules/context-evaluation/manifest.json",
     "modules/context-attachments/manifest.json",
     "modules/funding/manifest.json",
+    "modules/contribution/manifest.json",
     "modules/location/manifest.json"
   ],
   "authentication": {
@@ -344,6 +357,8 @@
     "note": "The query endpoints expose public record reads and require no caller authentication."
   },
   "handlerStatus": {
+    "getContribution": "implemented",
+    "listContributions": "implemented",
     "getVocabTag": "implemented",
     "listVocabTags": "implemented",
     "getBadgeDefinition": "implemented",

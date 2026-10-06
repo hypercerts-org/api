@@ -28,7 +28,7 @@ test('getFollow returns the earliest tied record with its independently expected
   assert.deepEqual(body, {
     follow: {
       uri: `at://${graphDids.publisher}/app.certified.graph.follow/3jzfcijpj2z2a`,
-      cid: 'bafyreihtbxd7h25x4phenw3h7dkd77m77wbvxwvyg22ozos5tqsntvb26a',
+      cid: 'bafyreibvbi6wq6v4ra4ktrkvup36euf5exfxice57zojxcf5g7dqrswwie',
       indexedAt: '2025-03-01T00:00:00.000Z',
       did: graphDids.publisher,
       record: {

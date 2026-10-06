@@ -3181,9 +3181,48 @@
           }
         }
       },
-      "org.hypercerts.api.defs.entityFollowRecordView": {
-        "description": "Schema reference org.hypercerts.api.defs#entityFollowRecordView is outside the committed local Lexicon snapshot.",
-        "x-lexicon-ref": "org.hypercerts.api.defs#entityFollowRecordView"
+      "app.certified.graph.entityFollow.main": {
+        "description": "Schema reference app.certified.graph.entityFollow is outside the committed local Lexicon snapshot.",
+        "x-lexicon-ref": "app.certified.graph.entityFollow"
+      },
+      "app.certified.graph.getEntityFollow.entityFollowRecordView": {
+        "type": "object",
+        "description": "Raw indexed entity-follow record view, including the DID that published the relationship.",
+        "required": [
+          "uri",
+          "cid",
+          "indexedAt",
+          "did",
+          "record"
+        ],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "cid": {
+            "type": "string",
+            "format": "cid"
+          },
+          "indexedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "datetime"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "did": {
+            "type": "string",
+            "format": "did"
+          },
+          "record": {
+            "$ref": "#/components/schemas/app.certified.graph.entityFollow.main"
+          }
+        }
       },
       "app.certified.graph.getEntityFollow.output": {
         "type": "object",
@@ -3194,7 +3233,7 @@
           "follow": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/org.hypercerts.api.defs.entityFollowRecordView"
+                "$ref": "#/components/schemas/app.certified.graph.getEntityFollow.entityFollowRecordView"
               },
               {
                 "type": "null"
@@ -3347,9 +3386,44 @@
           }
         }
       },
-      "org.hypercerts.api.defs.entityFollowerView": {
-        "description": "Schema reference org.hypercerts.api.defs#entityFollowerView is outside the committed local Lexicon snapshot.",
-        "x-lexicon-ref": "org.hypercerts.api.defs#entityFollowerView"
+      "app.certified.graph.listEntityFollowers.entityFollowerView": {
+        "type": "object",
+        "description": "The follower actor and the raw entity-follow record representing its relationship.",
+        "required": [
+          "did",
+          "profile",
+          "organization",
+          "follow"
+        ],
+        "properties": {
+          "did": {
+            "type": "string",
+            "format": "did"
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/org.hypercerts.api.defs.profileView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "organization": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/org.hypercerts.api.defs.organizationView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "follow": {
+            "$ref": "#/components/schemas/app.certified.graph.getEntityFollow.entityFollowRecordView"
+          }
+        }
       },
       "app.certified.graph.listEntityFollowers.output": {
         "type": "object",
@@ -3360,176 +3434,12 @@
           "followers": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/org.hypercerts.api.defs.entityFollowerView"
+              "$ref": "#/components/schemas/app.certified.graph.listEntityFollowers.entityFollowerView"
             }
           },
           "cursor": {
             "type": "string",
             "description": "Opaque cursor for the next page; omitted when there are no more relationships."
-          }
-        }
-      },
-      "org.hypercerts.api.defs.entityFollowingItem": {
-        "description": "Schema reference org.hypercerts.api.defs#entityFollowingItem is outside the committed local Lexicon snapshot.",
-        "x-lexicon-ref": "org.hypercerts.api.defs#entityFollowingItem"
-      },
-      "app.certified.graph.listEntityFollowing.output": {
-        "type": "object",
-        "required": [
-          "entities"
-        ],
-        "properties": {
-          "entities": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/org.hypercerts.api.defs.entityFollowingItem"
-            }
-          },
-          "cursor": {
-            "type": "string",
-            "description": "Opaque cursor for the next page; omitted when there are no more relationships."
-          }
-        }
-      },
-      "app.certified.graph.entityFollow.main": {
-        "description": "Schema reference app.certified.graph.entityFollow is outside the committed local Lexicon snapshot.",
-        "x-lexicon-ref": "app.certified.graph.entityFollow"
-      },
-      "app.certified.graph.listRecentFollows.recentFollowView": {
-        "type": "object",
-        "description": "Raw indexed account- or entity-follow record with its publishing repository identity. The unchanged record's $type distinguishes the follow collection.",
-        "required": [
-          "uri",
-          "cid",
-          "indexedAt",
-          "did",
-          "record"
-        ],
-        "properties": {
-          "uri": {
-            "type": "string",
-            "description": "AT-URI of this follow record.",
-            "format": "at-uri"
-          },
-          "cid": {
-            "type": "string",
-            "description": "CID of the indexed follow record version.",
-            "format": "cid"
-          },
-          "indexedAt": {
-            "anyOf": [
-              {
-                "type": "string",
-                "description": "Time this follow record was indexed, not the ordering field.",
-                "format": "datetime"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "did": {
-            "type": "string",
-            "description": "DID of the repository that published this follow record.",
-            "format": "did"
-          },
-          "record": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/app.certified.graph.follow.main"
-              },
-              {
-                "$ref": "#/components/schemas/app.certified.graph.entityFollow.main"
-              }
-            ],
-            "description": "Unmodified account- or entity-follow record; its $type identifies the collection."
-          }
-        }
-      },
-      "app.certified.graph.listRecentFollows.output": {
-        "type": "object",
-        "required": [
-          "follows"
-        ],
-        "properties": {
-          "follows": {
-            "type": "array",
-            "description": "Raw follow records from both collections, sorted by createdAt descending then URI descending, including duplicates.",
-            "items": {
-              "$ref": "#/components/schemas/app.certified.graph.listRecentFollows.recentFollowView"
-            }
-          },
-          "cursor": {
-            "type": "string",
-            "description": "Opaque cursor for the next page; omitted when no further page exists."
-          }
-        }
-      },
-      "app.certified.location.main": {
-        "description": "Schema reference app.certified.location is outside the committed local Lexicon snapshot.",
-        "x-lexicon-ref": "app.certified.location"
-      },
-      "app.certified.location.getLocation.locationView": {
-        "type": "object",
-        "description": "Location record with full indexed metadata, original payload, and hydrated author.",
-        "required": [
-          "uri",
-          "cid",
-          "indexedAt",
-          "did",
-          "author",
-          "record"
-        ],
-        "properties": {
-          "uri": {
-            "type": "string",
-            "format": "at-uri"
-          },
-          "cid": {
-            "type": "string",
-            "format": "cid"
-          },
-          "indexedAt": {
-            "type": "string",
-            "format": "datetime"
-          },
-          "did": {
-            "type": "string",
-            "format": "did"
-          },
-          "author": {
-            "$ref": "#/components/schemas/org.hypercerts.api.defs.actorView"
-          },
-          "record": {
-            "$ref": "#/components/schemas/app.certified.location.main"
-          }
-        }
-      },
-      "app.certified.location.getLocation.output": {
-        "type": "object",
-        "required": [
-          "location"
-        ],
-        "properties": {
-          "location": {
-            "$ref": "#/components/schemas/app.certified.location.getLocation.locationView"
-          }
-        }
-      },
-      "app.certified.location.listLocations.output": {
-        "type": "object",
-        "required": [
-          "locations"
-        ],
-        "properties": {
-          "locations": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/app.certified.location.getLocation.locationView"
-            }
-          },
-          "cursor": {
-            "type": "string"
           }
         }
       },
@@ -3721,53 +3631,6 @@
           }
         }
       },
-      "org.hypercerts.claim.getActivity.output": {
-        "type": "object",
-        "required": [
-          "activity"
-        ],
-        "properties": {
-          "activity": {
-            "$ref": "#/components/schemas/org.hypercerts.claim.getActivity.activityView"
-          }
-        }
-      },
-      "org.hypercerts.claim.listActivities.output": {
-        "type": "object",
-        "required": [
-          "activities"
-        ],
-        "properties": {
-          "activities": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/org.hypercerts.claim.getActivity.activityView"
-            }
-          },
-          "cursor": {
-            "type": "string",
-            "description": "Opaque cursor for the next page; omitted when pagination is complete."
-          }
-        }
-      },
-      "org.hypercerts.claim.searchActivities.output": {
-        "type": "object",
-        "required": [
-          "activities"
-        ],
-        "properties": {
-          "activities": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/org.hypercerts.claim.getActivity.activityView"
-            }
-          },
-          "cursor": {
-            "type": "string",
-            "description": "Opaque cursor for the next page; omitted when pagination is complete."
-          }
-        }
-      },
       "app.certified.actor.profile.main": {
         "description": "Schema reference app.certified.actor.profile is outside the committed local Lexicon snapshot.",
         "x-lexicon-ref": "app.certified.actor.profile"
@@ -3892,6 +3755,10 @@
       "org.hypercerts.collection.main": {
         "description": "Schema reference org.hypercerts.collection is outside the committed local Lexicon snapshot.",
         "x-lexicon-ref": "org.hypercerts.collection"
+      },
+      "app.certified.location.main": {
+        "description": "Schema reference app.certified.location is outside the committed local Lexicon snapshot.",
+        "x-lexicon-ref": "app.certified.location"
       },
       "org.hypercerts.collection.getCollection.locationRecordView": {
         "type": "object",
@@ -4087,6 +3954,292 @@
           }
         }
       },
+      "org.hypercerts.entity.feature.main": {
+        "description": "Schema reference org.hypercerts.entity.feature is outside the committed local Lexicon snapshot.",
+        "x-lexicon-ref": "org.hypercerts.entity.feature"
+      },
+      "org.hypercerts.collection.listCollectionItems.featureView": {
+        "type": "object",
+        "description": "Feature record view with hydrated author actor; feature location, tag, and sameAs references remain unexpanded.",
+        "required": [
+          "uri",
+          "cid",
+          "indexedAt",
+          "did",
+          "author",
+          "record"
+        ],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "cid": {
+            "type": "string",
+            "format": "cid"
+          },
+          "indexedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "datetime"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "did": {
+            "type": "string",
+            "format": "did"
+          },
+          "author": {
+            "$ref": "#/components/schemas/org.hypercerts.collection.getCollection.collectionActorView"
+          },
+          "record": {
+            "$ref": "#/components/schemas/org.hypercerts.entity.feature.main"
+          }
+        }
+      },
+      "app.certified.graph.listEntityFollowing.entityFollowingItem": {
+        "type": "object",
+        "description": "An entity-follow target and its relationship record. Resolve the latest indexed target by URI; retain the URI and follow when the target is missing or unsupported.",
+        "required": [
+          "uri",
+          "entity",
+          "follow"
+        ],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "description": "AT-URI of the followed entity, retained even when the target cannot be resolved.",
+            "format": "at-uri"
+          },
+          "entity": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/org.hypercerts.claim.getActivity.activityView"
+                  },
+                  {
+                    "$ref": "#/components/schemas/org.hypercerts.collection.getCollection.collectionView"
+                  },
+                  {
+                    "$ref": "#/components/schemas/org.hypercerts.collection.listCollectionItems.featureView"
+                  }
+                ],
+                "description": "Resolved ActivityView, CollectionView, or author-hydrated FeatureView, or null when missing or unsupported."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "follow": {
+            "$ref": "#/components/schemas/app.certified.graph.getEntityFollow.entityFollowRecordView"
+          }
+        }
+      },
+      "app.certified.graph.listEntityFollowing.output": {
+        "type": "object",
+        "required": [
+          "entities"
+        ],
+        "properties": {
+          "entities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/app.certified.graph.listEntityFollowing.entityFollowingItem"
+            }
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Opaque cursor for the next page; omitted when there are no more relationships."
+          }
+        }
+      },
+      "app.certified.graph.listRecentFollows.recentFollowView": {
+        "type": "object",
+        "description": "Raw indexed account- or entity-follow record with its publishing repository identity. The unchanged record's $type distinguishes the follow collection.",
+        "required": [
+          "uri",
+          "cid",
+          "indexedAt",
+          "did",
+          "record"
+        ],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "description": "AT-URI of this follow record.",
+            "format": "at-uri"
+          },
+          "cid": {
+            "type": "string",
+            "description": "CID of the indexed follow record version.",
+            "format": "cid"
+          },
+          "indexedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "Time this follow record was indexed, not the ordering field.",
+                "format": "datetime"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "did": {
+            "type": "string",
+            "description": "DID of the repository that published this follow record.",
+            "format": "did"
+          },
+          "record": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/app.certified.graph.follow.main"
+              },
+              {
+                "$ref": "#/components/schemas/app.certified.graph.entityFollow.main"
+              }
+            ],
+            "description": "Unmodified account- or entity-follow record; its $type identifies the collection."
+          }
+        }
+      },
+      "app.certified.graph.listRecentFollows.output": {
+        "type": "object",
+        "required": [
+          "follows"
+        ],
+        "properties": {
+          "follows": {
+            "type": "array",
+            "description": "Raw follow records from both collections, sorted by createdAt descending then URI descending, including duplicates.",
+            "items": {
+              "$ref": "#/components/schemas/app.certified.graph.listRecentFollows.recentFollowView"
+            }
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Opaque cursor for the next page; omitted when no further page exists."
+          }
+        }
+      },
+      "app.certified.location.getLocation.locationView": {
+        "type": "object",
+        "description": "Location record with full indexed metadata, original payload, and hydrated author.",
+        "required": [
+          "uri",
+          "cid",
+          "indexedAt",
+          "did",
+          "author",
+          "record"
+        ],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "cid": {
+            "type": "string",
+            "format": "cid"
+          },
+          "indexedAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "did": {
+            "type": "string",
+            "format": "did"
+          },
+          "author": {
+            "$ref": "#/components/schemas/org.hypercerts.api.defs.actorView"
+          },
+          "record": {
+            "$ref": "#/components/schemas/app.certified.location.main"
+          }
+        }
+      },
+      "app.certified.location.getLocation.output": {
+        "type": "object",
+        "required": [
+          "location"
+        ],
+        "properties": {
+          "location": {
+            "$ref": "#/components/schemas/app.certified.location.getLocation.locationView"
+          }
+        }
+      },
+      "app.certified.location.listLocations.output": {
+        "type": "object",
+        "required": [
+          "locations"
+        ],
+        "properties": {
+          "locations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/app.certified.location.getLocation.locationView"
+            }
+          },
+          "cursor": {
+            "type": "string"
+          }
+        }
+      },
+      "org.hypercerts.claim.getActivity.output": {
+        "type": "object",
+        "required": [
+          "activity"
+        ],
+        "properties": {
+          "activity": {
+            "$ref": "#/components/schemas/org.hypercerts.claim.getActivity.activityView"
+          }
+        }
+      },
+      "org.hypercerts.claim.listActivities.output": {
+        "type": "object",
+        "required": [
+          "activities"
+        ],
+        "properties": {
+          "activities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/org.hypercerts.claim.getActivity.activityView"
+            }
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Opaque cursor for the next page; omitted when pagination is complete."
+          }
+        }
+      },
+      "org.hypercerts.claim.searchActivities.output": {
+        "type": "object",
+        "required": [
+          "activities"
+        ],
+        "properties": {
+          "activities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/org.hypercerts.claim.getActivity.activityView"
+            }
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Opaque cursor for the next page; omitted when pagination is complete."
+          }
+        }
+      },
       "org.hypercerts.collection.getCollection.output": {
         "type": "object",
         "required": [
@@ -4133,53 +4286,6 @@
             "type": "string",
             "maxLength": 3000,
             "x-lexicon-maxGraphemes": 300
-          }
-        }
-      },
-      "org.hypercerts.entity.feature.main": {
-        "description": "Schema reference org.hypercerts.entity.feature is outside the committed local Lexicon snapshot.",
-        "x-lexicon-ref": "org.hypercerts.entity.feature"
-      },
-      "org.hypercerts.collection.listCollectionItems.featureView": {
-        "type": "object",
-        "description": "Feature record view with hydrated author actor; feature location, tag, and sameAs references remain unexpanded.",
-        "required": [
-          "uri",
-          "cid",
-          "indexedAt",
-          "did",
-          "author",
-          "record"
-        ],
-        "properties": {
-          "uri": {
-            "type": "string",
-            "format": "at-uri"
-          },
-          "cid": {
-            "type": "string",
-            "format": "cid"
-          },
-          "indexedAt": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "datetime"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "did": {
-            "type": "string",
-            "format": "did"
-          },
-          "author": {
-            "$ref": "#/components/schemas/org.hypercerts.collection.getCollection.collectionActorView"
-          },
-          "record": {
-            "$ref": "#/components/schemas/org.hypercerts.entity.feature.main"
           }
         }
       },
@@ -4605,18 +4711,6 @@
     {
       "component": "org.hypercerts.api.defs.actorView",
       "reference": "org.hypercerts.api.defs#actorView"
-    },
-    {
-      "component": "org.hypercerts.api.defs.entityFollowerView",
-      "reference": "org.hypercerts.api.defs#entityFollowerView"
-    },
-    {
-      "component": "org.hypercerts.api.defs.entityFollowingItem",
-      "reference": "org.hypercerts.api.defs#entityFollowingItem"
-    },
-    {
-      "component": "org.hypercerts.api.defs.entityFollowRecordView",
-      "reference": "org.hypercerts.api.defs#entityFollowRecordView"
     },
     {
       "component": "org.hypercerts.api.defs.organizationView",
