@@ -1,3 +1,23 @@
+local function valid_did(value)
+  if type(value) ~= "string" or #value > 2048 then return false end
+  local method, specific = value:match("^did:([a-z]+):(.+)$")
+  if not method or not specific or specific:sub(-1) == ":" or specific:sub(-1) == "%"
+    or value:find("[^%w%.:_%%%-]") then return false end
+  return true
+end
+
+local function valid_record_key(value)
+  return #value >= 1 and #value <= 512 and value ~= "." and value ~= ".."
+    and not value:find("[^%w_~%.:%-]")
+end
+
+local function valid_record_uri(value)
+  if type(value) ~= "string" or value:find("[?#]") then return false end
+  local authority, collection, rkey = value:match("^at://([^/]+)/([^/]+)/([^/]+)$")
+  if not authority or not valid_did(authority) or not valid_record_key(rkey) then return false end
+  return true, collection, authority
+end
+
 local ACTIVITY_PROJECTION_CONTRIBUTOR_INFORMATION = "org.hypercerts.claim.contributorInformation"
 local ACTIVITY_PROJECTION_PROFILE = "app.certified.actor.profile"
 local ACTIVITY_PROJECTION_ORGANIZATION = "app.certified.actor.organization"
@@ -172,4 +192,63 @@ local function activity_projection_hydrate_views(views)
   for view_index, projections in pairs(projected_contributors) do
     views[view_index].contributors = toarray(projections)
   end
+end
+
+local function invalid(message)
+  error("InvalidRequest: " .. message, 0)
+end
+
+local function keys_only(values, allowed, unknown_message_prefix)
+  for key in pairs(values) do
+    if not allowed[key] then
+      invalid(unknown_message_prefix and (unknown_message_prefix .. key) or "unknown query parameter")
+    end
+  end
+end
+
+local function scalar(params, key)
+  local value = params[key]
+  if value == nil then return nil end
+  if type(value) ~= "string" and type(value) ~= "number" then
+    invalid(key .. " must occur once")
+  end
+  return tostring(value)
+end
+
+local ACTIVITY = "org.hypercerts.claim.activity"
+
+local function query(sql, values)
+  if db.backend() ~= "postgres" then error("ActivityQueryFailed: activity API requires PostgreSQL", 0) end
+  local ok, result = pcall(db.raw, sql, values)
+  if not ok or type(result) ~= "table" then
+    error("ActivityQueryFailed: activity lookup failed", 0)
+  end
+  return result
+end
+
+local function activity_view(row)
+  return activity_projection_view(row)
+end
+
+local function hydrate_activity_views(views)
+  return activity_projection_hydrate_views(views)
+end
+
+function handle()
+  keys_only(params, { uri = true }, "unknown query parameter: ")
+  local uri = scalar(params, "uri")
+  local valid, collection = valid_record_uri(uri)
+  if not uri or not valid or collection ~= ACTIVITY then
+    invalid("uri must be a full org.hypercerts.claim.activity AT-URI with a DID authority")
+  end
+
+  local rows = query(
+    "SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record " ..
+      "FROM happyview_records WHERE collection = $1 AND uri = $2 LIMIT 1",
+    { ACTIVITY, uri })
+  if #rows == 0 then error("RecordNotFound: activity record is not indexed", 0) end
+
+  local view = activity_view(rows[1])
+  hydrate_activity_views({ view })
+  return { activity = view }
 end

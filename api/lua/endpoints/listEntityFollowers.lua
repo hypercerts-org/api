@@ -1,3 +1,11 @@
+local function valid_did(value)
+  if type(value) ~= "string" or #value > 2048 then return false end
+  local method, specific = value:match("^did:([a-z]+):(.+)$")
+  if not method or not specific or specific:sub(-1) == ":" or specific:sub(-1) == "%"
+    or value:find("[^%w%.:_%%%-]") then return false end
+  return true
+end
+
 local function invalid(message)
   error("InvalidRequest: " .. message, 0)
 end
@@ -17,14 +25,6 @@ local function scalar(params, key)
     invalid(key .. " must occur once")
   end
   return tostring(value)
-end
-
-local function valid_did(value)
-  if type(value) ~= "string" or #value > 2048 then return false end
-  local method, specific = value:match("^did:([a-z]+):(.+)$")
-  if not method or not specific or specific:sub(-1) == ":" or specific:sub(-1) == "%"
-    or value:find("[^%w%.:_%%%-]") then return false end
-  return true
 end
 
 local function valid_record_key(value)

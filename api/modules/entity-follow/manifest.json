@@ -46,8 +46,8 @@
       "path": "../../lua/endpoints/getEntityFollow.lua",
       "sourcePath": "../../lua/src/getEntityFollow.lua",
       "sharedSourcePaths": [
-        "../../lua/shared/query.lua",
         "../../lua/shared/didValidation.lua",
+        "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/entityFollow.lua",
         "../../lua/shared/entityFollowLookup.lua"
@@ -66,8 +66,8 @@
       "path": "../../lua/endpoints/listEntityFollowers.lua",
       "sourcePath": "../../lua/src/listEntityFollowers.lua",
       "sharedSourcePaths": [
-        "../../lua/shared/query.lua",
         "../../lua/shared/didValidation.lua",
+        "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/listValidation.lua",
         "../../lua/shared/listQuery.lua",
@@ -89,8 +89,8 @@
       "path": "../../lua/endpoints/listEntityFollowing.lua",
       "sourcePath": "../../lua/src/listEntityFollowing.lua",
       "sharedSourcePaths": [
-        "../../lua/shared/query.lua",
         "../../lua/shared/didValidation.lua",
+        "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/listValidation.lua",
         "../../lua/shared/listQuery.lua",

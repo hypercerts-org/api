@@ -1,3 +1,11 @@
+local function valid_did(value)
+  if type(value) ~= "string" or #value > 2048 then return false end
+  local method, specific = value:match("^did:([a-z]+):(.+)$")
+  if not method or not specific or specific:sub(-1) == ":" or specific:sub(-1) == "%"
+    or value:find("[^%w%.:_%%%-]") then return false end
+  return true
+end
+
 local function invalid(message)
   error("InvalidRequest: " .. message, 0)
 end
@@ -17,14 +25,6 @@ local function scalar(params, key)
     invalid(key .. " must occur once")
   end
   return tostring(value)
-end
-
-local function valid_did(value)
-  if type(value) ~= "string" or #value > 2048 then return false end
-  local method, specific = value:match("^did:([a-z]+):(.+)$")
-  if not method or not specific or specific:sub(-1) == ":" or specific:sub(-1) == "%"
-    or value:find("[^%w%.:_%%%-]") then return false end
-  return true
 end
 
 local function valid_record_key(value)
@@ -95,27 +95,6 @@ local function activity_projection_query(sql, values)
   return result
 end
 
-local function activity_projection_valid_did(value)
-  if type(value) ~= "string" or #value > 2048 then return false end
-  local method, specific = value:match("^did:([a-z]+):(.+)$")
-  if not method or not specific or specific:sub(-1) == ":" or specific:sub(-1) == "%"
-    or value:find("[^%w%.:_%%%-]") then return false end
-  return true
-end
-
-local function activity_projection_valid_record_key(value)
-  return #value >= 1 and #value <= 512 and value ~= "." and value ~= ".."
-    and not value:find("[^%w_~%.:%-]")
-end
-
-local function activity_projection_valid_record_uri(value)
-  if type(value) ~= "string" or value:find("[?#]") then return false end
-  local authority, collection, rkey = value:match("^at://([^/]+)/([^/]+)/([^/]+)$")
-  if not authority or not activity_projection_valid_did(authority)
-    or not activity_projection_valid_record_key(rkey) then return false end
-  return true, collection, authority
-end
-
 local function activity_projection_record_view(row, nullable_indexed_at)
   return {
     uri = row.uri,
@@ -127,8 +106,8 @@ local function activity_projection_record_view(row, nullable_indexed_at)
 end
 
 local function activity_projection_identity_did(identifier)
-  if activity_projection_valid_did(identifier) then return identifier end
-  local valid, _, authority = activity_projection_valid_record_uri(identifier)
+  if valid_did(identifier) then return identifier end
+  local valid, _, authority = valid_record_uri(identifier)
   if valid then return authority end
   return nil
 end
@@ -162,18 +141,20 @@ local function activity_projection_load_contributor_information(references)
 end
 
 local function activity_projection_load_actor_records(collection, dids)
-  if #dids == 0 then return {} end
-  local values, placeholders = { collection }, {}
-  for _, did in ipairs(dids) do
-    values[#values + 1] = did
-    placeholders[#placeholders + 1] = "$" .. #values
-  end
-  local rows = activity_projection_query(
-    "SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record " ..
-      "FROM happyview_records WHERE collection = $1 AND rkey = 'self' AND did IN (" .. table.concat(placeholders, ", ") .. ")",
-    values)
   local by_did = {}
-  for _, row in ipairs(rows) do by_did[row.did] = row end
+  for first = 1, #dids, 500 do
+    local values, placeholders = { collection }, {}
+    local last = math.min(first + 499, #dids)
+    for index = first, last do
+      values[#values + 1] = dids[index]
+      placeholders[#placeholders + 1] = "$" .. #values
+    end
+    local rows = activity_projection_query(
+      "SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record " ..
+        "FROM happyview_records WHERE collection = $1 AND rkey = 'self' AND did IN (" .. table.concat(placeholders, ", ") .. ")",
+      values)
+    for _, row in ipairs(rows) do by_did[row.did] = row end
+  end
   return by_did
 end
 
@@ -706,13 +687,6 @@ local function entity_follow_resolve_entities(rows, subjects_by_row)
   return entities
 end
 
-local function list_entity_following_keys_only(values, allowed)
-  for key in pairs(values) do
-    if not allowed[key] then invalid("unknown query parameter: " .. key) end
-  end
-  keys_only(values, allowed)
-end
-
 local function list_entity_following_page(actor, limit, cursor, direction)
   local candidates, subjects_by_row = {}, {}
   local scan_cursor = cursor
@@ -748,7 +722,7 @@ local function list_entity_following_page(actor, limit, cursor, direction)
 end
 
 local function list_entity_following()
-  list_entity_following_keys_only(params, { actor = true, sortDirection = true, limit = true, cursor = true })
+  keys_only(params, { actor = true, sortDirection = true, limit = true, cursor = true }, "unknown query parameter: ")
   local actor = scalar(params, "actor")
   if not actor or not valid_did(actor) then invalid("actor must be a valid DID") end
 

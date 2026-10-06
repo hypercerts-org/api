@@ -5,6 +5,9 @@
   "runtimeCompatibility": "compatible-at-target-revision",
   "status": "handlers-implemented; location-and-actor-follow-runtime-validated-at-target-revision; other-query-runtime-validation-pending",
   "handlerStatus": {
+    "getActivity": "implemented",
+    "listActivities": "implemented",
+    "searchActivities": "implemented",
     "getCollection": "implemented",
     "listCollections": "implemented",
     "searchCollections": "implemented",
@@ -92,6 +95,14 @@
     {
       "id": "org.hypercerts.context.evaluation",
       "packagePath": "lexicons/org/hypercerts/context/evaluation.json"
+    },
+    {
+      "id": "org.hypercerts.claim.listActivities",
+      "path": "lexicons/org.hypercerts.claim.listActivities.json"
+    },
+    {
+      "id": "org.hypercerts.claim.searchActivities",
+      "path": "lexicons/org.hypercerts.claim.searchActivities.json"
     },
     {
       "id": "org.hypercerts.collection.getCollection",
@@ -289,6 +300,7 @@
   "modules": [
     "modules/shared/manifest.json",
     "modules/badge-definitions/manifest.json",
+    "modules/activity/manifest.json",
     "modules/collection/manifest.json",
     "modules/actor-follow/manifest.json",
     "modules/entity-follow/manifest.json",

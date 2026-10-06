@@ -31,8 +31,8 @@
       "path": "../../lua/endpoints/getLocation.lua",
       "sourcePath": "../../lua/src/getLocation.lua",
       "sharedSourcePaths": [
-        "../../lua/shared/query.lua",
         "../../lua/shared/didValidation.lua",
+        "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",
@@ -52,8 +52,8 @@
       "path": "../../lua/endpoints/listLocations.lua",
       "sourcePath": "../../lua/src/listLocations.lua",
       "sharedSourcePaths": [
-        "../../lua/shared/query.lua",
         "../../lua/shared/didValidation.lua",
+        "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/listValidation.lua",
         "../../lua/shared/listQuery.lua",
