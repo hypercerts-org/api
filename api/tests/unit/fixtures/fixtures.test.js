@@ -8,6 +8,12 @@ import * as CID from '@atcute/cid';
 import { isValidDid, isValidTid } from '@atproto/syntax';
 import { locationRecords, profileRecords, organizationRecords, seedSql } from '../../fixtures/records.js';
 import { activityContributorInformationVersions, activityFixtureRows } from '../../fixtures/activities.js';
+import { seedRows as activityHttpFixtureRows } from '../../http/fixtures/activity.fixture.js';
+import { seedRows as badgeHttpFixtureRows } from '../../http/fixtures/badge-definitions.fixture.js';
+import { seedRows as contextAttachmentHttpFixtureRows } from '../../http/fixtures/context-attachments.fixture.js';
+import { seedRows as contextEvaluationHttpFixtureRows } from '../../http/fixtures/context-evaluations.fixture.js';
+import { seedRows as fundingHttpFixtureRows } from '../../http/fixtures/funding-receipts.fixture.js';
+import { seedRows as graphFollowHttpFixtureRows } from '../../http/fixtures/graph-follows.fixture.js';
 import {
   actorFollowDids,
   actorFollowOrganizationRecords,
@@ -35,11 +41,22 @@ async function findHttpFixtureFiles(directory) {
   return groups.flat();
 }
 
+function duplicateKeys(rows, keyFor) {
+  const seen = new Set();
+  const duplicates = new Set();
+  for (const row of rows) {
+    const key = keyFor(row);
+    if (seen.has(key)) duplicates.add(key);
+    seen.add(key);
+  }
+  return [...duplicates].sort();
+}
+
 test('fixtures have consistent full AT-URIs, valid DID/TID/CID identifiers, types, and fixed timestamps', () => {
   const records = [
     ...locationRecords, ...profileRecords, ...organizationRecords,
     ...actorFollowRecords, ...actorFollowProfileRecords, ...actorFollowOrganizationRecords,
-    ...activityFixtureRows,
+    ...activityFixtureRows, ...activityHttpFixtureRows,
   ];
   for (const row of records) {
     assert.equal(row.uri, `at://${row.did}/${row.collection}/${row.rkey}`);
@@ -55,7 +72,7 @@ test('fixtures have consistent full AT-URIs, valid DID/TID/CID identifiers, type
   }
 });
 
-test('shared and recursively discovered HTTP seed rows have unique URIs and identities with CBOR-derived CIDs', async () => {
+test('shared and recursively discovered HTTP seed rows are unique against shared fixtures and use CBOR-derived CIDs', async () => {
   const sharedRows = [
     ...locationRecords, ...profileRecords, ...organizationRecords,
     ...actorFollowRecords, ...actorFollowProfileRecords, ...actorFollowOrganizationRecords,
@@ -72,29 +89,32 @@ test('shared and recursively discovered HTTP seed rows have unique URIs and iden
   }
 
   const allRows = [...sharedRows, ...httpRows];
-  const seenUris = new Set();
-  const seenIdentities = new Set();
-  const duplicateUris = [];
-  const duplicateIdentities = [];
   for (const row of allRows) {
     assert.equal(row.uri, `at://${row.did}/${row.collection}/${row.rkey}`);
-    const identity = JSON.stringify([row.did, row.collection, row.rkey]);
-    if (seenUris.has(row.uri)) duplicateUris.push(row.uri);
-    if (seenIdentities.has(identity)) duplicateIdentities.push(identity);
-    seenUris.add(row.uri);
-    seenIdentities.add(identity);
   }
-
-  assert.deepEqual({
-    duplicateUris: [...new Set(duplicateUris)].sort(),
-    duplicateIdentities: [...new Set(duplicateIdentities)].sort(),
-  }, { duplicateUris: [], duplicateIdentities: [] }, 'shared and HTTP fixture rows must not collide in URI-based seed upserts');
-
+  assert.deepEqual(duplicateKeys(allRows, ({ uri }) => uri), [], 'seed rows must not overwrite another record URI');
+  assert.deepEqual(
+    duplicateKeys(allRows, ({ did, collection, rkey }) => JSON.stringify([did, collection, rkey])),
+    [],
+    'seed rows must not reuse another record identity',
+  );
   for (const row of allRows) {
     assert.equal(CID.toString(await CID.create(0x71, encode(row.record))), row.cid, `CBOR-derived CID mismatch for ${row.uri}`);
   }
 });
 
+test('activity HTTP fixture repositories do not collide with other fixture repositories', () => {
+  const existingRows = [
+    ...locationRecords, ...profileRecords, ...organizationRecords,
+    ...actorFollowRecords, ...actorFollowProfileRecords, ...actorFollowOrganizationRecords,
+    ...activityFixtureRows, ...contextAttachmentHttpFixtureRows, ...contextEvaluationHttpFixtureRows,
+    ...graphFollowHttpFixtureRows, ...fundingHttpFixtureRows, ...badgeHttpFixtureRows,
+  ];
+  const existingDids = new Set(existingRows.map(({ did }) => did));
+  const activityHttpDids = new Set(activityHttpFixtureRows.map(({ did }) => did));
+  assert.deepEqual([...activityHttpDids].filter((did) => existingDids.has(did)), []);
+  assert.equal(new Set(activityHttpFixtureRows.map(({ uri }) => uri)).size, activityHttpFixtureRows.length);
+});
 test('actor-follow fixtures isolate publishers and cover date precedence, URI ties, and sparse sidecars', async () => {
   const publishers = new Set([actorFollowDids.publisher, actorFollowDids.otherPublisher]);
   assert.equal(publishers.size, 2);
