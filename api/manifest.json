@@ -10,7 +10,9 @@
     "getReceipt": "implemented",
     "listReceipts": "implemented",
     "getFeature": "implemented",
-    "listFeatures": "implemented"
+    "listFeatures": "implemented",
+    "getLocation": "implemented",
+    "listLocations": "implemented"
   },
   "authentication": {
     "decision": "public",
@@ -241,13 +243,22 @@
     {
       "id": "org.hypercerts.entity.listFeatures",
       "path": "lexicons/org.hypercerts.entity.listFeatures.json"
+    },
+    {
+      "id": "app.certified.location.getLocation",
+      "path": "lexicons/app.certified.location.getLocation.json"
+    },
+    {
+      "id": "app.certified.location.listLocations",
+      "path": "lexicons/app.certified.location.listLocations.json"
     }
   ],
   "modules": [
     "modules/shared/manifest.json",
     "modules/badge-definitions/manifest.json",
     "modules/funding/manifest.json",
-    "modules/features/manifest.json"
+    "modules/features/manifest.json",
+    "modules/location/manifest.json"
   ],
   "luaBuild": {
     "endpointSources": [
