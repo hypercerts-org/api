@@ -18,6 +18,7 @@
       "path": "../../lua/endpoints/listRecentFollows.lua",
       "sourcePath": "../../lua/src/listRecentFollows.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recentFollows.lua"
       ],

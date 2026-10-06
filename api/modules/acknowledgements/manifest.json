@@ -36,7 +36,12 @@
       "id": "xrpc.query:org.hypercerts.context.getAcknowledgement",
       "path": "../../lua/endpoints/getAcknowledgement.lua",
       "sourcePath": "../../lua/src/getAcknowledgement.lua",
-      "sharedSourcePaths": ["../../lua/shared/acknowledgement.lua"],
+      "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/query.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/acknowledgement.lua"
+      ],
       "config": {
         "script_type": "lua",
         "description": "Hypercerts acknowledgement lookup handler"
@@ -62,6 +67,10 @@
       "path": "../../lua/endpoints/listAcknowledgements.lua",
       "sourcePath": "../../lua/src/listAcknowledgements.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/query.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/listValidation.lua",
         "../../lua/shared/acknowledgement.lua",
         "../../lua/shared/acknowledgementList.lua"
       ],

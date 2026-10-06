@@ -1,41 +1,30 @@
-local ACKNOWLEDGEMENT = "org.hypercerts.context.acknowledgement"
-local PROFILE = "app.certified.actor.profile"
-local ORGANIZATION = "app.certified.actor.organization"
-local NULL = json.decode("null")
-
-local function invalid(message)
-  error("InvalidRequest: " .. message, 0)
-end
-
-local function keys_only(values, allowed)
-  for key in pairs(values) do
-    if not allowed[key] then invalid("unknown query parameter") end
-  end
-end
-
-local function scalar(values, key)
-  local value = values[key]
-  if value == nil then return nil end
-  if type(value) ~= "string" and type(value) ~= "number" then
-    invalid(key .. " must occur once")
-  end
-  return tostring(value)
-end
-
 local function valid_did(value)
   if type(value) ~= "string" or #value > 2048 then return false end
   local method, specific = value:match("^did:([a-z]+):(.+)$")
   if not method or not specific or specific:sub(-1) == ":" or specific:sub(-1) == "%"
     or value:find("[^%w%.:_%%%-]") then return false end
-  local position = 1
-  while true do
-    local percent = value:find("%", position, true)
-    if not percent then break end
-    local escape = value:sub(percent + 1, percent + 2)
-    if #escape ~= 2 or escape:find("[^0-9A-Fa-f]") then return false end
-    position = percent + 3
-  end
   return true
+end
+
+local function invalid(message)
+  error("InvalidRequest: " .. message, 0)
+end
+
+local function keys_only(values, allowed, unknown_message_prefix)
+  for key in pairs(values) do
+    if not allowed[key] then
+      invalid(unknown_message_prefix and (unknown_message_prefix .. key) or "unknown query parameter")
+    end
+  end
+end
+
+local function scalar(params, key)
+  local value = params[key]
+  if value == nil then return nil end
+  if type(value) ~= "string" and type(value) ~= "number" then
+    invalid(key .. " must occur once")
+  end
+  return tostring(value)
 end
 
 local function valid_record_key(value)
@@ -47,6 +36,33 @@ local function valid_record_uri(value)
   if type(value) ~= "string" or value:find("[?#]") then return false end
   local authority, collection, rkey = value:match("^at://([^/]+)/([^/]+)/([^/]+)$")
   if not authority or not valid_did(authority) or not valid_record_key(rkey) then return false end
+  return true, collection, authority
+end
+
+local ACKNOWLEDGEMENT = "org.hypercerts.context.acknowledgement"
+local PROFILE = "app.certified.actor.profile"
+local ORGANIZATION = "app.certified.actor.organization"
+local NULL = json.decode("null")
+
+local generic_valid_did = valid_did
+local generic_valid_record_uri = valid_record_uri
+
+local function acknowledgement_valid_did(value)
+  if not generic_valid_did(value) then return false end
+  local position = 1
+  while true do
+    local percent = value:find("%", position, true)
+    if not percent then break end
+    local escape = value:sub(percent + 1, percent + 2)
+    if #escape ~= 2 or escape:find("[^0-9A-Fa-f]") then return false end
+    position = percent + 3
+  end
+  return true
+end
+
+valid_record_uri = function(value)
+  local valid, collection, authority = generic_valid_record_uri(value)
+  if not valid or not acknowledgement_valid_did(authority) then return false end
   return true, collection
 end
 
