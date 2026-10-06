@@ -98,12 +98,27 @@ if (hasModule('modules/organization/manifest.json')) test('organization query Le
   assert.equal(actorView.properties.profile.ref, 'lex:org.hypercerts.api.defs#profileView');
   assert.equal(actorView.properties.organization.ref, 'lex:org.hypercerts.api.defs#organizationView');
   assert.equal(getOrganization.defs.output.properties.actor.ref, 'lex:app.certified.actor.getOrganization#organizationActorView');
-  assert.deepEqual(getOrganization.defs.main.errors.map(({ name }) => name), ['InvalidRequest', 'RecordNotFound']);
+  const organizationQueryFailed = {
+    name: 'OrganizationQueryFailed',
+    description: 'The indexed organization sidecar or associated profile could not be queried.',
+  };
+  assert.deepEqual(getOrganization.defs.main.errors.map(({ name }) => name), [
+    'InvalidRequest', 'RecordNotFound', 'OrganizationQueryFailed',
+  ]);
+  assert.deepEqual(
+    getOrganization.defs.main.errors.find(({ name }) => name === 'OrganizationQueryFailed'),
+    organizationQueryFailed,
+  );
 
   assert.equal(lexicons.getDefOrThrow(getOrganizations.defs.output.properties.organizations.items.ref).type, 'object');
   assert.equal(lexicons.getDefOrThrow(getOrganizations.defs.organizationResult.properties.organization.ref).type, 'object');
 
   for (const query of [listOrganizations, searchOrganizations]) {
+    assert.deepEqual(query.defs.main.errors.map(({ name }) => name), ['InvalidRequest', 'OrganizationQueryFailed']);
+    assert.deepEqual(
+      query.defs.main.errors.find(({ name }) => name === 'OrganizationQueryFailed'),
+      organizationQueryFailed,
+    );
     assert.equal(query.defs.main.parameters.properties.organizationTypes.maxLength, 100);
     assert.equal(query.defs.output.properties.actors.items.ref, 'lex:app.certified.actor.getOrganization#organizationActorView');
   }
@@ -151,6 +166,30 @@ if (hasModule('modules/context-measurements/manifest.json')) test('measurement q
   assert.deepEqual([properties.limit.minimum, properties.limit.maximum, properties.limit.default], [1, 100, 25]);
   assert.equal(listMeasurements.defs.output.properties.measurements.items.ref, 'lex:org.hypercerts.context.getMeasurement#measurementView');
   assert.deepEqual(listMeasurements.defs.main.errors.map(({ name }) => name), ['InvalidRequest']);
+});
+
+if (hasModule('modules/entity-follow/manifest.json')) test('entity-follow view refs resolve from their endpoint-owned Lexicons', async () => {
+  const { lexicons, documents } = await validatePackageLexicons();
+  const byId = new Map(documents.map((document) => [document.id, document]));
+  const shared = byId.get('org.hypercerts.api.defs');
+  const get = byId.get('app.certified.graph.getEntityFollow');
+  const followers = byId.get('app.certified.graph.listEntityFollowers');
+  const following = byId.get('app.certified.graph.listEntityFollowing');
+
+  for (const name of ['entityFollowRecordView', 'entityFollowerView', 'entityFollowingItem']) {
+    assert.equal(shared.defs[name], undefined, `${name} is owned by its endpoint Lexicon`);
+  }
+  for (const [owner, name] of [
+    ['app.certified.graph.getEntityFollow', 'entityFollowRecordView'],
+    ['app.certified.graph.listEntityFollowers', 'entityFollowerView'],
+    ['app.certified.graph.listEntityFollowing', 'entityFollowingItem'],
+  ]) assert.equal(lexicons.getDefOrThrow(`${owner}#${name}`).type, 'object');
+
+  assert.equal(get.defs.output.properties.follow.ref, 'lex:app.certified.graph.getEntityFollow#entityFollowRecordView');
+  assert.equal(followers.defs.output.properties.followers.items.ref, 'lex:app.certified.graph.listEntityFollowers#entityFollowerView');
+  assert.equal(followers.defs.entityFollowerView.properties.follow.ref, 'lex:app.certified.graph.getEntityFollow#entityFollowRecordView');
+  assert.equal(following.defs.output.properties.entities.items.ref, 'lex:app.certified.graph.listEntityFollowing#entityFollowingItem');
+  assert.equal(following.defs.entityFollowingItem.properties.follow.ref, 'lex:app.certified.graph.getEntityFollow#entityFollowRecordView');
 });
 
 test('installed ATProto validator accepts package language, transitive refs, and real fixture records', async () => {

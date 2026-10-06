@@ -5,7 +5,7 @@ import { contractUrl, requireContractTarget } from './helpers.js';
 const endpoint = 'org.hypercerts.context.getMeasurement';
 const listEndpoint = 'org.hypercerts.context.listMeasurements';
 const collection = 'org.hypercerts.context.measurement';
-const publisher = 'did:plc:xxxxxxxxxxxxxxxxxxxxxxxx';
+const publisher = 'did:plc:measurementhttpfixtureaa';
 const publisherB = 'did:plc:nnnnnnnnnnnnnnnnnnnnnnnn';
 const measurer = 'did:plc:oooooooooooooooooooooooo';
 const measurementUri = `at://${publisher}/${collection}/3jzfcijpj2z2a`;

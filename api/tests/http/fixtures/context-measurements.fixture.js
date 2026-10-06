@@ -5,7 +5,7 @@ import { activityRecord, staleOnlyActivityRecord } from '../../fixtures/activiti
 const collection = 'org.hypercerts.context.measurement';
 const profileCollection = 'app.certified.actor.profile';
 const organizationCollection = 'app.certified.actor.organization';
-const publisherA = 'did:plc:xxxxxxxxxxxxxxxxxxxxxxxx';
+const publisherA = 'did:plc:measurementhttpfixtureaa';
 const publisherB = 'did:plc:nnnnnnnnnnnnnnnnnnnnnnnn';
 const measurer = 'did:plc:oooooooooooooooooooooooo';
 const indexedAt = '2025-03-01T00:00:00.000Z';

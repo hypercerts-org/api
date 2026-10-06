@@ -123,6 +123,8 @@ assert(#result.entities == 1 and result.cursor ~= nil)
 local item = result.entities[1]
 assert(item.uri == FIXTURE.entityUri)
 assert(item.follow.uri == FIXTURE.follows[1].uri and item.follow.did == FIXTURE.actor)
+assert(item['$type'] == 'app.certified.graph.listEntityFollowing#entityFollowingItem')
+assert(item.follow['$type'] == 'app.certified.graph.getEntityFollow#entityFollowRecordView')
 assert(item.follow.indexedAt == NULL_VALUE, 'a nullable follow indexedAt must remain explicit null')
 assert(item.entity['$type'] == 'org.hypercerts.collection.listCollectionItems#featureView')
 assert(item.entity.uri == FIXTURE.entityUri and item.entity.indexedAt == NULL_VALUE)
@@ -397,6 +399,7 @@ dofile('lua/endpoints/getEntityFollow.lua')
 local ok, result = pcall(handle)
 assert(ok, tostring(result))
 assert(result.follow.uri == follow.uri and result.follow.did == '${actor}')
+assert(result.follow['$type'] == 'app.certified.graph.getEntityFollow#entityFollowRecordView')
 assert(result.follow.indexedAt == NULL_VALUE and result.follow.record.subject.uri == '${entity}')
 assert(#calls == 1 and calls[1].values[1] == '${entityFollow}')
 assert(calls[1].values[2] == '${actor}' and calls[1].values[3] == '${entity}')
@@ -467,9 +470,12 @@ assert(ok, tostring(result))
 assert(#result.followers == 1 and result.cursor ~= nil and result.totalCount == nil)
 local item = result.followers[1]
 assert(item.did == FIXTURE.follows[1].did and item.follow.did == FIXTURE.follows[1].did)
+assert(item['$type'] == 'app.certified.graph.listEntityFollowers#entityFollowerView')
+assert(item.follow['$type'] == 'app.certified.graph.getEntityFollow#entityFollowRecordView')
 assert(item.follow.indexedAt == NULL_VALUE and item.follow.uri == FIXTURE.follows[1].uri)
 assert(item.profile.did == FIXTURE.follows[1].did and item.profile.record.displayName == 'Incoming follower')
 assert(item.organization.did == FIXTURE.follows[1].did and item.organization.record.organizationType[1] == 'nonprofit')
+assert(item.profile['$type'] == nil and item.organization['$type'] == nil, 'shared sidecar views are not entity-follow view types')
 assert(#calls == 3)
 assert(calls[1].values[1] == FIXTURE.entityFollow and calls[1].values[2] == FIXTURE.entity)
 assert(calls[1].sql:find("record::jsonb->'subject'->>'uri' = $2", 1, true))
@@ -532,11 +538,14 @@ local ok, result = pcall(handle)
 assert(ok, tostring(result))
 assert(#result.entities == 2 and result.cursor == nil)
 local activity_item, collection_item = result.entities[1], result.entities[2]
+assert(activity_item['$type'] == 'app.certified.graph.listEntityFollowing#entityFollowingItem')
+assert(activity_item.follow['$type'] == 'app.certified.graph.getEntityFollow#entityFollowRecordView')
 assert(activity_item.entity['$type'] == 'org.hypercerts.claim.getActivity#activityView')
 assert(activity_item.uri == FIXTURE.activityUri and activity_item.entity.uri == FIXTURE.activityUri)
 assert(activity_item.entity.cid == 'bafy-activity-latest' and activity_item.entity.indexedAt == NULL_VALUE)
 assert(activity_item.entity.record.title == 'Resolved activity' and activity_item.entity.author.did == FIXTURE.activity.did)
 assert(activity_item.follow.uri == FIXTURE.follows[1].uri)
+assert(collection_item['$type'] == 'app.certified.graph.listEntityFollowing#entityFollowingItem')
 assert(collection_item.entity['$type'] == 'org.hypercerts.collection.getCollection#collectionView')
 assert(collection_item.uri == FIXTURE.collectionUri and collection_item.entity.uri == FIXTURE.collectionUri)
 assert(collection_item.entity.cid == 'bafy-collection-latest' and collection_item.entity.indexedAt == NULL_VALUE)
@@ -625,7 +634,7 @@ end
   runLua('listEntityFollowing', source);
 });
 
-test('entity-follow module references shared record and view assets without adding unrelated graph APIs', async () => {
+test('entity-follow module owns its view Lexicons and declares their shared dependencies', async () => {
   const rootManifest = JSON.parse(await readFile(`${root}/manifest.json`, 'utf8'));
   const modulePath = 'modules/entity-follow/manifest.json';
   assert.ok(rootManifest.modules.includes(modulePath));
@@ -655,6 +664,11 @@ test('entity-follow module references shared record and view assets without addi
   const record = assetsById.get('app.certified.graph.entityFollow');
   assert.equal(record.config.backfill, true);
   assert.deepEqual(record.dependsOn, ['app.certified.signature.defs']);
+  assert.deepEqual(assetsById.get('app.certified.graph.getEntityFollow').dependsOn, ['app.certified.graph.entityFollow']);
+  assert.deepEqual(assetsById.get('app.certified.graph.listEntityFollowers').dependsOn, [
+    'app.certified.graph.getEntityFollow',
+    'org.hypercerts.api.defs',
+  ]);
   const following = assetsById.get('app.certified.graph.listEntityFollowing');
   for (const viewOwner of [
     'org.hypercerts.claim.getActivity',
@@ -690,15 +704,6 @@ test('entity-follow module references shared record and view assets without addi
   const apiDefs = localLexicons.get('org.hypercerts.api.defs');
   assert.deepEqual(apiDefs.defs.profileView.nullable, ['indexedAt']);
   assert.deepEqual(apiDefs.defs.organizationView.nullable, ['indexedAt']);
-  assert.deepEqual(apiDefs.defs.entityFollowRecordView.nullable, ['indexedAt']);
-  assert.ok(apiDefs.defs.entityFollowerView);
-  assert.deepEqual(apiDefs.defs.entityFollowerView.nullable, ['profile', 'organization']);
-  const followingItem = apiDefs.defs.entityFollowingItem;
-  assert.deepEqual(followingItem.properties.entity.refs, [
-    'org.hypercerts.claim.getActivity#activityView',
-    'org.hypercerts.collection.getCollection#collectionView',
-    'org.hypercerts.collection.listCollectionItems#featureView',
-  ]);
   for (const id of [
     'app.certified.graph.getEntityFollow',
     'app.certified.graph.listEntityFollowers',
@@ -712,6 +717,16 @@ test('entity-follow module references shared record and view assets without addi
   const get = localLexicons.get('app.certified.graph.getEntityFollow');
   const followers = localLexicons.get('app.certified.graph.listEntityFollowers');
   const followingDoc = localLexicons.get('app.certified.graph.listEntityFollowing');
+  assert.deepEqual(get.defs.entityFollowRecordView.nullable, ['indexedAt']);
+  assert.deepEqual(followers.defs.entityFollowerView.nullable, ['profile', 'organization']);
+  assert.deepEqual(followers.defs.entityFollowerView.properties.follow.ref, 'app.certified.graph.getEntityFollow#entityFollowRecordView');
+  const followingItem = followingDoc.defs.entityFollowingItem;
+  assert.deepEqual(followingItem.properties.entity.refs, [
+    'org.hypercerts.claim.getActivity#activityView',
+    'org.hypercerts.collection.getCollection#collectionView',
+    'org.hypercerts.collection.listCollectionItems#featureView',
+  ]);
+  assert.deepEqual(followingItem.properties.follow.ref, 'app.certified.graph.getEntityFollow#entityFollowRecordView');
   assert.deepEqual(Object.keys(get.defs.main.parameters.properties).sort(), ['actor', 'entity']);
   assert.deepEqual(get.defs.output.required, ['follow']);
   assert.deepEqual(get.defs.output.nullable, ['follow']);

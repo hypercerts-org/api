@@ -10,10 +10,12 @@ import { locationRecords, profileRecords, organizationRecords, seedSql } from '.
 import { activityContributorInformationVersions, activityFixtureRows } from '../../fixtures/activities.js';
 import { seedRows as activityHttpFixtureRows } from '../../http/fixtures/activity.fixture.js';
 import { seedRows as badgeHttpFixtureRows } from '../../http/fixtures/badge-definitions.fixture.js';
+import { seedRows as collectionHttpFixtureRows } from '../../http/fixtures/collections.fixture.js';
 import { seedRows as contextAttachmentHttpFixtureRows } from '../../http/fixtures/context-attachments.fixture.js';
 import { seedRows as contextEvaluationHttpFixtureRows } from '../../http/fixtures/context-evaluations.fixture.js';
 import { seedRows as fundingHttpFixtureRows } from '../../http/fixtures/funding-receipts.fixture.js';
 import { seedRows as graphFollowHttpFixtureRows } from '../../http/fixtures/graph-follows.fixture.js';
+import { seedRows as locationHttpFixtureRows } from '../../http/fixtures/location.fixture.js';
 import {
   actorFollowDids,
   actorFollowOrganizationRecords,
@@ -26,14 +28,14 @@ const httpFixturesRoot = fileURLToPath(new URL('../../http/fixtures/', import.me
 
 async function findHttpFixtureModules(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
-  entries.sort((left, right) => left.name < right.name ? -1 : left.name > right.name ? 1 : 0);
-  const fileGroups = await Promise.all(entries.map(async (entry) => {
+  entries.sort((left, right) => left.name.localeCompare(right.name));
+  const groups = await Promise.all(entries.map(async (entry) => {
     const entryPath = path.join(directory, entry.name);
     if (entry.isDirectory()) return findHttpFixtureModules(entryPath);
     if (entry.isFile() && entry.name.endsWith('.fixture.js')) return [entryPath];
     return [];
   }));
-  return fileGroups.flat();
+  return groups.flat();
 }
 
 function duplicateKeys(rows, keyFor) {
@@ -91,7 +93,8 @@ test('shared and discovered HTTP fixture rows have unique identities, canonical 
 
   for (const row of rows) {
     assert.equal(row.uri, `at://${row.did}/${row.collection}/${row.rkey}`);
-    assert.equal(CID.toString(await CID.create(0x71, encode(row.record))), row.cid, row.uri);
+    assert.equal(row.record.$type, row.collection);
+    assert.equal(CID.toString(await CID.create(0x71, encode(row.record))), row.cid, `incorrect CID for ${row.uri}`);
   }
 });
 
@@ -101,6 +104,7 @@ test('activity HTTP fixture repositories do not collide with other fixture repos
     ...actorFollowRecords, ...actorFollowProfileRecords, ...actorFollowOrganizationRecords,
     ...activityFixtureRows, ...contextAttachmentHttpFixtureRows, ...contextEvaluationHttpFixtureRows,
     ...graphFollowHttpFixtureRows, ...fundingHttpFixtureRows, ...badgeHttpFixtureRows,
+    ...collectionHttpFixtureRows, ...locationHttpFixtureRows,
   ];
   const existingDids = new Set(existingRows.map(({ did }) => did));
   const activityHttpDids = new Set(activityHttpFixtureRows.map(({ did }) => did));
