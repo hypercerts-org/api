@@ -12,6 +12,8 @@
     "listEntityFollowers": "implemented",
     "listEntityFollowing": "implemented",
     "listRecentFollows": "implemented",
+    "getLocation": "implemented",
+    "listLocations": "implemented",
     "getReceipt": "implemented",
     "listReceipts": "implemented",
     "getBadgeDefinition": "implemented",
@@ -66,6 +68,14 @@
     {
       "id": "app.certified.graph.listRecentFollows",
       "path": "lexicons/app.certified.graph.listRecentFollows.json"
+    },
+    {
+      "id": "app.certified.location.getLocation",
+      "path": "lexicons/app.certified.location.getLocation.json"
+    },
+    {
+      "id": "app.certified.location.listLocations",
+      "path": "lexicons/app.certified.location.listLocations.json"
     },
     {
       "id": "app.certified.actor.profile",
@@ -270,6 +280,7 @@
     "modules/actor-follow/manifest.json",
     "modules/entity-follow/manifest.json",
     "modules/recent-follows/manifest.json",
+    "modules/location/manifest.json",
     "modules/funding/manifest.json"
   ]
 }
