@@ -37,8 +37,6 @@ async function request(params = {}) {
 
 test('listRecentFollows returns the exact global feed across tied-key pages, including baseline account follows', async () => {
   const expectedUris = [
-    `at://${graphDids.thirdFollower}/${accountFollow}/3jzfcijpj2z2g`,
-    `at://${graphDids.thirdFollower}/${entityFollow}/3jzfcijpj2z2f`,
     `at://${graphDids.secondPublisher}/${accountFollow}/3jzfcijpj2z2e`,
     `at://${graphDids.secondPublisher}/${entityFollow}/3jzfcijpj2z2e`,
     `at://${graphDids.publisher}/${accountFollow}/3jzfcijpj2z2d`,
@@ -49,6 +47,8 @@ test('listRecentFollows returns the exact global feed across tied-key pages, inc
     `at://${graphDids.publisher}/${entityFollow}/3jzfcijpj2z2c`,
     `at://${graphDids.publisher}/${entityFollow}/3jzfcijpj2z2b`,
     `at://${graphDids.publisher}/${entityFollow}/3jzfcijpj2z2a`,
+    `at://${graphDids.thirdFollower}/${accountFollow}/3jzfcijpj2z2g`,
+    `at://${graphDids.thirdFollower}/${entityFollow}/3jzfcijpj2z2f`,
     olderGraphFollowUri,
     ...baselineRecentUris,
   ];

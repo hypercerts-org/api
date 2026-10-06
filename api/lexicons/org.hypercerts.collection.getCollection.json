@@ -116,7 +116,7 @@
     },
     "collectionView": {
       "type": "object",
-      "description": "Collection record view with hydrated author and optional sibling projections for location and tags. The original record is unchanged; exact strong-reference versions are used and unresolved projections retain their source URI/CID with record null.",
+      "description": "Collection record with hydrated author and exact-version location and tag projections. Missing author sidecars are null; unavailable referenced versions retain their source URI and CID with a null record. The original record is unchanged.",
       "required": ["uri", "cid", "indexedAt", "did", "author", "record"],
       "nullable": ["indexedAt"],
       "properties": {
@@ -131,7 +131,7 @@
           "type": "array",
           "maxLength": 20,
           "items": { "type": "ref", "ref": "#collectionTagView" },
-          "description": "Projection of record.tags preserving order, length, and duplicates, including an empty array; omitted only when record.tags is absent."
+          "description": "Projection of record.tags in source order, preserving duplicates. Present as an empty array when record.tags is empty; omitted when it is absent."
         }
       }
     }
