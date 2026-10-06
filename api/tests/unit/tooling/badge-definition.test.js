@@ -59,6 +59,8 @@ test('badge-definition module closes package and view Lexicon refs against found
 
   const badgeDefinitionView = lexicons.getDefOrThrow('app.certified.badge.getBadgeDefinition#badgeDefinitionView');
   const listOutput = lexicons.getDefOrThrow('app.certified.badge.listBadgeDefinitions#output');
+  assert.deepEqual(badgeDefinitionView.required, ['uri', 'cid', 'indexedAt', 'did', 'author', 'record']);
+  assert.deepEqual(badgeDefinitionView.nullable, ['indexedAt']);
   assert.equal(badgeDefinitionView.properties.record.ref, 'lex:app.certified.badge.definition');
   assert.equal(listOutput.properties.badgeDefinitions.items.ref,
     'lex:app.certified.badge.getBadgeDefinition#badgeDefinitionView');
