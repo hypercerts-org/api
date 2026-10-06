@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Public lookup of one indexed activity by full AT-URI. Authentication is not required.",
+      "description": "Looks up one indexed activity by full AT-URI. Authentication is not required.",
       "parameters": {
         "type": "params",
         "required": ["uri"],
@@ -12,7 +12,7 @@
           "uri": {
             "type": "string",
             "format": "at-uri",
-            "description": "Full AT-URI of the activity record, using a DID authority."
+            "description": "Full AT-URI of the activity, using a DID authority."
           }
         }
       },
@@ -21,9 +21,9 @@
         "schema": { "type": "ref", "ref": "#output" }
       },
       "errors": [
-        { "name": "InvalidRequest", "description": "The URI is not a full activity AT-URI or the request contains an unsupported parameter." },
-        { "name": "RecordNotFound", "description": "No indexed activity exists at this AT-URI." },
-        { "name": "ActivityQueryFailed", "description": "The activity or required hydration lookup failed; retry after checking the HappyView PostgreSQL service." }
+        { "name": "InvalidRequest", "description": "The URI is invalid or the request includes an unsupported parameter." },
+        { "name": "RecordNotFound", "description": "No indexed activity exists at the requested URI." },
+        { "name": "ActivityQueryFailed", "description": "The activity lookup or required hydration failed." }
       ]
     },
     "output": {
@@ -35,7 +35,7 @@
     },
     "activityView": {
       "type": "object",
-      "description": "Activity record with metadata, unchanged source payload, hydrated author, and optional contributor projection.",
+      "description": "Activity record with its original payload, hydrated author, and contributors only when present in the source record.",
       "required": ["uri", "cid", "indexedAt", "did", "author", "record"],
       "nullable": ["indexedAt"],
       "properties": {
@@ -54,7 +54,7 @@
     },
     "activityContributorView": {
       "type": "object",
-      "description": "Original activity contributor fields with exact-version contributor information and nullable actor hydration.",
+      "description": "Source contributor fields with nullable hydrated projections; unavailable referenced information or unresolved identities are null, while lookup failures fail the query.",
       "required": ["contributorIdentity", "contributorInformation", "actor"],
       "nullable": ["contributorInformation", "actor"],
       "properties": {
@@ -73,7 +73,7 @@
     },
     "contributorInformationView": {
       "type": "object",
-      "description": "The exact indexed contributor-information version identified by the source strong reference.",
+      "description": "Contributor-information record matched by the source reference's URI and CID; newer versions are not substituted.",
       "required": ["uri", "cid", "indexedAt", "did", "record"],
       "nullable": ["indexedAt"],
       "properties": {
@@ -86,7 +86,7 @@
     },
     "contributorActorView": {
       "type": "object",
-      "description": "Contributor DID with nullable current Certified profile.",
+      "description": "Contributor DID with its current profile, if indexed.",
       "required": ["did", "profile"],
       "nullable": ["profile"],
       "properties": {

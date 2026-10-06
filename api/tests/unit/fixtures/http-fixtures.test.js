@@ -14,6 +14,15 @@ import {
 import { activityFixtureRows } from '../../fixtures/activities.js';
 
 const httpFixtureRoot = fileURLToPath(new URL('../../http/fixtures/', import.meta.url));
+const sharedRows = [
+  ...locationRecords,
+  ...profileRecords,
+  ...organizationRecords,
+  ...actorFollowRecords,
+  ...actorFollowProfileRecords,
+  ...actorFollowOrganizationRecords,
+  ...activityFixtureRows,
+];
 
 function compareEntryNames(left, right) {
   if (left.name < right.name) return -1;
@@ -34,42 +43,31 @@ async function findFixtureModules(directory) {
 }
 
 test('shared and recursively discovered HTTP fixture rows have unique identities and CBOR-derived CIDs', async () => {
+  const records = sharedRows.map((row) => ({ source: 'shared fixtures', row }));
   const fixtureModules = await findFixtureModules(httpFixtureRoot);
   assert.ok(fixtureModules.length > 0, 'expected HTTP fixture modules under tests/http/fixtures');
 
-  const httpRows = [];
   for (const file of fixtureModules) {
     const fixture = await import(pathToFileURL(file).href);
+    const source = path.relative(httpFixtureRoot, file);
     assert.ok(Array.isArray(fixture.seedRows) && fixture.seedRows.length > 0,
-      `${path.relative(httpFixtureRoot, file)} must export nonempty seedRows`);
-    httpRows.push(...fixture.seedRows);
+      `${source} must export nonempty seedRows`);
+    records.push(...fixture.seedRows.map((row) => ({ source, row })));
   }
 
-  const sharedRows = [
-    ...locationRecords,
-    ...profileRecords,
-    ...organizationRecords,
-    ...actorFollowRecords,
-    ...actorFollowProfileRecords,
-    ...actorFollowOrganizationRecords,
-    ...activityFixtureRows,
-  ];
-  const rows = [...sharedRows, ...httpRows];
-  const uris = new Set();
-  const identities = new Set();
-
-  for (const row of rows) {
-    assert.equal(row.uri, `at://${row.did}/${row.collection}/${row.rkey}`);
-    assert.ok(!uris.has(row.uri), `duplicate fixture URI: ${row.uri}`);
-    uris.add(row.uri);
-
+  const uris = new Map();
+  const identities = new Map();
+  for (const { source, row } of records) {
     const identity = JSON.stringify([row.did, row.collection, row.rkey]);
-    assert.ok(!identities.has(identity), `duplicate fixture (DID, collection, rkey): ${identity}`);
-    identities.add(identity);
+    assert.equal(row.uri, `at://${row.did}/${row.collection}/${row.rkey}`, `${source} has an inconsistent URI`);
+    assert.equal(uris.has(row.uri), false, `${row.uri} is seeded by both ${uris.get(row.uri)} and ${source}`);
+    assert.equal(identities.has(identity), false, `${identity} is seeded by both ${identities.get(identity)} and ${source}`);
+    uris.set(row.uri, source);
+    identities.set(identity, source);
   }
 
-  for (const row of rows) {
+  for (const { source, row } of records) {
     const expectedCid = CID.toString(await CID.create(0x71, encode(row.record)));
-    assert.equal(row.cid, expectedCid, `fixture CID does not match CBOR record: ${row.uri}`);
+    assert.equal(row.cid, expectedCid, `${source} has a non-CBOR-derived CID for ${row.uri}`);
   }
 });
