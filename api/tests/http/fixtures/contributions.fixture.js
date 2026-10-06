@@ -4,9 +4,9 @@ import * as CID from '@atcute/cid';
 const contributionCollection = 'org.hypercerts.claim.contribution';
 const profileCollection = 'app.certified.actor.profile';
 const publishers = {
-  a: 'did:plc:mmmmmmmmmmmmmmmmmmmmmmmm',
-  b: 'did:plc:nnnnnnnnnnnnnnnnnnnnnnnn',
-  c: 'did:plc:oooooooooooooooooooooooo',
+  a: 'did:plc:uuuuuuuuuuuuuuuuuuuuuuuu',
+  b: 'did:plc:vvvvvvvvvvvvvvvvvvvvvvvv',
+  c: 'did:plc:wwwwwwwwwwwwwwwwwwwwwwww',
 };
 const indexedAt = '2025-04-01T00:00:00.000Z';
 

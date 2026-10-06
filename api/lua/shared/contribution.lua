@@ -16,9 +16,8 @@ local function valid_contribution_did(value)
 end
 
 local function valid_contribution_uri(value)
-  local valid, collection = valid_record_uri(value)
+  local valid, collection, authority = valid_record_uri(value)
   if not valid or collection ~= CONTRIBUTION then return false end
-  local authority = value:match("^at://([^/]+)/")
   return valid_contribution_did(authority)
 end
 

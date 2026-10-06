@@ -48,7 +48,7 @@
       "properties": {
         "contributions": {
           "type": "array",
-          "items": { "type": "ref", "ref": "org.hypercerts.api.defs#contributionView" }
+          "items": { "type": "ref", "ref": "org.hypercerts.claim.getContribution#contributionView" }
         },
         "cursor": {
           "type": "string",

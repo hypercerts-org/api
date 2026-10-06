@@ -137,7 +137,7 @@ test('contribution query Lexicons expose exact lookup and publisher-based paging
   assert.deepEqual(getParams.required, ['uri']);
   assert.deepEqual(Object.keys(getParams.properties), ['uri']);
   assert.equal(getParams.properties.uri.format, 'at-uri');
-  assert.equal(getContribution.defs.output.properties.contribution.ref, 'lex:org.hypercerts.api.defs#contributionView');
+  assert.equal(getContribution.defs.output.properties.contribution.ref, 'lex:org.hypercerts.claim.getContribution#contributionView');
 
   const listParams = listContributions.defs.main.parameters.properties;
   assert.deepEqual(Object.keys(listParams).sort(), ['authors', 'cursor', 'limit', 'sortDirection']);
@@ -148,13 +148,14 @@ test('contribution query Lexicons expose exact lookup and publisher-based paging
   assert.equal(listParams.limit.minimum, 1);
   assert.equal(listParams.limit.maximum, 100);
   assert.equal(listParams.limit.default, 25);
-  assert.equal(listContributions.defs.output.properties.contributions.items.ref, 'lex:org.hypercerts.api.defs#contributionView');
+  assert.equal(listContributions.defs.output.properties.contributions.items.ref, 'lex:org.hypercerts.claim.getContribution#contributionView');
 
-  const view = shared.defs.contributionView;
+  assert.equal(shared.defs.contributionView, undefined, 'contribution views belong to the owning query Lexicon');
+  const view = getContribution.defs.contributionView;
   assert.deepEqual(view.required, ['uri', 'cid', 'indexedAt', 'did', 'author', 'record']);
   assert.deepEqual(view.nullable, ['indexedAt']);
   assert.equal(view.properties.author.ref, 'lex:org.hypercerts.api.defs#actorView');
-  assert.equal(lexicons.getDefOrThrow('org.hypercerts.api.defs#contributionView').properties.record.ref,
+  assert.equal(lexicons.getDefOrThrow('org.hypercerts.claim.getContribution#contributionView').properties.record.ref,
     'lex:org.hypercerts.claim.contribution');
   assert.deepEqual(shared.defs.actorView.nullable, ['profile', 'organization']);
 });

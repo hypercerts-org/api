@@ -4,9 +4,9 @@ import { contractUrl, requireContractTarget } from './helpers.js';
 
 const endpoint = 'org.hypercerts.claim.getContribution';
 const listEndpoint = 'org.hypercerts.claim.listContributions';
-const publisherDid = 'did:plc:mmmmmmmmmmmmmmmmmmmmmmmm';
-const secondPublisherDid = 'did:plc:nnnnnnnnnnnnnnnnnnnnnnnn';
-const thirdPublisherDid = 'did:plc:oooooooooooooooooooooooo';
+const publisherDid = 'did:plc:uuuuuuuuuuuuuuuuuuuuuuuu';
+const secondPublisherDid = 'did:plc:vvvvvvvvvvvvvvvvvvvvvvvv';
+const thirdPublisherDid = 'did:plc:wwwwwwwwwwwwwwwwwwwwwwww';
 const contributionUris = {
   alpha: `at://${publisherDid}/org.hypercerts.claim.contribution/alpha`,
   beta: `at://${publisherDid}/org.hypercerts.claim.contribution/beta`,

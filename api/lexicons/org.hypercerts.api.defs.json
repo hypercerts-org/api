@@ -83,20 +83,6 @@
         },
         "follow": { "type": "ref", "ref": "#entityFollowRecordView" }
       }
-    },
-    "contributionView": {
-      "type": "object",
-      "description": "Contribution record view with a hydrated publisher and unchanged source record; the publisher is not necessarily the contributor.",
-      "required": ["uri", "cid", "indexedAt", "did", "author", "record"],
-      "nullable": ["indexedAt"],
-      "properties": {
-        "uri": { "type": "string", "format": "at-uri" },
-        "cid": { "type": "string", "format": "cid" },
-        "indexedAt": { "type": "string", "format": "datetime" },
-        "did": { "type": "string", "format": "did" },
-        "author": { "type": "ref", "ref": "#actorView" },
-        "record": { "type": "ref", "ref": "org.hypercerts.claim.contribution" }
-      }
     }
   }
 }
