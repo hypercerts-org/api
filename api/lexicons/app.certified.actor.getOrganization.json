@@ -22,7 +22,8 @@
       },
       "errors": [
         { "name": "InvalidRequest", "description": "The actor DID is invalid or an unsupported parameter was supplied." },
-        { "name": "RecordNotFound", "description": "No indexed organization sidecar exists for this DID." }
+        { "name": "RecordNotFound", "description": "No indexed organization sidecar exists for this DID." },
+        { "name": "OrganizationQueryFailed", "description": "The indexed organization sidecar or associated profile could not be queried." }
       ]
     },
     "organizationActorView": {

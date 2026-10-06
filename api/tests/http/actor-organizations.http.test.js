@@ -105,15 +105,17 @@ test('listOrganizations combines exact type and visibility filters and leaves om
   const communityOrCooperative = await get('app.certified.actor.listOrganizations', {
     organizationTypes: ['community', 'cooperative'], sortDirection: 'asc', limit: 100,
   });
-  assert.deepEqual(communityOrCooperative.actors.map(({ did }) => did), [
-    'did:plc:cccccccccccccccccccccccc',
-    'did:web:organization-only.example',
-    'did:plc:mmmmmmmmmmmmmmmmmmmmmmmm',
-    'did:plc:nnnnnnnnnnnnnnnnnnnnnnnn',
-    'did:plc:qqqqqqqqqqqqqqqqqqqqqqqq',
-    'did:web:location-organization-only.example',
-    'did:plc:jjjjjjjjjjjjjjjjjjjjjjjj',
-  ]);
+  const ownDids = new Set(Object.values(actorFixtureDids));
+  assert.deepEqual(
+    communityOrCooperative.actors
+      .map(({ did }) => did)
+      .filter((did) => ownDids.has(did)),
+    [actorFixtureDids.alpine, actorFixtureDids.forest, actorFixtureDids.organizationOnly],
+  );
+  assert.ok(
+    communityOrCooperative.actors.every(({ organization }) =>
+      organization.record.organizationType.some((type) => ['community', 'cooperative'].includes(type))),
+  );
 
   const communityUnlisted = await get('app.certified.actor.listOrganizations', {
     organizationTypes: ['community'], visibility: 'unlisted', limit: 100,

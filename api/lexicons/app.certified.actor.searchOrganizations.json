@@ -51,7 +51,8 @@
         "schema": { "type": "ref", "ref": "#output" }
       },
       "errors": [
-        { "name": "InvalidRequest", "description": "A filter or scalar parameter is invalid or repeated, or an unsupported parameter was supplied." }
+        { "name": "InvalidRequest", "description": "A filter or scalar parameter is invalid or repeated, or an unsupported parameter was supplied." },
+        { "name": "OrganizationQueryFailed", "description": "The indexed organization sidecar or associated profile could not be queried." }
       ]
     },
     "output": {
