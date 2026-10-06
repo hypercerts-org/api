@@ -16,12 +16,25 @@
       "output": { "encoding": "application/json", "schema": { "type": "ref", "ref": "#output" } },
       "errors": [{ "name": "InvalidRequest", "description": "The actor DID, entity AT-URI, or another query parameter is invalid." }]
     },
+    "entityFollowRecordView": {
+      "type": "object",
+      "description": "Raw indexed entity-follow record view, including the DID that published the relationship.",
+      "required": ["uri", "cid", "indexedAt", "did", "record"],
+      "nullable": ["indexedAt"],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
+        "indexedAt": { "type": "string", "format": "datetime" },
+        "did": { "type": "string", "format": "did" },
+        "record": { "type": "ref", "ref": "app.certified.graph.entityFollow" }
+      }
+    },
     "output": {
       "type": "object",
       "required": ["follow"],
       "nullable": ["follow"],
       "properties": {
-        "follow": { "type": "ref", "ref": "org.hypercerts.api.defs#entityFollowRecordView", "description": "Earliest matching record by createdAt, with URI ascending on ties; null if none is indexed." }
+        "follow": { "type": "ref", "ref": "#entityFollowRecordView", "description": "Earliest matching record by createdAt, with URI ascending on ties; null if none is indexed." }
       }
     }
   }

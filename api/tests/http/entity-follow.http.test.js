@@ -46,6 +46,7 @@ test('getEntityFollow returns the earliest tied actor-entity record with its ind
 
   assert.equal(response.status, 200, JSON.stringify(body));
   assert.equal(body.follow.uri, `at://${graphDids.publisher}/${entityFollowCollection}/3jzfcijpj2z2a`);
+  assert.equal(body.follow.$type, 'app.certified.graph.getEntityFollow#entityFollowRecordView');
   assert.equal(body.follow.did, graphDids.publisher);
   assert.equal(body.follow.indexedAt, '2025-03-01T00:00:00.000Z');
   assert.deepEqual(body.follow.record, {
@@ -79,6 +80,8 @@ test('listEntityFollowers filters by target, deduplicates tied records, paginate
   );
 
   assert.equal(items[0].did, graphDids.publisher);
+  assert.equal(items[0].$type, 'app.certified.graph.listEntityFollowers#entityFollowerView');
+  assert.equal(items[0].follow.$type, 'app.certified.graph.getEntityFollow#entityFollowRecordView');
   assert.equal(items[0].follow.indexedAt, '2025-03-01T00:00:00.000Z');
   assert.equal(items[0].profile.record.displayName, 'Graph Fixture Publisher');
   assert.deepEqual(items[0].organization.record.organizationType, ['nonprofit']);
@@ -106,6 +109,8 @@ test('listEntityFollowing resolves supported feature targets and preserves unres
     assert.equal(response.status, 200, JSON.stringify(body));
     assert.equal(body.entities.length, 1);
     const [item] = body.entities;
+    assert.equal(item.$type, 'app.certified.graph.listEntityFollowing#entityFollowingItem');
+    assert.equal(item.follow.$type, 'app.certified.graph.getEntityFollow#entityFollowRecordView');
     assert.equal(item.follow.uri, expectedFollowUris[index]);
     entities.push(item);
     cursor = body.cursor;
