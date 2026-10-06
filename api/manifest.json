@@ -12,6 +12,10 @@
     "getActivity": "implemented",
     "listActivities": "implemented",
     "searchActivities": "implemented",
+    "getCollection": "implemented",
+    "listCollections": "implemented",
+    "searchCollections": "implemented",
+    "listCollectionItems": "implemented",
     "getFollow": "implemented",
     "listActorFollowers": "implemented",
     "listActorFollowing": "implemented",
@@ -107,6 +111,14 @@
     {
       "id": "org.hypercerts.collection.getCollection",
       "path": "lexicons/org.hypercerts.collection.getCollection.json"
+    },
+    {
+      "id": "org.hypercerts.collection.listCollections",
+      "path": "lexicons/org.hypercerts.collection.listCollections.json"
+    },
+    {
+      "id": "org.hypercerts.collection.searchCollections",
+      "path": "lexicons/org.hypercerts.collection.searchCollections.json"
     },
     {
       "id": "org.hypercerts.collection.listCollectionItems",
@@ -309,6 +321,7 @@
     "modules/shared/manifest.json",
     "modules/badge-definitions/manifest.json",
     "modules/activity/manifest.json",
+    "modules/collection/manifest.json",
     "modules/actor-follow/manifest.json",
     "modules/entity-follow/manifest.json",
     "modules/recent-follows/manifest.json",
