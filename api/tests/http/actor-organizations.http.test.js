@@ -111,6 +111,7 @@ test('listOrganizations combines exact type and visibility filters and leaves om
     'did:plc:mmmmmmmmmmmmmmmmmmmmmmmm',
     'did:plc:nnnnnnnnnnnnnnnnnnnnnnnn',
     'did:plc:qqqqqqqqqqqqqqqqqqqqqqqq',
+    'did:web:location-organization-only.example',
     'did:plc:jjjjjjjjjjjjjjjjjjjjjjjj',
   ]);
 
