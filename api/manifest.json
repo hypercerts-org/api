@@ -47,7 +47,9 @@
     "getBadgeResponse": "implemented",
     "listBadgeResponses": "implemented",
     "getVocabTag": "implemented",
-    "listVocabTags": "implemented"
+    "listVocabTags": "implemented",
+    "getAcknowledgement": "implemented",
+    "listAcknowledgements": "implemented"
   },
   "authentication": {
     "decision": "public",
@@ -134,6 +136,10 @@
     {
       "id": "org.hypercerts.context.attachment",
       "packagePath": "lexicons/org/hypercerts/context/attachment.json"
+    },
+    {
+      "id": "org.hypercerts.context.acknowledgement",
+      "packagePath": "lexicons/org/hypercerts/context/acknowledgement.json"
     },
     {
       "id": "app.certified.badge.definition",
@@ -400,6 +406,14 @@
       "path": "lexicons/org.hypercerts.context.listAttachments.json"
     },
     {
+      "id": "org.hypercerts.context.getAcknowledgement",
+      "path": "lexicons/org.hypercerts.context.getAcknowledgement.json"
+    },
+    {
+      "id": "org.hypercerts.context.listAcknowledgements",
+      "path": "lexicons/org.hypercerts.context.listAcknowledgements.json"
+    },
+    {
       "id": "app.certified.badge.award",
       "packagePath": "lexicons/app/certified/badge/award.json"
     },
@@ -445,6 +459,7 @@
     "modules/recent-follows/manifest.json",
     "modules/context-evaluation/manifest.json",
     "modules/context-attachments/manifest.json",
+    "modules/acknowledgements/manifest.json",
     "modules/contribution/manifest.json"
   ]
 }
