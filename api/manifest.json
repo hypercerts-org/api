@@ -1,46 +1,64 @@
 {
   "name": "hypercerts-api-foundation",
+  "collection": "app.certified.location",
+  "targetHappyViewRevision": "a2f347e605d7cd9c11669b320e43c10dbfe982e3",
+  "runtimeCompatibility": "compatible-at-target-revision",
+  "status": "handlers-implemented; location-and-actor-follow-runtime-validated-at-target-revision; other-query-runtime-validation-pending",
+  "handlerStatus": {
+    "getProfile": "implemented",
+    "getProfiles": "implemented",
+    "searchProfiles": "implemented",
+    "listProfiles": "implemented",
+    "getOrganization": "implemented",
+    "getOrganizations": "implemented",
+    "listOrganizations": "implemented",
+    "searchOrganizations": "implemented",
+    "getEvaluation": "implemented",
+    "listEvaluations": "implemented",
+    "getAcknowledgement": "implemented",
+    "listAcknowledgements": "implemented",
+    "getAttachment": "implemented",
+    "listAttachments": "implemented",
+    "getActivity": "implemented",
+    "listActivities": "implemented",
+    "searchActivities": "implemented",
+    "getCollection": "implemented",
+    "listCollections": "implemented",
+    "searchCollections": "implemented",
+    "listCollectionItems": "implemented",
+    "getFollow": "implemented",
+    "listActorFollowers": "implemented",
+    "listActorFollowing": "implemented",
+    "getEntityFollow": "implemented",
+    "listEntityFollowers": "implemented",
+    "listEntityFollowing": "implemented",
+    "listRecentFollows": "implemented",
+    "getReceipt": "implemented",
+    "listReceipts": "implemented",
+    "getBadgeDefinition": "implemented",
+    "listBadgeDefinitions": "implemented",
+    "getWorkscopeTag": "implemented",
+    "listWorkscopeTags": "implemented",
+    "getContribution": "implemented",
+    "listContributions": "implemented",
+    "getContributorInformation": "implemented",
+    "listContributorInformation": "implemented",
+    "getVocabTag": "implemented",
+    "listVocabTags": "implemented",
+    "getLocation": "implemented",
+    "listLocations": "implemented",
+    "searchBadgeDefinitions": "implemented",
+    "getBadgeAward": "implemented",
+    "listBadgeAwards": "implemented",
+    "getBadgeResponse": "implemented",
+    "listBadgeResponses": "implemented"
+  },
+  "authentication": {
+    "decision": "public",
+    "unresolved": false,
+    "note": "Badge query endpoints expose public indexed record reads; all query endpoints expose public record reads and require no caller authentication."
+  },
   "validationLexicons": [
-    {
-      "id": "app.certified.badge.award",
-      "packagePath": "lexicons/app/certified/badge/award.json"
-    },
-    {
-      "id": "app.certified.badge.response",
-      "packagePath": "lexicons/app/certified/badge/response.json"
-    },
-    {
-      "id": "app.certified.badge.searchBadgeDefinitions",
-      "path": "lexicons/app.certified.badge.searchBadgeDefinitions.json"
-    },
-    {
-      "id": "app.certified.badge.getBadgeAward",
-      "path": "lexicons/app.certified.badge.getBadgeAward.json"
-    },
-    {
-      "id": "app.certified.badge.listBadgeAwards",
-      "path": "lexicons/app.certified.badge.listBadgeAwards.json"
-    },
-    {
-      "id": "app.certified.badge.getBadgeResponse",
-      "path": "lexicons/app.certified.badge.getBadgeResponse.json"
-    },
-    {
-      "id": "app.certified.badge.listBadgeResponses",
-      "path": "lexicons/app.certified.badge.listBadgeResponses.json"
-    },
-    {
-      "id": "org.hypercerts.claim.contribution",
-      "packagePath": "lexicons/org/hypercerts/claim/contribution.json"
-    },
-    {
-      "id": "org.hypercerts.claim.getContribution",
-      "path": "lexicons/org.hypercerts.claim.getContribution.json"
-    },
-    {
-      "id": "org.hypercerts.claim.listContributions",
-      "path": "lexicons/org.hypercerts.claim.listContributions.json"
-    },
     {
       "id": "app.certified.location",
       "packagePath": "lexicons/app/certified/location.json"
@@ -58,8 +76,68 @@
       "packagePath": "lexicons/app/certified/graph/entityFollow.json"
     },
     {
+      "id": "app.certified.graph.getEntityFollow",
+      "path": "lexicons/app.certified.graph.getEntityFollow.json"
+    },
+    {
+      "id": "app.certified.graph.listEntityFollowers",
+      "path": "lexicons/app.certified.graph.listEntityFollowers.json"
+    },
+    {
+      "id": "app.certified.graph.listEntityFollowing",
+      "path": "lexicons/app.certified.graph.listEntityFollowing.json"
+    },
+    {
+      "id": "app.certified.graph.getFollow",
+      "path": "lexicons/app.certified.graph.getFollow.json"
+    },
+    {
+      "id": "app.certified.graph.listActorFollowers",
+      "path": "lexicons/app.certified.graph.listActorFollowers.json"
+    },
+    {
+      "id": "app.certified.graph.listActorFollowing",
+      "path": "lexicons/app.certified.graph.listActorFollowing.json"
+    },
+    {
+      "id": "app.certified.graph.listRecentFollows",
+      "path": "lexicons/app.certified.graph.listRecentFollows.json"
+    },
+    {
       "id": "app.certified.actor.profile",
       "packagePath": "lexicons/app/certified/actor/profile.json"
+    },
+    {
+      "id": "app.certified.actor.getProfile",
+      "path": "lexicons/app.certified.actor.getProfile.json"
+    },
+    {
+      "id": "app.certified.actor.getProfiles",
+      "path": "lexicons/app.certified.actor.getProfiles.json"
+    },
+    {
+      "id": "app.certified.actor.listProfiles",
+      "path": "lexicons/app.certified.actor.listProfiles.json"
+    },
+    {
+      "id": "app.certified.actor.searchProfiles",
+      "path": "lexicons/app.certified.actor.searchProfiles.json"
+    },
+    {
+      "id": "app.certified.actor.getOrganization",
+      "path": "lexicons/app.certified.actor.getOrganization.json"
+    },
+    {
+      "id": "app.certified.actor.getOrganizations",
+      "path": "lexicons/app.certified.actor.getOrganizations.json"
+    },
+    {
+      "id": "app.certified.actor.listOrganizations",
+      "path": "lexicons/app.certified.actor.listOrganizations.json"
+    },
+    {
+      "id": "app.certified.actor.searchOrganizations",
+      "path": "lexicons/app.certified.actor.searchOrganizations.json"
     },
     {
       "id": "org.hypercerts.claim.getActivity",
@@ -74,16 +152,68 @@
       "path": "lexicons/org.hypercerts.claim.listContributorInformation.json"
     },
     {
+      "id": "org.hypercerts.workscope.getWorkscopeTag",
+      "path": "lexicons/org.hypercerts.workscope.getWorkscopeTag.json"
+    },
+    {
+      "id": "org.hypercerts.workscope.listWorkscopeTags",
+      "path": "lexicons/org.hypercerts.workscope.listWorkscopeTags.json"
+    },
+    {
       "id": "org.hypercerts.context.evaluation",
       "packagePath": "lexicons/org/hypercerts/context/evaluation.json"
+    },
+    {
+      "id": "org.hypercerts.context.getEvaluation",
+      "path": "lexicons/org.hypercerts.context.getEvaluation.json"
+    },
+    {
+      "id": "org.hypercerts.context.listEvaluations",
+      "path": "lexicons/org.hypercerts.context.listEvaluations.json"
+    },
+    {
+      "id": "org.hypercerts.context.acknowledgement",
+      "packagePath": "lexicons/org/hypercerts/context/acknowledgement.json"
+    },
+    {
+      "id": "org.hypercerts.context.getAcknowledgement",
+      "path": "lexicons/org.hypercerts.context.getAcknowledgement.json"
+    },
+    {
+      "id": "org.hypercerts.context.listAcknowledgements",
+      "path": "lexicons/org.hypercerts.context.listAcknowledgements.json"
+    },
+    {
+      "id": "org.hypercerts.claim.listActivities",
+      "path": "lexicons/org.hypercerts.claim.listActivities.json"
+    },
+    {
+      "id": "org.hypercerts.claim.searchActivities",
+      "path": "lexicons/org.hypercerts.claim.searchActivities.json"
     },
     {
       "id": "org.hypercerts.collection.getCollection",
       "path": "lexicons/org.hypercerts.collection.getCollection.json"
     },
     {
+      "id": "org.hypercerts.collection.listCollections",
+      "path": "lexicons/org.hypercerts.collection.listCollections.json"
+    },
+    {
+      "id": "org.hypercerts.collection.searchCollections",
+      "path": "lexicons/org.hypercerts.collection.searchCollections.json"
+    },
+    {
       "id": "org.hypercerts.collection.listCollectionItems",
       "path": "lexicons/org.hypercerts.collection.listCollectionItems.json"
+    },
+    {
+      "id": "org.hypercerts.context.getAttachment",
+      "path": "lexicons/org.hypercerts.context.getAttachment.json"
+    },
+    {
+      "id": "org.hypercerts.context.listAttachments",
+      "path": "lexicons/org.hypercerts.context.listAttachments.json"
     },
     {
       "id": "org.hypercerts.context.attachment",
@@ -94,8 +224,24 @@
       "packagePath": "lexicons/app/certified/badge/definition.json"
     },
     {
+      "id": "app.certified.badge.getBadgeDefinition",
+      "path": "lexicons/app.certified.badge.getBadgeDefinition.json"
+    },
+    {
+      "id": "app.certified.badge.listBadgeDefinitions",
+      "path": "lexicons/app.certified.badge.listBadgeDefinitions.json"
+    },
+    {
       "id": "org.hypercerts.funding.receipt",
       "packagePath": "lexicons/org/hypercerts/funding/receipt.json"
+    },
+    {
+      "id": "org.hypercerts.funding.getReceipt",
+      "path": "lexicons/org.hypercerts.funding.getReceipt.json"
+    },
+    {
+      "id": "org.hypercerts.funding.listReceipts",
+      "path": "lexicons/org.hypercerts.funding.listReceipts.json"
     },
     {
       "id": "app.certified.actor.organization",
@@ -126,6 +272,10 @@
       "packagePath": "lexicons/org/hypercerts/workscope/cel.json"
     },
     {
+      "id": "org.hypercerts.workscope.tag",
+      "packagePath": "lexicons/org/hypercerts/workscope/tag.json"
+    },
+    {
       "id": "org.hypercerts.claim.activity",
       "packagePath": "lexicons/org/hypercerts/claim/activity.json"
     },
@@ -144,14 +294,6 @@
     {
       "id": "org.hypercerts.vocab.tag",
       "packagePath": "lexicons/org/hypercerts/vocab/tag.json"
-    },
-    {
-      "id": "org.hypercerts.vocab.getVocabTag",
-      "path": "lexicons/org.hypercerts.vocab.getVocabTag.json"
-    },
-    {
-      "id": "org.hypercerts.vocab.listVocabTags",
-      "path": "lexicons/org.hypercerts.vocab.listVocabTags.json"
     },
     {
       "id": "pub.leaflet.blocks.blockquote",
@@ -254,20 +396,24 @@
       "packagePath": "lexicons/pub/leaflet/theme/color.json"
     },
     {
-      "id": "app.certified.badge.getBadgeDefinition",
-      "path": "lexicons/app.certified.badge.getBadgeDefinition.json"
+      "id": "org.hypercerts.claim.getContribution",
+      "path": "lexicons/org.hypercerts.claim.getContribution.json"
     },
     {
-      "id": "app.certified.badge.listBadgeDefinitions",
-      "path": "lexicons/app.certified.badge.listBadgeDefinitions.json"
+      "id": "org.hypercerts.claim.listContributions",
+      "path": "lexicons/org.hypercerts.claim.listContributions.json"
     },
     {
-      "id": "org.hypercerts.funding.getReceipt",
-      "path": "lexicons/org.hypercerts.funding.getReceipt.json"
+      "id": "org.hypercerts.claim.contribution",
+      "packagePath": "lexicons/org/hypercerts/claim/contribution.json"
     },
     {
-      "id": "org.hypercerts.funding.listReceipts",
-      "path": "lexicons/org.hypercerts.funding.listReceipts.json"
+      "id": "org.hypercerts.vocab.getVocabTag",
+      "path": "lexicons/org.hypercerts.vocab.getVocabTag.json"
+    },
+    {
+      "id": "org.hypercerts.vocab.listVocabTags",
+      "path": "lexicons/org.hypercerts.vocab.listVocabTags.json"
     },
     {
       "id": "app.certified.location.getLocation",
@@ -278,113 +424,36 @@
       "path": "lexicons/app.certified.location.listLocations.json"
     },
     {
-      "id": "org.hypercerts.context.acknowledgement",
-      "packagePath": "lexicons/org/hypercerts/context/acknowledgement.json"
+      "id": "app.certified.badge.award",
+      "packagePath": "lexicons/app/certified/badge/award.json"
     },
     {
-      "id": "org.hypercerts.context.getAcknowledgement",
-      "path": "lexicons/org.hypercerts.context.getAcknowledgement.json"
+      "id": "app.certified.badge.response",
+      "packagePath": "lexicons/app/certified/badge/response.json"
     },
     {
-      "id": "org.hypercerts.context.listAcknowledgements",
-      "path": "lexicons/org.hypercerts.context.listAcknowledgements.json"
+      "id": "app.certified.badge.searchBadgeDefinitions",
+      "path": "lexicons/app.certified.badge.searchBadgeDefinitions.json"
     },
     {
-      "id": "app.certified.graph.getEntityFollow",
-      "path": "lexicons/app.certified.graph.getEntityFollow.json"
+      "id": "app.certified.badge.getBadgeAward",
+      "path": "lexicons/app.certified.badge.getBadgeAward.json"
     },
     {
-      "id": "app.certified.graph.listEntityFollowers",
-      "path": "lexicons/app.certified.graph.listEntityFollowers.json"
+      "id": "app.certified.badge.listBadgeAwards",
+      "path": "lexicons/app.certified.badge.listBadgeAwards.json"
     },
     {
-      "id": "app.certified.graph.listEntityFollowing",
-      "path": "lexicons/app.certified.graph.listEntityFollowing.json"
+      "id": "app.certified.badge.getBadgeResponse",
+      "path": "lexicons/app.certified.badge.getBadgeResponse.json"
     },
     {
-      "id": "app.certified.graph.getFollow",
-      "path": "lexicons/app.certified.graph.getFollow.json"
-    },
-    {
-      "id": "app.certified.graph.listActorFollowers",
-      "path": "lexicons/app.certified.graph.listActorFollowers.json"
-    },
-    {
-      "id": "app.certified.graph.listActorFollowing",
-      "path": "lexicons/app.certified.graph.listActorFollowing.json"
-    },
-    {
-      "id": "app.certified.graph.listRecentFollows",
-      "path": "lexicons/app.certified.graph.listRecentFollows.json"
-    },
-    {
-      "id": "org.hypercerts.context.getEvaluation",
-      "path": "lexicons/org.hypercerts.context.getEvaluation.json"
-    },
-    {
-      "id": "org.hypercerts.context.listEvaluations",
-      "path": "lexicons/org.hypercerts.context.listEvaluations.json"
-    },
-    {
-      "id": "org.hypercerts.claim.listActivities",
-      "path": "lexicons/org.hypercerts.claim.listActivities.json"
-    },
-    {
-      "id": "org.hypercerts.claim.searchActivities",
-      "path": "lexicons/org.hypercerts.claim.searchActivities.json"
-    },
-    {
-      "id": "org.hypercerts.context.getAttachment",
-      "path": "lexicons/org.hypercerts.context.getAttachment.json"
-    },
-    {
-      "id": "org.hypercerts.context.listAttachments",
-      "path": "lexicons/org.hypercerts.context.listAttachments.json"
-    },
-    {
-      "id": "app.certified.actor.getProfile",
-      "path": "lexicons/app.certified.actor.getProfile.json"
-    },
-    {
-      "id": "app.certified.actor.getProfiles",
-      "path": "lexicons/app.certified.actor.getProfiles.json"
-    },
-    {
-      "id": "app.certified.actor.listProfiles",
-      "path": "lexicons/app.certified.actor.listProfiles.json"
-    },
-    {
-      "id": "app.certified.actor.searchProfiles",
-      "path": "lexicons/app.certified.actor.searchProfiles.json"
-    },
-    {
-      "id": "app.certified.actor.getOrganization",
-      "path": "lexicons/app.certified.actor.getOrganization.json"
-    },
-    {
-      "id": "app.certified.actor.getOrganizations",
-      "path": "lexicons/app.certified.actor.getOrganizations.json"
-    },
-    {
-      "id": "app.certified.actor.listOrganizations",
-      "path": "lexicons/app.certified.actor.listOrganizations.json"
-    },
-    {
-      "id": "app.certified.actor.searchOrganizations",
-      "path": "lexicons/app.certified.actor.searchOrganizations.json"
-    },
-    {
-      "id": "org.hypercerts.collection.listCollections",
-      "path": "lexicons/org.hypercerts.collection.listCollections.json"
-    },
-    {
-      "id": "org.hypercerts.collection.searchCollections",
-      "path": "lexicons/org.hypercerts.collection.searchCollections.json"
+      "id": "app.certified.badge.listBadgeResponses",
+      "path": "lexicons/app.certified.badge.listBadgeResponses.json"
     }
   ],
   "modules": [
     "modules/shared/manifest.json",
-    "modules/vocab/manifest.json",
     "modules/badge-definitions/manifest.json",
     "modules/badge-queries/manifest.json",
     "modules/profile/manifest.json",
@@ -396,66 +465,12 @@
     "modules/recent-follows/manifest.json",
     "modules/context-evaluation/manifest.json",
     "modules/context-attachments/manifest.json",
-    "modules/funding/manifest.json",
     "modules/contributor-information/manifest.json",
-    "modules/contribution/manifest.json",
     "modules/acknowledgements/manifest.json",
+    "modules/funding/manifest.json",
+    "modules/workscope-tags/manifest.json",
+    "modules/contribution/manifest.json",
+    "modules/vocab/manifest.json",
     "modules/location/manifest.json"
-  ],
-  "authentication": {
-    "unresolved": false,
-    "decision": "public",
-    "note": "Badge query endpoints expose public indexed record reads; all query endpoints expose public record reads and require no caller authentication."
-  },
-  "handlerStatus": {
-    "getAcknowledgement": "implemented",
-    "listAcknowledgements": "implemented",
-    "searchBadgeDefinitions": "implemented",
-    "getBadgeAward": "implemented",
-    "listBadgeAwards": "implemented",
-    "getBadgeResponse": "implemented",
-    "listBadgeResponses": "implemented",
-    "getContribution": "implemented",
-    "listContributions": "implemented",
-    "getContributorInformation": "implemented",
-    "listContributorInformation": "implemented",
-    "getVocabTag": "implemented",
-    "listVocabTags": "implemented",
-    "getBadgeDefinition": "implemented",
-    "listBadgeDefinitions": "implemented",
-    "getReceipt": "implemented",
-    "listReceipts": "implemented",
-    "getLocation": "implemented",
-    "listLocations": "implemented",
-    "getEvaluation": "implemented",
-    "listEvaluations": "implemented",
-    "getAttachment": "implemented",
-    "listAttachments": "implemented",
-    "getActivity": "implemented",
-    "listActivities": "implemented",
-    "searchActivities": "implemented",
-    "getFollow": "implemented",
-    "listActorFollowers": "implemented",
-    "listActorFollowing": "implemented",
-    "getEntityFollow": "implemented",
-    "listEntityFollowers": "implemented",
-    "listEntityFollowing": "implemented",
-    "listRecentFollows": "implemented",
-    "getProfile": "implemented",
-    "getProfiles": "implemented",
-    "searchProfiles": "implemented",
-    "listProfiles": "implemented",
-    "getOrganization": "implemented",
-    "getOrganizations": "implemented",
-    "listOrganizations": "implemented",
-    "searchOrganizations": "implemented",
-    "getCollection": "implemented",
-    "listCollections": "implemented",
-    "searchCollections": "implemented",
-    "listCollectionItems": "implemented"
-  },
-  "collection": "app.certified.location",
-  "targetHappyViewRevision": "a2f347e605d7cd9c11669b320e43c10dbfe982e3",
-  "runtimeCompatibility": "compatible-at-target-revision",
-  "status": "handlers-implemented; location-and-actor-follow-runtime-validated-at-target-revision; other-query-runtime-validation-pending"
+  ]
 }

@@ -4,7 +4,7 @@ import * as CID from '@atcute/cid';
 const acknowledgementCollection = 'org.hypercerts.context.acknowledgement';
 const profileCollection = 'app.certified.actor.profile';
 const organizationCollection = 'app.certified.actor.organization';
-const publisher = 'did:plc:llllllllllllllllllllllll';
+const publisher = 'did:web:acknowledgements-primary.invalid';
 const secondPublisher = 'did:web:acknowledgements-secondary.example';
 const thirdPublisher = 'did:web:acknowledgements-tertiary.example';
 const subjectUri = 'at://did:plc:mmmmmmmmmmmmmmmmmmmmmmmm/org.hypercerts.claim.activity/ack-subject';
