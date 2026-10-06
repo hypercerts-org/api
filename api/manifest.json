@@ -41,6 +41,8 @@
     "listWorkscopeTags": "implemented",
     "getContribution": "implemented",
     "listContributions": "implemented",
+    "getContributorInformation": "implemented",
+    "listContributorInformation": "implemented",
     "getVocabTag": "implemented",
     "listVocabTags": "implemented",
     "getLocation": "implemented",
@@ -140,6 +142,14 @@
     {
       "id": "org.hypercerts.claim.getActivity",
       "path": "lexicons/org.hypercerts.claim.getActivity.json"
+    },
+    {
+      "id": "org.hypercerts.claim.getContributorInformation",
+      "path": "lexicons/org.hypercerts.claim.getContributorInformation.json"
+    },
+    {
+      "id": "org.hypercerts.claim.listContributorInformation",
+      "path": "lexicons/org.hypercerts.claim.listContributorInformation.json"
     },
     {
       "id": "org.hypercerts.workscope.getWorkscopeTag",
@@ -455,6 +465,7 @@
     "modules/recent-follows/manifest.json",
     "modules/context-evaluation/manifest.json",
     "modules/context-attachments/manifest.json",
+    "modules/contributor-information/manifest.json",
     "modules/acknowledgements/manifest.json",
     "modules/funding/manifest.json",
     "modules/workscope-tags/manifest.json",
