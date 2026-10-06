@@ -97,6 +97,15 @@ test('getBadgeDefinition reports RecordNotFound when the exact indexed URI is ab
   runLua({ endpoint: 'getBadgeDefinition', params: { uri }, expectError: 'RecordNotFound:', expectedCalls: 1 });
 });
 
+test('getBadgeDefinition emits explicit JSON null when indexed_at is SQL NULL', () => {
+  const definition = definitionRow(author, 'unindexed', { title: 'Unindexed badge' });
+  delete definition.indexed_at;
+  runLua({
+    endpoint: 'getBadgeDefinition', params: { uri: definition.uri }, queryResults: [[definition], [], []],
+    assertions: `assert(result.badgeDefinition.indexedAt == NULL, 'SQL NULL indexed_at must serialize as JSON null')`,
+  });
+});
+
 test('getBadgeDefinition preserves icon and allowedIssuers while hydrating nullable author sidecars', () => {
   const record = {
     title: 'Verified watershed', badgeType: 'certification', createdAt: '2025-02-01T00:00:00Z',

@@ -33,6 +33,7 @@
       "path": "../../lua/endpoints/getBadgeDefinition.lua",
       "sourcePath": "../../lua/src/getBadgeDefinition.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/recordView.lua",
@@ -52,8 +53,10 @@
       "path": "../../lua/endpoints/listBadgeDefinitions.lua",
       "sourcePath": "../../lua/src/listBadgeDefinitions.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/listValidation.lua",
         "../../lua/shared/listQuery.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua"
