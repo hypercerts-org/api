@@ -45,6 +45,35 @@ test('CLI requires a nonblank admin token and does not fall back to a session co
   }
 });
 
+test('CLI help documents the explicit override and safe default without requiring credentials', () => {
+  const script = fileURLToPath(new URL('../../../tooling/installer.js', import.meta.url));
+  const child = spawnSync(process.execPath, [script, '--help'], {
+    encoding: 'utf8',
+    env: { PATH: process.env.PATH ?? '' },
+  });
+
+  assert.equal(child.status, 0, child.stderr);
+  assert.match(child.stdout, /Usage: pnpm install:api .*--override/);
+  assert.match(child.stdout, /Without it, conflicts are refused before any asset writes/);
+  assert.equal(child.stderr, '');
+});
+
+test('CLI accepts --override and --debug before target validation', () => {
+  const script = fileURLToPath(new URL('../../../tooling/installer.js', import.meta.url));
+  const child = spawnSync(process.execPath, [script, '--override', '--debug'], {
+    encoding: 'utf8',
+    env: {
+      PATH: process.env.PATH ?? '',
+      HAPPYVIEW_BASE_URL: 'not a URL',
+      HAPPYVIEW_ADMIN_TOKEN: 'hv_cli-test-token',
+    },
+  });
+
+  assert.equal(child.status, 1);
+  assert.equal(child.stdout, '');
+  assert.equal(child.stderr, 'HappyView admin URL must be a valid HTTP(S) URL\n');
+});
+
 test('CLI reports an actionable error for a malformed HappyView admin URL', () => {
   const script = fileURLToPath(new URL('../../../tooling/installer.js', import.meta.url));
   const child = spawnSync(process.execPath, [script], {

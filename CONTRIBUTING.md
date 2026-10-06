@@ -51,4 +51,4 @@ For the pinned HappyView release, ordinary Lua `error()` exceptions return HTTP 
 
 ## Operations with external effects
 
-`pnpm install:api` sends admin requests to a HappyView instance and uploads declared assets. Run it only for an explicitly approved target with an approved token. It does not roll back writes if a later asset fails. Review the target and release notes before installing a released bundle; see [api/README.md](api/README.md).
+`pnpm install:api` sends admin requests to a HappyView instance and uploads declared assets. By default, conflicting declared assets stop the install before asset writes; `pnpm install:api --override` explicitly replaces only those conflicts. Override does not bypass source/dependency validation, authentication, or profile resolver-setting requirements, and writes are not rolled back if a later asset fails. Run the installer only for an explicitly approved target with an approved token. Review the target and release notes before installing a released bundle; see [api/README.md](api/README.md).

@@ -147,6 +147,20 @@ test('asset conflicts are all preflighted before resolver setting interaction or
   assert.deepEqual(prompts, []);
 });
 
+test('override does not bypass the resolver setting requirement for a conflicting profile handler', async () => {
+  const admin = fakeAdmin({ conflictId: profileHandlerId });
+  await assert.rejects(() => apply(assets([profileHandlerId]), admin, {
+    override: true,
+    env: {},
+    isTTY: false,
+  }), /HYPERCERTS_HANDLE_RESOLVER_URL is required/);
+
+  assert.deepEqual(admin.events, [
+    ['read', profileHandlerId],
+    ['list-script-variables'],
+  ]);
+});
+
 test('resolver setting permission failures explain the required token scopes', async () => {
   const readAdmin = fakeAdmin({ listFailure: new Error('HappyView GET /admin/script-variables returned HTTP 403') });
   await assert.rejects(() => apply(assets([profileHandlerId]), readAdmin, {
