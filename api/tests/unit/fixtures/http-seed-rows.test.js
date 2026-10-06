@@ -86,6 +86,14 @@ test('shared and discovered HTTP seed rows preserve acknowledgement sidecar isol
       `${rkey} publisher must have no profile or organization sidecars in shared or HTTP fixtures`);
   }
 
+  const measurementWithoutSidecars = rows.find(({ row }) =>
+    row.collection === 'org.hypercerts.context.measurement' && row.rkey === '3jzfcijpj2z2d');
+  assert.ok(measurementWithoutSidecars, 'expected a measurement fixture with absent publisher sidecars');
+  const measurementSidecars = rows.filter(({ row }) => row.did === measurementWithoutSidecars.row.did
+    && ['app.certified.actor.profile', 'app.certified.actor.organization'].includes(row.collection));
+  assert.deepEqual(measurementSidecars.map(({ row }) => row.uri), [],
+    'the measurement fixture without sidecars must not share its publisher DID with another fixture');
+
   const byUri = new Map();
   const byIdentity = new Map();
   const duplicateUris = [];

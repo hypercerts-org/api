@@ -39,6 +39,7 @@ test('the full validation Lexicon closure resolves locally while only selected p
     'org.hypercerts.context.acknowledgement',
     'org.hypercerts.context.attachment',
     'org.hypercerts.context.evaluation',
+    'org.hypercerts.context.measurement',
     'org.hypercerts.defs',
     'org.hypercerts.entity.feature',
     'org.hypercerts.funding.receipt',
@@ -172,6 +173,34 @@ if (hasModule('modules/actor-follow/manifest.json')) test('follow query Lexicons
     listActorFollowers: ['actor'],
     listActorFollowing: ['actor'],
   });
+});
+
+if (hasModule('modules/context-measurements/manifest.json')) test('measurement query Lexicons preserve the typed publisher and full-record contract', async () => {
+  const { lexicons, documents } = await validatePackageLexicons();
+  const byId = new Map(documents.map((document) => [document.id, document]));
+  const getMeasurement = byId.get('org.hypercerts.context.getMeasurement');
+  const listMeasurements = byId.get('org.hypercerts.context.listMeasurements');
+  const view = lexicons.getDefOrThrow('org.hypercerts.context.getMeasurement#measurementView');
+  assert.ok(getMeasurement && listMeasurements);
+  assert.deepEqual(getMeasurement.defs.main.parameters.required, ['uri']);
+  assert.equal(getMeasurement.defs.main.parameters.properties.uri.format, 'at-uri');
+  assert.deepEqual(getMeasurement.defs.main.errors.map(({ name }) => name), ['InvalidRequest', 'RecordNotFound']);
+  assert.equal(getMeasurement.defs.output.properties.measurement.ref, 'lex:org.hypercerts.context.getMeasurement#measurementView');
+  assert.equal(view.properties.author.ref, 'lex:org.hypercerts.api.defs#actorView');
+  assert.equal(view.properties.record.ref, 'lex:org.hypercerts.context.measurement');
+  assert.deepEqual(view.required, ['uri', 'cid', 'indexedAt', 'did', 'author', 'record']);
+  assert.deepEqual(view.nullable, ['indexedAt']);
+
+  const properties = listMeasurements.defs.main.parameters.properties;
+  assert.equal(properties.authors.maxLength, 100);
+  assert.equal(properties.authors.items.format, 'did');
+  assert.equal(properties.subjects.maxLength, 100);
+  assert.equal(properties.subjects.items.format, 'at-uri');
+  assert.deepEqual(properties.sortDirection.enum, ['asc', 'desc']);
+  assert.equal(properties.sortDirection.default, 'desc');
+  assert.deepEqual([properties.limit.minimum, properties.limit.maximum, properties.limit.default], [1, 100, 25]);
+  assert.equal(listMeasurements.defs.output.properties.measurements.items.ref, 'lex:org.hypercerts.context.getMeasurement#measurementView');
+  assert.deepEqual(listMeasurements.defs.main.errors.map(({ name }) => name), ['InvalidRequest']);
 });
 
 test('contributor-information view is owned by getContributorInformation and keeps nullable indexedAt required', async () => {

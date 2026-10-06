@@ -53,7 +53,9 @@
     "getBadgeResponse": "implemented",
     "listBadgeResponses": "implemented",
     "getFeature": "implemented",
-    "listFeatures": "implemented"
+    "listFeatures": "implemented",
+    "getMeasurement": "implemented",
+    "listMeasurements": "implemented"
   },
   "authentication": {
     "decision": "public",
@@ -464,6 +466,18 @@
     {
       "id": "org.hypercerts.entity.listFeatures",
       "path": "lexicons/org.hypercerts.entity.listFeatures.json"
+    },
+    {
+      "id": "org.hypercerts.context.measurement",
+      "packagePath": "lexicons/org/hypercerts/context/measurement.json"
+    },
+    {
+      "id": "org.hypercerts.context.getMeasurement",
+      "path": "lexicons/org.hypercerts.context.getMeasurement.json"
+    },
+    {
+      "id": "org.hypercerts.context.listMeasurements",
+      "path": "lexicons/org.hypercerts.context.listMeasurements.json"
     }
   ],
   "modules": [
@@ -486,7 +500,8 @@
     "modules/contribution/manifest.json",
     "modules/vocab/manifest.json",
     "modules/location/manifest.json",
-    "modules/features/manifest.json"
+    "modules/features/manifest.json",
+    "modules/context-measurements/manifest.json"
   ],
   "luaBuild": {
     "endpointSources": [
