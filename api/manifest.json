@@ -10,7 +10,9 @@
     "getReceipt": "implemented",
     "listReceipts": "implemented",
     "getEvmLink": "implemented",
-    "listEvmLinks": "implemented"
+    "listEvmLinks": "implemented",
+    "getLocation": "implemented",
+    "listLocations": "implemented"
   },
   "authentication": {
     "decision": "public",
@@ -241,12 +243,21 @@
     {
       "id": "app.certified.link.listEvmLinks",
       "path": "lexicons/app.certified.link.listEvmLinks.json"
+    },
+    {
+      "id": "app.certified.location.getLocation",
+      "path": "lexicons/app.certified.location.getLocation.json"
+    },
+    {
+      "id": "app.certified.location.listLocations",
+      "path": "lexicons/app.certified.location.listLocations.json"
     }
   ],
   "modules": [
     "modules/shared/manifest.json",
     "modules/badge-definitions/manifest.json",
     "modules/funding/manifest.json",
-    "modules/evm-links/manifest.json"
+    "modules/evm-links/manifest.json",
+    "modules/location/manifest.json"
   ]
 }

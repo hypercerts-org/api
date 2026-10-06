@@ -10,6 +10,8 @@ The root manifest declares the EVM-link record Lexicon and handlers, so `pnpm bu
 
 EVM-link HTTP coverage exercises `getEvmLink` record retrieval, combined actor/address filters, tied pagination in both directions, nullable sidecar hydration, and named errors. Its fixtures use CBOR-derived record CIDs. See the root [CONTRIBUTING.md](../CONTRIBUTING.md) for local validation commands and HTTP runtime requirements.
 
+For local development, checks, and HTTP runtime test requirements, see [CONTRIBUTING.md](../CONTRIBUTING.md).
+
 ## Install a released API bundle
 
 Releases version the installable API bundle in this package; they do not publish to npm or deploy to a HappyView instance. This public repository's GitHub Releases and tagged source archives are the distribution channel. Choose an `@hypercerts-org/hypercerts-api@X.Y.Z` release tag, clone that snapshot, install its pinned workspace dependencies from the repository root, then run the installer from `api/`:
