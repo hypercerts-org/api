@@ -10,7 +10,9 @@
     "getReceipt": "implemented",
     "listReceipts": "implemented",
     "getWorkscopeTag": "implemented",
-    "listWorkscopeTags": "implemented"
+    "listWorkscopeTags": "implemented",
+    "getLocation": "implemented",
+    "listLocations": "implemented"
   },
   "authentication": {
     "decision": "public",
@@ -241,12 +243,21 @@
     {
       "id": "pub.leaflet.theme.color",
       "packagePath": "lexicons/pub/leaflet/theme/color.json"
+    },
+    {
+      "id": "app.certified.location.getLocation",
+      "path": "lexicons/app.certified.location.getLocation.json"
+    },
+    {
+      "id": "app.certified.location.listLocations",
+      "path": "lexicons/app.certified.location.listLocations.json"
     }
   ],
   "modules": [
     "modules/shared/manifest.json",
     "modules/badge-definitions/manifest.json",
     "modules/funding/manifest.json",
-    "modules/workscope-tags/manifest.json"
+    "modules/workscope-tags/manifest.json",
+    "modules/location/manifest.json"
   ]
 }

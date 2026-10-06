@@ -18,6 +18,8 @@ The handlers require the PostgreSQL HappyView records backend. The shared module
 
 See [CONTRIBUTING.md](../CONTRIBUTING.md) for local validation commands, HTTP test prerequisites and safety boundaries, endpoint coverage, and task-owned resource cleanup.
 
+For local development, checks, and HTTP runtime test requirements, see [CONTRIBUTING.md](../CONTRIBUTING.md).
+
 ## Install a released API bundle
 
 Releases version the installable API bundle in this package; they do not publish to npm or deploy to a HappyView instance. This public repository's GitHub Releases and tagged source archives are the distribution channel. Choose an `@hypercerts-org/hypercerts-api@X.Y.Z` release tag, clone that snapshot, install its pinned workspace dependencies from the repository root, then run the installer from `api/`:
