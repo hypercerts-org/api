@@ -19,6 +19,7 @@
       "path": "../../lua/endpoints/getEvaluation.lua",
       "sourcePath": "../../lua/src/getEvaluation.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/recordView.lua",
@@ -51,8 +52,10 @@
       "path": "../../lua/endpoints/listEvaluations.lua",
       "sourcePath": "../../lua/src/listEvaluations.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/listValidation.lua",
         "../../lua/shared/listQuery.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",
