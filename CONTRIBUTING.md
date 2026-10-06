@@ -15,7 +15,7 @@ pnpm build
 
 ## HTTP runtime tests
 
-`pnpm test:http` runs the suites in `api/tests/http` against the activity, collection, funding, badge-definition and badge-query, rights, location, context attachment and evaluation, profile, organization, graph, and contribution query XRPC endpoints installed from this checkout. These tests exercise real HTTP behavior against PostgreSQL, not only Lua handlers with a fake database.
+`pnpm test:http` runs the suites in `api/tests/http` against the activity, collection, funding, badge-definition and badge-query, rights, vocabulary-tag, location, context attachment and evaluation, profile, organization, graph, and contribution query XRPC endpoints installed from this checkout. These tests exercise real HTTP behavior against PostgreSQL, not only Lua handlers with a fake database.
 
 The local runner requires a local Docker Compose daemon, `psql`, and the pinned PostgreSQL and HappyView images already cached locally. Set `PSQL_PATH` to the absolute path of a trusted `psql` executable:
 
@@ -36,6 +36,7 @@ The HTTP gate fails if it discovers no suites, executes no `node:test` cases, or
 - Rights record retrieval and author-filtered listing, nullable publisher sidecars, repeated-author OR filtering, and stable `createdAt`/URI cursor pagination.
 - Badge-query baseline-aware definition feeds and discriminating filters, exact-version award/response lookups, recipient status, raw response history, bidirectional tied pagination, nullable sidecars, and named runtime errors.
 - Profile and organization queries across all four endpoints for each record type, including batch null results, profile-sidecar hydration, filters, `createdAt`/URI pagination ties, and named errors.
+- Vocabulary-tag exact-URI retrieval, repeated-author filtering and no-match behavior, hydrated and nullable sidecars, bidirectional pagination ties, unsupported-search rejection, and named errors.
 - Context attachment and evaluation retrieval with publisher/evaluator sidecar hydration, list filters, pagination across tied `createdAt` values, and named runtime errors.
 - Activity retrieval with contributor-sidecar hydration, author/organization/contributor/URI filters, tied timestamp pagination, and literal wildcard search.
 - Collection retrieval with CBOR-derived CIDs, location/tag projections, author, organization, item and tag filters, title/shortDescription search, `createdAt`/URI pagination ties, and source-order item pagination with exact-version resolution.
@@ -43,7 +44,7 @@ The HTTP gate fails if it discovers no suites, executes no `node:test` cases, or
 - Contribution exact-record retrieval, repeated publisher filters, tied ascending/descending cursor pagination, nullable publisher sidecars, and named errors.
 - Badge, badge-query, contribution, and rights HTTP fixtures with CBOR-derived record CIDs; contribution DIDs are distinct from baseline fixture identities.
 - Location retrieval with nullable sidecars, repeated author/URI/location-type filters, unsupported-search errors, tied pagination in both directions, malformed/absent `createdAt` handling, and named errors.
-- HTTP fixtures for activity, collection, funding, badge-definition, badge-query, actor, context attachment and evaluation, graph, location, and rights records use CBOR-derived record CIDs.
+- HTTP fixtures for activity, collection, funding, badge-definition, badge-query, actor, context attachment and evaluation, graph, location, rights, and vocabulary-tag records use CBOR-derived record CIDs.
 
 For the pinned HappyView release, ordinary Lua `error()` exceptions return HTTP 500 JSON with `error: "script_error"` and `errorType: "runtime"`; the error name appears in `message`. Negative HTTP tests assert this observed behavior. It is not a statement of the ideal public HTTP status contract, and does not guarantee 4xx mapping for `RecordNotFound` or `InvalidRequest`.
 
