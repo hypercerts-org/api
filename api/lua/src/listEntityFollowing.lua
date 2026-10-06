@@ -1,10 +1,3 @@
-local function list_entity_following_keys_only(values, allowed)
-  for key in pairs(values) do
-    if not allowed[key] then invalid("unknown query parameter: " .. key) end
-  end
-  keys_only(values, allowed)
-end
-
 local function list_entity_following_page(actor, limit, cursor, direction)
   local candidates, subjects_by_row = {}, {}
   local scan_cursor = cursor
@@ -40,7 +33,7 @@ local function list_entity_following_page(actor, limit, cursor, direction)
 end
 
 local function list_entity_following()
-  list_entity_following_keys_only(params, { actor = true, sortDirection = true, limit = true, cursor = true })
+  keys_only(params, { actor = true, sortDirection = true, limit = true, cursor = true }, "unknown query parameter: ")
   local actor = scalar(params, "actor")
   if not actor or not valid_did(actor) then invalid("actor must be a valid DID") end
 
