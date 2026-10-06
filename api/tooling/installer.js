@@ -26,7 +26,7 @@ import { readLexiconSource } from './lexicon-source.js';
 /** @typedef {{ read: (asset: LoadedAsset) => Promise<InstalledAsset | null>; write: (asset: LoadedAsset) => Promise<void>; listScriptVariables?: () => Promise<unknown>; createScriptVariable?: (key: string, value: string) => Promise<void> }} AdminClient */
 /** @typedef {{ changed: string[]; unchanged: string[] }} InstallResult */
 /** @typedef {{ key: string; status: 'exists-unverified' | 'created' }} ResolverSetting */
-/** @typedef {{ env?: Record<string, string | undefined>; isTTY?: boolean; ask?: (prompt: string) => Promise<string>; onNotice?: (message: string) => void; debug?: boolean; override?: boolean }} ApplyAssetsOptions */
+/** @typedef {{ env?: Record<string, string | undefined>; isTTY?: boolean; ask?: (prompt: string) => Promise<string>; onNotice?: (message: string) => void; onProgress?: (message: string) => void; debug?: boolean; override?: boolean }} ApplyAssetsOptions */
 /** @typedef {InstallResult & { resolverSetting?: ResolverSetting }} ApplyAssetsResult */
 /** @typedef {Error & { completed: string[]; remaining: string[]; resolverSetting?: ResolverSetting }} PartialInstallError */
 
@@ -223,9 +223,10 @@ export function orderAssets(assets) {
 }
 
 /** @param {LoadedAsset[]} ordered @param {AdminClient} client @param {ApplyAssetsOptions} [options] @returns {Promise<AssetInstallState[]>} */
-async function preflightAssets(ordered, client, { debug = false, override = false } = {}) {
+async function preflightAssets(ordered, client, { debug = false, override = false, onProgress } = {}) {
   const states = [];
-  for (const asset of ordered) {
+  for (const [index, asset] of ordered.entries()) {
+    onProgress?.(`[check ${index + 1}/${ordered.length}] ${asset.id}`);
     const installed = await client.read(asset);
     const state = compareAsset(asset, installed);
     if (state === 'conflict' && !override) {
@@ -237,12 +238,16 @@ async function preflightAssets(ordered, client, { debug = false, override = fals
   return states;
 }
 
-/** @param {AssetInstallState[]} states @param {AdminClient} client @returns {Promise<InstallResult>} */
-async function writeAssets(states, client) {
+/** @param {AssetInstallState[]} states @param {AdminClient} client @param {(message: string) => void} [onProgress] @returns {Promise<InstallResult>} */
+async function writeAssets(states, client, onProgress) {
   const changed = [];
+  const total = states.filter(({ state }) => state !== 'unchanged').length;
+  let progress = 0;
   for (let i = 0; i < states.length; i++) {
     const { asset, state } = states[i];
     if (state === 'unchanged') continue;
+    progress++;
+    onProgress?.(`[install ${progress}/${total}] ${asset.id}`);
     try {
       await client.write(asset);
       changed.push(asset.id);
@@ -346,7 +351,7 @@ export async function applyAssets(assets, client, options = {}) {
   const ordered = orderAssets(assets);
   const states = await preflightAssets(ordered, client, options);
   if (!ordered.some(({ id }) => PROFILE_LOOKUP_ASSET_IDS.has(id))) {
-    return writeAssets(states, client);
+    return writeAssets(states, client, options.onProgress);
   }
 
   const resolverSetting = await installResolverSetting(client, {
@@ -356,7 +361,7 @@ export async function applyAssets(assets, client, options = {}) {
     onNotice: options.onNotice ?? ((message) => console.log(message)),
   });
   try {
-    const result = await writeAssets(states, client);
+    const result = await writeAssets(states, client, options.onProgress);
     return { ...result, resolverSetting };
   } catch (cause) {
     if (resolverSetting.status !== 'created') throw cause;
@@ -680,7 +685,12 @@ async function main() {
   const { baseUrl: rawBaseUrl, token } = await resolveInstallConfig();
   const client = createAdminClient({ baseUrl: rawBaseUrl, token });
   const { assets } = await loadAssets(fileURLToPath(new URL('../manifest.json', import.meta.url)));
-  const result = await applyAssets(assets, client, { debug, override });
+  const result = await applyAssets(assets, client, {
+    debug,
+    override,
+    // Keep progress out of the JSON result on stdout.
+    onProgress: (message) => console.error(message),
+  });
   console.log(JSON.stringify(result, null, 2));
 }
 

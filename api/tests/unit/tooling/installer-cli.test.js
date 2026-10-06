@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
+import { createServer } from 'node:http';
 import { copyFile, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -99,6 +100,57 @@ test('importing the installer does not run the CLI or require configuration', ()
   assert.equal(child.status, 0, child.stderr);
   assert.equal(child.stdout, '');
   assert.equal(child.stderr, '');
+});
+
+test('CLI writes per-asset progress to stderr and keeps its JSON result on stdout', async () => {
+  const server = createServer((request, response) => {
+    if (request.method === 'GET' && request.url === '/admin/script-variables') {
+      response.writeHead(200, { 'content-type': 'application/json' });
+      response.end('[]');
+    } else if (request.method === 'GET') {
+      response.writeHead(404).end();
+    } else {
+      response.writeHead(204).end();
+    }
+  });
+  await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
+
+  try {
+    const address = server.address();
+    const script = fileURLToPath(new URL('../../../tooling/installer.js', import.meta.url));
+    const child = spawn(process.execPath, [script], {
+      env: {
+        ...process.env,
+        HAPPYVIEW_BASE_URL: `http://127.0.0.1:${address.port}`,
+        HAPPYVIEW_ADMIN_TOKEN: 'hv_cli-test-token',
+        HYPERCERTS_HANDLE_RESOLVER_URL: 'https://resolver.example',
+      },
+    });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.setEncoding('utf8').on('data', (chunk) => { stdout += chunk; });
+    child.stderr.setEncoding('utf8').on('data', (chunk) => { stderr += chunk; });
+    const { code, signal } = await new Promise((resolve) => {
+      child.once('close', (exitCode, childSignal) => resolve({ code: exitCode, signal: childSignal }));
+    });
+
+    assert.equal(code, 0, `signal: ${signal}; stderr: ${stderr}`);
+    const result = JSON.parse(stdout);
+    const progress = stderr.trimEnd().split('\n');
+    const checks = progress.filter((line) => line.startsWith('[check '));
+    const installs = progress.filter((line) => line.startsWith('[install '));
+    const total = result.changed.length + result.unchanged.length;
+
+    assert.equal(checks.length, total);
+    assert.equal(installs.length, result.changed.length);
+    assert.match(checks[0], new RegExp(`^\\[check 1/${total}\\] \\S+$`));
+    assert.match(installs[0], new RegExp(`^\\[install 1/${result.changed.length}\\] \\S+$`));
+  } finally {
+    await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  }
 });
 
 test('CLI main-module detection works when the checkout path contains #', async () => {

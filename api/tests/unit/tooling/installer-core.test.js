@@ -26,6 +26,34 @@ test('installer preflights every asset before writing and refuses conflicts', as
   assert.deepEqual(written, []);
 });
 
+test('installer reports compact per-asset check and install progress', async () => {
+  const events = [];
+  const assets = [
+    { id: 'existing', kind: 'script', config: {}, body: 'same' },
+    { id: 'new', kind: 'script', config: {}, body: 'incoming' },
+  ];
+
+  const result = await applyAssets(assets, {
+    read: async ({ id }) => {
+      events.push(`read:${id}`);
+      return id === 'existing' ? { config: {}, body: 'same' } : null;
+    },
+    write: async ({ id }) => { events.push(`write:${id}`); },
+  }, {
+    onProgress: (message) => events.push(`progress:${message}`),
+  });
+
+  assert.deepEqual(events, [
+    'progress:[check 1/2] existing',
+    'read:existing',
+    'progress:[check 2/2] new',
+    'read:new',
+    'progress:[install 1/1] new',
+    'write:new',
+  ]);
+  assert.deepEqual(result, { changed: ['new'], unchanged: ['existing'] });
+});
+
 test('override replaces differing declared assets only after preflighting the complete bundle', async () => {
   const lexicon = {
     id: 'org.example.query',
