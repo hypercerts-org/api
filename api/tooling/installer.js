@@ -126,7 +126,7 @@ function validateAdminUrl(baseUrl) {
 
 /** @param {URL} target @param {string} token @param {typeof globalThis.fetch} fetchImpl */
 function createAdminRequest(target, token, fetchImpl) {
-  return /** @param {'GET' | 'POST'} method @param {string} route @param {unknown} [body] */ async function request(method, route, body) {
+  return /** @param {'GET' | 'POST'} method @param {string} route @param {unknown} [body] @param {{ readJson?: boolean }} [options] */ async function request(method, route, body, { readJson = true } = {}) {
     let response;
     try {
       response = await fetchImpl(new URL(route, target), {
@@ -140,7 +140,16 @@ function createAdminRequest(target, token, fetchImpl) {
     }
     if (method === 'GET' && response.status === 404) return null;
     if (!response.ok) throw new Error(`HappyView ${method} ${route} returned HTTP ${response.status}`);
-    return response.status === 204 ? null : response.json();
+    if (response.status === 204) return null;
+    if (!readJson) {
+      try {
+        await response.body?.cancel();
+      } catch {
+        // The successful status confirms the write; its response body is unused.
+      }
+      return null;
+    }
+    return response.json();
   };
 }
 
@@ -173,9 +182,9 @@ export function createAdminClient({ baseUrl, token, fetchImpl = globalThis.fetch
           target_collection: asset.config.target_collection,
           action: asset.config.action,
           token_cost: asset.config.token_cost,
-        });
+        }, { readJson: false });
       } else {
-        await request('POST', '/admin/scripts', { id: asset.id, script_type: asset.config.script_type, description: asset.config.description, body: asset.body });
+        await request('POST', '/admin/scripts', { id: asset.id, script_type: asset.config.script_type, description: asset.config.description, body: asset.body }, { readJson: false });
       }
     },
     async listScriptVariables() {
@@ -183,7 +192,7 @@ export function createAdminClient({ baseUrl, token, fetchImpl = globalThis.fetch
     },
     /** @param {string} key @param {string} value */
     async createScriptVariable(key, value) {
-      await request('POST', '/admin/script-variables', { key, value });
+      await request('POST', '/admin/script-variables', { key, value }, { readJson: false });
     },
   };
 }
@@ -238,6 +247,18 @@ async function preflightAssets(ordered, client, { debug = false, override = fals
   return states;
 }
 
+/** @param {LoadedAsset} asset @param {AdminClient} client @returns {Promise<string | null>} */
+async function verifyFailedWrite(asset, client) {
+  try {
+    const installed = await client.read(asset);
+    if (compareAsset(asset, installed) === 'unchanged') return null;
+    return 'read-back did not confirm the requested asset';
+  } catch (error_) {
+    const detail = error_ instanceof Error ? error_.message : 'unknown read-back failure';
+    return `read-back failed: ${detail}`;
+  }
+}
+
 /** @param {AssetInstallState[]} states @param {AdminClient} client @param {(message: string) => void} [onProgress] @returns {Promise<InstallResult>} */
 async function writeAssets(states, client, onProgress) {
   const changed = [];
@@ -252,8 +273,14 @@ async function writeAssets(states, client, onProgress) {
       await client.write(asset);
       changed.push(asset.id);
     } catch (cause) {
+      // Confirm this outcome before advancing to the next dependency-ordered write.
+      const verification = await verifyFailedWrite(asset, client);
+      if (verification === null) {
+        changed.push(asset.id);
+        continue;
+      }
       const reason = cause instanceof Error ? cause.message : 'unknown write failure';
-      const error = /** @type {PartialInstallError} */ (new Error(`Install partially failed at ${asset.id}: ${reason}; completed: ${changed.join(', ') || '(none)'}; remaining: ${states.slice(i).filter((entry) => entry.state !== 'unchanged').map((entry) => entry.asset.id).join(', ')}`, { cause }));
+      const error = /** @type {PartialInstallError} */ (new Error(`Install partially failed at ${asset.id}: ${reason}; ${verification}; completed: ${changed.join(', ') || '(none)'}; remaining: ${states.slice(i).filter((entry) => entry.state !== 'unchanged').map((entry) => entry.asset.id).join(', ')}`, { cause }));
       error.completed = changed;
       error.remaining = states.slice(i).filter((entry) => entry.state !== 'unchanged').map((entry) => entry.asset.id);
       throw error;

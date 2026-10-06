@@ -152,7 +152,7 @@ The shared module registers the pinned rights-record Lexicon with backfill enabl
 
 The installer validates all local assets and dependencies before making admin requests, then checks installed versions before writing. By default, any conflicting declared asset stops the install before asset writes. Pass `--override` to replace only conflicting assets declared by this bundle; it does not affect undeclared assets or bypass source/dependency validation, admin authentication, or the profile resolver-setting requirements. Use `--debug` to include incoming and installed values in conflict errors, or `--help` to list the options.
 
-`pnpm install:api` prints a short progress line for each asset check and each required install to stderr; its final JSON summary remains on stdout. It contacts a HappyView instance and uploads declared assets, so do not run it without an explicitly approved target and token. Writes are not rolled back if a later asset fails.
+`pnpm install:api` prints a short progress line for each asset check and each required install to stderr; its final JSON summary remains on stdout. It contacts a HappyView instance and uploads declared assets, so do not run it without an explicitly approved target and token. If a write request errors, the installer checks the installed asset and treats it as complete only if it matches the bundle. Writes are not rolled back if a later asset fails.
 
 Fixture SQL helpers require an explicit disposable loopback database opt-in. Unit tests use local fixture data and fake process/network adapters; they do not seed a database or call an external HappyView service.
 
