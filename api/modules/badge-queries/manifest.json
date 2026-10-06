@@ -1,0 +1,161 @@
+{
+  "assets": [
+    {
+      "id": "app.certified.badge.searchBadgeDefinitions",
+      "kind": "lexicon",
+      "path": "../../lexicons/app.certified.badge.searchBadgeDefinitions.json",
+      "config": {
+        "backfill": false,
+        "target_collection": "app.certified.badge.definition"
+      },
+      "dependsOn": [
+        "app.certified.badge.definition",
+        "org.hypercerts.api.defs"
+      ]
+    },
+    {
+      "id": "app.certified.badge.getBadgeAward",
+      "kind": "lexicon",
+      "path": "../../lexicons/app.certified.badge.getBadgeAward.json",
+      "config": {
+        "backfill": false,
+        "target_collection": "app.certified.badge.award"
+      },
+      "dependsOn": [
+        "app.certified.badge.award",
+        "app.certified.badge.definition",
+        "app.certified.badge.response",
+        "org.hypercerts.api.defs"
+      ]
+    },
+    {
+      "id": "app.certified.badge.listBadgeAwards",
+      "kind": "lexicon",
+      "path": "../../lexicons/app.certified.badge.listBadgeAwards.json",
+      "config": {
+        "backfill": false,
+        "target_collection": "app.certified.badge.award"
+      },
+      "dependsOn": ["app.certified.badge.getBadgeAward"]
+    },
+    {
+      "id": "app.certified.badge.getBadgeResponse",
+      "kind": "lexicon",
+      "path": "../../lexicons/app.certified.badge.getBadgeResponse.json",
+      "config": {
+        "backfill": false,
+        "target_collection": "app.certified.badge.response"
+      },
+      "dependsOn": [
+        "app.certified.badge.response",
+        "org.hypercerts.api.defs"
+      ]
+    },
+    {
+      "id": "app.certified.badge.listBadgeResponses",
+      "kind": "lexicon",
+      "path": "../../lexicons/app.certified.badge.listBadgeResponses.json",
+      "config": {
+        "backfill": false,
+        "target_collection": "app.certified.badge.response"
+      },
+      "dependsOn": ["app.certified.badge.getBadgeResponse"]
+    },
+    {
+      "id": "xrpc.query:app.certified.badge.searchBadgeDefinitions",
+      "kind": "script",
+      "path": "../../lua/endpoints/searchBadgeDefinitions.lua",
+      "sourcePath": "../../lua/src/searchBadgeDefinitions.lua",
+      "sharedSourcePaths": [
+        "../../lua/shared/query.lua",
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/listValidation.lua",
+        "../../lua/shared/listQuery.lua",
+        "../../lua/shared/recordView.lua",
+        "../../lua/shared/actorView.lua"
+      ],
+      "config": {
+        "script_type": "lua",
+        "description": "Badge definition search handler"
+      },
+      "dependsOn": ["app.certified.badge.searchBadgeDefinitions"]
+    },
+    {
+      "id": "xrpc.query:app.certified.badge.getBadgeAward",
+      "kind": "script",
+      "path": "../../lua/endpoints/getBadgeAward.lua",
+      "sourcePath": "../../lua/src/getBadgeAward.lua",
+      "sharedSourcePaths": [
+        "../../lua/shared/query.lua",
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/recordView.lua",
+        "../../lua/shared/actorView.lua"
+      ],
+      "config": {
+        "script_type": "lua",
+        "description": "Badge award lookup handler"
+      },
+      "dependsOn": ["app.certified.badge.getBadgeAward"]
+    },
+    {
+      "id": "xrpc.query:app.certified.badge.listBadgeAwards",
+      "kind": "script",
+      "path": "../../lua/endpoints/listBadgeAwards.lua",
+      "sourcePath": "../../lua/src/listBadgeAwards.lua",
+      "sharedSourcePaths": [
+        "../../lua/shared/query.lua",
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/listValidation.lua",
+        "../../lua/shared/listQuery.lua",
+        "../../lua/shared/recordView.lua",
+        "../../lua/shared/actorView.lua"
+      ],
+      "config": {
+        "script_type": "lua",
+        "description": "Badge award listing handler"
+      },
+      "dependsOn": ["app.certified.badge.listBadgeAwards"]
+    },
+    {
+      "id": "xrpc.query:app.certified.badge.getBadgeResponse",
+      "kind": "script",
+      "path": "../../lua/endpoints/getBadgeResponse.lua",
+      "sourcePath": "../../lua/src/getBadgeResponse.lua",
+      "sharedSourcePaths": [
+        "../../lua/shared/query.lua",
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/recordView.lua",
+        "../../lua/shared/actorView.lua"
+      ],
+      "config": {
+        "script_type": "lua",
+        "description": "Badge response lookup handler"
+      },
+      "dependsOn": ["app.certified.badge.getBadgeResponse"]
+    },
+    {
+      "id": "xrpc.query:app.certified.badge.listBadgeResponses",
+      "kind": "script",
+      "path": "../../lua/endpoints/listBadgeResponses.lua",
+      "sourcePath": "../../lua/src/listBadgeResponses.lua",
+      "sharedSourcePaths": [
+        "../../lua/shared/query.lua",
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/listValidation.lua",
+        "../../lua/shared/listQuery.lua",
+        "../../lua/shared/recordView.lua",
+        "../../lua/shared/actorView.lua"
+      ],
+      "config": {
+        "script_type": "lua",
+        "description": "Badge response listing handler"
+      },
+      "dependsOn": ["app.certified.badge.listBadgeResponses"]
+    }
+  ]
+}

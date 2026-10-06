@@ -1,6 +1,12 @@
 # Hypercerts API workspace
 
-This checkout combines the shared HappyView installer, pinned Lexicon dependencies, reusable Lua projections, fixtures, and public query modules for actor profiles and organizations, activity, badge definitions, collections, context attachments and evaluations, actor and entity follows, recent follows, funding receipts, locations, work-scope tags, and contribution records. `api/manifest.json` is authoritative for the assets installed by this checkout.
+This repository combines the shared HappyView installer, pinned Lexicon dependencies, reusable Lua projections, fixtures, offline checks, and independently owned capability modules. This composed checkout includes public query modules for actor profiles and organizations, activity, badge definitions and queries, collections, context attachments and evaluations, actor and entity follows, recent follows, funding receipts, locations, work-scope tags, and contribution records.
+
+- `tooling/api-foundation` owns the shared installer, pinned schemas, projections, fixtures, and offline checks.
+- Capability branches add their independently owned endpoint modules.
+- `tooling/docs` adds the endpoint explorer and full schema snapshots.
+
+`api/manifest.json` is authoritative for the API modules included in this checkout. The docs explorer is present on the docs branch.
 
 ```sh
 pnpm install --frozen-lockfile
@@ -8,7 +14,7 @@ pnpm check
 pnpm build
 ```
 
-`pnpm check` validates generated handlers, lint, types, and unit tests. `pnpm build` refreshes declared Lua handler bundles. These checks do not deploy or contact a HappyView instance. `pnpm install:api` sends admin requests and requires an explicitly approved target and token. See [CONTRIBUTING.md](CONTRIBUTING.md) for local development and HTTP test guidance, and [api/README.md](api/README.md) for API bundle and release installation details.
+`pnpm check` validates generated handlers, lint, types, and unit tests. `pnpm build` refreshes declared Lua handler bundles. These checks do not deploy or contact a HappyView instance. `pnpm install:api` sends admin requests and requires an explicitly approved target and token. See [CONTRIBUTING.md](CONTRIBUTING.md) for local development and HTTP test guidance, and [api/README.md](api/README.md) for API bundle, badge-query, and release installation details.
 
 ## Installed HTTP endpoint inventory
 
@@ -18,6 +24,7 @@ pnpm build
 | --- | --- | --- |
 | Funding receipts | `org.hypercerts.funding.getReceipt`, `org.hypercerts.funding.listReceipts` | Record retrieval, repeated filters, stable pagination, and named runtime errors |
 | Badge definitions | `app.certified.badge.getBadgeDefinition`, `app.certified.badge.listBadgeDefinitions` | Record/CID retrieval, publisher sidecars, filters, tied pagination, and named runtime errors |
+| Badge queries | `app.certified.badge.searchBadgeDefinitions`, `app.certified.badge.getBadgeAward`, `app.certified.badge.listBadgeAwards`, `app.certified.badge.getBadgeResponse`, `app.certified.badge.listBadgeResponses` | Baseline-aware definition search, exact-version award/response lookups, recipient status, raw response history, filters, and cursor pagination |
 | Work-scope tags | `org.hypercerts.workscope.getWorkscopeTag`, `org.hypercerts.workscope.listWorkscopeTags` | Exact-URI retrieval, author filters, hydrated and null sidecars, middle-position `indexedAt` fallback, tied pagination in both directions, and named runtime errors |
 | Contributions | `org.hypercerts.claim.getContribution`, `org.hypercerts.claim.listContributions` | Exact-record retrieval, publisher filters, hydrated and null sidecars, createdAt/indexedAt fallback, tied pagination in both directions, and named runtime errors |
 | Actor profiles | `app.certified.actor.getProfile`, `app.certified.actor.getProfiles`, `app.certified.actor.listProfiles`, `app.certified.actor.searchProfiles` | Single and batch retrieval, batch null results, profile-sidecar hydration, filters, `createdAt`/URI pagination ties, and named errors |
