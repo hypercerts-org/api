@@ -26,7 +26,7 @@ import { readLexiconSource } from './lexicon-source.js';
 /** @typedef {{ read: (asset: LoadedAsset) => Promise<InstalledAsset | null>; write: (asset: LoadedAsset) => Promise<void>; listScriptVariables?: () => Promise<unknown>; createScriptVariable?: (key: string, value: string) => Promise<void> }} AdminClient */
 /** @typedef {{ changed: string[]; unchanged: string[] }} InstallResult */
 /** @typedef {{ key: string; status: 'exists-unverified' | 'created' }} ResolverSetting */
-/** @typedef {{ env?: Record<string, string | undefined>; isTTY?: boolean; ask?: (prompt: string) => Promise<string>; onNotice?: (message: string) => void; debug?: boolean; override?: boolean }} ApplyAssetsOptions */
+/** @typedef {{ env?: Record<string, string | undefined>; isTTY?: boolean; ask?: (prompt: string) => Promise<string>; onNotice?: (message: string) => void; onProgress?: (message: string) => void; debug?: boolean; override?: boolean }} ApplyAssetsOptions */
 /** @typedef {InstallResult & { resolverSetting?: ResolverSetting }} ApplyAssetsResult */
 /** @typedef {Error & { completed: string[]; remaining: string[]; resolverSetting?: ResolverSetting }} PartialInstallError */
 
@@ -126,7 +126,7 @@ function validateAdminUrl(baseUrl) {
 
 /** @param {URL} target @param {string} token @param {typeof globalThis.fetch} fetchImpl */
 function createAdminRequest(target, token, fetchImpl) {
-  return /** @param {'GET' | 'POST'} method @param {string} route @param {unknown} [body] */ async function request(method, route, body) {
+  return /** @param {'GET' | 'POST'} method @param {string} route @param {unknown} [body] @param {{ readJson?: boolean }} [options] */ async function request(method, route, body, { readJson = true } = {}) {
     let response;
     try {
       response = await fetchImpl(new URL(route, target), {
@@ -140,7 +140,16 @@ function createAdminRequest(target, token, fetchImpl) {
     }
     if (method === 'GET' && response.status === 404) return null;
     if (!response.ok) throw new Error(`HappyView ${method} ${route} returned HTTP ${response.status}`);
-    return response.status === 204 ? null : response.json();
+    if (response.status === 204) return null;
+    if (!readJson) {
+      try {
+        await response.body?.cancel();
+      } catch {
+        // The successful status confirms the write; its response body is unused.
+      }
+      return null;
+    }
+    return response.json();
   };
 }
 
@@ -173,9 +182,9 @@ export function createAdminClient({ baseUrl, token, fetchImpl = globalThis.fetch
           target_collection: asset.config.target_collection,
           action: asset.config.action,
           token_cost: asset.config.token_cost,
-        });
+        }, { readJson: false });
       } else {
-        await request('POST', '/admin/scripts', { id: asset.id, script_type: asset.config.script_type, description: asset.config.description, body: asset.body });
+        await request('POST', '/admin/scripts', { id: asset.id, script_type: asset.config.script_type, description: asset.config.description, body: asset.body }, { readJson: false });
       }
     },
     async listScriptVariables() {
@@ -183,7 +192,7 @@ export function createAdminClient({ baseUrl, token, fetchImpl = globalThis.fetch
     },
     /** @param {string} key @param {string} value */
     async createScriptVariable(key, value) {
-      await request('POST', '/admin/script-variables', { key, value });
+      await request('POST', '/admin/script-variables', { key, value }, { readJson: false });
     },
   };
 }
@@ -223,9 +232,10 @@ export function orderAssets(assets) {
 }
 
 /** @param {LoadedAsset[]} ordered @param {AdminClient} client @param {ApplyAssetsOptions} [options] @returns {Promise<AssetInstallState[]>} */
-async function preflightAssets(ordered, client, { debug = false, override = false } = {}) {
+async function preflightAssets(ordered, client, { debug = false, override = false, onProgress } = {}) {
   const states = [];
-  for (const asset of ordered) {
+  for (const [index, asset] of ordered.entries()) {
+    onProgress?.(`[check ${index + 1}/${ordered.length}] ${asset.id}`);
     const installed = await client.read(asset);
     const state = compareAsset(asset, installed);
     if (state === 'conflict' && !override) {
@@ -237,18 +247,40 @@ async function preflightAssets(ordered, client, { debug = false, override = fals
   return states;
 }
 
-/** @param {AssetInstallState[]} states @param {AdminClient} client @returns {Promise<InstallResult>} */
-async function writeAssets(states, client) {
+/** @param {LoadedAsset} asset @param {AdminClient} client @returns {Promise<string | null>} */
+async function verifyFailedWrite(asset, client) {
+  try {
+    const installed = await client.read(asset);
+    if (compareAsset(asset, installed) === 'unchanged') return null;
+    return 'read-back did not confirm the requested asset';
+  } catch (error_) {
+    const detail = error_ instanceof Error ? error_.message : 'unknown read-back failure';
+    return `read-back failed: ${detail}`;
+  }
+}
+
+/** @param {AssetInstallState[]} states @param {AdminClient} client @param {(message: string) => void} [onProgress] @returns {Promise<InstallResult>} */
+async function writeAssets(states, client, onProgress) {
   const changed = [];
+  const total = states.filter(({ state }) => state !== 'unchanged').length;
+  let progress = 0;
   for (let i = 0; i < states.length; i++) {
     const { asset, state } = states[i];
     if (state === 'unchanged') continue;
+    progress++;
+    onProgress?.(`[install ${progress}/${total}] ${asset.id}`);
     try {
       await client.write(asset);
       changed.push(asset.id);
     } catch (cause) {
+      // Confirm this outcome before advancing to the next dependency-ordered write.
+      const verification = await verifyFailedWrite(asset, client);
+      if (verification === null) {
+        changed.push(asset.id);
+        continue;
+      }
       const reason = cause instanceof Error ? cause.message : 'unknown write failure';
-      const error = /** @type {PartialInstallError} */ (new Error(`Install partially failed at ${asset.id}: ${reason}; completed: ${changed.join(', ') || '(none)'}; remaining: ${states.slice(i).filter((entry) => entry.state !== 'unchanged').map((entry) => entry.asset.id).join(', ')}`, { cause }));
+      const error = /** @type {PartialInstallError} */ (new Error(`Install partially failed at ${asset.id}: ${reason}; ${verification}; completed: ${changed.join(', ') || '(none)'}; remaining: ${states.slice(i).filter((entry) => entry.state !== 'unchanged').map((entry) => entry.asset.id).join(', ')}`, { cause }));
       error.completed = changed;
       error.remaining = states.slice(i).filter((entry) => entry.state !== 'unchanged').map((entry) => entry.asset.id);
       throw error;
@@ -346,7 +378,7 @@ export async function applyAssets(assets, client, options = {}) {
   const ordered = orderAssets(assets);
   const states = await preflightAssets(ordered, client, options);
   if (!ordered.some(({ id }) => PROFILE_LOOKUP_ASSET_IDS.has(id))) {
-    return writeAssets(states, client);
+    return writeAssets(states, client, options.onProgress);
   }
 
   const resolverSetting = await installResolverSetting(client, {
@@ -356,7 +388,7 @@ export async function applyAssets(assets, client, options = {}) {
     onNotice: options.onNotice ?? ((message) => console.log(message)),
   });
   try {
-    const result = await writeAssets(states, client);
+    const result = await writeAssets(states, client, options.onProgress);
     return { ...result, resolverSetting };
   } catch (cause) {
     if (resolverSetting.status !== 'created') throw cause;
@@ -680,7 +712,12 @@ async function main() {
   const { baseUrl: rawBaseUrl, token } = await resolveInstallConfig();
   const client = createAdminClient({ baseUrl: rawBaseUrl, token });
   const { assets } = await loadAssets(fileURLToPath(new URL('../manifest.json', import.meta.url)));
-  const result = await applyAssets(assets, client, { debug, override });
+  const result = await applyAssets(assets, client, {
+    debug,
+    override,
+    // Keep progress out of the JSON result on stdout.
+    onProgress: (message) => console.error(message),
+  });
   console.log(JSON.stringify(result, null, 2));
 }
 
