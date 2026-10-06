@@ -42,6 +42,7 @@
       "type": "object",
       "description": "Full indexed badge-definition record with its publisher actor.",
       "required": ["uri", "cid", "indexedAt", "did", "author", "record"],
+      "nullable": ["indexedAt"],
       "properties": {
         "uri": { "type": "string", "format": "at-uri" },
         "cid": { "type": "string", "format": "cid" },
