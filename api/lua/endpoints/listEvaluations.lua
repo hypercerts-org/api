@@ -310,7 +310,7 @@ local function decode_evaluation_cursor(token, direction)
   return value
 end
 
-local function evaluation_list_query(authors, evaluators, subjects, limit, cursor, direction)
+local function evaluation_list_filters(authors, evaluators, subjects)
   local where, values = { "evaluation.collection = $1" }, { EVALUATION }
   if authors then
     if #authors == 0 then
@@ -335,43 +335,58 @@ local function evaluation_list_query(authors, evaluators, subjects, limit, curso
         table.concat(bind_evaluation_values(values, subjects), ", ") .. ")"
     end
   end
+  return where, values
+end
+
+local function evaluation_list_page_query(values, where, cursor, limit, direction)
+  local page_values, page_where = {}, {}
+  for _, value in ipairs(values) do page_values[#page_values + 1] = value end
+  for _, clause in ipairs(where) do page_where[#page_where + 1] = clause end
+  if cursor then
+    page_values[#page_values + 1] = cursor.t
+    local timestamp = "$" .. #page_values
+    page_values[#page_values + 1] = cursor.u
+    local uri = "$" .. #page_values
+    local operator = direction == "asc" and ">" or "<"
+    page_where[#page_where + 1] = "(sorted.sort_at, evaluation.uri) " .. operator ..
+      " ((" .. timestamp .. ")::timestamptz, " .. uri .. ")"
+  end
+
+  page_values[#page_values + 1] = limit + 1
+  local ordering = direction == "asc" and "ASC" or "DESC"
+  local sql = "SELECT evaluation.uri, evaluation.did, evaluation.cid, " ..
+    "evaluation.indexed_at::text AS indexed_at, evaluation.record::text AS record, " ..
+    "to_char(sorted.sort_at AT TIME ZONE 'UTC', " ..
+    "'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp " ..
+    "FROM happyview_records AS evaluation CROSS JOIN LATERAL (SELECT " ..
+    evaluation_sort_expression() .. " AS sort_at) AS sorted WHERE " .. table.concat(page_where, " AND ") ..
+    " ORDER BY sorted.sort_at " .. ordering .. ", evaluation.uri " .. ordering .. " LIMIT $" .. #page_values
+  return sql, page_values
+end
+
+local function evaluation_list_scan_batch(rows, views, limit)
+  local last_scanned
+  for index = 1, math.min(#rows, limit) do
+    local row = rows[index]
+    last_scanned = row
+    local view = evaluation_view(row, true)
+    if view then views[#views + 1] = view end
+    if #views == limit then break end
+  end
+  return last_scanned, #views == limit
+end
+
+local function evaluation_list_query(authors, evaluators, subjects, limit, cursor, direction)
+  local where, values = evaluation_list_filters(authors, evaluators, subjects)
   local views, next_cursor = {}, nil
   -- Bound work when many indexed rows are unrepresentable; the cursor lets callers continue.
   for batch = 1, 10 do
-    local page_values, page_where = {}, {}
-    for _, value in ipairs(values) do page_values[#page_values + 1] = value end
-    for _, clause in ipairs(where) do page_where[#page_where + 1] = clause end
-    if cursor then
-      page_values[#page_values + 1] = cursor.t
-      local timestamp = "$" .. #page_values
-      page_values[#page_values + 1] = cursor.u
-      local uri = "$" .. #page_values
-      local operator = direction == "asc" and ">" or "<"
-      page_where[#page_where + 1] = "(sorted.sort_at, evaluation.uri) " .. operator ..
-        " ((" .. timestamp .. ")::timestamptz, " .. uri .. ")"
-    end
-
-    page_values[#page_values + 1] = limit + 1
-    local ordering = direction == "asc" and "ASC" or "DESC"
-    local sql = "SELECT evaluation.uri, evaluation.did, evaluation.cid, " ..
-      "evaluation.indexed_at::text AS indexed_at, evaluation.record::text AS record, " ..
-      "to_char(sorted.sort_at AT TIME ZONE 'UTC', " ..
-      "'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp " ..
-      "FROM happyview_records AS evaluation CROSS JOIN LATERAL (SELECT " ..
-      evaluation_sort_expression() .. " AS sort_at) AS sorted WHERE " .. table.concat(page_where, " AND ") ..
-      " ORDER BY sorted.sort_at " .. ordering .. ", evaluation.uri " .. ordering .. " LIMIT $" .. #page_values
+    local sql, page_values = evaluation_list_page_query(values, where, cursor, limit, direction)
     local rows = evaluation_query(sql, page_values)
-    local last_scanned
-    for index = 1, math.min(#rows, limit) do
-      local row = rows[index]
-      last_scanned = row
-      local view = evaluation_view(row, true)
-      if view then views[#views + 1] = view end
-      if #views == limit then break end
-    end
+    local last_scanned, limit_reached = evaluation_list_scan_batch(rows, views, limit)
     if not last_scanned then break end
     cursor = { t = last_scanned.sort_timestamp, u = last_scanned.uri }
-    if #views == limit then
+    if limit_reached then
       if #rows > limit then
         next_cursor = cursor_encode({ v = 1, d = direction, t = cursor.t, u = cursor.u })
       end
