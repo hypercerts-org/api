@@ -54,7 +54,7 @@ function duplicateDetails(previous, current) {
   };
 }
 
-test('shared and recursively discovered HTTP seed rows have unique identities and CBOR-derived CIDs', async () => {
+test('shared and discovered HTTP seed rows have unique identities, isolated acknowledgement sidecars, and CBOR-derived CIDs', async () => {
   const rows = [
     ...[
       ...locationRecords, ...profileRecords, ...organizationRecords,
@@ -63,6 +63,16 @@ test('shared and recursively discovered HTTP seed rows have unique identities an
     ].map((row) => ({ row, source: 'shared seed rows' })),
     ...await loadHttpSeedRows(),
   ];
+  for (const rkey of ['ack-middle-b', 'ack-author-negative']) {
+    const acknowledgement = rows.find(({ row }) =>
+      row.collection === 'org.hypercerts.context.acknowledgement' && row.rkey === rkey);
+    assert.ok(acknowledgement, `expected acknowledgement fixture ${rkey}`);
+    const sidecars = rows.filter(({ row }) => row.did === acknowledgement.row.did
+      && ['app.certified.actor.profile', 'app.certified.actor.organization'].includes(row.collection));
+    assert.deepEqual(sidecars.map(({ row }) => row.uri), [],
+      `${rkey} publisher must have no profile or organization sidecars in shared or HTTP fixtures`);
+  }
+
   const byUri = new Map();
   const byIdentity = new Map();
   const duplicateUris = [];

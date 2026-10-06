@@ -15,6 +15,8 @@
     "searchOrganizations": "implemented",
     "getEvaluation": "implemented",
     "listEvaluations": "implemented",
+    "getAcknowledgement": "implemented",
+    "listAcknowledgements": "implemented",
     "getAttachment": "implemented",
     "listAttachments": "implemented",
     "getActivity": "implemented",
@@ -158,6 +160,18 @@
     {
       "id": "org.hypercerts.context.listEvaluations",
       "path": "lexicons/org.hypercerts.context.listEvaluations.json"
+    },
+    {
+      "id": "org.hypercerts.context.acknowledgement",
+      "packagePath": "lexicons/org/hypercerts/context/acknowledgement.json"
+    },
+    {
+      "id": "org.hypercerts.context.getAcknowledgement",
+      "path": "lexicons/org.hypercerts.context.getAcknowledgement.json"
+    },
+    {
+      "id": "org.hypercerts.context.listAcknowledgements",
+      "path": "lexicons/org.hypercerts.context.listAcknowledgements.json"
     },
     {
       "id": "org.hypercerts.claim.listActivities",
@@ -441,6 +455,7 @@
     "modules/recent-follows/manifest.json",
     "modules/context-evaluation/manifest.json",
     "modules/context-attachments/manifest.json",
+    "modules/acknowledgements/manifest.json",
     "modules/funding/manifest.json",
     "modules/workscope-tags/manifest.json",
     "modules/contribution/manifest.json",
