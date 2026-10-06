@@ -139,14 +139,14 @@ test('getBadgeAward retrieves the exact award version and latest eligible recipi
   assert.equal(response.status, 200, JSON.stringify(body));
   const { badgeAward } = body;
   assert.equal(badgeAward.uri, canonicalRecords.awardA.uri);
-  assert.equal(badgeAward.cid, 'bafyreihiubxkalxdhucg7ggirlewxydggfy5hck4bnif6cddlx7ghoirbi');
+  assert.equal(badgeAward.cid, 'bafyreibkpebxfngi6cangcci7sozlkqsgfrgxu2a2ebcdu2f7cutgkxgke');
   assert.deepEqual(badgeAward.record, canonicalRecords.awardA.record);
   assert.equal(badgeAward.badge.uri, definitionUri);
   assert.equal(badgeAward.badge.cid, 'bafyreiatp3bngjbyu5skyqanyt3nr7riaxsmyok73bsuzn2sz52i2oft5a');
   assert.deepEqual(badgeAward.badge.record, canonicalRecords.definitionA.record);
   assert.equal(badgeAward.responseStatus, 'accepted');
   assert.equal(badgeAward.recipientResponse.uri, canonicalRecords.responseAccepted.uri);
-  assert.equal(badgeAward.recipientResponse.cid, 'bafyreihap4ghzghynzvap4aqke2hvxbz3zxyljitsrnbblo4ckrj4napyi');
+  assert.equal(badgeAward.recipientResponse.cid, 'bafyreidsmg5v62mympmzotqptqnkiksjaqc3de2naugadgx7zmbdgycjue');
   assert.equal(badgeAward.author.profile.record.displayName, 'Cedar Query Publisher');
   assert.equal(badgeAward.author.organization, null);
 
@@ -262,7 +262,7 @@ test('getBadgeResponse retrieves a raw response with its independent CBOR CID an
   assert.equal(response.status, 200, JSON.stringify(body));
   const { badgeResponse } = body;
   assert.equal(badgeResponse.uri, canonicalRecords.responseAccepted.uri);
-  assert.equal(badgeResponse.cid, 'bafyreihap4ghzghynzvap4aqke2hvxbz3zxyljitsrnbblo4ckrj4napyi');
+  assert.equal(badgeResponse.cid, 'bafyreidsmg5v62mympmzotqptqnkiksjaqc3de2naugadgx7zmbdgycjue');
   assert.deepEqual(badgeResponse.record, canonicalRecords.responseAccepted.record);
   assert.equal(badgeResponse.record.response, 'accepted');
   assert.equal(badgeResponse.author.did, badgeQueryDids.recipient);
@@ -290,7 +290,7 @@ test('listBadgeResponses preserves the full raw feed, URI-only matching, and bid
     [...expectedAll].sort(),
   );
 
-  const uriFiltered = ['responseForeign', 'responseAccepted', 'responseOlderAwardVersion', 'responseDeferred']
+  const uriFiltered = ['responseAccepted', 'responseOlderAwardVersion', 'responseDeferred', 'responseForeign']
     .map((name) => canonicalRecords[name].uri);
   await assertBidirectionalPages(endpoints.listBadgeResponses, 'badgeResponses', { badgeAward: awardUri }, {
     asc: [[uriFiltered[0], uriFiltered[1]], [uriFiltered[2], uriFiltered[3]]],
