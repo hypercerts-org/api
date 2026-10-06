@@ -33,6 +33,7 @@
       "type": "object",
       "description": "Raw indexed follow record with its publisher DID. For duplicates, the earliest createdAt wins, with URI ascending on ties.",
       "required": ["uri", "cid", "indexedAt", "did", "record"],
+      "nullable": ["indexedAt"],
       "properties": {
         "uri": { "type": "string", "format": "at-uri" },
         "cid": { "type": "string", "format": "cid" },

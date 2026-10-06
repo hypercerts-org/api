@@ -186,6 +186,7 @@ test('actor-follow query Lexicons validate the endpoint inputs, nullable lookup,
   const followView = lexicons.getDefOrThrow('app.certified.graph.getFollow#followRecordView');
   const actorFollowView = lexicons.getDefOrThrow('app.certified.graph.getFollow#actorFollowView');
   assert.deepEqual(followView.required, ['uri', 'cid', 'indexedAt', 'did', 'record']);
+  assert.deepEqual(followView.nullable, ['indexedAt']);
   assert.equal(followView.properties.record.ref, `lex:${followCollection}`);
   assert.deepEqual(actorFollowView.required, ['did', 'profile', 'organization', 'follow']);
   assert.deepEqual(actorFollowView.nullable, ['profile', 'organization']);
@@ -239,6 +240,39 @@ assert(result.follow.via == nil, 'via stays inside the unchanged raw record')
   assert.equal(output, '');
 
   runLua({ endpoint: 'getFollow', params: { actor, subject }, rows: [], assertions: 'assert(result.follow == NULL_VALUE)\nassert(#calls == 1)' });
+});
+
+test('getFollow emits explicit JSON null when indexed_at is SQL NULL', () => {
+  const row = followRow('unindexed-lookup', actor, actor, '2025-01-01T00:00:00Z', { subjectDid: subject });
+  delete row.indexed_at;
+  runLua({
+    endpoint: 'getFollow', params: { actor, subject }, rows: [row],
+    assertions: `assert(result.follow.indexedAt == NULL_VALUE, 'SQL NULL indexed_at must serialize as JSON null')`,
+  });
+});
+
+test('actor-follow lists emit explicit JSON null for SQL NULL relationship and sidecar timestamps', () => {
+  const followerRow = followRow('unindexed-follower', follower, follower, '2025-01-01T00:00:00Z');
+  delete followerRow.indexed_at;
+  const profile = sidecarRow(profileCollection, follower, { $type: profileCollection, displayName: 'Unindexed follower' });
+  const organization = sidecarRow(organizationCollection, follower, { $type: organizationCollection, visibility: 'public' });
+  delete profile.indexed_at;
+  delete organization.indexed_at;
+  runLua({
+    endpoint: 'listActorFollowers', params: { actor }, rows: [followerRow], profiles: [profile], organizations: [organization],
+    assertions: `
+assert(result.followers[1].follow.indexedAt == NULL_VALUE, 'SQL NULL follow indexed_at must serialize as JSON null')
+assert(result.followers[1].profile.indexedAt == NULL_VALUE, 'SQL NULL profile indexed_at must serialize as JSON null')
+assert(result.followers[1].organization.indexedAt == NULL_VALUE, 'SQL NULL organization indexed_at must serialize as JSON null')
+`,
+  });
+
+  const followingRow = followRow('unindexed-following', actor, subject, '2025-01-01T00:00:00Z', { subjectDid: subject });
+  delete followingRow.indexed_at;
+  runLua({
+    endpoint: 'listActorFollowing', params: { actor }, rows: [followingRow],
+    assertions: `assert(result.following[1].follow.indexedAt == NULL_VALUE, 'SQL NULL follow indexed_at must serialize as JSON null')`,
+  });
 });
 
 test('actor-follow lookup and listings guard malformed createdAt and fall back to indexed_at for sorting', () => {
