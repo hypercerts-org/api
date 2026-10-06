@@ -9,6 +9,7 @@ import { isValidDid, isValidTid } from '@atproto/syntax';
 import { locationRecords, profileRecords, organizationRecords, seedSql } from '../../fixtures/records.js';
 import { activityContributorInformationVersions, activityFixtureRows } from '../../fixtures/activities.js';
 import { seedRows as activityHttpFixtureRows } from '../../http/fixtures/activity.fixture.js';
+import { seedRows as actorsHttpFixtureRows } from '../../http/fixtures/actors.fixture.js';
 import { seedRows as badgeHttpFixtureRows } from '../../http/fixtures/badge-definitions.fixture.js';
 import { seedRows as collectionHttpFixtureRows } from '../../http/fixtures/collections.fixture.js';
 import { seedRows as contextAttachmentHttpFixtureRows } from '../../http/fixtures/context-attachments.fixture.js';
@@ -26,12 +27,18 @@ import {
 const packageRoot = fileURLToPath(new URL('../../../', import.meta.url));
 const httpFixturesRoot = fileURLToPath(new URL('../../http/fixtures/', import.meta.url));
 
-async function findHttpFixtureModules(directory) {
+function compareEntryNames(left, right) {
+  if (left.name < right.name) return -1;
+  if (left.name > right.name) return 1;
+  return 0;
+}
+
+async function findHttpFixtureFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
-  entries.sort((left, right) => left.name.localeCompare(right.name));
+  entries.sort(compareEntryNames);
   const groups = await Promise.all(entries.map(async (entry) => {
     const entryPath = path.join(directory, entry.name);
-    if (entry.isDirectory()) return findHttpFixtureModules(entryPath);
+    if (entry.isDirectory()) return findHttpFixtureFiles(entryPath);
     if (entry.isFile() && entry.name.endsWith('.fixture.js')) return [entryPath];
     return [];
   }));
@@ -69,21 +76,23 @@ test('fixtures have consistent full AT-URIs, valid DID/TID/CID identifiers, type
   }
 });
 
-test('shared and discovered HTTP fixture rows have unique identities, canonical URIs, and CBOR-derived CIDs', async () => {
-  const fixtureFiles = await findHttpFixtureModules(httpFixturesRoot);
-  assert.ok(fixtureFiles.length > 0, 'expected discovered HTTP fixture modules');
-  const httpRows = [];
-  for (const file of fixtureFiles) {
-    const { seedRows } = await import(pathToFileURL(file).href);
-    assert.ok(Array.isArray(seedRows) && seedRows.length > 0, `${path.relative(packageRoot, file)} must export nonempty seedRows`);
-    httpRows.push(...seedRows);
-  }
-
-  const rows = [
+test('shared and recursively discovered HTTP fixture rows have unique identities, canonical URIs, and CBOR-derived CIDs', async () => {
+  const sharedRows = [
     ...locationRecords, ...profileRecords, ...organizationRecords,
     ...actorFollowRecords, ...actorFollowProfileRecords, ...actorFollowOrganizationRecords,
-    ...activityFixtureRows, ...httpRows,
+    ...activityFixtureRows,
   ];
+  const fixtureFiles = await findHttpFixtureFiles(httpFixturesRoot);
+  assert.ok(fixtureFiles.length > 0, 'expected recursively discovered HTTP fixture modules');
+
+  const httpRows = [];
+  for (const file of fixtureFiles) {
+    const fixture = await import(pathToFileURL(file).href);
+    assert.ok(Array.isArray(fixture.seedRows) && fixture.seedRows.length > 0, `${path.relative(packageRoot, file)} must export nonempty seedRows`);
+    httpRows.push(...fixture.seedRows);
+  }
+
+  const rows = [...sharedRows, ...httpRows];
   assert.deepEqual(duplicateKeys(rows, ({ uri }) => uri), [], 'shared and HTTP fixture rows must not overwrite one another by URI');
   assert.deepEqual(
     duplicateKeys(rows, ({ did, collection, rkey }) => JSON.stringify([did, collection, rkey])),
@@ -94,7 +103,7 @@ test('shared and discovered HTTP fixture rows have unique identities, canonical 
   for (const row of rows) {
     assert.equal(row.uri, `at://${row.did}/${row.collection}/${row.rkey}`);
     assert.equal(row.record.$type, row.collection);
-    assert.equal(CID.toString(await CID.create(0x71, encode(row.record))), row.cid, `incorrect CID for ${row.uri}`);
+    assert.equal(CID.toString(await CID.create(0x71, encode(row.record))), row.cid, `CBOR-derived CID mismatch for ${row.uri}`);
   }
 });
 
@@ -104,7 +113,7 @@ test('activity HTTP fixture repositories do not collide with other fixture repos
     ...actorFollowRecords, ...actorFollowProfileRecords, ...actorFollowOrganizationRecords,
     ...activityFixtureRows, ...contextAttachmentHttpFixtureRows, ...contextEvaluationHttpFixtureRows,
     ...graphFollowHttpFixtureRows, ...fundingHttpFixtureRows, ...badgeHttpFixtureRows,
-    ...collectionHttpFixtureRows, ...locationHttpFixtureRows,
+    ...actorsHttpFixtureRows, ...collectionHttpFixtureRows, ...locationHttpFixtureRows,
   ];
   const existingDids = new Set(existingRows.map(({ did }) => did));
   const activityHttpDids = new Set(activityHttpFixtureRows.map(({ did }) => did));

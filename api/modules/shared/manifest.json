@@ -2,7 +2,9 @@
   "assets": [
     { "kind": "lexicon", "id": "app.certified.actor.organization", "packagePath": "lexicons/app/certified/actor/organization.json", "config": { "backfill": true }, "dependsOn": [], "registrationGroup": "location-record-schema-sources" },
     { "kind": "lexicon", "id": "app.certified.actor.profile", "packagePath": "lexicons/app/certified/actor/profile.json", "config": { "backfill": true }, "dependsOn": [], "registrationGroup": "location-record-schema-sources" },
+    { "kind": "lexicon", "id": "app.certified.badge.award", "packagePath": "lexicons/app/certified/badge/award.json", "config": { "backfill": true }, "dependsOn": ["app.certified.defs", "app.certified.signature.defs"] },
     { "kind": "lexicon", "id": "app.certified.badge.definition", "packagePath": "lexicons/app/certified/badge/definition.json", "config": { "backfill": true }, "dependsOn": ["app.certified.defs", "app.certified.signature.defs"] },
+    { "kind": "lexicon", "id": "app.certified.badge.response", "packagePath": "lexicons/app/certified/badge/response.json", "config": { "backfill": true }, "dependsOn": ["app.certified.signature.defs"] },
     { "kind": "lexicon", "id": "app.certified.defs", "packagePath": "lexicons/app/certified/defs.json", "config": { "backfill": false }, "dependsOn": [] },
     { "kind": "lexicon", "id": "app.certified.graph.entityFollow", "packagePath": "lexicons/app/certified/graph/entityFollow.json", "config": { "backfill": true }, "dependsOn": ["app.certified.signature.defs"] },
     { "kind": "lexicon", "id": "app.certified.graph.follow", "packagePath": "lexicons/app/certified/graph/follow.json", "config": { "backfill": true }, "dependsOn": ["app.certified.signature.defs"], "registrationGroup": "actor-follow-record-schema-sources" },
@@ -24,7 +26,7 @@
       "id": "org.hypercerts.api.defs",
       "path": "../../lexicons/org.hypercerts.api.defs.json",
       "config": { "backfill": false },
-      "dependsOn": ["app.certified.actor.organization", "app.certified.actor.profile", "org.hypercerts.claim.contribution"]
+      "dependsOn": ["app.certified.actor.organization", "app.certified.actor.profile", "org.hypercerts.vocab.tag", "org.hypercerts.claim.contribution"]
     },
     {
       "kind": "lexicon",
