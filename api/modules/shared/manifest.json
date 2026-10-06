@@ -21,6 +21,7 @@
     { "kind": "lexicon", "id": "org.hypercerts.entity.feature", "packagePath": "lexicons/org/hypercerts/entity/feature.json", "config": { "backfill": true }, "dependsOn": ["org.hypercerts.defs", "app.certified.signature.defs"] },
     { "kind": "lexicon", "id": "org.hypercerts.funding.receipt", "packagePath": "lexicons/org/hypercerts/funding/receipt.json", "config": { "backfill": true }, "dependsOn": [] },
     { "kind": "lexicon", "id": "org.hypercerts.vocab.tag", "packagePath": "lexicons/org/hypercerts/vocab/tag.json", "config": { "backfill": true }, "dependsOn": ["org.hypercerts.defs", "app.certified.signature.defs"] },
+    { "kind": "lexicon", "id": "org.hypercerts.workscope.tag", "packagePath": "lexicons/org/hypercerts/workscope/tag.json", "config": { "backfill": true }, "dependsOn": ["org.hypercerts.defs", "app.certified.signature.defs"] },
     {
       "kind": "lexicon",
       "id": "org.hypercerts.api.defs",

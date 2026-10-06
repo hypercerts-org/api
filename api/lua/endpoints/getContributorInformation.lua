@@ -1,11 +1,3 @@
-local function valid_did(value)
-  if type(value) ~= "string" or #value > 2048 then return false end
-  local method, specific = value:match("^did:([a-z]+):(.+)$")
-  if not method or not specific or specific:sub(-1) == ":" or specific:sub(-1) == "%"
-    or value:find("[^%w%.:_%%%-]") then return false end
-  return true
-end
-
 local function invalid(message)
   error("InvalidRequest: " .. message, 0)
 end
@@ -27,6 +19,14 @@ local function scalar(params, key)
   return tostring(value)
 end
 
+local function valid_did(value)
+  if type(value) ~= "string" or #value > 2048 then return false end
+  local method, specific = value:match("^did:([a-z]+):(.+)$")
+  if not method or not specific or specific:sub(-1) == ":" or specific:sub(-1) == "%"
+    or value:find("[^%w%.:_%%%-]") then return false end
+  return true
+end
+
 local function valid_record_key(value)
   return #value >= 1 and #value <= 512 and value ~= "." and value ~= ".."
     and not value:find("[^%w_~%.:%-]")
@@ -39,11 +39,24 @@ local function valid_record_uri(value)
   return true, collection, authority
 end
 
-local BADGE_DEFINITION_COLLECTION = "app.certified.badge.definition"
+local CONTRIBUTOR_INFORMATION_COLLECTION = "org.hypercerts.claim.contributorInformation"
 
-local function valid_badge_definition_uri(value)
-  local valid, collection = valid_record_uri(value)
-  return valid and collection == BADGE_DEFINITION_COLLECTION
+local function contributor_information_did(value)
+  if not valid_did(value) then return false end
+  local position = 1
+  while true do
+    local percent = value:find("%", position, true)
+    if not percent then return true end
+    local escape = value:sub(percent + 1, percent + 2)
+    if #escape ~= 2 or escape:find("[^%x]") then return false end
+    position = percent + 3
+  end
+end
+
+local function contributor_information_uri(value)
+  local valid, collection, authority = valid_record_uri(value)
+  if not valid or collection ~= CONTRIBUTOR_INFORMATION_COLLECTION then return false end
+  return contributor_information_did(authority)
 end
 
 local NULL = json.decode("null")
@@ -88,34 +101,45 @@ local function hydrate_actor_views(actors, run_query)
   end
 end
 
-local COLLECTION = BADGE_DEFINITION_COLLECTION
-
-local function query(sql, values)
+local function contributor_information_query(sql, values)
+  local backend_ok, backend = pcall(db.backend)
+  if not backend_ok or backend ~= "postgres" then
+    error("ContributorInformationQueryFailed: contributor-information queries require PostgreSQL", 0)
+  end
   local ok, result = pcall(db.raw, sql, values)
-  if not ok then error("BadgeDefinitionQueryFailed: badge definition lookup failed", 0) end
+  if not ok or type(result) ~= "table" then
+    error("ContributorInformationQueryFailed: contributor-information lookup failed", 0)
+  end
   return result
 end
 
-local function get_badge_definition()
-  keys_only(params, { uri = true })
-  local uri = scalar(params, "uri")
-  if not uri or not valid_badge_definition_uri(uri) then
-    invalid("uri must be a full app.certified.badge.definition AT-URI with a DID authority")
+local function preserve_contributor_author_timestamps(author)
+  for _, field in ipairs({ "profile", "organization" }) do
+    local sidecar = author[field]
+    if type(sidecar) == "table" and sidecar.uri ~= nil and sidecar.indexedAt == nil then
+      sidecar.indexedAt = json.decode("null")
+    end
   end
-  if db.backend() ~= "postgres" then
-    error("BadgeDefinitionQueryFailed: badge definition API requires PostgreSQL", 0)
-  end
-  local rows = query(
-    "SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record " ..
-      "FROM happyview_records WHERE collection = $1 AND uri = $2 LIMIT 1",
-    { COLLECTION, uri })
-  if #rows == 0 then error("RecordNotFound: badge definition is not indexed", 0) end
-  local view = record_view(rows[1])
-  view.author = { did = view.did }
-  hydrate_actor_views({ view.author }, query)
-  return { badgeDefinition = view }
 end
 
 function handle()
-  return get_badge_definition()
+  keys_only(params, { uri = true })
+  local uri = scalar(params, "uri")
+  if not contributor_information_uri(uri) then
+    invalid("uri must be a full org.hypercerts.claim.contributorInformation AT-URI with a DID authority")
+  end
+
+  local rows = contributor_information_query(
+    "SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record " ..
+      "FROM happyview_records WHERE collection = $1 AND uri = $2 LIMIT 1",
+    { CONTRIBUTOR_INFORMATION_COLLECTION, uri })
+  if #rows == 0 then error("RecordNotFound: contributor-information record is not indexed", 0) end
+
+  local view = record_view(rows[1])
+  if rows[1].indexed_at == nil then view.indexedAt = json.decode("null") end
+  local author = { did = rows[1].did }
+  hydrate_actor_views({ author }, contributor_information_query)
+  preserve_contributor_author_timestamps(author)
+  view.author = author
+  return { contributorInformation = view }
 end

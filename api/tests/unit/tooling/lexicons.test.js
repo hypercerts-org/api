@@ -44,6 +44,7 @@ test('the full validation Lexicon closure resolves locally while only selected p
     'org.hypercerts.entity.feature',
     'org.hypercerts.funding.receipt',
     'org.hypercerts.vocab.tag',
+    'org.hypercerts.workscope.tag',
   ]);
   for (const asset of deployedPackageAssets) {
     const source = validationSources.get(asset.id);
@@ -131,6 +132,35 @@ if (hasModule('modules/organization/manifest.json')) test('organization query Le
   assert.equal(lexicons.getDefOrThrow(searchOrganizations.defs.output.properties.actors.items.ref).type, 'object');
 });
 
+if (hasModule('modules/workscope-tags/manifest.json')) test('work-scope tag queries keep their result view with getWorkscopeTag and declare pagination bounds', async () => {
+  const { lexicons, documents } = await validatePackageLexicons();
+  const byId = new Map(documents.map((document) => [document.id, document]));
+  const shared = byId.get('org.hypercerts.api.defs');
+  const tag = byId.get('org.hypercerts.workscope.tag');
+  const get = byId.get('org.hypercerts.workscope.getWorkscopeTag');
+  const list = byId.get('org.hypercerts.workscope.listWorkscopeTags');
+  assert.ok(shared && tag && get && list);
+  assert.equal(shared.defs.workscopeTagView, undefined, 'the workscope-specific view is not part of shared API defs');
+
+  const view = lexicons.getDefOrThrow('org.hypercerts.workscope.getWorkscopeTag#workscopeTagView');
+  assert.deepEqual(view.required, ['uri', 'cid', 'indexedAt', 'did', 'author', 'record']);
+  assert.deepEqual(view.nullable, ['indexedAt']);
+  assert.equal(view.properties.author.ref, 'lex:org.hypercerts.api.defs#actorView');
+  assert.equal(view.properties.record.ref, 'lex:org.hypercerts.workscope.tag');
+  assert.deepEqual(get.defs.main.parameters.required, ['uri']);
+  assert.equal(get.defs.main.parameters.properties.uri.format, 'at-uri');
+  assert.equal(get.defs.output.properties.workscopeTag.ref, 'lex:org.hypercerts.workscope.getWorkscopeTag#workscopeTagView');
+  assert.equal(list.defs.main.parameters.properties.authors.maxLength, 100);
+  assert.equal(list.defs.main.parameters.properties.authors.items.format, 'did');
+  assert.equal(list.defs.main.parameters.properties.sortDirection.default, 'desc');
+  assert.equal(list.defs.main.parameters.properties.limit.default, 25);
+  assert.equal(list.defs.main.parameters.properties.limit.minimum, 1);
+  assert.equal(list.defs.main.parameters.properties.limit.maximum, 100);
+  assert.equal(list.defs.output.properties.workscopeTags.items.ref, 'lex:org.hypercerts.workscope.getWorkscopeTag#workscopeTagView');
+  assert.deepEqual(get.defs.main.errors.map(({ name }) => name), ['InvalidRequest', 'RecordNotFound', 'WorkscopeTagQueryFailed']);
+  assert.deepEqual(list.defs.main.errors.map(({ name }) => name), ['InvalidRequest', 'WorkscopeTagQueryFailed']);
+});
+
 if (hasModule('modules/actor-follow/manifest.json')) test('follow query Lexicons declare all required DID parameters', async () => {
   const { documents } = await validatePackageLexicons();
   const byId = new Map(documents.map((document) => [document.id, document]));
@@ -171,6 +201,30 @@ if (hasModule('modules/context-measurements/manifest.json')) test('measurement q
   assert.deepEqual([properties.limit.minimum, properties.limit.maximum, properties.limit.default], [1, 100, 25]);
   assert.equal(listMeasurements.defs.output.properties.measurements.items.ref, 'lex:org.hypercerts.context.getMeasurement#measurementView');
   assert.deepEqual(listMeasurements.defs.main.errors.map(({ name }) => name), ['InvalidRequest']);
+});
+
+test('contributor-information view is owned by getContributorInformation and keeps nullable indexedAt required', async () => {
+  const { lexicons, documents } = await validatePackageLexicons();
+  const byId = new Map(documents.map((document) => [document.id, document]));
+  const shared = byId.get('org.hypercerts.api.defs');
+  const getContributorInformation = byId.get('org.hypercerts.claim.getContributorInformation');
+  const listContributorInformation = byId.get('org.hypercerts.claim.listContributorInformation');
+  assert.ok(shared && getContributorInformation && listContributorInformation);
+  assert.equal(Object.hasOwn(shared.defs, 'contributorInformationView'), false);
+  assert.equal(
+    getContributorInformation.defs.output.properties.contributorInformation.ref,
+    'lex:org.hypercerts.claim.getContributorInformation#contributorInformationView',
+  );
+  assert.equal(
+    listContributorInformation.defs.output.properties.contributorInformation.items.ref,
+    'lex:org.hypercerts.claim.getContributorInformation#contributorInformationView',
+  );
+
+  const view = lexicons.getDefOrThrow('org.hypercerts.claim.getContributorInformation#contributorInformationView');
+  assert.ok(view.required.includes('indexedAt'));
+  assert.ok(view.nullable.includes('indexedAt'));
+  assert.equal(view.properties.author.ref, 'lex:org.hypercerts.api.defs#actorView');
+  assert.equal(view.properties.record.ref, 'lex:org.hypercerts.claim.contributorInformation');
 });
 
 test('contribution query Lexicons expose exact lookup and publisher-based paging contracts', async () => {

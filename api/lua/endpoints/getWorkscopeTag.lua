@@ -39,20 +39,14 @@ local function valid_record_uri(value)
   return true, collection, authority
 end
 
-local BADGE_DEFINITION_COLLECTION = "app.certified.badge.definition"
-
-local function valid_badge_definition_uri(value)
-  local valid, collection = valid_record_uri(value)
-  return valid and collection == BADGE_DEFINITION_COLLECTION
-end
-
+-- Workscope sidecars omit missing indexedAt; the work-scope tag view encodes it as JSON null separately.
 local NULL = json.decode("null")
 
 local function record_view(row)
   return {
     uri = row.uri,
     cid = row.cid,
-    indexedAt = row.indexed_at == nil and NULL or row.indexed_at,
+    indexedAt = row.indexed_at,
     did = row.did,
     record = json.decode(row.record),
   }
@@ -88,34 +82,66 @@ local function hydrate_actor_views(actors, run_query)
   end
 end
 
-local COLLECTION = BADGE_DEFINITION_COLLECTION
+local WORKSCOPE_TAG = "org.hypercerts.workscope.tag"
+local WORKSCOPE_TAG_NULL = json.decode("null")
 
-local function query(sql, values)
+local function workscope_tag_valid_did(value)
+  if not valid_did(value) then return false end
+  local offset = 1
+  while true do
+    local percent = value:find("%", offset, true)
+    if not percent then return true end
+    local escape = value:sub(percent + 1, percent + 2)
+    if not escape:match("^[0-9A-Fa-f][0-9A-Fa-f]$") then return false end
+    offset = percent + 3
+  end
+end
+
+local function workscope_tag_valid_record_uri(value)
+  local valid, collection, authority = valid_record_uri(value)
+  return valid and workscope_tag_valid_did(authority), collection
+end
+
+local function workscope_tag_query(sql, values)
+  if db.backend() ~= "postgres" then
+    error("WorkscopeTagQueryFailed: workscope-tag API requires PostgreSQL", 0)
+  end
   local ok, result = pcall(db.raw, sql, values)
-  if not ok then error("BadgeDefinitionQueryFailed: badge definition lookup failed", 0) end
+  if not ok or type(result) ~= "table" then
+    error("WorkscopeTagQueryFailed: work-scope tag query failed", 0)
+  end
   return result
 end
 
-local function get_badge_definition()
+local function workscope_tag_view(row)
+  return {
+    uri = row.uri,
+    cid = row.cid,
+    indexedAt = row.indexed_at == nil and WORKSCOPE_TAG_NULL or row.indexed_at,
+    did = row.did,
+    author = { did = row.did },
+    record = json.decode(row.record),
+  }
+end
+
+local function workscope_tag_get(uri)
   keys_only(params, { uri = true })
-  local uri = scalar(params, "uri")
-  if not uri or not valid_badge_definition_uri(uri) then
-    invalid("uri must be a full app.certified.badge.definition AT-URI with a DID authority")
+  local valid, collection = workscope_tag_valid_record_uri(uri)
+  if not uri or not valid or collection ~= WORKSCOPE_TAG then
+    invalid("uri must be a full org.hypercerts.workscope.tag AT-URI with a DID authority")
   end
-  if db.backend() ~= "postgres" then
-    error("BadgeDefinitionQueryFailed: badge definition API requires PostgreSQL", 0)
-  end
-  local rows = query(
+
+  local rows = workscope_tag_query(
     "SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record " ..
       "FROM happyview_records WHERE collection = $1 AND uri = $2 LIMIT 1",
-    { COLLECTION, uri })
-  if #rows == 0 then error("RecordNotFound: badge definition is not indexed", 0) end
-  local view = record_view(rows[1])
-  view.author = { did = view.did }
-  hydrate_actor_views({ view.author }, query)
-  return { badgeDefinition = view }
+    { WORKSCOPE_TAG, uri })
+  if #rows == 0 then error("RecordNotFound: work-scope tag is not indexed", 0) end
+
+  local view = workscope_tag_view(rows[1])
+  hydrate_actor_views({ view.author }, workscope_tag_query)
+  return { workscopeTag = view }
 end
 
 function handle()
-  return get_badge_definition()
+  return workscope_tag_get(scalar(params, "uri"))
 end
