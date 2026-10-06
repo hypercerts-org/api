@@ -1,6 +1,6 @@
 # Hypercerts API workspace
 
-This repository combines the shared HappyView installer, pinned Lexicon dependencies, reusable Lua projections, fixtures, offline checks, and independently owned capability modules. This composed checkout includes public query modules for actor profiles and organizations, activity, badge definitions and queries, collections, context measurements, attachments and evaluations, actor and entity follows, recent follows, funding receipts, locations, features, work-scope tags, contribution records, contributor information, vocabulary tags, and acknowledgements. The `org.hypercerts.vocab.getVocabTag` and `org.hypercerts.vocab.listVocabTags` handlers are bundled and registered through `api/modules/vocab/manifest.json`.
+This repository combines the shared HappyView installer, pinned Lexicon dependencies, reusable Lua projections, fixtures, offline checks, and independently owned capability modules. This composed checkout includes public query modules for actor profiles and organizations, activity, badge definitions and queries, collections, context measurements, attachments and evaluations, actor and entity follows, recent follows, funding receipts, Certified EVM links, locations, features, work-scope tags, contribution records, contributor information, vocabulary tags, and acknowledgements. The `org.hypercerts.vocab.getVocabTag` and `org.hypercerts.vocab.listVocabTags` handlers are bundled and registered through `api/modules/vocab/manifest.json`.
 
 This checkout is one of the additive local sibling branches used to compose the API:
 
@@ -8,6 +8,7 @@ Included query endpoints:
 
 - Badge definitions: `app.certified.badge.getBadgeDefinition`, `app.certified.badge.listBadgeDefinitions`
 - Badge queries: `app.certified.badge.searchBadgeDefinitions`, `app.certified.badge.getBadgeAward`, `app.certified.badge.listBadgeAwards`, `app.certified.badge.getBadgeResponse`, `app.certified.badge.listBadgeResponses`
+- Certified EVM links: `app.certified.link.getEvmLink`, `app.certified.link.listEvmLinks`
 - Funding receipts: `org.hypercerts.funding.getReceipt`, `org.hypercerts.funding.listReceipts`
 - Acknowledgements: `org.hypercerts.context.getAcknowledgement`, `org.hypercerts.context.listAcknowledgements`
 - Contributions: `org.hypercerts.claim.getContribution`, `org.hypercerts.claim.listContributions`
@@ -33,6 +34,7 @@ pnpm build
 | Funding receipts | `org.hypercerts.funding.getReceipt`, `org.hypercerts.funding.listReceipts` | Record retrieval, repeated filters, stable pagination, and named runtime errors |
 | Badge definitions | `app.certified.badge.getBadgeDefinition`, `app.certified.badge.listBadgeDefinitions` | Record/CID retrieval, publisher sidecars, filters, tied pagination, and named runtime errors |
 | Badge queries | `app.certified.badge.searchBadgeDefinitions`, `app.certified.badge.getBadgeAward`, `app.certified.badge.listBadgeAwards`, `app.certified.badge.getBadgeResponse`, `app.certified.badge.listBadgeResponses` | Baseline-aware definition search, exact-version award/response lookups, recipient status, raw response history, filters, and cursor pagination |
+| Certified EVM links | `app.certified.link.getEvmLink`, `app.certified.link.listEvmLinks` | Exact retrieval, actor/address filters, tied pagination in both directions, nullable sidecars, and named errors |
 | Features | `org.hypercerts.entity.getFeature`, `org.hypercerts.entity.listFeatures` | Exact retrieval, author sidecars, author/type and organization-presence filters, tied pagination, and named errors |
 | Contributor information | `org.hypercerts.claim.getContributorInformation`, `org.hypercerts.claim.listContributorInformation` | Exact-URI retrieval, repeated-author filters, cursor pagination, hydrated and missing author sidecars, and named runtime errors |
 | Work-scope tags | `org.hypercerts.workscope.getWorkscopeTag`, `org.hypercerts.workscope.listWorkscopeTags` | Exact-URI retrieval, author filters, hydrated and null sidecars, middle-position `indexedAt` fallback, tied pagination in both directions, and named runtime errors |
