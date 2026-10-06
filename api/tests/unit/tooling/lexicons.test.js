@@ -97,12 +97,27 @@ if (hasModule('modules/organization/manifest.json')) test('organization query Le
   assert.equal(actorView.properties.profile.ref, 'lex:org.hypercerts.api.defs#profileView');
   assert.equal(actorView.properties.organization.ref, 'lex:org.hypercerts.api.defs#organizationView');
   assert.equal(getOrganization.defs.output.properties.actor.ref, 'lex:app.certified.actor.getOrganization#organizationActorView');
-  assert.deepEqual(getOrganization.defs.main.errors.map(({ name }) => name), ['InvalidRequest', 'RecordNotFound']);
+  const organizationQueryFailed = {
+    name: 'OrganizationQueryFailed',
+    description: 'The indexed organization sidecar or associated profile could not be queried.',
+  };
+  assert.deepEqual(getOrganization.defs.main.errors.map(({ name }) => name), [
+    'InvalidRequest', 'RecordNotFound', 'OrganizationQueryFailed',
+  ]);
+  assert.deepEqual(
+    getOrganization.defs.main.errors.find(({ name }) => name === 'OrganizationQueryFailed'),
+    organizationQueryFailed,
+  );
 
   assert.equal(lexicons.getDefOrThrow(getOrganizations.defs.output.properties.organizations.items.ref).type, 'object');
   assert.equal(lexicons.getDefOrThrow(getOrganizations.defs.organizationResult.properties.organization.ref).type, 'object');
 
   for (const query of [listOrganizations, searchOrganizations]) {
+    assert.deepEqual(query.defs.main.errors.map(({ name }) => name), ['InvalidRequest', 'OrganizationQueryFailed']);
+    assert.deepEqual(
+      query.defs.main.errors.find(({ name }) => name === 'OrganizationQueryFailed'),
+      organizationQueryFailed,
+    );
     assert.equal(query.defs.main.parameters.properties.organizationTypes.maxLength, 100);
     assert.equal(query.defs.output.properties.actors.items.ref, 'lex:app.certified.actor.getOrganization#organizationActorView');
   }

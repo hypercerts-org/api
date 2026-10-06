@@ -73,22 +73,22 @@ test('listEntityFollowers filters by target, deduplicates tied records, paginate
     'followers',
     { entity: graphUris.followedFeature },
     [
+      `at://${graphDids.thirdFollower}/${entityFollowCollection}/3jzfcijpj2z2f`,
       `at://${graphDids.publisher}/${entityFollowCollection}/3jzfcijpj2z2a`,
       `at://${graphDids.secondPublisher}/${entityFollowCollection}/3jzfcijpj2z2e`,
-      `at://${graphDids.thirdFollower}/${entityFollowCollection}/3jzfcijpj2z2f`,
     ],
   );
 
-  assert.equal(items[0].did, graphDids.publisher);
+  assert.equal(items[0].did, graphDids.thirdFollower);
   assert.equal(items[0].$type, 'app.certified.graph.listEntityFollowers#entityFollowerView');
   assert.equal(items[0].follow.$type, 'app.certified.graph.getEntityFollow#entityFollowRecordView');
   assert.equal(items[0].follow.indexedAt, '2025-03-01T00:00:00.000Z');
-  assert.equal(items[0].profile.record.displayName, 'Graph Fixture Publisher');
-  assert.deepEqual(items[0].organization.record.organizationType, ['nonprofit']);
-  assert.equal(items[1].did, graphDids.secondPublisher);
-  assert.equal(items[1].profile, null);
-  assert.equal(items[1].organization, null);
-  assert.equal(items[2].did, graphDids.thirdFollower);
+  assert.equal(items[0].profile, null);
+  assert.equal(items[0].organization, null);
+  assert.equal(items[1].did, graphDids.publisher);
+  assert.equal(items[1].profile.record.displayName, 'Graph Fixture Publisher');
+  assert.deepEqual(items[1].organization.record.organizationType, ['nonprofit']);
+  assert.equal(items[2].did, graphDids.secondPublisher);
   assert.equal(items[2].profile, null);
   assert.equal(items[2].organization, null);
 });
