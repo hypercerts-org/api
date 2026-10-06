@@ -30,6 +30,7 @@ test('the full validation Lexicon closure resolves locally while only selected p
     'app.certified.location',
     'app.certified.signature.defs',
     'org.hypercerts.claim.activity',
+    'org.hypercerts.claim.contribution',
     'org.hypercerts.claim.contributorInformation',
     'org.hypercerts.collection',
     'org.hypercerts.context.attachment',
@@ -137,6 +138,41 @@ if (hasModule('modules/actor-follow/manifest.json')) test('follow query Lexicons
     listActorFollowers: ['actor'],
     listActorFollowing: ['actor'],
   });
+});
+
+test('contribution query Lexicons expose exact lookup and publisher-based paging contracts', async () => {
+  const { lexicons, documents } = await validatePackageLexicons();
+  const byId = new Map(documents.map((document) => [document.id, document]));
+  const getContribution = byId.get('org.hypercerts.claim.getContribution');
+  const listContributions = byId.get('org.hypercerts.claim.listContributions');
+  const shared = byId.get('org.hypercerts.api.defs');
+  assert.ok(getContribution && listContributions && shared);
+
+  const getParams = getContribution.defs.main.parameters;
+  assert.deepEqual(getParams.required, ['uri']);
+  assert.deepEqual(Object.keys(getParams.properties), ['uri']);
+  assert.equal(getParams.properties.uri.format, 'at-uri');
+  assert.equal(getContribution.defs.output.properties.contribution.ref, 'lex:org.hypercerts.claim.getContribution#contributionView');
+
+  const listParams = listContributions.defs.main.parameters.properties;
+  assert.deepEqual(Object.keys(listParams).sort(), ['authors', 'cursor', 'limit', 'sortDirection']);
+  assert.equal(listParams.authors.maxLength, 100);
+  assert.equal(listParams.authors.items.format, 'did');
+  assert.deepEqual(listParams.sortDirection.enum, ['asc', 'desc']);
+  assert.equal(listParams.sortDirection.default, 'desc');
+  assert.equal(listParams.limit.minimum, 1);
+  assert.equal(listParams.limit.maximum, 100);
+  assert.equal(listParams.limit.default, 25);
+  assert.equal(listContributions.defs.output.properties.contributions.items.ref, 'lex:org.hypercerts.claim.getContribution#contributionView');
+
+  assert.equal(shared.defs.contributionView, undefined, 'contribution views belong to the owning query Lexicon');
+  const view = getContribution.defs.contributionView;
+  assert.deepEqual(view.required, ['uri', 'cid', 'indexedAt', 'did', 'author', 'record']);
+  assert.deepEqual(view.nullable, ['indexedAt']);
+  assert.equal(view.properties.author.ref, 'lex:org.hypercerts.api.defs#actorView');
+  assert.equal(lexicons.getDefOrThrow('org.hypercerts.claim.getContribution#contributionView').properties.record.ref,
+    'lex:org.hypercerts.claim.contribution');
+  assert.deepEqual(shared.defs.actorView.nullable, ['profile', 'organization']);
 });
 
 if (hasModule('modules/entity-follow/manifest.json')) test('entity-follow view refs resolve from their endpoint-owned Lexicons', async () => {
