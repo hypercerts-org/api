@@ -20,7 +20,7 @@ PSQL_PATH="$(command -v psql)" pnpm test:http
 
 ## HTTP runtime tests
 
-HTTP suites live in `api/tests/http` and exercise the funding, badge-definition, badge-query, feature, contribution, profile, organization, context attachment and evaluation, activity, collection, acknowledgement, vocabulary-tag, graph, and location XRPC endpoints installed from the current checkout. `pnpm test:http` discovers `*.http.test.js` suites and fixture modules named `*.fixture.js`, then creates a random Compose project with loopback-only dynamic ports, PostgreSQL data on tmpfs, and a task-owned default bridge network. Bridge networking permits container egress. HappyView receives loopback placeholder upstream URLs and proxy variables pointing to `127.0.0.1:9`; these are application-level settings, not network-hard egress isolation. The installer and HTTP suites target only the task-owned loopback service. The runner installs this checkout's manifest, seeds shared and HTTP fixtures, runs the suites, and tears down only that generated Compose project and its temporary credentials. Locally, Compose uses `--pull never`; missing cached images fail before service startup.
+HTTP suites live in `api/tests/http` and exercise the funding, badge-definition, badge-query, feature, work-scope-tag, contribution, profile, organization, context attachment and evaluation, activity, collection, acknowledgement, vocabulary-tag, graph, and location XRPC endpoints installed from the current checkout. `pnpm test:http` discovers `*.http.test.js` suites and fixture modules named `*.fixture.js`, then creates a random Compose project with loopback-only dynamic ports, PostgreSQL data on tmpfs, and a task-owned default bridge network. Bridge networking permits container egress. HappyView receives loopback placeholder upstream URLs and proxy variables pointing to `127.0.0.1:9`; these are application-level settings, not network-hard egress isolation. The installer and HTTP suites target only the task-owned loopback service. The runner installs this checkout's manifest, seeds shared and HTTP fixtures, runs the suites, and tears down only that generated Compose project and its temporary credentials. Locally, Compose uses `--pull never`; missing cached images fail before service startup.
 
 The HTTP gate fails when it discovers zero suites, executes zero `node:test` cases, or runs only skipped cases. These checks cover real HTTP behavior against PostgreSQL, not just Lua handlers with a fake database. Funding coverage exercises record retrieval, repeated filters, and pagination. Badge-definition coverage exercises retrieval with an icon and allowed-issuer list, publisher-sidecar hydration, author and badge-type filters, createdAt/URI pagination ties, and named error responses. Badge-query coverage exercises baseline-aware definition feeds and discriminating filters, exact-version award/response lookups, recipient status, raw response history, bidirectional tied pagination, nullable sidecars, and named runtime errors. Vocabulary-tag coverage exercises exact retrieval, author filters, hydrated and nullable sidecars, tied pagination, and named errors. Acknowledgement coverage exercises exact retrieval, hydrated and absent publisher sidecars, repeated author/subject filters, tied pagination in both directions, and named errors. Feature coverage exercises exact retrieval and author hydration, list filters and sidecars, tied createdAt/URI pagination, and named errors. Contribution coverage exercises exact-record retrieval, repeated publisher filters, tied ascending/descending cursor pagination, nullable publisher sidecars, and named errors. Fixtures use CBOR-derived record CIDs and are seeded only into the task-owned disposable database.
 
@@ -35,6 +35,19 @@ Both feature queries are public and require no authentication. The aggregate man
 `org.hypercerts.entity.listFeatures` accepts repeated, unbracketed `authors` and `types` query keys, with at most 100 values per array. Different filters combine with AND, while values within either array combine with OR. Authors are repository-owner DIDs; types are exact, case-sensitive open strings of at most 64 UTF-8 bytes. `hasOrganizationRecord=true` requires an `app.certified.actor.organization/self` record, while `false` matches its absence regardless of profile presence.
 
 Listings sort by `(createdAt, uri)` in the requested direction, defaulting to descending. Pages default to 25 entries and accept limits from 1 through 100. The opaque cursor is bound to `sortDirection`; reuse the same filters when continuing a listing. The response omits `cursor` after the final page. Unknown parameters, repeated scalar parameters, malformed filters, out-of-range limits, and invalid or direction-mismatched cursors return `InvalidRequest`.
+
+## Work-scope tag queries
+
+Both queries are public and require no authentication. Lookup uses the exact record AT-URI and returns `RecordNotFound` when that URI is not indexed:
+
+```text
+/xrpc/org.hypercerts.workscope.getWorkscopeTag?uri=at%3A%2F%2Fdid%3Aweb%3Apublisher.example%2Forg.hypercerts.workscope.tag%2F3jzfcijpj2z2a
+```
+
+Listing accepts repeated, unbracketed `authors` DID parameters with OR matching (up to 100 values), `sortDirection=asc|desc` (default `desc`), and `limit=1..100` (default `25`). Results use stable timestamp-and-URI order: a valid zoned record `createdAt`, then the index timestamp, then the row creation timestamp. Pass the opaque response cursor unchanged with the same filters and direction to fetch the next page. Each result includes the unchanged record and a hydrated publisher actor; a missing `indexedAt`, profile, or organization sidecar is `null`, while query/hydration failures are returned as errors. Parent and other record references are not expanded.
+
+The handlers require the PostgreSQL HappyView records backend. The shared module registers the tag record Lexicon for backfill; the workscope-tags module registers both query Lexicons and generated Lua scripts. `pnpm build` refreshes the checked-in handler bundles. Installing assets with `pnpm install:api` contacts a HappyView service; use it only with an explicitly approved target and token.
+
 
 ## Acknowledgement queries
 
@@ -56,7 +69,9 @@ The current design requires `indexedAt` to be present but nullable; the older `c
 
 The shared module registers the contribution record Lexicon with backfill enabled; the contribution module registers both query Lexicons and Lua handlers. Installing the bundle through `pnpm install:api` writes these declarations and scripts to the configured HappyView instance, so use the existing approved-target and admin-token procedure before running it.
 
-For local development checks and HTTP runtime test requirements, see [CONTRIBUTING.md](../CONTRIBUTING.md).
+## Local validation and HTTP coverage
+
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for local validation commands, HTTP test prerequisites and safety boundaries, endpoint coverage, and task-owned resource cleanup.
 
 ## Install a released API bundle
 

@@ -60,11 +60,32 @@ function duplicateDetails(previous, current) {
   };
 }
 
-test('shared and recursively discovered HTTP seed rows have unique identities and CBOR-derived CIDs', async () => {
+test('shared and discovered HTTP seed rows preserve acknowledgement sidecar isolation, unique identities, and CBOR-derived CIDs', async () => {
   const rows = [
     ...sharedSeedRows.map((row) => ({ row, source: 'shared seed rows' })),
     ...await loadHttpSeedRows(),
   ];
+  const acknowledgementRows = rows.filter(({ row }) => row.collection === 'org.hypercerts.context.acknowledgement');
+  const acknowledgementDids = new Set(acknowledgementRows.map(({ row }) => row.did));
+  const acknowledgementSources = new Set(acknowledgementRows.map(({ source }) => source));
+  const sharedAcknowledgementSidecars = rows
+    .filter(({ row, source }) => acknowledgementDids.has(row.did)
+      && !acknowledgementSources.has(source)
+      && ['app.certified.actor.profile', 'app.certified.actor.organization'].includes(row.collection))
+    .map(({ row, source }) => ({ did: row.did, collection: row.collection, uri: row.uri, source }));
+  assert.deepEqual(sharedAcknowledgementSidecars, [],
+    'acknowledgement publishers must not share actor-sidecar DIDs with other fixture sources because seed upserts can overwrite those rows');
+
+  for (const rkey of ['ack-middle-b', 'ack-author-negative']) {
+    const acknowledgement = rows.find(({ row }) =>
+      row.collection === 'org.hypercerts.context.acknowledgement' && row.rkey === rkey);
+    assert.ok(acknowledgement, `expected acknowledgement fixture ${rkey}`);
+    const sidecars = rows.filter(({ row }) => row.did === acknowledgement.row.did
+      && ['app.certified.actor.profile', 'app.certified.actor.organization'].includes(row.collection));
+    assert.deepEqual(sidecars.map(({ row }) => row.uri), [],
+      `${rkey} publisher must have no profile or organization sidecars in shared or HTTP fixtures`);
+  }
+
   const byUri = new Map();
   const byIdentity = new Map();
   const duplicateUris = [];
