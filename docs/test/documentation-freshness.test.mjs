@@ -37,7 +37,7 @@ async function writeBaselineArtifacts(apiRoot, fixtureDocs, packageRoot) {
 }
 
 test('committed snapshots, index metadata, OpenAPI, and coverage match fresh manifest sources', async () => {
-  await assertDocumentationFresh();
+  await assert.doesNotReject(() => assertDocumentationFresh());
 });
 
 test('freshness gate rejects endpoint and pinned support-schema drift without writing artifacts', async (t) => {

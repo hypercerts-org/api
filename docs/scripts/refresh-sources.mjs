@@ -71,6 +71,54 @@ function snapshotFile(id) {
   return `sources/lexicons/${id}.json`;
 }
 
+function indexValidationSources(sources) {
+  const validationSources = new Map();
+  for (const source of sources ?? []) {
+    if (!source.id || validationSources.has(source.id)) {
+      throw new Error(`api/manifest.json has a missing or duplicate validation Lexicon ID: ${source.id ?? '(missing)'}`);
+    }
+    if (!source.path && !source.packagePath) {
+      throw new Error(`api/manifest.json has no source path for validation Lexicon ${source.id}`);
+    }
+    validationSources.set(source.id, source);
+  }
+  return validationSources;
+}
+
+async function readActiveEndpoint(asset, moduleRef, moduleFile, readSource) {
+  if (asset.kind !== 'lexicon') return undefined;
+  const lexicon = await readSource(asset, path.dirname(moduleFile), `Lexicon asset ${asset.id ?? '(missing ID)'}`);
+  if (!asset.id || lexicon.id !== asset.id) {
+    throw new Error(`Lexicon asset ID mismatch in ${moduleRef}: expected ${asset.id ?? '(missing ID)'}, got ${lexicon.id ?? '(missing ID)'}`);
+  }
+  const type = lexicon.defs?.main?.type;
+  if (!['query', 'procedure'].includes(type)) return undefined;
+  return {
+    id: lexicon.id,
+    type,
+    module: moduleRef,
+    sourcePath: asset.path ?? asset.packagePath,
+    lexicon,
+  };
+}
+
+async function discoverActiveEndpoints(manifest, currentApiRoot, readSource) {
+  const activeEndpoints = new Map();
+  for (const moduleRef of manifest.modules ?? []) {
+    const moduleFile = resolveInside(currentApiRoot, moduleRef, 'Module manifest path');
+    const moduleManifest = await readJson(moduleFile);
+    for (const asset of moduleManifest.assets ?? []) {
+      const endpoint = await readActiveEndpoint(asset, moduleRef, moduleFile, readSource);
+      if (!endpoint) continue;
+      if (activeEndpoints.has(endpoint.id)) {
+        throw new Error(`Duplicate registered query/procedure Lexicon: ${endpoint.id}`);
+      }
+      activeEndpoints.set(endpoint.id, endpoint);
+    }
+  }
+  return activeEndpoints;
+}
+
 /**
  * Read active query Lexicons from the aggregate manifest and the reachable
  * schema Lexicons from its declared validation sources. No remote refs are fetched.
@@ -84,17 +132,7 @@ export async function collectDocumentationSources(options = {}) {
   const apiPackage = await readJson(path.join(currentApiRoot, 'package.json'));
   const packageName = '@hypercerts-org/lexicon';
   const packageVersion = apiPackage.dependencies?.[packageName];
-  const validationSources = new Map();
-
-  for (const source of manifest.validationLexicons ?? []) {
-    if (!source.id || validationSources.has(source.id)) {
-      throw new Error(`api/manifest.json has a missing or duplicate validation Lexicon ID: ${source.id ?? '(missing)'}`);
-    }
-    if (!source.path && !source.packagePath) {
-      throw new Error(`api/manifest.json has no source path for validation Lexicon ${source.id}`);
-    }
-    validationSources.set(source.id, source);
-  }
+  const validationSources = indexValidationSources(manifest.validationLexicons);
 
   let packageRoot;
   async function getPackageRoot() {
@@ -125,30 +163,7 @@ export async function collectDocumentationSources(options = {}) {
     throw new Error(`${label} has neither path nor packagePath.`);
   }
 
-  const activeEndpoints = new Map();
-  for (const moduleRef of manifest.modules ?? []) {
-    const moduleFile = resolveInside(currentApiRoot, moduleRef, 'Module manifest path');
-    const moduleManifest = await readJson(moduleFile);
-    for (const asset of moduleManifest.assets ?? []) {
-      if (asset.kind !== 'lexicon') continue;
-      const lexicon = await readSource(asset, path.dirname(moduleFile), `Lexicon asset ${asset.id ?? '(missing ID)'}`);
-      if (!asset.id || lexicon.id !== asset.id) {
-        throw new Error(`Lexicon asset ID mismatch in ${moduleRef}: expected ${asset.id ?? '(missing ID)'}, got ${lexicon.id ?? '(missing ID)'}`);
-      }
-      const type = lexicon.defs?.main?.type;
-      if (!['query', 'procedure'].includes(type)) continue;
-      if (activeEndpoints.has(lexicon.id)) {
-        throw new Error(`Duplicate registered query/procedure Lexicon: ${lexicon.id}`);
-      }
-      activeEndpoints.set(lexicon.id, {
-        id: lexicon.id,
-        type,
-        module: moduleRef,
-        sourcePath: asset.path ?? asset.packagePath,
-        lexicon,
-      });
-    }
-  }
+  const activeEndpoints = await discoverActiveEndpoints(manifest, currentApiRoot, readSource);
 
   const sourceDocuments = new Map();
   for (const [id, endpoint] of activeEndpoints) {
