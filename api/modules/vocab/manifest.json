@@ -1,0 +1,73 @@
+{
+  "assets": [
+    {
+      "id": "org.hypercerts.vocab.getVocabTag",
+      "kind": "lexicon",
+      "path": "../../lexicons/org.hypercerts.vocab.getVocabTag.json",
+      "config": {
+        "backfill": false,
+        "target_collection": "org.hypercerts.vocab.tag"
+      },
+      "dependsOn": [
+        "org.hypercerts.vocab.tag",
+        "org.hypercerts.api.defs"
+      ]
+    },
+    {
+      "id": "org.hypercerts.vocab.listVocabTags",
+      "kind": "lexicon",
+      "path": "../../lexicons/org.hypercerts.vocab.listVocabTags.json",
+      "config": {
+        "backfill": false,
+        "target_collection": "org.hypercerts.vocab.tag"
+      },
+      "dependsOn": [
+        "org.hypercerts.vocab.getVocabTag"
+      ]
+    },
+    {
+      "id": "xrpc.query:org.hypercerts.vocab.getVocabTag",
+      "kind": "script",
+      "path": "../../lua/endpoints/getVocabTag.lua",
+      "sourcePath": "../../lua/src/getVocabTag.lua",
+      "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/query.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/recordView.lua",
+        "../../lua/shared/actorView.lua",
+        "../../lua/shared/vocabTagValidation.lua"
+      ],
+      "config": {
+        "script_type": "lua",
+        "description": "Vocabulary tag lookup API handler"
+      },
+      "dependsOn": [
+        "org.hypercerts.vocab.getVocabTag"
+      ]
+    },
+    {
+      "id": "xrpc.query:org.hypercerts.vocab.listVocabTags",
+      "kind": "script",
+      "path": "../../lua/endpoints/listVocabTags.lua",
+      "sourcePath": "../../lua/src/listVocabTags.lua",
+      "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/query.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/listValidation.lua",
+        "../../lua/shared/listQuery.lua",
+        "../../lua/shared/recordView.lua",
+        "../../lua/shared/actorView.lua",
+        "../../lua/shared/vocabTagValidation.lua"
+      ],
+      "config": {
+        "script_type": "lua",
+        "description": "Vocabulary tag listing API handler"
+      },
+      "dependsOn": [
+        "org.hypercerts.vocab.listVocabTags"
+      ]
+    }
+  ]
+}
