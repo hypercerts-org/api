@@ -232,3 +232,18 @@ test('record validator rejects malformed embedded location payloads', async () =
   invalidBlobRecord.location.blob.ref.$link = 'not-a-cid';
   assert.throws(() => lexicons.assertValidRecord('app.certified.location', jsonToLex(invalidBlobRecord)), /blob ref/);
 });
+
+if (hasModule('modules/vocab/manifest.json')) test('vocabulary-tag responses share the view owned by getVocabTag', async () => {
+  const { lexicons, documents } = await validatePackageLexicons();
+  const byId = new Map(documents.map((document) => [document.id, document]));
+  const shared = byId.get('org.hypercerts.api.defs');
+  const get = byId.get('org.hypercerts.vocab.getVocabTag');
+  const list = byId.get('org.hypercerts.vocab.listVocabTags');
+  assert.ok(shared && get && list);
+  assert.equal(shared.defs.vocabTagView, undefined);
+  assert.equal(get.defs.output.properties.vocabTag.ref, `lex:${get.id}#vocabTagView`);
+  assert.equal(list.defs.output.properties.vocabTags.items.ref, `lex:${get.id}#vocabTagView`);
+  assert.deepEqual(get.defs.vocabTagView.required, ['uri', 'cid', 'indexedAt', 'did', 'author', 'record']);
+  assert.equal(get.defs.vocabTagView.properties.author.ref, 'lex:org.hypercerts.api.defs#actorView');
+  assert.equal(lexicons.getDefOrThrow(`${get.id}#vocabTagView`).type, 'object');
+});
