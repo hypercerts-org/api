@@ -9,6 +9,8 @@ import { isValidDid, isValidTid } from '@atproto/syntax';
 import { locationRecords, profileRecords, organizationRecords, seedSql } from '../../fixtures/records.js';
 import { activityContributorInformationVersions, activityFixtureRows } from '../../fixtures/activities.js';
 import { seedRows as activityHttpFixtureRows } from '../../http/fixtures/activity.fixture.js';
+import { seedRows as acknowledgementHttpFixtureRows } from '../../http/fixtures/acknowledgements.fixture.js';
+import { seedRows as contextMeasurementHttpFixtureRows } from '../../http/fixtures/context-measurements.fixture.js';
 import { seedRows as actorsHttpFixtureRows } from '../../http/fixtures/actors.fixture.js';
 import { seedRows as badgeHttpFixtureRows } from '../../http/fixtures/badge-definitions.fixture.js';
 import { seedRows as collectionHttpFixtureRows } from '../../http/fixtures/collections.fixture.js';
@@ -92,15 +94,30 @@ test('shared and recursively discovered HTTP fixture rows have unique identities
     httpRows.push(...fixture.seedRows);
   }
 
-  const rows = [...sharedRows, ...httpRows];
-  assert.deepEqual(duplicateKeys(rows, ({ uri }) => uri), [], 'shared and HTTP fixture rows must not overwrite one another by URI');
+  const allRows = [...sharedRows, ...httpRows];
+  for (const rkey of ['ack-middle-b', 'ack-author-negative']) {
+    const acknowledgement = acknowledgementHttpFixtureRows.find((row) => row.rkey === rkey);
+    assert.ok(acknowledgement, `expected acknowledgement fixture ${rkey}`);
+    const sidecars = allRows.filter(({ did, collection }) => did === acknowledgement.did
+      && ['app.certified.actor.profile', 'app.certified.actor.organization'].includes(collection));
+    assert.deepEqual(sidecars.map(({ uri }) => uri), [],
+      `${rkey} publisher must have no profile or organization sidecars in shared or HTTP fixtures`);
+  }
+  const measurementWithoutSidecars = contextMeasurementHttpFixtureRows.find(({ rkey }) => rkey === '3jzfcijpj2z2d');
+  assert.ok(measurementWithoutSidecars, 'expected a measurement fixture with absent publisher sidecars');
+  const measurementSidecars = allRows.filter(({ did, collection }) => did === measurementWithoutSidecars.did
+    && ['app.certified.actor.profile', 'app.certified.actor.organization'].includes(collection));
+  assert.deepEqual(measurementSidecars.map(({ uri }) => uri), [],
+    'the measurement fixture without sidecars must not share its publisher DID with another fixture');
+
+  assert.deepEqual(duplicateKeys(allRows, ({ uri }) => uri), [], 'seed rows must not overwrite another record URI');
   assert.deepEqual(
-    duplicateKeys(rows, ({ did, collection, rkey }) => JSON.stringify([did, collection, rkey])),
+    duplicateKeys(allRows, ({ did, collection, rkey }) => JSON.stringify([did, collection, rkey])),
     [],
     'shared and HTTP fixture rows must not reuse repository record identities',
   );
 
-  for (const row of rows) {
+  for (const row of allRows) {
     assert.equal(row.uri, `at://${row.did}/${row.collection}/${row.rkey}`);
     assert.equal(row.record.$type, row.collection);
     assert.equal(CID.toString(await CID.create(0x71, encode(row.record))), row.cid, `CBOR-derived CID mismatch for ${row.uri}`);
