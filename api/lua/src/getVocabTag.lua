@@ -1,22 +1,4 @@
-local COLLECTION = "org.hypercerts.vocab.tag"
-
-local function valid_vocab_did(value)
-  if not valid_did(value) then return false end
-  local position = 1
-  while true do
-    local percent = value:find("%", position, true)
-    if not percent then return true end
-    if not value:sub(percent + 1, percent + 2):match("^%x%x$") then return false end
-    position = percent + 3
-  end
-end
-
-local function valid_vocab_tag_uri(value)
-  local valid, collection = valid_record_uri(value)
-  if not valid or collection ~= COLLECTION then return false end
-  local authority = value:match("^at://([^/]+)/")
-  return valid_vocab_did(authority)
-end
+local COLLECTION = VOCAB_TAG
 
 local function query(sql, values)
   local ok, result = pcall(db.raw, sql, values)
@@ -43,7 +25,7 @@ local function get_vocab_tag()
   local view = record_view(rows[1])
   if rows[1].indexed_at == nil then view.indexedAt = json.decode("null") end
   view.author = { did = view.did }
-  hydrate_actor_views({ view.author }, query)
+  hydrate_vocab_actor_views({ view.author }, query)
   return { vocabTag = view }
 end
 

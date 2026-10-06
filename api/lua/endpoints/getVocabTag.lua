@@ -1,10 +1,20 @@
+local function valid_did(value)
+  if type(value) ~= "string" or #value > 2048 then return false end
+  local method, specific = value:match("^did:([a-z]+):(.+)$")
+  if not method or not specific or specific:sub(-1) == ":" or specific:sub(-1) == "%"
+    or value:find("[^%w%.:_%%%-]") then return false end
+  return true
+end
+
 local function invalid(message)
   error("InvalidRequest: " .. message, 0)
 end
 
-local function keys_only(values, allowed)
+local function keys_only(values, allowed, unknown_message_prefix)
   for key in pairs(values) do
-    if not allowed[key] then invalid("unknown query parameter") end
+    if not allowed[key] then
+      invalid(unknown_message_prefix and (unknown_message_prefix .. key) or "unknown query parameter")
+    end
   end
 end
 
@@ -17,14 +27,6 @@ local function scalar(params, key)
   return tostring(value)
 end
 
-local function valid_did(value)
-  if #value > 2048 then return false end
-  local method, specific = value:match("^did:([a-z]+):(.+)$")
-  if not method or not specific or specific:sub(-1) == ":" or specific:sub(-1) == "%"
-    or value:find("[^%w%.:_%%%-]") then return false end
-  return true
-end
-
 local function valid_record_key(value)
   return #value >= 1 and #value <= 512 and value ~= "." and value ~= ".."
     and not value:find("[^%w_~%.:%-]")
@@ -34,7 +36,7 @@ local function valid_record_uri(value)
   if type(value) ~= "string" or value:find("[?#]") then return false end
   local authority, collection, rkey = value:match("^at://([^/]+)/([^/]+)/([^/]+)$")
   if not authority or not valid_did(authority) or not valid_record_key(rkey) then return false end
-  return true, collection
+  return true, collection, authority
 end
 
 local NULL = json.decode("null")
@@ -43,7 +45,7 @@ local function record_view(row)
   return {
     uri = row.uri,
     cid = row.cid,
-    indexedAt = row.indexed_at,
+    indexedAt = row.indexed_at == nil and NULL or row.indexed_at,
     did = row.did,
     record = json.decode(row.record),
   }
@@ -79,7 +81,7 @@ local function hydrate_actor_views(actors, run_query)
   end
 end
 
-local COLLECTION = "org.hypercerts.vocab.tag"
+local VOCAB_TAG = "org.hypercerts.vocab.tag"
 
 local function valid_vocab_did(value)
   if not valid_did(value) then return false end
@@ -93,11 +95,21 @@ local function valid_vocab_did(value)
 end
 
 local function valid_vocab_tag_uri(value)
-  local valid, collection = valid_record_uri(value)
-  if not valid or collection ~= COLLECTION then return false end
-  local authority = value:match("^at://([^/]+)/")
+  local valid, collection, authority = valid_record_uri(value)
+  if not valid or collection ~= VOCAB_TAG then return false end
   return valid_vocab_did(authority)
 end
+
+local function hydrate_vocab_actor_views(actors, run_query)
+  hydrate_actor_views(actors, run_query)
+  -- Vocab sidecars preserve the omission; only the top-level tag emits indexedAt as JSON null.
+  for _, actor in ipairs(actors) do
+    if actor.profile ~= NULL and actor.profile.indexedAt == NULL then actor.profile.indexedAt = nil end
+    if actor.organization ~= NULL and actor.organization.indexedAt == NULL then actor.organization.indexedAt = nil end
+  end
+end
+
+local COLLECTION = VOCAB_TAG
 
 local function query(sql, values)
   local ok, result = pcall(db.raw, sql, values)
@@ -124,7 +136,7 @@ local function get_vocab_tag()
   local view = record_view(rows[1])
   if rows[1].indexed_at == nil then view.indexedAt = json.decode("null") end
   view.author = { did = view.did }
-  hydrate_actor_views({ view.author }, query)
+  hydrate_vocab_actor_views({ view.author }, query)
   return { vocabTag = view }
 end
 

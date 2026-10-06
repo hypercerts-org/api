@@ -62,7 +62,7 @@
           "type": "array",
           "items": {
             "type": "ref",
-            "ref": "org.hypercerts.api.defs#vocabTagView"
+            "ref": "org.hypercerts.vocab.getVocabTag#vocabTagView"
           }
         },
         "cursor": {

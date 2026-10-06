@@ -9,11 +9,14 @@ const root = fileURLToPath(new URL('../../../', import.meta.url));
 const uri = 'at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.vocab.tag/3jzfcijpj2z2z';
 const did = 'did:plc:abcdefghijklmnopqrstuvwx';
 const sharedSources = [
+  'lua/shared/didValidation.lua',
   'lua/shared/query.lua',
   'lua/shared/recordIdentifier.lua',
+  'lua/shared/listValidation.lua',
   'lua/shared/listQuery.lua',
   'lua/shared/recordView.lua',
   'lua/shared/actorView.lua',
+  'lua/shared/vocabTagValidation.lua',
 ];
 
 function lua(value) {
@@ -42,6 +45,7 @@ async function runLua({ endpoint = 'getVocabTag', params, queryResults = [], ass
       createdAt: 'not-a-datetime',
     },
     'profile-record': { $type: 'app.certified.actor.profile', displayName: 'Vocabulary publisher' },
+    'organization-record': { $type: 'app.certified.actor.organization', organizationType: ['nonprofit'] },
   };
   const script = `
 local RECORDS = ${lua(recordJson)}
@@ -155,6 +159,49 @@ test('getVocabTag preserves required indexedAt as JSON null when the index times
     assertions: `
 assert(result.vocabTag.indexedAt == NULL)
 assert(result.vocabTag.uri == '${uri}' and result.vocabTag.record.name == 'Climate action')
+`,
+  });
+});
+
+test('vocab tag sidecar timestamps are omitted when null while the tag timestamp remains explicit null', async () => {
+  const tagWithoutIndexedAt = { ...tagRow };
+  delete tagWithoutIndexedAt.indexed_at;
+  const profileWithoutIndexedAt = {
+    uri: `at://${did}/app.certified.actor.profile/self`,
+    did,
+    cid: 'bafy-profile-without-indexed-at',
+    record: 'profile-record',
+  };
+  const organizationWithoutIndexedAt = {
+    uri: `at://${did}/app.certified.actor.organization/self`,
+    did,
+    cid: 'bafy-organization-without-indexed-at',
+    record: 'organization-record',
+  };
+  const sidecars = [profileWithoutIndexedAt, organizationWithoutIndexedAt];
+
+  await runLua({
+    params: { uri },
+    queryResults: [[tagWithoutIndexedAt], [sidecars[0]], [sidecars[1]]],
+    assertions: `
+assert(result.vocabTag.indexedAt == NULL)
+assert(result.vocabTag.author.profile.record.displayName == 'Vocabulary publisher')
+assert(result.vocabTag.author.profile.indexedAt == nil)
+assert(result.vocabTag.author.organization.record.organizationType[1] == 'nonprofit')
+assert(result.vocabTag.author.organization.indexedAt == nil)
+`,
+  });
+
+  await runLua({
+    endpoint: 'listVocabTags',
+    params: {},
+    queryResults: [[tagWithoutIndexedAt], [sidecars[0]], [sidecars[1]]],
+    assertions: `
+assert(result.vocabTags[1].indexedAt == NULL)
+assert(result.vocabTags[1].author.profile.record.displayName == 'Vocabulary publisher')
+assert(result.vocabTags[1].author.profile.indexedAt == nil)
+assert(result.vocabTags[1].author.organization.record.organizationType[1] == 'nonprofit')
+assert(result.vocabTags[1].author.organization.indexedAt == nil)
 `,
   });
 });

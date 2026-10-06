@@ -1,27 +1,9 @@
-local COLLECTION = "org.hypercerts.vocab.tag"
+local COLLECTION = VOCAB_TAG
 
 local function query(sql, values)
   local ok, result = pcall(db.raw, sql, values)
   if not ok then error("VocabTagQueryFailed: vocabulary tag or publisher query failed", 0) end
   return result
-end
-
-local function valid_vocab_did(value)
-  if not valid_did(value) then return false end
-  local position = 1
-  while true do
-    local percent = value:find("%", position, true)
-    if not percent then return true end
-    if not value:sub(percent + 1, percent + 2):match("^%x%x$") then return false end
-    position = percent + 3
-  end
-end
-
-local function valid_vocab_tag_uri(value)
-  local valid, collection = valid_record_uri(value)
-  if not valid or collection ~= COLLECTION then return false end
-  local authority = value:match("^at://([^/]+)/")
-  return valid_vocab_did(authority)
 end
 
 local function parse_authors(value)
@@ -139,7 +121,7 @@ local function list_vocab_tags(authors, limit, cursor, direction)
     views[#views + 1] = view
     authors_to_hydrate[#authors_to_hydrate + 1] = view.author
   end
-  hydrate_actor_views(authors_to_hydrate, query)
+  hydrate_vocab_actor_views(authors_to_hydrate, query)
 
   local next_cursor
   if more then

@@ -31,10 +31,12 @@
       "path": "../../lua/endpoints/getVocabTag.lua",
       "sourcePath": "../../lua/src/getVocabTag.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/recordView.lua",
-        "../../lua/shared/actorView.lua"
+        "../../lua/shared/actorView.lua",
+        "../../lua/shared/vocabTagValidation.lua"
       ],
       "config": {
         "script_type": "lua",
@@ -50,11 +52,14 @@
       "path": "../../lua/endpoints/listVocabTags.lua",
       "sourcePath": "../../lua/src/listVocabTags.lua",
       "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/listValidation.lua",
         "../../lua/shared/listQuery.lua",
         "../../lua/shared/recordView.lua",
-        "../../lua/shared/actorView.lua"
+        "../../lua/shared/actorView.lua",
+        "../../lua/shared/vocabTagValidation.lua"
       ],
       "config": {
         "script_type": "lua",
