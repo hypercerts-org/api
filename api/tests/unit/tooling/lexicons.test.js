@@ -97,7 +97,7 @@ if (hasModule('modules/organization/manifest.json')) test('organization query Le
   assert.equal(actorView.properties.profile.ref, 'lex:org.hypercerts.api.defs#profileView');
   assert.equal(actorView.properties.organization.ref, 'lex:org.hypercerts.api.defs#organizationView');
   assert.equal(getOrganization.defs.output.properties.actor.ref, 'lex:app.certified.actor.getOrganization#organizationActorView');
-  assert.deepEqual(getOrganization.defs.main.errors.map(({ name }) => name), ['InvalidRequest', 'RecordNotFound']);
+  assert.deepEqual(getOrganization.defs.main.errors.map(({ name }) => name), ['InvalidRequest', 'RecordNotFound', 'OrganizationQueryFailed']);
 
   assert.equal(lexicons.getDefOrThrow(getOrganizations.defs.output.properties.organizations.items.ref).type, 'object');
   assert.equal(lexicons.getDefOrThrow(getOrganizations.defs.organizationResult.properties.organization.ref).type, 'object');

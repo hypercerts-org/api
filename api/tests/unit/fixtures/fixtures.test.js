@@ -9,7 +9,9 @@ import { isValidDid, isValidTid } from '@atproto/syntax';
 import { locationRecords, profileRecords, organizationRecords, seedSql } from '../../fixtures/records.js';
 import { activityContributorInformationVersions, activityFixtureRows } from '../../fixtures/activities.js';
 import { seedRows as activityHttpFixtureRows } from '../../http/fixtures/activity.fixture.js';
+import { seedRows as actorsHttpFixtureRows } from '../../http/fixtures/actors.fixture.js';
 import { seedRows as badgeHttpFixtureRows } from '../../http/fixtures/badge-definitions.fixture.js';
+import { seedRows as collectionHttpFixtureRows } from '../../http/fixtures/collections.fixture.js';
 import { seedRows as contextAttachmentHttpFixtureRows } from '../../http/fixtures/context-attachments.fixture.js';
 import { seedRows as contextEvaluationHttpFixtureRows } from '../../http/fixtures/context-evaluations.fixture.js';
 import { seedRows as fundingHttpFixtureRows } from '../../http/fixtures/funding-receipts.fixture.js';
@@ -95,6 +97,7 @@ test('activity HTTP fixture repositories do not collide with other fixture repos
     ...actorFollowRecords, ...actorFollowProfileRecords, ...actorFollowOrganizationRecords,
     ...activityFixtureRows, ...contextAttachmentHttpFixtureRows, ...contextEvaluationHttpFixtureRows,
     ...graphFollowHttpFixtureRows, ...fundingHttpFixtureRows, ...badgeHttpFixtureRows,
+    ...actorsHttpFixtureRows, ...collectionHttpFixtureRows,
   ];
   const existingDids = new Set(existingRows.map(({ did }) => did));
   const activityHttpDids = new Set(activityHttpFixtureRows.map(({ did }) => did));

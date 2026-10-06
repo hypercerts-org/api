@@ -10,11 +10,11 @@ const indexedAt = '2025-03-01T00:00:00.000Z';
 const tiedCreatedAt = '2025-02-10T00:00:00.000Z';
 
 export const graphDids = {
-  publisher: 'did:plc:mmmmmmmmmmmmmmmmmmmmmmmm',
-  secondPublisher: 'did:plc:nnnnnnnnnnnnnnnnnnnnnnnn',
-  primarySubject: 'did:plc:oooooooooooooooooooooooo',
-  secondSubject: 'did:plc:pppppppppppppppppppppppp',
-  thirdSubject: 'did:plc:qqqqqqqqqqqqqqqqqqqqqqqq',
+  publisher: 'did:plc:uuuuuuuuuuuuuuuuuuuuuuuu',
+  secondPublisher: 'did:plc:vvvvvvvvvvvvvvvvvvvvvvvv',
+  primarySubject: 'did:plc:wwwwwwwwwwwwwwwwwwwwwwww',
+  secondSubject: 'did:plc:xxxxxxxxxxxxxxxxxxxxxxxx',
+  thirdSubject: 'did:plc:yyyyyyyyyyyyyyyyyyyyyyyy',
   entityAuthor: 'did:plc:rrrrrrrrrrrrrrrrrrrrrrrr',
   curator: 'did:plc:ssssssssssssssssssssssss',
   thirdFollower: 'did:plc:tttttttttttttttttttttttt',
