@@ -14,7 +14,7 @@ The current design requires `indexedAt` to be present but nullable; the older `c
 
 The shared module registers the contribution record Lexicon with backfill enabled; the contribution module registers both query Lexicons and Lua handlers. Installing the bundle through `pnpm install:api` writes these declarations and scripts to the configured HappyView instance, so use the existing approved-target and admin-token procedure before running it.
 
-For local development, checks, and HTTP runtime test requirements, see [CONTRIBUTING.md](../CONTRIBUTING.md).
+For local development checks and HTTP runtime test requirements, see [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Install a released API bundle
 
