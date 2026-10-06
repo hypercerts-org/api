@@ -139,14 +139,14 @@ test('getBadgeAward retrieves the exact award version and latest eligible recipi
   assert.equal(response.status, 200, JSON.stringify(body));
   const { badgeAward } = body;
   assert.equal(badgeAward.uri, canonicalRecords.awardA.uri);
-  assert.equal(badgeAward.cid, 'bafyreihcv3cqtowrvp7fj7ocsfrnmobnfotajlqopomd4yqivdsfaxvbnm');
+  assert.equal(badgeAward.cid, 'bafyreihiubxkalxdhucg7ggirlewxydggfy5hck4bnif6cddlx7ghoirbi');
   assert.deepEqual(badgeAward.record, canonicalRecords.awardA.record);
   assert.equal(badgeAward.badge.uri, definitionUri);
   assert.equal(badgeAward.badge.cid, 'bafyreiatp3bngjbyu5skyqanyt3nr7riaxsmyok73bsuzn2sz52i2oft5a');
   assert.deepEqual(badgeAward.badge.record, canonicalRecords.definitionA.record);
   assert.equal(badgeAward.responseStatus, 'accepted');
   assert.equal(badgeAward.recipientResponse.uri, canonicalRecords.responseAccepted.uri);
-  assert.equal(badgeAward.recipientResponse.cid, 'bafyreihokurp7qhgx2knawho4tgsxvbwi7vavxoyubgef3c4bkqvcrbica');
+  assert.equal(badgeAward.recipientResponse.cid, 'bafyreihap4ghzghynzvap4aqke2hvxbz3zxyljitsrnbblo4ckrj4napyi');
   assert.equal(badgeAward.author.profile.record.displayName, 'Cedar Query Publisher');
   assert.equal(badgeAward.author.organization, null);
 
@@ -262,7 +262,7 @@ test('getBadgeResponse retrieves a raw response with its independent CBOR CID an
   assert.equal(response.status, 200, JSON.stringify(body));
   const { badgeResponse } = body;
   assert.equal(badgeResponse.uri, canonicalRecords.responseAccepted.uri);
-  assert.equal(badgeResponse.cid, 'bafyreihokurp7qhgx2knawho4tgsxvbwi7vavxoyubgef3c4bkqvcrbica');
+  assert.equal(badgeResponse.cid, 'bafyreihap4ghzghynzvap4aqke2hvxbz3zxyljitsrnbblo4ckrj4napyi');
   assert.deepEqual(badgeResponse.record, canonicalRecords.responseAccepted.record);
   assert.equal(badgeResponse.record.response, 'accepted');
   assert.equal(badgeResponse.author.did, badgeQueryDids.recipient);

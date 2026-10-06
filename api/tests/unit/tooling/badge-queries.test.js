@@ -5,6 +5,8 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../../../', import.meta.url));
+const badgeQueriesModuleRoot = new URL('../../../modules/badge-queries/', import.meta.url);
+const badgeQueriesManifest = readFile(new URL('manifest.json', badgeQueriesModuleRoot), 'utf8').then(JSON.parse);
 const definitionCollection = 'app.certified.badge.definition';
 const awardCollection = 'app.certified.badge.award';
 const responseCollection = 'app.certified.badge.response';
@@ -24,7 +26,14 @@ function lua(value) {
 }
 
 async function handlerSource(endpoint) {
-  return readFile(`${root}/lua/endpoints/${endpoint}.lua`, 'utf8');
+  const manifest = await badgeQueriesManifest;
+  const id = `xrpc.query:app.certified.badge.${endpoint}`;
+  const asset = manifest.assets.find((entry) => entry.id === id);
+  assert.ok(asset, `${id} must be declared in the badge-queries module`);
+  const sourcePaths = [...asset.sharedSourcePaths, asset.sourcePath];
+  const sources = await Promise.all(sourcePaths.map((sourcePath) =>
+    readFile(new URL(sourcePath, badgeQueriesModuleRoot), 'utf8')));
+  return `${sources.map((source) => source.trimEnd()).join('\n\n')}\n`;
 }
 
 function runLua(source, { params, queryResults = [], recordValues = {}, assertions = '', expectedError = '' }) {

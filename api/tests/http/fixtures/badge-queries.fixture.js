@@ -11,9 +11,9 @@ const collections = {
 
 export const badgeQueryDids = {
   publisher: 'did:plc:llllllllllllllllllllllll',
-  partner: 'did:plc:mmmmmmmmmmmmmmmmmmmmmmmm',
+  partner: 'did:plc:rrrrrrrrrrrrrrrrrrrrrrrr',
   unlistedAuthor: 'did:plc:nnnnnnnnnnnnnnnnnnnnnnnn',
-  recipient: 'did:plc:oooooooooooooooooooooooo',
+  recipient: 'did:plc:ssssssssssssssssssssssss',
   recordRecipient: 'did:plc:pppppppppppppppppppppppp',
 };
 
