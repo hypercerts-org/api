@@ -9,6 +9,9 @@ const authorB = 'did:web:context-evaluation-b.invalid';
 const evaluatorA = 'did:web:context-evaluator-a.invalid';
 const evaluatorB = 'did:web:context-evaluator-b.invalid';
 const evaluatorC = 'did:web:context-evaluator-c.invalid';
+const evaluatorD = 'did:web:context-evaluator-d.invalid';
+const legacyEvaluatorDid = 'did:web:context-evaluator-legacy.invalid';
+const malformedAuthor = 'did:web:context-evaluation-malformed.invalid';
 const subjectA = 'at://did:web:context-eval-subject-a.invalid/org.hypercerts.claim.activity/subject-a';
 const subjectB = 'at://did:web:context-eval-subject-b.invalid/org.hypercerts.claim.activity/subject-b';
 const subjectC = 'at://did:web:context-eval-subject-c.invalid/org.hypercerts.claim.activity/subject-c';
@@ -61,6 +64,28 @@ const evaluationSpecs = [
       score: { min: '0', max: '5', value: '1' },
     },
   },
+  {
+    did: malformedAuthor,
+    rkey: '3jzfcijpj2z2e',
+    record: {
+      evaluators: [
+        { did: evaluatorD }, legacyEvaluatorDid, { did: 'reviewer.example' }, { did: evaluatorD },
+      ],
+      summary: 'Evaluation with malformed evaluator entries',
+      createdAt: tiedCreatedAt,
+      subject: { uri: subjectA, cid: subjectCid },
+    },
+  },
+  {
+    did: malformedAuthor,
+    rkey: '3jzfcijpj2z2f',
+    record: {
+      evaluators: [{ did: evaluatorC }],
+      summary: 'Evaluation after malformed evaluator entries',
+      createdAt: tiedCreatedAt,
+      subject: { uri: subjectA, cid: subjectCid },
+    },
+  },
 ];
 
 async function seedRow(collection, did, rkey, fields) {
@@ -84,6 +109,10 @@ export const seedRows = await Promise.all([
   }),
   seedRow(profileCollection, evaluatorA, 'self', {
     displayName: 'Named context evaluator',
+    createdAt: indexedAt,
+  }),
+  seedRow(profileCollection, evaluatorD, 'self', {
+    displayName: 'Tolerated projection evaluator',
     createdAt: indexedAt,
   }),
   seedRow(organizationCollection, authorB, 'self', {

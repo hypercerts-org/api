@@ -31,7 +31,7 @@ local function parse_authors(value)
 
   local unique, seen = {}, {}
   for _, author in ipairs(supplied) do
-    if not valid_vocab_did(author) then invalid("each authors value must be a valid DID") end
+    if not valid_did(author) then invalid("each authors value must be a valid DID") end
     if not seen[author] then
       seen[author] = true
       unique[#unique + 1] = author

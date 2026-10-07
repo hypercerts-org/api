@@ -3,6 +3,10 @@
 import { encode } from '@atcute/cbor';
 import * as CID from '@atcute/cid';
 
+/** @typedef {{ uri: string; did: string; collection: string; rkey: string; cid: string; indexedAt: string; record: Record<string, unknown> }} SeedRow */
+/** @typedef {Omit<SeedRow, 'indexedAt'> & { indexedAt: string | null; storedAt: string }} DateFixtureRow */
+
+/** @type {[string, string | number | string[] | null | undefined, string | null][]} */
 const cases = [
   ['badmissing', undefined, '2025-01-02T03:04:05.123456Z'],
   ['badnull', null, '2025-01-02T03:04:05.123456Z'],
@@ -20,6 +24,7 @@ const cases = [
   ['goodearlier', '2025-01-01T00:00:00Z', '2025-01-08T00:00:00Z'],
 ];
 
+/** @param {SeedRow} base @param {{ did: string; decorateRecord?: (record: Record<string, unknown>, rkey: string) => Record<string, unknown> }} options @returns {Promise<DateFixtureRow[]>} */
 export async function makeDateCaseRows(base, { did, decorateRecord = (record) => record }) {
   return Promise.all(cases.map(async ([rkey, createdAt, indexedAt]) => {
     const record = decorateRecord({ ...base.record }, rkey);
@@ -33,6 +38,7 @@ export async function makeDateCaseRows(base, { did, decorateRecord = (record) =>
   }));
 }
 
+/** @param {DateFixtureRow[]} rows @param {{ disposableTestTarget?: boolean }} [options] @returns {{ sql: string; params: unknown[] }[]} */
 export function badDateSeedSql(rows, { disposableTestTarget = false } = {}) {
   if (disposableTestTarget !== true) throw new Error('Bad-date seeding requires explicit disposable-test target opt-in');
   return rows.map((row) => ({

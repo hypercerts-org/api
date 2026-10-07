@@ -4,11 +4,16 @@
     "checkJs": true,
     "noEmit": true,
     "strict": true,
+    "noUncheckedIndexedAccess": true,
     "skipLibCheck": true,
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "types": ["node"]
   },
-  "include": ["tooling/installer.js"]
+  "include": [
+    "tooling/installer.js",
+    "tooling/run-http-tests.js",
+    "tooling/seed.js"
+  ]
 }

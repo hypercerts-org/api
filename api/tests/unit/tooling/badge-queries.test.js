@@ -246,6 +246,7 @@ assert(result.badgeAward.author.profile.record.displayName == 'Issuer')
 local sql = calls[1].sql
 assert(sql:find("badge.cid = award.record::jsonb->'badge'->>'cid'", 1, true))
 assert(sql:find("response.did = CASE WHEN jsonb_typeof(award.record::jsonb->'subject') = 'string'", 1, true))
+assert(sql:find("WHEN jsonb_typeof(award.record::jsonb->'subject') = 'object' AND award.record::jsonb->'subject'->>'$type' = 'app.certified.defs#did' AND jsonb_typeof(award.record::jsonb->'subject'->'did') = 'string' THEN award.record::jsonb->'subject'->>'did'", 1, true))
 assert(sql:find("split_part(award.record::jsonb->'subject'->>'uri', '/', 3)", 1, true))
 assert(sql:find("response.record::jsonb->'badgeAward'->>'uri' = award.uri", 1, true))
 assert(sql:find("response.record::jsonb->'badgeAward'->>'cid' = award.cid", 1, true))
@@ -262,6 +263,47 @@ assert(not sql:find("response.record::jsonb->>'createdAt'", 1, true), 'publisher
     queryResults: [[]],
     expectedError: 'RecordNotFound: badge award is not indexed',
     assertions: 'assert(#calls == 1)',
+  });
+});
+
+test('getBadgeAward resolves a DID-object recipient and constrains response author and exact award version', async () => {
+  const recipient = 'did:plc:bbbbbbbbbbbbbbbbbbbbbbbb';
+  const awardUri = `at://${issuer}/${awardCollection}/did-object`;
+  const responseUri = `at://${recipient}/${responseCollection}/did-object`;
+  const awardCid = 'bafy-did-object-award-v1';
+  const row = {
+    uri: awardUri, did: issuer, cid: awardCid, indexed_at: indexedAt, record: 'did-object-award',
+    record_json: {
+      $type: awardCollection,
+      badge: { uri: `at://${issuer}/${definitionCollection}/forest`, cid: 'bafy-definition-v1' },
+      subject: { $type: 'app.certified.defs#did', did: recipient },
+      createdAt: '2025-01-01T00:00:00Z',
+    },
+    recipient_response_uri: responseUri, recipient_response_cid: 'bafy-did-object-response-v1',
+    recipient_response_indexed_at: indexedAt, recipient_response_did: recipient,
+    recipient_response_record: 'did-object-response',
+  };
+
+  runLua(await handlerSource('getBadgeAward'), {
+    params: { uri: awardUri },
+    queryResults: [[row], [], []],
+    recordValues: {
+      'did-object-response': {
+        $type: responseCollection,
+        badgeAward: { uri: awardUri, cid: awardCid },
+        response: 'accepted',
+      },
+    },
+    assertions: `
+assert(result.badgeAward.responseStatus == 'accepted')
+assert(result.badgeAward.recipientResponse.uri == '${responseUri}')
+assert(result.badgeAward.recipientResponse.did == '${recipient}')
+local sql = calls[1].sql
+assert(sql:find("WHEN jsonb_typeof(award.record::jsonb->'subject') = 'object' AND award.record::jsonb->'subject'->>'$type' = 'app.certified.defs#did' AND jsonb_typeof(award.record::jsonb->'subject'->'did') = 'string' THEN award.record::jsonb->'subject'->>'did'", 1, true))
+assert(sql:find("response.did = CASE WHEN", 1, true))
+assert(sql:find("response.record::jsonb->'badgeAward'->>'uri' = award.uri", 1, true))
+assert(sql:find("response.record::jsonb->'badgeAward'->>'cid' = award.cid", 1, true))
+`,
   });
 });
 
@@ -287,7 +329,7 @@ test('listBadgeAwards combines filters, keeps repeated awards, and returns recip
     sort_timestamp: createdAt.replace('Z', '.000000Z'),
   });
   const rows = [
-    awardRow(awardUri('actor-1'), issuer, 'actor-one', recipient, '2025-01-01T00:00:00Z', {
+    awardRow(awardUri('actor-1'), issuer, 'actor-one', { $type: 'app.certified.defs#did', did: recipient }, '2025-01-01T00:00:00Z', {
       uri: `at://${recipient}/${responseCollection}/actor-1`, cid: 'bafy-response-1', did: recipient, record: 'response-1',
     }),
     awardRow(`at://${secondIssuer}/${awardCollection}/actor-2`, secondIssuer, 'actor-two', recipient, '2025-01-02T00:00:00Z'),
@@ -310,13 +352,13 @@ test('listBadgeAwards combines filters, keeps repeated awards, and returns recip
   runLua(await handlerSource('listBadgeAwards'), {
     params: {
       authors: [issuer, secondIssuer], badgeUris: [badgeUri], badgeTypes: ['certification'],
-      subjects: [recipient, subjectRecord], responses: ['accepted', 'unanswered'], sortDirection: 'asc', limit: '3',
+      subjects: [recipient, subjectRecord], responses: ['accepted', 'rejected', 'unanswered'], sortDirection: 'asc', limit: '3',
     },
     queryResults: [rows, profiles, []],
     recordValues: {
       'badge-record': { $type: definitionCollection, title: 'Forest Badge', badgeType: 'certification' },
       'response-1': responseRecord(awardUri('actor-1'), 'bafy-actor-one', 'accepted'),
-      'response-record': responseRecord(awardUri('record-1'), 'bafy-record-one', 'accepted'),
+      'response-record': responseRecord(awardUri('record-1'), 'bafy-record-one', 'rejected'),
     },
     assertions: `
 assert(#result.badgeAwards == 3 and result.cursor ~= nil)
@@ -329,7 +371,7 @@ assert(result.badgeAwards[1].recipientResponse.indexedAt == '${indexedAt}')
 assert(result.badgeAwards[1].responseStatus == 'accepted')
 assert(result.badgeAwards[2].responseStatus == 'unanswered' and result.badgeAwards[2].recipientResponse == NULL_VALUE)
 assert(result.badgeAwards[3].record.subject.uri == '${subjectRecord}')
-assert(result.badgeAwards[3].responseStatus == 'accepted' and result.badgeAwards[3].recipientResponse.did == '${recordOwner}')
+assert(result.badgeAwards[3].responseStatus == 'rejected' and result.badgeAwards[3].recipientResponse.did == '${recordOwner}')
 assert(result.badgeAwards[1].author.profile.record.displayName == 'Issuer One')
 local cursor = json.decode(result.cursor)
 assert(cursor.v == 1 and cursor.d == 'asc' and cursor.u == '${rows[2].uri}')
@@ -340,7 +382,20 @@ assert(sql:find("badge.record::jsonb->>'badgeType' IN", 1, true))
 assert(sql:find("badge.cid = award.record::jsonb->'badge'->>'cid'", 1, true))
 assert(sql:find("jsonb_typeof(award.record::jsonb->'subject') = 'string'", 1, true))
 assert(sql:find("jsonb_typeof(award.record::jsonb->'subject') = 'object'", 1, true))
+assert(sql:find("award.record::jsonb->'subject'->>'$type' = 'app.certified.defs#did'", 1, true))
+assert(sql:find("jsonb_typeof(award.record::jsonb->'subject'->'did') = 'string'", 1, true))
+assert(sql:find("award.record::jsonb->'subject'->>'did' IN", 1, true))
 assert(sql:find("award.record::jsonb->'subject'->>'uri' IN", 1, true))
+local subject_did = sql:find("award.record::jsonb->'subject'->>'did' IN", 1, true)
+local subject_or = sql:find(" OR ", subject_did, true)
+local subject_uri = sql:find("award.record::jsonb->'subject'->>'uri' IN", subject_or, true)
+local other_filter = sql:find(") AND badge.record::jsonb->>'badgeType' IN", subject_uri, true)
+assert(subject_did and subject_or and subject_uri and other_filter
+  and subject_did < subject_or and subject_or < subject_uri and subject_uri < other_filter,
+  'DID and URI subject alternatives are ORed before the other ANDed filters')
+assert(sql:find("response.did = CASE WHEN jsonb_typeof(award.record::jsonb->'subject') = 'string'", 1, true))
+assert(sql:find("response.record::jsonb->'badgeAward'->>'uri' = award.uri", 1, true))
+assert(sql:find("response.record::jsonb->'badgeAward'->>'cid' = award.cid", 1, true))
 assert(sql:find("COALESCE(recipient_response.record::jsonb->>'response', 'unanswered') IN", 1, true))
 local responseFilter = sql:find("response.record::jsonb->>'response' IN ('accepted', 'rejected')", 1, true)
 local responseOrder = sql:find('ORDER BY response.indexed_at DESC NULLS LAST, response.uri DESC', 1, true)
@@ -352,7 +407,7 @@ local function has(values, expected)
   for _, value in ipairs(values) do if value == expected then return true end end
   return false
 end
-for _, value in ipairs({ '${issuer}', '${secondIssuer}', '${badgeUri}', 'certification', '${recipient}', '${subjectRecord}', 'accepted', 'unanswered' }) do
+for _, value in ipairs({ '${issuer}', '${secondIssuer}', '${badgeUri}', 'certification', '${recipient}', '${subjectRecord}', 'accepted', 'rejected', 'unanswered' }) do
   assert(has(calls[1].values, value), 'filter value is bound: ' .. value)
 end
 `,

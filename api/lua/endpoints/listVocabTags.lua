@@ -125,21 +125,10 @@ end
 
 local VOCAB_TAG = "org.hypercerts.vocab.tag"
 
-local function valid_vocab_did(value)
-  if not valid_did(value) then return false end
-  local position = 1
-  while true do
-    local percent = value:find("%", position, true)
-    if not percent then return true end
-    if not value:sub(percent + 1, percent + 2):match("^%x%x$") then return false end
-    position = percent + 3
-  end
-end
-
 local function valid_vocab_tag_uri(value)
   local valid, collection, authority = valid_record_uri(value)
   if not valid or collection ~= VOCAB_TAG then return false end
-  return valid_vocab_did(authority)
+  return valid_did(authority)
 end
 
 local function hydrate_vocab_actor_views(actors, run_query)
@@ -184,7 +173,7 @@ local function parse_authors(value)
 
   local unique, seen = {}, {}
   for _, author in ipairs(supplied) do
-    if not valid_vocab_did(author) then invalid("each authors value must be a valid DID") end
+    if not valid_did(author) then invalid("each authors value must be a valid DID") end
     if not seen[author] then
       seen[author] = true
       unique[#unique + 1] = author

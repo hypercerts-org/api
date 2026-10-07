@@ -102,8 +102,8 @@ Reaction queries use the earliest record per author/subject URI, with URI ascend
 | List acknowledgements | `org.hypercerts.context.listAcknowledgements` | Filter by publisher or subject as documented. |
 | Load one attachment | `org.hypercerts.context.getAttachment` | Exact record AT-URI in `uri`. |
 | List attachments | `org.hypercerts.context.listAttachments` | Filter by publisher, record URI, subject, or content type. |
-| Load one evaluation | `org.hypercerts.context.getEvaluation` | Exact record AT-URI in `uri`; includes publisher/evaluator projections. |
-| List evaluations | `org.hypercerts.context.listEvaluations` | Filter by publisher, evaluator, or subject. |
+| Load one evaluation | `org.hypercerts.context.getEvaluation` | Exact record AT-URI in `uri`; includes publisher/evaluator projections and preserves raw records when malformed evaluator entries are omitted. |
+| List evaluations | `org.hypercerts.context.listEvaluations` | Filter by publisher, evaluator, or subject; malformed evaluator entries do not hide otherwise valid records. |
 | Load one measurement | `org.hypercerts.context.getMeasurement` | Exact record AT-URI in `uri`. |
 | List measurements | `org.hypercerts.context.listMeasurements` | Filter by publisher or subject. |
 

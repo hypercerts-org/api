@@ -150,26 +150,28 @@ local function activity_projection_hydrate_views(views)
         error("ActivityQueryFailed: activity contributors are not an array", 0)
       end
       local projections = {}
-      for contributor_index, source in ipairs(source_contributors) do
-        local projection = {}
-        for key, value in pairs(source) do projection[key] = value end
-        projection.contributorInformation = ACTIVITY_PROJECTION_NULL
-        projection.actor = ACTIVITY_PROJECTION_NULL
-        projections[contributor_index] = projection
+      for _, source in ipairs(source_contributors) do
+        if type(source) ~= "string" then
+          local projection = {}
+          for key, value in pairs(source) do projection[key] = value end
+          projection.contributorInformation = ACTIVITY_PROJECTION_NULL
+          projection.actor = ACTIVITY_PROJECTION_NULL
+          projections[#projections + 1] = projection
 
-        local identity = source.contributorIdentity
-        local resolution = { projection = projection }
-        if type(identity) == "table" and type(identity.uri) == "string" and type(identity.cid) == "string" then
-          local key = activity_projection_identity_key(identity.uri, identity.cid)
-          resolution.information_key = key
-          if not seen_references[key] then
-            seen_references[key] = true
-            references[#references + 1] = { uri = identity.uri, cid = identity.cid }
+          local identity = source.contributorIdentity
+          local resolution = { projection = projection }
+          if type(identity) == "table" and type(identity.uri) == "string" and type(identity.cid) == "string" then
+            local key = activity_projection_identity_key(identity.uri, identity.cid)
+            resolution.information_key = key
+            if not seen_references[key] then
+              seen_references[key] = true
+              references[#references + 1] = { uri = identity.uri, cid = identity.cid }
+            end
+          elseif type(identity) == "table" then
+            resolution.identifier = identity.identity
           end
-        elseif type(identity) == "table" then
-          resolution.identifier = identity.identity
+          contributor_resolutions[#contributor_resolutions + 1] = resolution
         end
-        contributor_resolutions[#contributor_resolutions + 1] = resolution
       end
       projected_contributors[view_index] = projections
     end
