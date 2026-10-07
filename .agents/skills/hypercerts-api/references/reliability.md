@@ -34,6 +34,8 @@ For a potentially fresh record that is absent:
 
 A nullable actor profile does not imply an invalid DID; a missing organization sidecar does not prove the actor is missing; an unavailable exact CID does not prove another version at that URI is absent.
 
+For `org.hypercerts.context.getEvaluation` and `listEvaluations`, the top-level `record` remains the indexed value. The separate hydrated `evaluators` array is a dense projection of entries shaped as objects with valid DIDs; malformed entries are omitted, and a missing or non-array source yields an empty projection. Do not treat an empty projection as proof that the raw record had no evaluator data. More than 1,000 raw entries remains outside the supported limit: exact lookup fails and lists skip that record.
+
 ## Diagnose failures without overgeneralizing
 
 1. Record HTTP status and parse the JSON XRPC error code/message when present; preserve a fallback for empty or non-JSON bodies. See [request-patterns.md](request-patterns.md#handle-http-and-xrpc-errors).

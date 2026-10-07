@@ -5,12 +5,17 @@ import { contractUrl, requireContractTarget } from './helpers.js';
 const getEndpoint = 'org.hypercerts.context.getEvaluation';
 const listEndpoint = 'org.hypercerts.context.listEvaluations';
 const authorA = 'did:web:context-evaluation-a.invalid';
+const malformedAuthor = 'did:web:context-evaluation-malformed.invalid';
 const evaluatorA = 'did:web:context-evaluator-a.invalid';
+const evaluatorD = 'did:web:context-evaluator-d.invalid';
+const legacyEvaluatorDid = 'did:web:context-evaluator-legacy.invalid';
 const evaluationUris = {
   a: `at://${authorA}/org.hypercerts.context.evaluation/3jzfcijpj2z2a`,
   b: `at://${authorA}/org.hypercerts.context.evaluation/3jzfcijpj2z2b`,
   c: 'at://did:web:context-evaluation-b.invalid/org.hypercerts.context.evaluation/3jzfcijpj2z2c',
   d: 'at://did:web:context-evaluation-b.invalid/org.hypercerts.context.evaluation/3jzfcijpj2z2d',
+  e: `at://${malformedAuthor}/org.hypercerts.context.evaluation/3jzfcijpj2z2e`,
+  f: `at://${malformedAuthor}/org.hypercerts.context.evaluation/3jzfcijpj2z2f`,
 };
 
 async function request(endpoint, params = {}) {
@@ -61,6 +66,23 @@ test('getEvaluation preserves the CBOR-addressed record and hydrates publisher a
   assert.equal(evaluation.evaluators[2].organization, null);
 });
 
+test('getEvaluation preserves malformed raw evaluator entries and densely hydrates valid DID objects', async () => {
+  const { response, body } = await request(getEndpoint, { uri: evaluationUris.e });
+  assert.equal(response.status, 200, JSON.stringify(body));
+
+  const { evaluation } = body;
+  assert.deepEqual(evaluation.record.evaluators, [
+    { did: evaluatorD }, legacyEvaluatorDid, { did: 'reviewer.example' }, { did: evaluatorD },
+  ]);
+  assert.deepEqual(evaluation.evaluators.map(({ did, hydrationStatus }) => ({ did, hydrationStatus })), [
+    { did: evaluatorD, hydrationStatus: 'hydrated' },
+    { did: evaluatorD, hydrationStatus: 'hydrated' },
+  ]);
+  assert.equal(evaluation.evaluators[0].profile.record.displayName, 'Tolerated projection evaluator');
+  assert.equal(evaluation.evaluators[1].profile.record.displayName, 'Tolerated projection evaluator');
+  assert.equal(evaluation.author.did, malformedAuthor);
+});
+
 test('getEvaluation exposes RecordNotFound and InvalidRequest through the pinned runtime error response', async () => {
   const missing = await request(getEndpoint, {
     uri: `at://${authorA}/org.hypercerts.context.evaluation/not-indexed`,
@@ -102,16 +124,39 @@ test('listEvaluations applies each filter, ORs repeated values, and ANDs distinc
 
 test('listEvaluations paginates the complete feed across tied createdAt timestamps', async () => {
   const expected = [evaluationUris.a, evaluationUris.b, evaluationUris.c, evaluationUris.d];
-  const first = await request(listEndpoint, { sortDirection: 'asc', limit: 2 });
+  const authors = [authorA, 'did:web:context-evaluation-b.invalid'];
+  const first = await request(listEndpoint, { authors, sortDirection: 'asc', limit: 2 });
   assert.equal(first.response.status, 200, JSON.stringify(first.body));
   assert.deepEqual(first.body.evaluations.map(({ uri }) => uri), expected.slice(0, 2));
   assert.equal(typeof first.body.cursor, 'string');
 
   const second = await request(listEndpoint, {
-    sortDirection: 'asc', limit: 2, cursor: first.body.cursor,
+    authors, sortDirection: 'asc', limit: 2, cursor: first.body.cursor,
   });
   assert.equal(second.response.status, 200, JSON.stringify(second.body));
   assert.deepEqual(second.body.evaluations.map(({ uri }) => uri), expected.slice(2));
+  assert.equal(Object.hasOwn(second.body, 'cursor'), false);
+});
+
+test('listEvaluations retains malformed evaluator records and paginates without dropping them', async () => {
+  const params = { authors: [malformedAuthor], sortDirection: 'asc', limit: 1 };
+  const first = await request(listEndpoint, params);
+  assert.equal(first.response.status, 200, JSON.stringify(first.body));
+  assert.deepEqual(first.body.evaluations.map(({ uri }) => uri), [evaluationUris.e]);
+  assert.deepEqual(first.body.evaluations[0].record.evaluators, [
+    { did: evaluatorD }, legacyEvaluatorDid, { did: 'reviewer.example' }, { did: evaluatorD },
+  ]);
+  assert.deepEqual(first.body.evaluations[0].evaluators.map(({ did, hydrationStatus }) => ({ did, hydrationStatus })), [
+    { did: evaluatorD, hydrationStatus: 'hydrated' },
+    { did: evaluatorD, hydrationStatus: 'hydrated' },
+  ]);
+  assert.equal(typeof first.body.cursor, 'string');
+
+  const second = await request(listEndpoint, { ...params, cursor: first.body.cursor });
+  assert.equal(second.response.status, 200, JSON.stringify(second.body));
+  assert.deepEqual(second.body.evaluations.map(({ uri }) => uri), [evaluationUris.f]);
+  assert.equal(second.body.evaluations[0].evaluators[0].did, 'did:web:context-evaluator-c.invalid');
+  assert.equal(second.body.evaluations[0].evaluators[0].hydrationStatus, 'hydrated');
   assert.equal(Object.hasOwn(second.body, 'cursor'), false);
 });
 
