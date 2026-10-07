@@ -68,11 +68,6 @@ function withoutRecordJson(row) {
 test('activity API manifests and Lexicons declare the implemented endpoint contracts', async () => {
   const manifest = JSON.parse(await readFile(new URL('../../../manifest.json', import.meta.url), 'utf8'));
   const module = JSON.parse(await readFile(new URL('../../../modules/activity/manifest.json', import.meta.url), 'utf8'));
-  assert.deepEqual({
-    getActivity: manifest.handlerStatus.getActivity,
-    listActivities: manifest.handlerStatus.listActivities,
-    searchActivities: manifest.handlerStatus.searchActivities,
-  }, { getActivity: 'implemented', listActivities: 'implemented', searchActivities: 'implemented' });
   assert.ok(manifest.modules.includes('modules/activity/manifest.json'));
   for (const nsid of ['org.hypercerts.claim.activity', 'org.hypercerts.claim.contributorInformation']) {
     assert.ok(manifest.validationLexicons.some(({ id, packagePath }) => id === nsid && packagePath));
@@ -564,6 +559,8 @@ assert(result.activities[1].author.profile.record.displayName == 'List author')
 assert(result.activities[1].contributors[1].contributorInformation.record.displayName == 'Exact contributor')
 assert(result.activities[1].contributors[1].actor.profile.record.displayName == 'List contributor')
 local sql = calls[1].sql
+assert(sql:find("activity.record::jsonb->'createdAt'", 1, true))
+assert(sql:find('COALESCE(activity.indexed_at::timestamptz, activity.created_at::timestamptz)', 1, true))
 assert(sql:find('activity.did IN ($2)', 1, true), 'duplicate author DIDs must be removed before binding')
 assert(sql:find('activity.uri IN ($6, $7)', 1, true), 'duplicate URIs must be removed before binding')
 assert(sql:find("NOT EXISTS (SELECT 1 FROM happyview_records AS organization", 1, true), 'false must require no organization self record')

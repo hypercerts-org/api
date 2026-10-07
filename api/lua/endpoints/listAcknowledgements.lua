@@ -75,28 +75,6 @@ local PROFILE = "app.certified.actor.profile"
 local ORGANIZATION = "app.certified.actor.organization"
 local NULL = json.decode("null")
 
-local generic_valid_did = valid_did
-local generic_valid_record_uri = valid_record_uri
-
-local function acknowledgement_valid_did(value)
-  if not generic_valid_did(value) then return false end
-  local position = 1
-  while true do
-    local percent = value:find("%", position, true)
-    if not percent then break end
-    local escape = value:sub(percent + 1, percent + 2)
-    if #escape ~= 2 or escape:find("[^0-9A-Fa-f]") then return false end
-    position = percent + 3
-  end
-  return true
-end
-
-valid_record_uri = function(value)
-  local valid, collection, authority = generic_valid_record_uri(value)
-  if not valid or not acknowledgement_valid_did(authority) then return false end
-  return true, collection
-end
-
 local function acknowledgement_query(sql, values)
   if db.backend() ~= "postgres" then
     error("AcknowledgementQueryFailed: acknowledgement API requires PostgreSQL", 0)
@@ -210,7 +188,7 @@ local function acknowledgement_array(key, format)
 
   local unique, seen = {}, {}
   for _, item in ipairs(supplied) do
-    if format == "did" and not acknowledgement_valid_did(item) then
+    if format == "did" and not valid_did(item) then
       invalid("each " .. key .. " value must be a valid DID; resolve handles to DIDs first")
     elseif format == "at-uri" then
       local valid, collection = valid_record_uri(item)

@@ -252,6 +252,62 @@ local function collection_hydrate(views, omit_invalid)
   return collection_projection_hydrate(views, omit_invalid)
 end
 
+local function valid_datetime(value)
+  if type(value) ~= "string" then return false end
+  local year, month, day, hour, minute, second, suffix = value:match(
+    "^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)(.*)$")
+  if not year then return false end
+  year, month, day = tonumber(year), tonumber(month), tonumber(day)
+  hour, minute, second = tonumber(hour), tonumber(minute), tonumber(second)
+  if month < 1 or month > 12 or hour > 23 or minute > 59 or second > 59 then return false end
+  local leap = year % 4 == 0 and (year % 100 ~= 0 or year % 400 == 0)
+  local month_days = { 31, leap and 29 or 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
+  if day < 1 or day > month_days[month] then return false end
+  local fraction, zone = suffix:match("^(%.%d+)(Z)$")
+  if not fraction then fraction, zone = suffix:match("^(%.%d+)([+-]%d%d:%d%d)$") end
+  if not fraction then zone = suffix:match("^(Z)$") end
+  if not zone then zone = suffix:match("^([+-]%d%d:%d%d)$") end
+  if not zone or zone == "-00:00" then return false end
+  if zone ~= "Z" then
+    local zh, zm = zone:match("^[+-](%d%d):(%d%d)$")
+    if not zh or tonumber(zh) > 23 or tonumber(zm) > 59 then return false end
+  end
+  return true
+end
+
+local CREATED_AT_SORT_COLUMNS = {
+  profile = { record = "record", indexed_at = "indexed_at", created_at = "created_at" },
+  organization = {
+    record = "organization.record",
+    indexed_at = "organization.indexed_at",
+    created_at = "organization.created_at",
+  },
+  activity = {
+    record = "activity.record",
+    indexed_at = "activity.indexed_at",
+    created_at = "activity.created_at",
+  },
+  collection = {
+    record = "collection.record",
+    indexed_at = "collection.indexed_at",
+    created_at = "collection.created_at",
+  },
+}
+local CREATED_AT_SORT_PATTERN = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
+
+local function created_at_sort_expression(source)
+  local columns = CREATED_AT_SORT_COLUMNS[source]
+  if not columns then
+    error("CreatedAtSortExpressionError: source must be 'profile', 'organization', 'activity', or 'collection'", 0)
+  end
+
+  local created = columns.record .. "::jsonb->>'createdAt'"
+  return "CASE WHEN jsonb_typeof(" .. columns.record .. "::jsonb->'createdAt') = 'string' AND " .. created ..
+    " ~ '" .. CREATED_AT_SORT_PATTERN .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created ..
+    ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE COALESCE(" .. columns.indexed_at ..
+    "::timestamptz, " .. columns.created_at .. "::timestamptz) END"
+end
+
 local function collection_array(key, kind)
   local value = params[key]
   if value == nil then return nil end
@@ -317,29 +373,6 @@ local function collection_list_limit()
   return limit
 end
 
-local function collection_valid_datetime(value)
-  if type(value) ~= "string" then return false end
-  local year, month, day, hour, minute, second, suffix = value:match(
-    "^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)(.*)$")
-  if not year then return false end
-  year, month, day = tonumber(year), tonumber(month), tonumber(day)
-  hour, minute, second = tonumber(hour), tonumber(minute), tonumber(second)
-  if month < 1 or month > 12 or hour > 23 or minute > 59 or second > 59 then return false end
-  local leap = year % 4 == 0 and (year % 100 ~= 0 or year % 400 == 0)
-  local month_days = { 31, leap and 29 or 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
-  if day < 1 or day > month_days[month] then return false end
-  local fraction, zone = suffix:match("^(%.%d+)(Z)$")
-  if not fraction then fraction, zone = suffix:match("^(%.%d+)([+-]%d%d:%d%d)$") end
-  if not fraction then zone = suffix:match("^(Z)$") end
-  if not zone then zone = suffix:match("^([+-]%d%d:%d%d)$") end
-  if not zone or zone == "-00:00" then return false end
-  if zone ~= "Z" then
-    local zh, zm = zone:match("^[+-](%d%d):(%d%d)$")
-    if not zh or tonumber(zh) > 23 or tonumber(zm) > 59 then return false end
-  end
-  return true
-end
-
 local function collection_list_cursor_decode(token, direction)
   if token == nil then return nil end
   if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
@@ -357,7 +390,7 @@ local function collection_list_cursor_decode(token, direction)
     end
   end
   local valid, collection = collection_valid_record_uri(value.u)
-  if not collection_valid_datetime(value.t) or not valid or collection ~= COLLECTION then
+  if not valid_datetime(value.t) or not valid or collection ~= COLLECTION then
     collection_invalid("cursor is malformed")
   end
   return value
@@ -454,12 +487,7 @@ end
 local function collection_list_sql(where, values, limit, direction)
   values[#values + 1] = limit + 1
   local ordering = direction == "asc" and "ASC" or "DESC"
-  local created = "collection.record::jsonb->>'createdAt'"
-  local zoned = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
-  local sort_key = "CASE WHEN jsonb_typeof(collection.record::jsonb->'createdAt') = 'string' AND " .. created ..
-    " ~ '" .. zoned .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created ..
-    ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE " ..
-    "COALESCE(collection.indexed_at::timestamptz, collection.created_at::timestamptz) END"
+  local sort_key = created_at_sort_expression("collection")
   return "SELECT collection.uri, collection.did, collection.cid, collection.indexed_at::text AS indexed_at, " ..
     "collection.record::text AS record, to_char(sorted.sort_at AT TIME ZONE 'UTC', " ..
     "'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp " ..

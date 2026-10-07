@@ -160,7 +160,7 @@ local function list_features()
     limit = true,
     cursor = true,
   })
-  local authors = feature_array(params, "authors", feature_valid_did, "valid DIDs")
+  local authors = feature_array(params, "authors", valid_did, "valid DIDs")
   local types = feature_array(params, "types", nil, nil, 64)
   local has_organization_record = feature_parse_organization_filter(params)
   local limit = parse_list_limit(params)

@@ -56,7 +56,7 @@ local function acknowledgement_array(key, format)
 
   local unique, seen = {}, {}
   for _, item in ipairs(supplied) do
-    if format == "did" and not acknowledgement_valid_did(item) then
+    if format == "did" and not valid_did(item) then
       invalid("each " .. key .. " value must be a valid DID; resolve handles to DIDs first")
     elseif format == "at-uri" then
       local valid, collection = valid_record_uri(item)

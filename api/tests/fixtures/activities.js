@@ -8,6 +8,9 @@ const authorDid = 'did:plc:gggggggggggggggggggggggg';
 const contributorDid = 'did:plc:hhhhhhhhhhhhhhhhhhhhhhhh';
 const indexedAt = '2025-01-02T03:04:05.000Z';
 
+/** @typedef {{ uri: string; did: string; collection: string; rkey: string; cid: string; indexedAt: string; record: Record<string, unknown> }} SeedRow */
+
+/** @param {string} collection @param {string} rkey @param {Record<string, unknown>} fields @param {string} did @returns {Promise<SeedRow>} */
 async function row(collection, rkey, fields, did) {
   const record = { $type: collection, ...fields };
   const uri = `at://${did}/${collection}/${rkey}`;

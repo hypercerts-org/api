@@ -6,6 +6,8 @@ const profileCollection = 'app.certified.actor.profile';
 const organizationCollection = 'app.certified.actor.organization';
 const indexedAt = '2025-01-02T03:04:05.000Z';
 
+/** @typedef {{ uri: string; did: string; collection: string; rkey: string; cid: string; indexedAt: string; record: Record<string, unknown> }} SeedRow */
+
 export const actorFollowDids = {
   publisher: 'did:plc:aaaaaaaaaaaaaaaaaaaaaaaa',
   otherPublisher: 'did:plc:bbbbbbbbbbbbbbbbbbbbbbbb',
@@ -15,6 +17,7 @@ export const actorFollowDids = {
   curator: 'did:plc:ffffffffffffffffffffffff',
 };
 
+/** @param {string} collection @param {string} rkey @param {Record<string, unknown>} fields @param {string} did @returns {Promise<SeedRow>} */
 async function row(collection, rkey, fields, did) {
   const record = { $type: collection, ...fields };
   const uri = `at://${did}/${collection}/${rkey}`;

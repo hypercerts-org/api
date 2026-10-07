@@ -1,24 +1,9 @@
 local CONTRIBUTION = "org.hypercerts.claim.contribution"
 
-local function valid_contribution_did(value)
-  if type(value) ~= "string" or not valid_did(value) then return false end
-  local index = 1
-  while index <= #value do
-    if value:sub(index, index) == "%" then
-      local escape = value:sub(index + 1, index + 2)
-      if #escape ~= 2 or escape:find("[^0-9A-Fa-f]") then return false end
-      index = index + 3
-    else
-      index = index + 1
-    end
-  end
-  return true
-end
-
 local function valid_contribution_uri(value)
   local valid, collection, authority = valid_record_uri(value)
   if not valid or collection ~= CONTRIBUTION then return false end
-  return valid_contribution_did(authority)
+  return valid_did(authority)
 end
 
 local function contribution_query(sql, values)

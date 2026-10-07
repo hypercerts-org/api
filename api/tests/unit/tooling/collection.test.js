@@ -64,6 +64,8 @@ db = {
   raw = function(sql, values)
     calls[#calls + 1] = { sql = sql, values = values }
     if values[1] ~= '${COLLECTION}' then return {} end
+    assert(sql:find("collection.record::jsonb->'createdAt'", 1, true))
+    assert(sql:find('COALESCE(collection.indexed_at::timestamptz, collection.created_at::timestamptz)', 1, true))
 
     for _, value in ipairs({ ${[...itemUris, ...tagUris].map((uri) => JSON.stringify(uri)).join(', ')} }) do
       local bound, placeholder = false, false

@@ -8,6 +8,8 @@
 
 A handle is a resolvable actor identifier, not a DID or record URI. `app.certified.actor.getProfile` accepts a DID or handle and uses the configured handle resolver; the declared contract does not claim independent DID-document verification. Batch profile/organization lookups take DIDs.
 
+The API's shared DID syntax check permits `%` without requiring a following pair of hexadecimal digits, so a value such as `did:example:abc%ZZ` passes DID syntax validation. When sending such a DID in a query string, use `URLSearchParams` to encode it as query data; see [request construction](request-patterns.md#build-one-public-xrpc-get). The shared syntax also permits empty internal colon-separated segments (for example, `did:example:a::b`), including for EVM-link identifiers; a trailing colon remains invalid.
+
 ### Exact collection item versions
 
 `org.hypercerts.collection.listCollectionItems` resolves each embedded item's strong reference by exact URI **and** CID. If the requested CID is unavailable, the item's `record` can be null; do not silently substitute a newer record at the same URI. Nested collections are summaries, not recursive expansion. By contrast, collection discovery filters such as `itemUris` and `tagUris` currently match AT-URIs without selecting a CID version. See [recipes.md](recipes.md#load-exact-collection-item-versions) and the operation's details in the bundled OpenAPI contract before relying on exact-version behavior.

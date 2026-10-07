@@ -72,18 +72,25 @@ assert(view.author.organization == null)
 assert(#calls == 3)
 assert(calls[1].sql:find("collection = %$1 AND uri = %$2", 1) ~= nil)
 assert(calls[1].values[1] == "org.hypercerts.claim.contributorInformation" and calls[1].values[2] == uri)
+record_missing = true
+local broad_uri = "at://did:plc:publisher%GG/org.hypercerts.claim.contributorInformation/tid"
+params = { uri = broad_uri }
+local broad_ok, broad_error = pcall(handle)
+assert(not broad_ok and tostring(broad_error):find("RecordNotFound:", 1, true) ~= nil)
+assert(#calls == 4 and calls[4].values[2] == broad_uri, "broad DID syntax must reach exact lookup unchanged")
+record_missing = false
 local bad_uri_ok, bad_uri_error = pcall(function()
-  params = { uri = "at://did:plc:publisher%GG/org.hypercerts.claim.contributorInformation/tid" }
+  params = { uri = "at://did:plc:publisher%/org.hypercerts.claim.contributorInformation/tid" }
   return handle()
 end)
 assert(not bad_uri_ok and tostring(bad_uri_error):find("InvalidRequest:", 1, true) ~= nil)
-assert(#calls == 3, "invalid DID authority must be rejected before querying")
+assert(#calls == 4, "trailing percent must remain an invalid DID boundary")
 local wrong_collection_ok, wrong_collection_error = pcall(function()
   params = { uri = "at://did:plc:publisher/org.hypercerts.claim.activity/tid" }
   return handle()
 end)
 assert(not wrong_collection_ok and tostring(wrong_collection_error) == "InvalidRequest: uri must be a full org.hypercerts.claim.contributorInformation AT-URI with a DID authority")
-assert(#calls == 3, "a different collection must be rejected before querying")
+assert(#calls == 4, "a different collection must be rejected before querying")
 local unknown_parameter_ok, unknown_parameter_error = pcall(function()
   params = { uri = uri, extra = "unsupported" }
   return handle()
@@ -94,7 +101,7 @@ local repeated_uri_ok, repeated_uri_error = pcall(function()
   return handle()
 end)
 assert(not repeated_uri_ok and tostring(repeated_uri_error) == "InvalidRequest: uri must occur once")
-assert(#calls == 3, "invalid query parameters must be rejected before querying")
+assert(#calls == 4, "invalid query parameters must be rejected before querying")
 recordRow.indexed_at = nil
 params = { uri = uri }
 local null_timestamp = handle().contributorInformation.indexedAt

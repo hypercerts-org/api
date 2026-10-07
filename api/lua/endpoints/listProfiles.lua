@@ -58,8 +58,30 @@ local function parse_list_limit(params)
   return limit
 end
 
-local PROFILE = "app.certified.actor.profile"
+local function parse_sort_direction(params)
+  local direction = scalar(params, "sortDirection") or "desc"
+  if direction ~= "asc" and direction ~= "desc" then invalid("sortDirection must be 'asc' or 'desc'") end
+  return direction
+end
+
+local function cursor_encode(value)
+  local encoded = json.encode(value)
+  return (encoded:gsub(".", function(char) return string.format("%02x", string.byte(char)) end))
+end
+
 local NULL = json.decode("null")
+
+local function record_view(row)
+  return {
+    uri = row.uri,
+    cid = row.cid,
+    indexedAt = row.indexed_at == nil and NULL or row.indexed_at,
+    did = row.did,
+    record = json.decode(row.record),
+  }
+end
+
+local PROFILE = "app.certified.actor.profile"
 
 local function query(sql, values)
   if db.backend() ~= "postgres" then error("ProfileQueryFailed: profile API requires PostgreSQL", 0) end
@@ -68,14 +90,37 @@ local function query(sql, values)
   return result
 end
 
-local function row_view(row)
-  return {
-    uri = row.uri,
-    cid = row.cid,
-    indexedAt = row.indexed_at == nil and NULL or row.indexed_at,
-    did = row.did,
-    record = json.decode(row.record),
-  }
+local CREATED_AT_SORT_COLUMNS = {
+  profile = { record = "record", indexed_at = "indexed_at", created_at = "created_at" },
+  organization = {
+    record = "organization.record",
+    indexed_at = "organization.indexed_at",
+    created_at = "organization.created_at",
+  },
+  activity = {
+    record = "activity.record",
+    indexed_at = "activity.indexed_at",
+    created_at = "activity.created_at",
+  },
+  collection = {
+    record = "collection.record",
+    indexed_at = "collection.indexed_at",
+    created_at = "collection.created_at",
+  },
+}
+local CREATED_AT_SORT_PATTERN = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
+
+local function created_at_sort_expression(source)
+  local columns = CREATED_AT_SORT_COLUMNS[source]
+  if not columns then
+    error("CreatedAtSortExpressionError: source must be 'profile', 'organization', 'activity', or 'collection'", 0)
+  end
+
+  local created = columns.record .. "::jsonb->>'createdAt'"
+  return "CASE WHEN jsonb_typeof(" .. columns.record .. "::jsonb->'createdAt') = 'string' AND " .. created ..
+    " ~ '" .. CREATED_AT_SORT_PATTERN .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created ..
+    ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE COALESCE(" .. columns.indexed_at ..
+    "::timestamptz, " .. columns.created_at .. "::timestamptz) END"
 end
 
 local function valid_profile_uri(value)
@@ -117,11 +162,6 @@ local function add_actors(where, values, actors)
   where[#where + 1] = "did IN (" .. table.concat(placeholders, ", ") .. ")"
 end
 
-local function cursor_encode(value)
-  local encoded = json.encode(value)
-  return (encoded:gsub(".", function(char) return string.format("%02x", string.byte(char)) end))
-end
-
 local function cursor_decode(token, direction)
   if not token then return nil end
   if #token % 2 ~= 0 or token:find("[^0-9a-f]") then invalid("cursor is malformed") end
@@ -158,11 +198,7 @@ local function query_profiles(actors, search, limit, cursor, direction)
 
   values[#values + 1] = limit + 1
   local ordering = direction == "asc" and "ASC" or "DESC"
-  local created = "record::jsonb->>'createdAt'"
-  local zoned = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
-  local sort_key = "CASE WHEN jsonb_typeof(record::jsonb->'createdAt') = 'string' AND " .. created .. " ~ '" .. zoned
-    .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created .. ", 'timestamptz') THEN (" .. created
-    .. ")::timestamptz ELSE COALESCE(indexed_at::timestamptz, created_at::timestamptz) END"
+  local sort_key = created_at_sort_expression("profile")
   local sql = "SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record, "
     .. "to_char(sorted.sort_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp "
     .. "FROM happyview_records CROSS JOIN LATERAL (SELECT " .. sort_key .. " AS sort_at) sorted WHERE "
@@ -172,7 +208,7 @@ local function query_profiles(actors, search, limit, cursor, direction)
   if more then rows[#rows] = nil end
 
   local profiles = {}
-  for _, row in ipairs(rows) do profiles[#profiles + 1] = row_view(row) end
+  for _, row in ipairs(rows) do profiles[#profiles + 1] = record_view(row) end
   local next_cursor
   if more then
     local last = rows[#rows]
@@ -200,8 +236,7 @@ local function profiles_response(search_enabled)
 
   local limit = parse_list_limit(params)
 
-  local direction = scalar(params, "sortDirection") or "desc"
-  if direction ~= "asc" and direction ~= "desc" then invalid("sortDirection must be 'asc' or 'desc'") end
+  local direction = parse_sort_direction(params)
   local cursor = cursor_decode(scalar(params, "cursor"), direction)
   local profiles, next_cursor = query_profiles(actors, search, limit, cursor, direction)
   local response = { profiles = toarray(profiles) }
