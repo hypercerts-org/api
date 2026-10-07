@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Lists indexed evaluations with optional publisher, evaluator, and subject filters. Values within each array filter use OR; distinct filters use AND. Authentication is not required.",
+      "description": "Lists indexed evaluations with optional publisher, evaluator, and subject filters. Values within each array filter use OR; distinct filters use AND. Records remain listed when evaluator entries cannot be projected; malformed entries are omitted from hydrated views while the original record is preserved. Authentication is not required.",
       "parameters": {
         "type": "params",
         "properties": {

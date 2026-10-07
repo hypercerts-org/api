@@ -151,10 +151,130 @@ assert(calls[1].values[1] == '${EVALUATION}' and calls[1].values[2] == '${evalua
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-test('listEvaluations skips an invalid evaluator row and paginates through later valid records', () => {
-  const bad = {
-    ...evaluationRow, uri: `at://${authorDid}/${EVALUATION}/bad`, record: 'bad-evaluation',
-    record_json: { ...evaluationRecord, evaluators: [{ did: 'not-a-did' }] },
+test('getEvaluation preserves raw entries and densely hydrates valid evaluator objects only', () => {
+  const legacyDid = 'did:plc:ffffffffffffffffffffffff';
+  const mixedRecord = {
+    ...evaluationRecord,
+    evaluators: [
+      { did: evaluatorDid }, legacyDid, { did: 'reviewer.example' }, { did: missingDid }, { did: evaluatorDid },
+    ],
+  };
+  const row = { ...evaluationRow, record: 'mixed-evaluation', record_json: mixedRecord };
+  const result = runLua({
+    endpoint: 'getEvaluation',
+    params: { uri: evaluationUri },
+    queryResults: [[row], [authorProfile, evaluatorProfile], [evaluatorOrganization]],
+    assertions: `
+local view = result.evaluation
+assert(view.record.evaluators[2] == '${legacyDid}' and view.record.evaluators[3].did == 'reviewer.example')
+assert(view.record.evaluators[4].did == '${missingDid}' and view.record.evaluators[5].did == '${evaluatorDid}')
+assert(view.record.evaluators[1].hydrationStatus == nil)
+assert(#view.evaluators == 3, 'invalid entries are skipped and the projected array is dense')
+assert(view.evaluators[1].did == '${evaluatorDid}' and view.evaluators[1].hydrationStatus == 'hydrated')
+assert(view.evaluators[1].profile.record.displayName == 'Named evaluator')
+assert(view.evaluators[1].organization.record.organizationType[1] == 'nonprofit')
+assert(view.evaluators[2].did == '${missingDid}' and view.evaluators[2].hydrationStatus == 'hydrated')
+assert(view.evaluators[2].profile == NULL and view.evaluators[2].organization == NULL)
+assert(view.evaluators[3].did == '${evaluatorDid}' and view.evaluators[3].hydrationStatus == 'hydrated')
+local profile_values = table.concat(calls[2].values, '|')
+assert(profile_values:find('${authorDid}', 1, true) and profile_values:find('${evaluatorDid}', 1, true))
+assert(profile_values:find('${missingDid}', 1, true))
+assert(not profile_values:find('${legacyDid}', 1, true) and not profile_values:find('reviewer.example', 1, true))
+assert(#calls == 3)
+`,
+  });
+  assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
+});
+
+test('getEvaluation keeps the 100-entry hydration boundary tied to raw source positions', () => {
+  const legacyDid = 'did:plc:ffffffffffffffffffffffff';
+  const row = {
+    ...evaluationRow,
+    record: 'invalid-prefix-evaluation',
+    record_json: {
+      ...evaluationRecord,
+      evaluators: [...Array(100).fill(legacyDid), { did: omittedDid }],
+    },
+  };
+  const result = runLua({
+    endpoint: 'getEvaluation',
+    params: { uri: evaluationUri },
+    queryResults: [[row], [authorProfile], []],
+    assertions: `
+local view = result.evaluation
+assert(#view.record.evaluators == 101 and view.record.evaluators[1] == '${legacyDid}')
+assert(#view.evaluators == 1 and view.evaluators[1].did == '${omittedDid}')
+assert(view.evaluators[1].hydrationStatus == 'omitted')
+assert(view.evaluators[1].profile == nil and view.evaluators[1].organization == nil)
+assert(not table.concat(calls[2].values, '|'):find('${omittedDid}', 1, true))
+assert(#calls == 3)
+`,
+  });
+  assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
+});
+
+test('getEvaluation returns empty evaluator projections for all-invalid, non-array, and absent containers', () => {
+  const legacyDid = 'did:plc:ffffffffffffffffffffffff';
+  const cases = [
+    {
+      name: 'all-invalid',
+      record_json: { ...evaluationRecord, evaluators: [legacyDid, { did: 'reviewer.example' }] },
+      rawAssertion: `assert(view.record.evaluators[1] == '${legacyDid}' and view.record.evaluators[2].did == 'reviewer.example')`,
+    },
+    {
+      name: 'non-array',
+      record_json: { ...evaluationRecord, evaluators: { legacy: { did: evaluatorDid } } },
+      rawAssertion: `assert(view.record.evaluators.legacy.did == '${evaluatorDid}')`,
+    },
+    {
+      name: 'absent',
+      record_json: Object.fromEntries(Object.entries(evaluationRecord).filter(([key]) => key !== 'evaluators')),
+      rawAssertion: 'assert(view.record.evaluators == nil)',
+    },
+  ];
+
+  for (const { name, record_json, rawAssertion } of cases) {
+    const row = { ...evaluationRow, record: `${name}-evaluation`, record_json };
+    const result = runLua({
+      endpoint: 'getEvaluation',
+      params: { uri: evaluationUri },
+      queryResults: [[row], [authorProfile], []],
+      assertions: `
+local view = result.evaluation
+assert(view.record.summary == 'Original evaluation summary')
+${rawAssertion}
+assert(type(view.evaluators) == 'table' and #view.evaluators == 0)
+assert(view.author.profile.record.displayName == 'Evaluation publisher')
+assert(#calls == 3, 'only the publisher is sent for sidecar hydration')
+`,
+    });
+    assert.equal(result.status, 0, `${name}\n${result.stderr}${result.stdout}`);
+  }
+});
+
+test('getEvaluation rejects evaluator arrays over the retained 1000-entry resource limit', () => {
+  const row = {
+    ...evaluationRow,
+    record: 'over-limit-evaluation',
+    record_json: { ...evaluationRecord, evaluators: Array(1001).fill('did:plc:ffffffffffffffffffffffff') },
+  };
+  const result = runLua({
+    endpoint: 'getEvaluation',
+    params: { uri: evaluationUri },
+    queryResults: [[row]],
+    expectError: 'exceeds the evaluator limit',
+  });
+  assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
+});
+
+test('listEvaluations retains malformed evaluator records and paginates without dropping them', () => {
+  const legacyDid = 'did:plc:ffffffffffffffffffffffff';
+  const malformed = {
+    ...evaluationRow, uri: `at://${authorDid}/${EVALUATION}/malformed`, record: 'malformed-evaluation',
+    record_json: {
+      ...evaluationRecord,
+      evaluators: [legacyDid, { did: 'reviewer.example' }, { did: evaluatorDid }],
+    },
     sort_timestamp: '2025-01-03T00:00:00.000000Z',
   };
   const good = {
@@ -167,28 +287,78 @@ test('listEvaluations skips an invalid evaluator row and paginates through later
   };
   const result = runLua({
     endpoint: 'listEvaluations', params: { limit: '1' },
-    queryResults: [[bad, good], [good, last], [authorProfile, evaluatorProfile], [evaluatorOrganization], [last], [authorProfile, evaluatorProfile], [evaluatorOrganization]],
+    queryResults: [
+      [malformed, good], [authorProfile, evaluatorProfile], [evaluatorOrganization],
+      [good, last], [authorProfile, evaluatorProfile], [evaluatorOrganization],
+      [last], [authorProfile, evaluatorProfile], [evaluatorOrganization],
+    ],
     assertions: `
-assert(#result.evaluations == 1 and result.evaluations[1].uri == '${good.uri}')
-assert(result.cursor ~= nil, 'cursor continues after the valid row')
+assert(#result.evaluations == 1 and result.evaluations[1].uri == '${malformed.uri}')
+local first = result.evaluations[1]
+assert(first.record.evaluators[1] == '${legacyDid}' and first.record.evaluators[2].did == 'reviewer.example')
+assert(#first.evaluators == 1 and first.evaluators[1].did == '${evaluatorDid}')
+assert(first.evaluators[1].hydrationStatus == 'hydrated' and first.evaluators[1].profile.record.displayName == 'Named evaluator')
 local cursor = json.decode(result.cursor:gsub('..', function(pair) return string.char(tonumber(pair, 16)) end))
-assert(cursor.u == '${good.uri}')
+assert(cursor.u == '${malformed.uri}')
 params.cursor = result.cursor
-local next_page = handle()
-assert(#next_page.evaluations == 1 and next_page.evaluations[1].uri == '${last.uri}' and next_page.cursor == nil)
-assert(calls[2].values[2] == '${bad.sort_timestamp}' and calls[2].values[3] == '${bad.uri}')
-assert(calls[5].values[2] == '${good.sort_timestamp}' and calls[5].values[3] == '${good.uri}')
+local second_page = handle()
+assert(#second_page.evaluations == 1 and second_page.evaluations[1].uri == '${good.uri}')
+assert(second_page.cursor ~= nil)
+local second_cursor = json.decode(second_page.cursor:gsub('..', function(pair) return string.char(tonumber(pair, 16)) end))
+assert(second_cursor.u == '${good.uri}')
+params.cursor = second_page.cursor
+local third_page = handle()
+assert(#third_page.evaluations == 1 and third_page.evaluations[1].uri == '${last.uri}' and third_page.cursor == nil)
+assert(calls[4].values[2] == '${malformed.sort_timestamp}' and calls[4].values[3] == '${malformed.uri}')
+assert(calls[7].values[2] == '${good.sort_timestamp}' and calls[7].values[3] == '${good.uri}')
 `,
   });
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-test('listEvaluations bounds scans of consecutive invalid rows and returns a continuation cursor', () => {
+test('listEvaluations returns all-invalid, non-array, and absent evaluator containers with empty projections', () => {
+  const legacyDid = 'did:plc:ffffffffffffffffffffffff';
+  const cases = [
+    { name: 'all-invalid', evaluators: [legacyDid, { did: 'reviewer.example' }] },
+    { name: 'non-array', evaluators: { legacy: { did: evaluatorDid } } },
+    { name: 'absent' },
+  ];
+  const rows = cases.map(({ name, evaluators }) => {
+    const record_json = { $type: EVALUATION, summary: name, createdAt };
+    if (evaluators !== undefined) record_json.evaluators = evaluators;
+    return {
+      ...evaluationRow,
+      uri: `at://${authorDid}/${EVALUATION}/${name}`,
+      record: `${name}-evaluation`,
+      record_json,
+      sort_timestamp: '2025-01-02T00:00:00.000000Z',
+    };
+  });
+  const result = runLua({
+    endpoint: 'listEvaluations', params: {},
+    queryResults: [[...rows], [authorProfile], []],
+    assertions: `
+assert(#result.evaluations == 3)
+assert(result.evaluations[1].uri == '${rows[0].uri}')
+assert(result.evaluations[2].uri == '${rows[1].uri}')
+assert(result.evaluations[3].uri == '${rows[2].uri}')
+for _, evaluation in ipairs(result.evaluations) do assert(#evaluation.evaluators == 0) end
+assert(result.evaluations[1].record.evaluators[1] == '${legacyDid}')
+assert(result.evaluations[2].record.evaluators.legacy.did == '${evaluatorDid}')
+assert(result.evaluations[3].record.evaluators == nil)
+assert(#calls == 3, 'authors still hydrate when evaluator projections are empty')
+`,
+  });
+  assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
+});
+
+test('listEvaluations bounds scans of over-limit evaluator arrays and returns a continuation cursor', () => {
+  const tooManyEvaluators = Array(1001).fill('did:plc:ffffffffffffffffffffffff');
   const rows = Array.from({ length: 11 }, (_, index) => ({
     ...evaluationRow,
-    uri: `at://${authorDid}/${EVALUATION}/bad-${index}`,
-    record: `bad-evaluation-${index}`,
-    record_json: { ...evaluationRecord, evaluators: [{ did: 'not-a-did' }] },
+    uri: `at://${authorDid}/${EVALUATION}/over-limit-${index}`,
+    record: 'over-limit-evaluation',
+    record_json: { ...evaluationRecord, evaluators: tooManyEvaluators },
     sort_timestamp: `2025-01-01T00:00:${String(59 - index).padStart(2, '0')}.000000Z`,
   }));
   const queryResults = Array.from({ length: 10 }, (_, index) => [rows[index], rows[index + 1]]);
@@ -198,7 +368,7 @@ test('listEvaluations bounds scans of consecutive invalid rows and returns a con
 assert(#result.evaluations == 0 and result.cursor ~= nil)
 assert(#calls == 10, 'stop after ten query batches instead of scanning indefinitely')
 local token = json.decode(result.cursor:gsub('..', function(pair) return string.char(tonumber(pair, 16)) end))
-assert(token.u == '${rows[9].uri}', 'continuation cursor must advance past the last inspected row')
+assert(token.u == '${rows[9].uri}', 'continuation cursor must advance past the last inspected over-limit row')
 `,
   });
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);

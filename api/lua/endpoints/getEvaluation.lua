@@ -95,21 +95,27 @@ local function evaluation_query(sql, values)
   return result
 end
 
+local function evaluation_evaluator_array(value)
+  if type(value) ~= "table" then return nil end
+  local count = 0
+  for key in pairs(value) do
+    if type(key) ~= "number" or key < 1 or key % 1 ~= 0 then return nil end
+    count = count + 1
+  end
+  if count ~= #value then return nil end
+  return value
+end
+
 local function evaluation_view(row, skip_invalid)
   local view = record_view(row)
-  if type(view.record) ~= "table" or type(view.record.evaluators) ~= "table" then
+  if type(view.record) ~= "table" then
     if skip_invalid then return nil end
     error("EvaluationQueryFailed: indexed evaluation has no evaluator array", 0)
   end
-  if #view.record.evaluators > 1000 then
+  local evaluators = evaluation_evaluator_array(view.record.evaluators)
+  if evaluators and #evaluators > 1000 then
     if skip_invalid then return nil end
     error("EvaluationQueryFailed: indexed evaluation exceeds the evaluator limit", 0)
-  end
-  for _, evaluator in ipairs(view.record.evaluators) do
-    if type(evaluator) ~= "table" or not valid_did(evaluator.did) then
-      if skip_invalid then return nil end
-      error("EvaluationQueryFailed: indexed evaluation contains an invalid evaluator DID", 0)
-    end
   end
   view.author = { did = row.did }
   return view
@@ -123,23 +129,24 @@ local function hydrate_evaluation_views(views)
   for view_index, view in ipairs(views) do
     actors[#actors + 1] = view.author
     local projections, hydrated_actors = {}, {}
-    for position, source in ipairs(view.record.evaluators) do
-      if type(source) ~= "table" or not valid_did(source.did) then
-        error("EvaluationQueryFailed: indexed evaluation contains an invalid evaluator DID", 0)
+    local sources = evaluation_evaluator_array(view.record.evaluators) or {}
+    for source_position, source in ipairs(sources) do
+      if type(source) == "table" and valid_did(source.did) then
+        local projection_position = #projections + 1
+        local evaluator = {}
+        for key, value in pairs(source) do evaluator[key] = value end
+        if source_position <= EVALUATOR_HYDRATION_LIMIT then
+          evaluator.hydrationStatus = "hydrated"
+          local actor = { did = source.did }
+          actors[#actors + 1] = actor
+          hydrated_actors[projection_position] = actor
+        else
+          evaluator.hydrationStatus = "omitted"
+          evaluator.profile = nil
+          evaluator.organization = nil
+        end
+        projections[projection_position] = evaluator
       end
-      local evaluator = {}
-      for key, value in pairs(source) do evaluator[key] = value end
-      if position <= EVALUATOR_HYDRATION_LIMIT then
-        evaluator.hydrationStatus = "hydrated"
-        local actor = { did = source.did }
-        actors[#actors + 1] = actor
-        hydrated_actors[position] = actor
-      else
-        evaluator.hydrationStatus = "omitted"
-        evaluator.profile = nil
-        evaluator.organization = nil
-      end
-      projections[position] = evaluator
     end
     evaluator_projections[view_index] = projections
     evaluator_actors[view_index] = hydrated_actors
