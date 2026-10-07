@@ -64,7 +64,7 @@ async function cidsFor(records) {
 const definitionCids = await cidsFor(definitions);
 const awardA = record(collections.award, badgeQueryDids.publisher, 'query-award-a', {
   badge: { uri: definitions.definitionA.uri, cid: definitionCids.definitionA },
-  subject: badgeQueryDids.recipient,
+  subject: { $type: 'app.certified.defs#did', did: badgeQueryDids.recipient },
   createdAt: awardCreatedAt,
 });
 const awardB = record(collections.award, badgeQueryDids.publisher, 'query-award-b', {
@@ -78,7 +78,7 @@ const awardB = record(collections.award, badgeQueryDids.publisher, 'query-award-
 });
 const awardC = record(collections.award, badgeQueryDids.publisher, 'query-award-c', {
   badge: { uri: definitions.definitionA.uri, cid: definitionCids.definitionA },
-  subject: badgeQueryDids.recipient,
+  subject: { $type: 'app.certified.defs#did', did: badgeQueryDids.recipient },
   createdAt: awardCreatedAt,
 });
 const awardD = record(collections.award, badgeQueryDids.publisher, 'query-award-d', {
@@ -91,25 +91,33 @@ const awardPartner = record(collections.award, badgeQueryDids.partner, 'query-aw
   subject: badgeQueryDids.recordRecipient,
   createdAt: '2025-03-04T00:00:00.000Z',
 });
+const awardOtherAuthor = record(collections.award, badgeQueryDids.partner, 'query-award-other-author', {
+  badge: { uri: definitions.definitionA.uri, cid: definitionCids.definitionA },
+  subject: awardB.record.subject,
+  createdAt: '2025-03-03T00:00:00.000Z',
+});
 
-const awardCids = await cidsFor({ awardA, awardB, awardC, awardD, awardPartner });
-const response = (did, rkey, award, cid, status, createdAt = responseCreatedAt) => record(
-  collections.response,
-  did,
-  rkey,
-  {
+const awardCids = await cidsFor({ awardA, awardB, awardC, awardD, awardPartner, awardOtherAuthor });
+const response = (did, rkey, award, cid, status, createdAt = responseCreatedAt, rowIndexedAt = indexedAt) => ({
+  ...record(collections.response, did, rkey, {
     badgeAward: { $type: 'com.atproto.repo.strongRef', uri: award.uri, cid },
     response: status,
     createdAt,
-  },
-);
+  }),
+  indexedAt: rowIndexedAt,
+});
 
 const responses = {
   responseAccepted: response(badgeQueryDids.recipient, 'query-response-a', awardA, awardCids.awardA, 'accepted'),
-  responseOlderAwardVersion: response(badgeQueryDids.recipient, 'query-response-b', awardA, 'bafyre-old-award-version', 'rejected'),
-  responseDeferred: response(badgeQueryDids.recipient, 'query-response-c', awardA, awardCids.awardA, 'deferred'),
-  responseForeign: response(badgeQueryDids.unlistedAuthor, 'query-response-d', awardA, awardCids.awardA, 'rejected'),
+  responseOlderAwardVersion: response(badgeQueryDids.recipient, 'query-response-b', awardA, 'bafyre-old-award-version', 'rejected', responseCreatedAt, '2025-04-05T00:00:00.000Z'),
+  responseDeferred: response(badgeQueryDids.recipient, 'query-response-c', awardA, awardCids.awardA, 'deferred', responseCreatedAt, '2025-04-06T00:00:00.000Z'),
+  responseForeign: response(badgeQueryDids.unlistedAuthor, 'query-response-d', awardA, awardCids.awardA, 'rejected', responseCreatedAt, '2025-04-04T00:00:00.000Z'),
+  responseRejected: response(badgeQueryDids.recipient, 'query-response-e', awardA, awardCids.awardA, 'rejected', responseCreatedAt, '2025-04-02T00:00:00.000Z'),
+  responseNewestAccepted: response(badgeQueryDids.recipient, 'query-response-f', awardA, awardCids.awardA, 'accepted', responseCreatedAt, '2025-04-03T00:00:00.000Z'),
   responseRecordRecipient: response(badgeQueryDids.recordRecipient, 'query-response-record-recipient', awardB, awardCids.awardB, 'rejected'),
+  responseBareStringDid: response(badgeQueryDids.recordRecipient, 'query-response-bare-string-did', awardPartner, awardCids.awardPartner, 'accepted'),
+  responseBareStringDidWrongAuthor: response(badgeQueryDids.unlistedAuthor, 'query-response-bare-string-did-wrong-author', awardPartner, awardCids.awardPartner, 'rejected', responseCreatedAt, '2025-04-02T00:00:00.000Z'),
+  responseOtherAuthorAward: response(badgeQueryDids.recordRecipient, 'query-response-other-author-award', awardOtherAuthor, awardCids.awardOtherAuthor, 'accepted'),
   responseWrongRecipient: response(badgeQueryDids.unlistedAuthor, 'query-response-wrong-recipient', awardC, awardCids.awardC, 'accepted'),
 };
 
@@ -132,6 +140,7 @@ export const canonicalRecords = {
   awardC,
   awardD,
   awardPartner,
+  awardOtherAuthor,
   ...responses,
   ...actors,
 };
@@ -141,5 +150,5 @@ export const canonicalCids = await cidsFor(canonicalRecords);
 export const seedRows = Object.entries(canonicalRecords).map(([name, item]) => ({
   ...item,
   cid: canonicalCids[name],
-  indexedAt,
+  indexedAt: item.indexedAt ?? indexedAt,
 }));

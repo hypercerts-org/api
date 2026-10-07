@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { contractUrl, requireContractTarget } from './helpers.js';
-import { badgeQueryDids, canonicalRecords } from './fixtures/badge-queries.fixture.js';
+import { badgeQueryDids, canonicalCids, canonicalRecords } from './fixtures/badge-queries.fixture.js';
 
 const endpoints = {
   searchBadgeDefinitions: 'app.certified.badge.searchBadgeDefinitions',
@@ -139,16 +139,47 @@ test('getBadgeAward retrieves the exact award version and latest eligible recipi
   assert.equal(response.status, 200, JSON.stringify(body));
   const { badgeAward } = body;
   assert.equal(badgeAward.uri, canonicalRecords.awardA.uri);
-  assert.equal(badgeAward.cid, 'bafyreibkpebxfngi6cangcci7sozlkqsgfrgxu2a2ebcdu2f7cutgkxgke');
+  assert.equal(badgeAward.cid, canonicalCids.awardA);
   assert.deepEqual(badgeAward.record, canonicalRecords.awardA.record);
   assert.equal(badgeAward.badge.uri, definitionUri);
   assert.equal(badgeAward.badge.cid, 'bafyreiatp3bngjbyu5skyqanyt3nr7riaxsmyok73bsuzn2sz52i2oft5a');
   assert.deepEqual(badgeAward.badge.record, canonicalRecords.definitionA.record);
   assert.equal(badgeAward.responseStatus, 'accepted');
-  assert.equal(badgeAward.recipientResponse.uri, canonicalRecords.responseAccepted.uri);
-  assert.equal(badgeAward.recipientResponse.cid, 'bafyreidsmg5v62mympmzotqptqnkiksjaqc3de2naugadgx7zmbdgycjue');
+  assert.equal(badgeAward.recipientResponse.uri, canonicalRecords.responseNewestAccepted.uri);
+  assert.equal(badgeAward.recipientResponse.cid, canonicalCids.responseNewestAccepted);
+  assert.equal(badgeAward.recipientResponse.indexedAt, canonicalRecords.responseNewestAccepted.indexedAt);
+  assert.equal(badgeAward.recipientResponse.record.badgeAward.uri, canonicalRecords.awardA.uri);
+  assert.equal(badgeAward.recipientResponse.record.badgeAward.cid, canonicalCids.awardA);
   assert.equal(badgeAward.author.profile.record.displayName, 'Cedar Query Publisher');
   assert.equal(badgeAward.author.organization, null);
+
+  const recordRecipient = await requestBadgeEndpoint(endpoints.getBadgeAward, {
+    uri: canonicalRecords.awardB.uri,
+  });
+  assert.equal(recordRecipient.response.status, 200, JSON.stringify(recordRecipient.body));
+  assert.equal(recordRecipient.body.badgeAward.responseStatus, 'rejected');
+  assert.equal(recordRecipient.body.badgeAward.recipientResponse.uri, canonicalRecords.responseRecordRecipient.uri);
+
+  const bareStringDid = await requestBadgeEndpoint(endpoints.getBadgeAward, {
+    uri: canonicalRecords.awardPartner.uri,
+  });
+  assert.equal(bareStringDid.response.status, 200, JSON.stringify(bareStringDid.body));
+  assert.equal(bareStringDid.body.badgeAward.uri, canonicalRecords.awardPartner.uri);
+  assert.equal(bareStringDid.body.badgeAward.cid, canonicalCids.awardPartner);
+  assert.equal(bareStringDid.body.badgeAward.author.did, badgeQueryDids.partner);
+  assert.equal(bareStringDid.body.badgeAward.responseStatus, 'accepted');
+  assert.equal(bareStringDid.body.badgeAward.recipientResponse.uri, canonicalRecords.responseBareStringDid.uri);
+  assert.equal(bareStringDid.body.badgeAward.recipientResponse.cid, canonicalCids.responseBareStringDid);
+  assert.equal(bareStringDid.body.badgeAward.recipientResponse.did, badgeQueryDids.recordRecipient);
+  assert.equal(bareStringDid.body.badgeAward.recipientResponse.record.badgeAward.uri, canonicalRecords.awardPartner.uri);
+  assert.equal(bareStringDid.body.badgeAward.recipientResponse.record.badgeAward.cid, canonicalCids.awardPartner);
+
+  const unansweredObjectDid = await requestBadgeEndpoint(endpoints.getBadgeAward, {
+    uri: canonicalRecords.awardC.uri,
+  });
+  assert.equal(unansweredObjectDid.response.status, 200, JSON.stringify(unansweredObjectDid.body));
+  assert.equal(unansweredObjectDid.body.badgeAward.responseStatus, 'unanswered');
+  assert.equal(unansweredObjectDid.body.badgeAward.recipientResponse, null);
 
   const unavailableVersion = await requestBadgeEndpoint(endpoints.getBadgeAward, {
     uri: canonicalRecords.awardD.uri,
@@ -176,21 +207,31 @@ test('listBadgeAwards returns the full feed with exact-version and actor-sidecar
     canonicalRecords.awardB.uri,
     canonicalRecords.awardC.uri,
     canonicalRecords.awardD.uri,
+    canonicalRecords.awardOtherAuthor.uri,
     canonicalRecords.awardPartner.uri,
   ]);
   const awardA = body.badgeAwards.find(({ uri }) => uri === canonicalRecords.awardA.uri);
   assert.equal(awardA.badge.record.title, 'Cedar Query Badge A');
   assert.equal(awardA.responseStatus, 'accepted');
+  assert.equal(awardA.recipientResponse.uri, canonicalRecords.responseNewestAccepted.uri);
+  assert.equal(awardA.recipientResponse.cid, canonicalCids.responseNewestAccepted);
+  assert.equal(awardA.recipientResponse.record.badgeAward.uri, canonicalRecords.awardA.uri);
+  assert.equal(awardA.recipientResponse.record.badgeAward.cid, canonicalCids.awardA);
   assert.equal(awardA.author.profile.record.displayName, 'Cedar Query Publisher');
   assert.equal(awardA.author.organization, null);
   const awardC = body.badgeAwards.find(({ uri }) => uri === canonicalRecords.awardC.uri);
   assert.equal(awardC.responseStatus, 'unanswered');
   assert.equal(awardC.recipientResponse, null);
+  const awardB = body.badgeAwards.find(({ uri }) => uri === canonicalRecords.awardB.uri);
+  assert.equal(awardB.responseStatus, 'rejected');
+  assert.equal(awardB.recipientResponse.uri, canonicalRecords.responseRecordRecipient.uri);
   const awardD = body.badgeAwards.find(({ uri }) => uri === canonicalRecords.awardD.uri);
   assert.equal(awardD.badge, null);
   const partnerAward = body.badgeAwards.find(({ uri }) => uri === canonicalRecords.awardPartner.uri);
   assert.equal(partnerAward.author.profile, null);
   assert.equal(partnerAward.author.organization.record.visibility, 'public');
+  assert.equal(partnerAward.responseStatus, 'accepted');
+  assert.equal(partnerAward.recipientResponse.uri, canonicalRecords.responseBareStringDid.uri);
 });
 
 test('listBadgeAwards combines discriminating filters and traverses ties in both directions', async () => {
@@ -215,15 +256,42 @@ test('listBadgeAwards combines discriminating filters and traverses ties in both
     canonicalRecords.awardB.uri,
   ]);
 
-  const acceptedRecipient = await requestBadgeEndpoint(endpoints.listBadgeAwards, {
+  const otherAuthorSubjectMatch = await requestBadgeEndpoint(endpoints.listBadgeAwards, {
+    authors: [badgeQueryDids.partner],
+    badgeUris: [definitionUri],
+    badgeTypes: ['certification'],
+    subjects: [recordSubjectUri],
+    responses: ['accepted', 'rejected'],
+  });
+  assert.equal(otherAuthorSubjectMatch.response.status, 200, JSON.stringify(otherAuthorSubjectMatch.body));
+  assert.deepEqual(otherAuthorSubjectMatch.body.badgeAwards.map(({ uri }) => uri), [canonicalRecords.awardOtherAuthor.uri]);
+
+  const legacyBareDid = await requestBadgeEndpoint(endpoints.listBadgeAwards, {
+    authors: [badgeQueryDids.partner],
+    badgeUris: [partnerDefinitionUri],
+    subjects: [badgeQueryDids.recordRecipient],
+    responses: ['accepted'],
+  });
+  assert.equal(legacyBareDid.response.status, 200, JSON.stringify(legacyBareDid.body));
+  assert.deepEqual(legacyBareDid.body.badgeAwards.map(({ uri }) => uri), [canonicalRecords.awardPartner.uri]);
+  const bareStringDidAward = legacyBareDid.body.badgeAwards[0];
+  assert.equal(bareStringDidAward.cid, canonicalCids.awardPartner);
+  assert.equal(bareStringDidAward.responseStatus, 'accepted');
+  assert.equal(bareStringDidAward.recipientResponse.uri, canonicalRecords.responseBareStringDid.uri);
+  assert.equal(bareStringDidAward.recipientResponse.did, badgeQueryDids.recordRecipient);
+  assert.equal(bareStringDidAward.recipientResponse.cid, canonicalCids.responseBareStringDid);
+  assert.equal(bareStringDidAward.recipientResponse.record.badgeAward.uri, canonicalRecords.awardPartner.uri);
+  assert.equal(bareStringDidAward.recipientResponse.record.badgeAward.cid, canonicalCids.awardPartner);
+
+  const supersededAcceptedRecipient = await requestBadgeEndpoint(endpoints.listBadgeAwards, {
     authors: [badgeQueryDids.publisher], badgeUris: [definitionUri],
     subjects: [badgeQueryDids.recipient], responses: ['accepted'],
   });
-  assert.equal(acceptedRecipient.response.status, 200, JSON.stringify(acceptedRecipient.body));
-  assert.deepEqual(acceptedRecipient.body.badgeAwards.map(({ uri }) => uri), [canonicalRecords.awardA.uri]);
+  assert.equal(supersededAcceptedRecipient.response.status, 200, JSON.stringify(supersededAcceptedRecipient.body));
+  assert.deepEqual(supersededAcceptedRecipient.body.badgeAwards.map(({ uri }) => uri), [canonicalRecords.awardA.uri]);
 
   const unmatchedFilters = [
-    { authors: [badgeQueryDids.partner] },
+    { authors: [badgeQueryDids.unlistedAuthor] },
     { badgeUris: [partnerDefinitionUri] },
     { badgeTypes: ['recognition'] },
     { subjects: ['did:web:no-such-badge-recipient.example'] },
@@ -262,7 +330,7 @@ test('getBadgeResponse retrieves a raw response with its independent CBOR CID an
   assert.equal(response.status, 200, JSON.stringify(body));
   const { badgeResponse } = body;
   assert.equal(badgeResponse.uri, canonicalRecords.responseAccepted.uri);
-  assert.equal(badgeResponse.cid, 'bafyreidsmg5v62mympmzotqptqnkiksjaqc3de2naugadgx7zmbdgycjue');
+  assert.equal(badgeResponse.cid, canonicalCids.responseAccepted);
   assert.deepEqual(badgeResponse.record, canonicalRecords.responseAccepted.record);
   assert.equal(badgeResponse.record.response, 'accepted');
   assert.equal(badgeResponse.author.did, badgeQueryDids.recipient);
@@ -290,23 +358,48 @@ test('listBadgeResponses preserves the full raw feed, URI-only matching, and bid
     [...expectedAll].sort(),
   );
 
-  const uriFiltered = ['responseAccepted', 'responseOlderAwardVersion', 'responseDeferred', 'responseForeign']
+  const uriFiltered = ['responseAccepted', 'responseOlderAwardVersion', 'responseDeferred', 'responseRejected', 'responseNewestAccepted', 'responseForeign']
     .map((name) => canonicalRecords[name].uri);
   await assertBidirectionalPages(endpoints.listBadgeResponses, 'badgeResponses', { badgeAward: awardUri }, {
-    asc: [[uriFiltered[0], uriFiltered[1]], [uriFiltered[2], uriFiltered[3]]],
-    desc: [[uriFiltered[3], uriFiltered[2]], [uriFiltered[1], uriFiltered[0]]],
+    asc: [[uriFiltered[0], uriFiltered[1]], [uriFiltered[2], uriFiltered[3]], [uriFiltered[4], uriFiltered[5]]],
+    desc: [[uriFiltered[5], uriFiltered[4]], [uriFiltered[3], uriFiltered[2]], [uriFiltered[1], uriFiltered[0]]],
   });
 
   const firstPage = await requestBadgeEndpoint(endpoints.listBadgeResponses, {
     badgeAward: awardUri, sortDirection: 'asc', limit: 100,
   });
   assert.equal(firstPage.response.status, 200, JSON.stringify(firstPage.body));
+  const newestEligible = firstPage.body.badgeResponses.find(({ uri }) => uri === canonicalRecords.responseNewestAccepted.uri);
+  assert.equal(newestEligible.record.badgeAward.uri, canonicalRecords.awardA.uri);
+  assert.equal(newestEligible.record.badgeAward.cid, canonicalCids.awardA);
+  assert.equal(newestEligible.author.did, badgeQueryDids.recipient);
+  assert.equal(newestEligible.record.response, 'accepted');
+  assert.equal(newestEligible.indexedAt, canonicalRecords.responseNewestAccepted.indexedAt);
+  const earlierEligibleRejected = firstPage.body.badgeResponses.find(({ uri }) => uri === canonicalRecords.responseRejected.uri);
+  assert.equal(earlierEligibleRejected.author.did, badgeQueryDids.recipient);
+  assert.equal(earlierEligibleRejected.record.badgeAward.uri, canonicalRecords.awardA.uri);
+  assert.equal(earlierEligibleRejected.record.badgeAward.cid, canonicalCids.awardA);
+  assert.equal(earlierEligibleRejected.record.response, 'rejected');
+  assert.ok(Date.parse(earlierEligibleRejected.indexedAt) < Date.parse(newestEligible.indexedAt));
+  for (const name of ['responseForeign', 'responseOlderAwardVersion', 'responseDeferred']) {
+    const decoy = firstPage.body.badgeResponses.find(({ uri }) => uri === canonicalRecords[name].uri);
+    assert.ok(Date.parse(decoy.indexedAt) > Date.parse(newestEligible.indexedAt), `${name} must be indexed after the newest eligible response`);
+  }
   const olderAwardVersion = firstPage.body.badgeResponses.find(({ uri }) => uri === canonicalRecords.responseOlderAwardVersion.uri);
+  assert.equal(olderAwardVersion.author.did, badgeQueryDids.recipient);
+  assert.equal(olderAwardVersion.record.badgeAward.uri, canonicalRecords.awardA.uri);
   assert.equal(olderAwardVersion.record.badgeAward.cid, 'bafyre-old-award-version');
   assert.equal(olderAwardVersion.record.response, 'rejected');
   const deferred = firstPage.body.badgeResponses.find(({ uri }) => uri === canonicalRecords.responseDeferred.uri);
+  assert.equal(deferred.author.did, badgeQueryDids.recipient);
+  assert.equal(deferred.record.badgeAward.uri, canonicalRecords.awardA.uri);
+  assert.equal(deferred.record.badgeAward.cid, canonicalCids.awardA);
   assert.equal(deferred.record.response, 'deferred');
   const foreign = firstPage.body.badgeResponses.find(({ uri }) => uri === canonicalRecords.responseForeign.uri);
+  assert.equal(foreign.record.badgeAward.uri, canonicalRecords.awardA.uri);
+  assert.equal(foreign.record.badgeAward.cid, canonicalCids.awardA);
+  assert.equal(foreign.record.response, 'rejected');
+  assert.equal(foreign.author.did, badgeQueryDids.unlistedAuthor);
   assert.equal(foreign.author.profile, null);
   assert.equal(foreign.author.organization, null);
   const accepted = firstPage.body.badgeResponses.find(({ uri }) => uri === canonicalRecords.responseAccepted.uri);
