@@ -9,6 +9,9 @@ const collections = {
 const did = 'did:plc:abcdefghijklmnopqrstuvwx';
 const indexedAt = '2025-01-02T03:04:05.000Z';
 
+/** @typedef {{ uri: string; did: string; collection: string; rkey: string; cid: string; indexedAt: string; record: Record<string, unknown> }} SeedRow */
+
+/** @param {string} collection @param {string} rkey @param {Record<string, unknown>} fields @param {string} [recordDid] @returns {Promise<SeedRow>} */
 async function row(collection, rkey, fields, recordDid = did) {
   const record = { $type: collection, ...fields };
   const uri = `at://${recordDid}/${collection}/${rkey}`;
@@ -84,6 +87,7 @@ export const locationRecords = await Promise.all([
   }, 'did:web:organization-only.example'),
 ]);
 
+/** @param {SeedRow[]} rows @param {{ disposableTestTarget?: boolean }} [options] @returns {{ sql: string; params: unknown[] }[]} */
 export function seedSql(rows, { disposableTestTarget = false } = {}) {
   if (disposableTestTarget !== true) throw new Error('Seeding requires explicit disposable-test target opt-in');
   if (!Array.isArray(rows) || rows.length === 0) throw new Error('Seeding requires at least one fixture row; supply a nonempty rows array');

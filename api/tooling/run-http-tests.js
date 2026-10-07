@@ -15,6 +15,15 @@ const fixtureRoot = path.join(httpTestRoot, 'fixtures');
 const services = new Set(['postgres', 'happyview']);
 const proxyBlock = 'http://127.0.0.1:9';
 
+/** @typedef {{ cwd?: string; env?: NodeJS.ProcessEnv; input?: string; maxBuffer?: number; timeoutMs?: number; label?: string }} SpawnOptions */
+/** @typedef {import('node:child_process').SpawnSyncReturns<string>} SpawnResult */
+/** @typedef {{ uri: string; did: string; collection: string; rkey: string; cid: string; indexedAt: string; record: Record<string, unknown> }} SeedRow */
+/** @typedef {(args: string[]) => string} ComposeRunner */
+/** @typedef {{ services?: Record<string, { image?: unknown } | undefined> }} ComposeConfig */
+/** @typedef {{ ownsProject: boolean; retainCredentials: boolean; failure: unknown }} LifecycleState */
+/** @typedef {{ psqlPath: string; suites: string[]; httpSeedRows: SeedRow[]; dockerEnv: NodeJS.ProcessEnv; dockerContext: string; projectName: string; postgresUser: string; postgresPassword: string; postgresDatabase: string; adminToken: string; composeEnv: NodeJS.ProcessEnv; tempRoot: string; envFile: string; compose: ComposeRunner; lifecycleState: LifecycleState }} RunContext */
+
+/** @param {string} command @param {string[]} args @param {SpawnOptions} [options] @returns {SpawnResult} */
 function spawn(command, args, {
   cwd = apiRoot,
   env = process.env,
@@ -24,7 +33,8 @@ function spawn(command, args, {
   label = `${command} ${args[0] ?? ''}`,
 } = {}) {
   const result = spawnSync(command, args, { cwd, env, input, encoding: 'utf8', maxBuffer, timeout: timeoutMs });
-  if (result.error?.code === 'ETIMEDOUT') {
+  const errorCode = result.error && 'code' in result.error ? result.error.code : undefined;
+  if (errorCode === 'ETIMEDOUT') {
     if (result.stdout) process.stderr.write(result.stdout);
     if (result.stderr) process.stderr.write(result.stderr);
     throw new Error(`${label} timed out after ${timeoutMs}ms; the subprocess was terminated. Check task-owned Docker logs and local service health before retrying.`, { cause: result.error });
@@ -33,6 +43,7 @@ function spawn(command, args, {
   return result;
 }
 
+/** @param {string} command @param {string[]} args @param {SpawnOptions} [options] @returns {string} */
 function run(command, args, options = {}) {
   const result = spawn(command, args, options);
   if (result.stdout) process.stdout.write(result.stdout);
@@ -43,6 +54,7 @@ function run(command, args, options = {}) {
   return result.stdout;
 }
 
+/** @param {string} command @param {string[]} args @param {SpawnOptions} [options] @returns {string} */
 function runQuiet(command, args, options = {}) {
   const result = spawn(command, args, options);
   if (result.status !== 0) {
@@ -52,6 +64,7 @@ function runQuiet(command, args, options = {}) {
   return result.stdout.trim();
 }
 
+/** @returns {string} */
 function requirePsqlPath() {
   const executable = process.env.PSQL_PATH;
   if (!executable || !path.isAbsolute(executable)) {
@@ -61,23 +74,26 @@ function requirePsqlPath() {
     if (!statSync(executable).isFile()) throw new Error('not a regular file');
     accessSync(executable, constants.X_OK);
   } catch (error) {
-    throw new Error(`PSQL_PATH must point to an existing executable file (${executable}): ${error.message}`, { cause: error });
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`PSQL_PATH must point to an existing executable file (${executable}): ${detail}`, { cause: error });
   }
   return executable;
 }
 
+/** @param {import('node:fs').Dirent} left @param {import('node:fs').Dirent} right @returns {number} */
 function compareEntryNames(left, right) {
   if (left.name < right.name) return -1;
   if (left.name > right.name) return 1;
   return 0;
 }
 
+/** @param {string} directory @param {string} suffix @returns {Promise<string[]>} */
 async function findFiles(directory, suffix) {
   let entries;
   try {
     entries = await readdir(directory, { withFileTypes: true });
   } catch (error) {
-    if (error?.code === 'ENOENT') return [];
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') return [];
     throw error;
   }
   entries.sort(compareEntryNames);
@@ -94,9 +110,12 @@ async function findFiles(directory, suffix) {
   return fileGroups.flat();
 }
 
+/** @param {string[]} fixtureModules @returns {Promise<SeedRow[]>} */
 async function loadFixtureRows(fixtureModules) {
+  /** @type {SeedRow[]} */
   const rows = [];
   await fixtureModules.reduce((previous, file) => previous.then(async () => {
+    /** @type {{ seedRows?: SeedRow[] }} */
     const fixture = await import(pathToFileURL(file).href);
     if (!Array.isArray(fixture.seedRows) || fixture.seedRows.length === 0) {
       throw new Error(`${path.relative(apiRoot, file)} must export a nonempty seedRows array.`);
@@ -107,6 +126,7 @@ async function loadFixtureRows(fixtureModules) {
   return rows;
 }
 
+/** @returns {NodeJS.ProcessEnv} */
 function dockerEnvironment() {
   const env = { ...process.env };
   delete env.DOCKER_HOST;
@@ -116,6 +136,7 @@ function dockerEnvironment() {
   return env;
 }
 
+/** @param {NodeJS.ProcessEnv} env @returns {string} */
 function assertLocalDocker(env) {
   const context = runQuiet('docker', ['context', 'show'], { env });
   const endpoint = runQuiet('docker', ['context', 'inspect', '--format', '{{.Endpoints.docker.Host}}', context], { env });
@@ -125,6 +146,7 @@ function assertLocalDocker(env) {
   return `${context} (${endpoint})`;
 }
 
+/** @param {ComposeConfig} config @returns {string[]} */
 function imagesFromComposeConfig(config) {
   return [...services].map((service) => {
     const image = config.services?.[service]?.image;
@@ -135,6 +157,7 @@ function imagesFromComposeConfig(config) {
   });
 }
 
+/** @param {string[]} images @param {NodeJS.ProcessEnv} env @param {string} context */
 function assertImagesCached(images, env, context) {
   for (const image of images) {
     const result = spawn('docker', ['image', 'inspect', image], { env, label: `Docker image cache check for ${image}` });
@@ -149,6 +172,7 @@ function assertImagesCached(images, env, context) {
   }
 }
 
+/** @param {NodeJS.ProcessEnv} env @returns {NodeJS.ProcessEnv} */
 function localProxyEnvironment(env) {
   return {
     ...env,
@@ -163,6 +187,7 @@ function localProxyEnvironment(env) {
   };
 }
 
+/** @param {string} projectName @param {string} envFile @param {string[]} args @returns {string[]} */
 function composeArgs(projectName, envFile, args) {
   return [
     'compose',
@@ -174,12 +199,14 @@ function composeArgs(projectName, envFile, args) {
   ];
 }
 
+/** @param {ComposeRunner} compose @param {string} service @param {number} targetPort @param {NodeJS.ProcessEnv} dockerEnv @returns {string} */
 function publishedPort(compose, service, targetPort, dockerEnv) {
   const ids = compose(['ps', '--all', '--quiet', service]).split(/\r?\n/).filter(Boolean);
-  if (ids.length !== 1) throw new Error(`Expected one task-owned ${service} container, found ${ids.length}.`);
+  const [containerId] = ids;
+  if (ids.length !== 1 || !containerId) throw new Error(`Expected one task-owned ${service} container, found ${ids.length}.`);
 
   const portKey = `${targetPort}/tcp`;
-  const rawBindings = runQuiet('docker', ['inspect', '--format', `{{json (index .NetworkSettings.Ports "${portKey}")}}`, ids[0]], { env: dockerEnv });
+  const rawBindings = runQuiet('docker', ['inspect', '--format', `{{json (index .NetworkSettings.Ports "${portKey}")}}`, containerId], { env: dockerEnv });
   let bindings;
   try {
     bindings = JSON.parse(rawBindings);
@@ -198,7 +225,9 @@ function publishedPort(compose, service, targetPort, dockerEnv) {
   return String(port);
 }
 
+/** @param {{ database: string; user: string; password: string; port: string; psqlPath: string }} options @returns {NodeJS.ProcessEnv} */
 function seedEnvironment({ database, user, password, port, psqlPath }) {
+  /** @type {NodeJS.ProcessEnv} */
   const env = {
     ...process.env,
     HAPPYVIEW_DISPOSABLE_TEST_TARGET: 'YES',
@@ -216,14 +245,17 @@ function seedEnvironment({ database, user, password, port, psqlPath }) {
   return env;
 }
 
+/** @param {string} psqlPath @param {NodeJS.ProcessEnv} env @param {string} input */
 function psql(psqlPath, env, input) {
   run(psqlPath, ['--no-psqlrc', '--quiet', '--set', 'ON_ERROR_STOP=1', ...psqlTargetArgs(env)], { env, input });
 }
 
+/** @param {string} value @returns {string} */
 function sqlString(value) {
   return `'${value.replaceAll("'", "''")}'`;
 }
 
+/** @param {string} psqlPath @param {NodeJS.ProcessEnv} env @param {string} token */
 function bootstrapAdmin(psqlPath, env, token) {
   const now = new Date().toISOString();
   const userId = randomUUID();
@@ -256,6 +288,7 @@ COMMIT;
   psql(psqlPath, env, sql);
 }
 
+/** @param {string} baseUrl @param {number} [timeoutMs] @returns {Promise<void>} */
 async function waitForHealth(baseUrl, timeoutMs = 30_000) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
@@ -270,6 +303,7 @@ async function waitForHealth(baseUrl, timeoutMs = 30_000) {
   throw new Error(`Task-owned HappyView did not become healthy at ${baseUrl}/health within ${timeoutMs}ms.`);
 }
 
+/** @param {string[]} files @param {NodeJS.ProcessEnv} env */
 function runHttpCases(files, env) {
   const relativeFiles = files.map((file) => path.relative(apiRoot, file));
   const result = spawn(process.execPath, ['--test', '--test-reporter=tap', ...relativeFiles], {
@@ -290,14 +324,17 @@ function runHttpCases(files, env) {
   process.stdout.write(`Verified ${tests[1]} executed HTTP cases (${passed[1]} passed) across ${files.length} suite files.\n`);
 }
 
+/** @param {ComposeRunner} compose @param {string} projectName @param {string} envFile @param {NodeJS.ProcessEnv} dockerEnv @param {NodeJS.ProcessEnv} composeEnv */
 function teardownOwnedProject(compose, projectName, envFile, dockerEnv, composeEnv) {
   const ids = compose(['ps', '--all', '--quiet']).split(/\r?\n/).filter(Boolean);
   for (const id of ids) {
     const rawLabels = runQuiet('docker', ['inspect', '--format', '{{json .Config.Labels}}', id], { env: dockerEnv });
-    const labels = JSON.parse(rawLabels);
+    const labels = /** @type {Record<string, string | undefined>} */ (JSON.parse(rawLabels));
     const configFiles = (labels['com.docker.compose.project.config_files'] ?? '').split(',').map((file) => path.resolve(file));
+    const service = labels['com.docker.compose.service'];
     if (labels['com.docker.compose.project'] !== projectName
-      || !services.has(labels['com.docker.compose.service'])
+      || typeof service !== 'string'
+      || !services.has(service)
       || !configFiles.includes(path.resolve(composeFile))) {
       throw new Error(`Refusing teardown: container ${id} is not owned by this task's Compose project and file.`);
     }
@@ -305,6 +342,7 @@ function teardownOwnedProject(compose, projectName, envFile, dockerEnv, composeE
   run('docker', composeArgs(projectName, envFile, ['down', '--volumes', '--timeout', '10']), { env: composeEnv });
 }
 
+/** @returns {Promise<RunContext>} */
 async function prepareRun() {
   const psqlPath = requirePsqlPath();
   const suites = await findFiles(httpTestRoot, '.http.test.js');
@@ -346,6 +384,7 @@ async function prepareRun() {
     '',
   ].join('\n'), { mode: 0o600 });
 
+  /** @type {ComposeRunner} */
   const compose = (args) => runQuiet('docker', composeArgs(projectName, envFile, args), { env: composeEnv });
   return {
     psqlPath,
@@ -366,13 +405,16 @@ async function prepareRun() {
   };
 }
 
+/** @param {RunContext} context */
 async function validateTaskProject(context) {
   const { lifecycleState } = context;
+  /** @type {ComposeConfig} */
   let composeConfig;
   try {
     composeConfig = JSON.parse(context.compose(['config', '--format', 'json']));
   } catch (cause) {
-    throw new Error(`Could not read the task Compose configuration before starting services: ${cause.message}`, { cause });
+    const detail = cause instanceof Error ? cause.message : String(cause);
+    throw new Error(`Could not read the task Compose configuration before starting services: ${detail}`, { cause });
   }
   assertImagesCached(imagesFromComposeConfig(composeConfig), context.dockerEnv, context.dockerContext);
   if (context.compose(['ps', '--all', '--quiet'])) throw new Error(`Refusing to reuse non-empty Compose project ${context.projectName}.`);
@@ -386,6 +428,7 @@ async function validateTaskProject(context) {
   lifecycleState.ownsProject = true;
 }
 
+/** @param {RunContext} context */
 function startTaskServices(context) {
   process.stdout.write(`Starting disposable local HTTP test project ${context.projectName} (cached images only).\n`);
   run('docker', composeArgs(context.projectName, context.envFile, ['up', '--pull', 'never', '--detach', '--wait', '--wait-timeout', '180']), {
@@ -395,6 +438,7 @@ function startTaskServices(context) {
   });
 }
 
+/** @param {RunContext} context @returns {Promise<string>} */
 async function installAndSeedApi(context) {
   const postgresPort = publishedPort(context.compose, 'postgres', 5432, context.dockerEnv);
   const happyviewPort = publishedPort(context.compose, 'happyview', 3000, context.dockerEnv);
@@ -428,6 +472,7 @@ async function installAndSeedApi(context) {
   return baseUrl;
 }
 
+/** @param {RunContext} context @param {string} baseUrl */
 function runHttpSuites(context, baseUrl) {
   const testEnv = {
     ...localProxyEnvironment(process.env),
@@ -437,6 +482,7 @@ function runHttpSuites(context, baseUrl) {
   runHttpCases(context.suites, testEnv);
 }
 
+/** @param {RunContext} context */
 async function runHttpLifecycle(context) {
   await validateTaskProject(context);
   startTaskServices(context);
@@ -444,6 +490,7 @@ async function runHttpLifecycle(context) {
   runHttpSuites(context, baseUrl);
 }
 
+/** @param {unknown} error @param {RunContext} context */
 function reportRunFailure(error, context) {
   process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
   if (!context.lifecycleState.ownsProject) return;
@@ -456,6 +503,7 @@ function reportRunFailure(error, context) {
   }
 }
 
+/** @param {RunContext} context */
 async function cleanupRun(context) {
   const { lifecycleState } = context;
   if (lifecycleState.ownsProject) {
