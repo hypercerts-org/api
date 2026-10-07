@@ -8,7 +8,7 @@
     "@atcute/cid": "2.4.1",
     "@atproto/lexicon": "0.6.2",
     "@atproto/syntax": "0.5.4",
-    "@hypercerts-org/lexicon": "1.4.0"
+    "@hypercerts-org/lexicon": "1.5.0"
   },
   "scripts": {
     "lint:js": "eslint --max-warnings=0 --report-unused-disable-directives .",

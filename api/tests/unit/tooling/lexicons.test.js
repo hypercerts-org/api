@@ -27,6 +27,8 @@ test('the full validation Lexicon closure resolves locally while only selected p
     'app.certified.badge.definition',
     'app.certified.badge.response',
     'app.certified.defs',
+    'app.certified.feed.like',
+    'app.certified.feed.repost',
     'app.certified.graph.entityFollow',
     'app.certified.graph.follow',
     'app.certified.link.evm',

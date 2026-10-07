@@ -29,6 +29,10 @@
     "getFollow": "implemented",
     "listActorFollowers": "implemented",
     "listActorFollowing": "implemented",
+    "getLikes": "implemented",
+    "getReposts": "implemented",
+    "getActorLikes": "implemented",
+    "getActorReposts": "implemented",
     "getEntityFollow": "implemented",
     "listEntityFollowers": "implemented",
     "listEntityFollowing": "implemented",
@@ -110,6 +114,22 @@
     {
       "id": "app.certified.graph.listRecentFollows",
       "path": "lexicons/app.certified.graph.listRecentFollows.json"
+    },
+    {
+      "id": "app.certified.feed.getLikes",
+      "path": "lexicons/app.certified.feed.getLikes.json"
+    },
+    {
+      "id": "app.certified.feed.getReposts",
+      "path": "lexicons/app.certified.feed.getReposts.json"
+    },
+    {
+      "id": "app.certified.feed.getActorLikes",
+      "path": "lexicons/app.certified.feed.getActorLikes.json"
+    },
+    {
+      "id": "app.certified.feed.getActorReposts",
+      "path": "lexicons/app.certified.feed.getActorReposts.json"
     },
     {
       "id": "app.certified.actor.profile",
@@ -262,6 +282,14 @@
     {
       "id": "app.certified.signature.defs",
       "packagePath": "lexicons/app/certified/signature/defs.json"
+    },
+    {
+      "id": "app.certified.feed.like",
+      "packagePath": "lexicons/app/certified/feed/like.json"
+    },
+    {
+      "id": "app.certified.feed.repost",
+      "packagePath": "lexicons/app/certified/feed/repost.json"
     },
     {
       "id": "app.certified.defs",
@@ -519,6 +547,7 @@
     "modules/actor-follow/manifest.json",
     "modules/entity-follow/manifest.json",
     "modules/recent-follows/manifest.json",
+    "modules/feed-reactions/manifest.json",
     "modules/context-evaluation/manifest.json",
     "modules/context-attachments/manifest.json",
     "modules/contributor-information/manifest.json",

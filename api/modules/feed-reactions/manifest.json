@@ -1,0 +1,118 @@
+{
+  "assets": [
+    {
+      "kind": "lexicon",
+      "id": "app.certified.feed.like",
+      "packagePath": "lexicons/app/certified/feed/like.json",
+      "config": { "backfill": true },
+      "dependsOn": ["app.certified.signature.defs"]
+    },
+    {
+      "kind": "lexicon",
+      "id": "app.certified.feed.repost",
+      "packagePath": "lexicons/app/certified/feed/repost.json",
+      "config": { "backfill": true },
+      "dependsOn": ["app.certified.signature.defs"]
+    },
+    {
+      "kind": "lexicon",
+      "id": "app.certified.feed.getLikes",
+      "path": "../../lexicons/app.certified.feed.getLikes.json",
+      "config": { "backfill": false, "target_collection": "app.certified.feed.like" },
+      "dependsOn": ["app.certified.feed.like", "org.hypercerts.api.defs"]
+    },
+    {
+      "kind": "lexicon",
+      "id": "app.certified.feed.getReposts",
+      "path": "../../lexicons/app.certified.feed.getReposts.json",
+      "config": { "backfill": false, "target_collection": "app.certified.feed.repost" },
+      "dependsOn": ["app.certified.feed.repost", "org.hypercerts.api.defs"]
+    },
+    {
+      "kind": "lexicon",
+      "id": "app.certified.feed.getActorLikes",
+      "path": "../../lexicons/app.certified.feed.getActorLikes.json",
+      "config": { "backfill": false, "target_collection": "app.certified.feed.like" },
+      "dependsOn": ["app.certified.feed.getLikes"]
+    },
+    {
+      "kind": "lexicon",
+      "id": "app.certified.feed.getActorReposts",
+      "path": "../../lexicons/app.certified.feed.getActorReposts.json",
+      "config": { "backfill": false, "target_collection": "app.certified.feed.repost" },
+      "dependsOn": ["app.certified.feed.getReposts"]
+    },
+    {
+      "kind": "script",
+      "id": "xrpc.query:app.certified.feed.getLikes",
+      "path": "../../lua/endpoints/getLikes.lua",
+      "sourcePath": "../../lua/src/getLikes.lua",
+      "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/query.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/listValidation.lua",
+        "../../lua/shared/listQuery.lua",
+        "../../lua/shared/recordView.lua",
+        "../../lua/shared/actorView.lua",
+        "../../lua/shared/feedReaction.lua"
+      ],
+      "config": { "script_type": "lua", "description": "Feed reaction API handler" },
+      "dependsOn": ["app.certified.feed.getLikes"]
+    },
+    {
+      "kind": "script",
+      "id": "xrpc.query:app.certified.feed.getReposts",
+      "path": "../../lua/endpoints/getReposts.lua",
+      "sourcePath": "../../lua/src/getReposts.lua",
+      "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/query.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/listValidation.lua",
+        "../../lua/shared/listQuery.lua",
+        "../../lua/shared/recordView.lua",
+        "../../lua/shared/actorView.lua",
+        "../../lua/shared/feedReaction.lua"
+      ],
+      "config": { "script_type": "lua", "description": "Feed reaction API handler" },
+      "dependsOn": ["app.certified.feed.getReposts"]
+    },
+    {
+      "kind": "script",
+      "id": "xrpc.query:app.certified.feed.getActorLikes",
+      "path": "../../lua/endpoints/getActorLikes.lua",
+      "sourcePath": "../../lua/src/getActorLikes.lua",
+      "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/query.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/listValidation.lua",
+        "../../lua/shared/listQuery.lua",
+        "../../lua/shared/recordView.lua",
+        "../../lua/shared/actorView.lua",
+        "../../lua/shared/feedReaction.lua"
+      ],
+      "config": { "script_type": "lua", "description": "Feed reaction API handler" },
+      "dependsOn": ["app.certified.feed.getActorLikes"]
+    },
+    {
+      "kind": "script",
+      "id": "xrpc.query:app.certified.feed.getActorReposts",
+      "path": "../../lua/endpoints/getActorReposts.lua",
+      "sourcePath": "../../lua/src/getActorReposts.lua",
+      "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/query.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/listValidation.lua",
+        "../../lua/shared/listQuery.lua",
+        "../../lua/shared/recordView.lua",
+        "../../lua/shared/actorView.lua",
+        "../../lua/shared/feedReaction.lua"
+      ],
+      "config": { "script_type": "lua", "description": "Feed reaction API handler" },
+      "dependsOn": ["app.certified.feed.getActorReposts"]
+    }
+  ]
+}
