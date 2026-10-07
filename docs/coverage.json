@@ -1,16 +1,16 @@
 {
   "source": {
     "apiManifest": "api/manifest.json",
-    "pinnedLexiconPackage": "1.4.0"
+    "pinnedLexiconPackage": "1.5.0"
   },
   "runtimeValidation": "not-assessed",
   "deploymentValidation": "not-assessed",
-  "endpointCount": 55,
+  "endpointCount": 59,
   "methods": {
-    "GET": 55
+    "GET": 59
   },
   "inclusion": {
-    "manifest-registered": 55
+    "manifest-registered": 59
   },
   "unresolvedReferences": [],
   "endpoints": [
@@ -103,6 +103,30 @@
       "method": "GET",
       "inclusion": "manifest-registered",
       "module": "modules/badge-queries/manifest.json"
+    },
+    {
+      "id": "app.certified.feed.getActorLikes",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/feed-reactions/manifest.json"
+    },
+    {
+      "id": "app.certified.feed.getActorReposts",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/feed-reactions/manifest.json"
+    },
+    {
+      "id": "app.certified.feed.getLikes",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/feed-reactions/manifest.json"
+    },
+    {
+      "id": "app.certified.feed.getReposts",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/feed-reactions/manifest.json"
     },
     {
       "id": "app.certified.graph.getEntityFollow",

@@ -1,6 +1,6 @@
 # Endpoint map: choose by consumer task
 
-This task index lists the 55 public query NSIDs in the bundled [OpenAPI contract](openapi.json). It helps choose an operation but does not replace its exact contract: inspect that operation and its referenced schemas for required parameters, types, defaults, limits, filter semantics, response fields, and declared errors. The static snapshot describes the contract, not availability or freshness on a selected deployment.
+This task index lists the 59 public query NSIDs in the bundled [OpenAPI contract](openapi.json). It helps choose an operation but does not replace its exact contract: inspect that operation and its referenced schemas for required parameters, types, defaults, limits, filter semantics, response fields, and declared errors. The static snapshot describes the contract, not availability or freshness on a selected deployment.
 
 ## Fast selection rules
 
@@ -9,6 +9,7 @@ This task index lists the 55 public query NSIDs in the bundled [OpenAPI contract
 - **Browse or filter without free text:** choose `list...` in the relevant domain.
 - **Text discovery:** use `search...` only where listed below. A search query is not interchangeable with a list filter, and search semantics vary by endpoint.
 - **Relationship checks:** use `get...Follow` for a single pair; list queries answer who follows whom or which entities an actor follows.
+- **Feed reactions:** use `getLikes` or `getReposts` for distinct actors reacting to a subject URI, or `getActorLikes` / `getActorReposts` for an actor's own raw representative reactions.
 
 Inspect the exact operation in the bundled OpenAPI contract before constructing a request: names such as `authors`, `actors`, `uri`, and `collection` have endpoint-specific meanings. Do not infer that a filter, search operation, output array name, or error exists just because a related endpoint has one.
 
@@ -81,6 +82,17 @@ An `unanswered` award is a successful indexed award result, not a not-found resp
 | Browse recent raw follow records | `app.certified.graph.listRecentFollows` | Beta feed across publishers; `before` and pagination have distinct feed semantics. Not a per-actor relationship check. |
 
 Do not confuse actor follows with entity follows; their identifiers and list outputs differ. Recent raw follows preserve duplicates and are not a snapshot; consult that endpoint's description before using cursors.
+
+## Feed reactions (4)
+
+| User task | Query NSID | Practical choice |
+|---|---|---|
+| List actors who liked a record | `app.certified.feed.getLikes` | `subject` is a full record AT-URI; matching ignores CID. The response includes a total distinct-actor count, paginated actor sidecars, and each actor's raw representative like. |
+| List actors who reposted a record | `app.certified.feed.getReposts` | `subject` is a full record AT-URI; matching ignores CID. The response includes a total distinct-actor count, paginated actor sidecars, and each actor's raw representative repost. |
+| List an actor's likes | `app.certified.feed.getActorLikes` | `actor` is a repository-owner DID. Returns raw like records, one per subject URI; subjects need not be indexed. |
+| List an actor's reposts | `app.certified.feed.getActorReposts` | `actor` is a repository-owner DID. Returns raw repost records, one per subject URI; subjects need not be indexed. |
+
+Reaction queries use the earliest record per author/subject URI, with URI ascending as the tie-breaker. They sort pages by the representative record's `createdAt` and URI; check each operation for exact cursor and response details.
 
 ## Context and supporting records (8)
 

@@ -6,6 +6,12 @@ This package owns the shared API installer and build tooling, pinned upstream Le
 
 Use the [`docs/` endpoint explorer](../docs/) and generated [OpenAPI reference](../docs/openapi.json) for endpoint names and contracts. The [coverage report](../docs/coverage.json) lists manifest-registered operations; inclusion does not imply runtime or deployment validation. See [docs/README.md](../docs/README.md) to run the explorer locally and refresh its committed reference.
 
+## Feed reaction capability
+
+`modules/feed-reactions/manifest.json` owns the like and repost record schemas and four public queries: `app.certified.feed.getLikes`, `getReposts`, `getActorLikes`, and `getActorReposts`. The root manifest includes this independently installable module in the aggregate bundle. Its record schemas enable backfill, and queries read the current indexed records directly; deleted reactions therefore stop appearing once removed from HappyView's index, without a separate stored count.
+
+Subject queries match by AT-URI without requiring a subject CID match, return one earliest reaction per author, and include a distinct-actor total with nullable profile and organization sidecars. Actor queries return raw reaction records without subject hydration. All four use bounded `createdAt`/URI cursor pagination.
+
 ## Local validation
 
 From the repository root:

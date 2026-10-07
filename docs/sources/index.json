@@ -1,6 +1,6 @@
 {
   "apiManifest": "api/manifest.json",
-  "pinnedLexiconPackage": "1.4.0",
+  "pinnedLexiconPackage": "1.5.0",
   "sourcePolicy": "Explorer operations are the query/procedure Lexicons declared by modules in api/manifest.json. Referenced schemas are resolved from that manifest and its pinned Lexicon package; no remote refs are fetched.",
   "runtimeValidation": "not-assessed",
   "deploymentValidation": "not-assessed",
@@ -138,6 +138,42 @@
       "file": "sources/lexicons/app.certified.badge.searchBadgeDefinitions.json",
       "source": {
         "path": "../../lexicons/app.certified.badge.searchBadgeDefinitions.json"
+      }
+    },
+    {
+      "id": "app.certified.feed.getActorLikes",
+      "type": "query",
+      "module": "modules/feed-reactions/manifest.json",
+      "file": "sources/lexicons/app.certified.feed.getActorLikes.json",
+      "source": {
+        "path": "../../lexicons/app.certified.feed.getActorLikes.json"
+      }
+    },
+    {
+      "id": "app.certified.feed.getActorReposts",
+      "type": "query",
+      "module": "modules/feed-reactions/manifest.json",
+      "file": "sources/lexicons/app.certified.feed.getActorReposts.json",
+      "source": {
+        "path": "../../lexicons/app.certified.feed.getActorReposts.json"
+      }
+    },
+    {
+      "id": "app.certified.feed.getLikes",
+      "type": "query",
+      "module": "modules/feed-reactions/manifest.json",
+      "file": "sources/lexicons/app.certified.feed.getLikes.json",
+      "source": {
+        "path": "../../lexicons/app.certified.feed.getLikes.json"
+      }
+    },
+    {
+      "id": "app.certified.feed.getReposts",
+      "type": "query",
+      "module": "modules/feed-reactions/manifest.json",
+      "file": "sources/lexicons/app.certified.feed.getReposts.json",
+      "source": {
+        "path": "../../lexicons/app.certified.feed.getReposts.json"
       }
     },
     {
@@ -691,6 +727,58 @@
       "kind": "schema",
       "source": {
         "packagePath": "lexicons/app/certified/defs.json"
+      }
+    },
+    {
+      "id": "app.certified.feed.getActorLikes",
+      "file": "sources/lexicons/app.certified.feed.getActorLikes.json",
+      "kind": "endpoint",
+      "source": {
+        "module": "modules/feed-reactions/manifest.json",
+        "path": "../../lexicons/app.certified.feed.getActorLikes.json"
+      }
+    },
+    {
+      "id": "app.certified.feed.getActorReposts",
+      "file": "sources/lexicons/app.certified.feed.getActorReposts.json",
+      "kind": "endpoint",
+      "source": {
+        "module": "modules/feed-reactions/manifest.json",
+        "path": "../../lexicons/app.certified.feed.getActorReposts.json"
+      }
+    },
+    {
+      "id": "app.certified.feed.getLikes",
+      "file": "sources/lexicons/app.certified.feed.getLikes.json",
+      "kind": "endpoint",
+      "source": {
+        "module": "modules/feed-reactions/manifest.json",
+        "path": "../../lexicons/app.certified.feed.getLikes.json"
+      }
+    },
+    {
+      "id": "app.certified.feed.getReposts",
+      "file": "sources/lexicons/app.certified.feed.getReposts.json",
+      "kind": "endpoint",
+      "source": {
+        "module": "modules/feed-reactions/manifest.json",
+        "path": "../../lexicons/app.certified.feed.getReposts.json"
+      }
+    },
+    {
+      "id": "app.certified.feed.like",
+      "file": "sources/lexicons/app.certified.feed.like.json",
+      "kind": "schema",
+      "source": {
+        "packagePath": "lexicons/app/certified/feed/like.json"
+      }
+    },
+    {
+      "id": "app.certified.feed.repost",
+      "file": "sources/lexicons/app.certified.feed.repost.json",
+      "kind": "schema",
+      "source": {
+        "packagePath": "lexicons/app/certified/feed/repost.json"
       }
     },
     {

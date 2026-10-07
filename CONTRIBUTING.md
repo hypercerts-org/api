@@ -25,7 +25,7 @@ This updates `docs/sources/index.json`, the committed Lexicon snapshots, `docs/o
 
 ## HTTP runtime tests
 
-`pnpm test:http` runs the suites in `api/tests/http` against the activity, badge-definition, badge-query, EVM-link, acknowledgement, collection, context-measurement, context attachment and evaluation, contributor-information, funding, location, profile, organization, feature, work-scope-tag, rights, vocabulary-tag, graph, and contribution query XRPC endpoints installed from this checkout. These tests exercise real HTTP behavior against PostgreSQL, not only Lua handlers with a fake database.
+`pnpm test:http` runs the suites in `api/tests/http` against the activity, badge-definition, badge-query, EVM-link, acknowledgement, collection, context-measurement, context attachment and evaluation, contributor-information, funding, location, profile, organization, feature, work-scope-tag, rights, vocabulary-tag, graph, contribution, and feed-reaction query XRPC endpoints installed from this checkout. These tests exercise real HTTP behavior against PostgreSQL, not only Lua handlers with a fake database.
 
 The local runner requires a local Docker Compose daemon, `psql`, and the pinned PostgreSQL and HappyView images already cached locally. Set `PSQL_PATH` to the absolute path of a trusted `psql` executable:
 
@@ -57,6 +57,7 @@ The HTTP gate fails if it discovers no suites, executes no `node:test` cases, or
 - Activity retrieval with contributor-sidecar hydration, author/organization/contributor/URI filters, tied timestamp pagination, and literal wildcard search.
 - Collection retrieval with CBOR-derived CIDs, location/tag projections, author, organization, item and tag filters, title/shortDescription search, `createdAt`/URI pagination ties, and source-order item pagination with exact-version resolution.
 - Graph actor/entity lookups and lists, tied-key pagination, nullable profile/organization sidecars, entity target resolution, and the global recent-follows `before` filter.
+- Feed-reaction subject and actor queries, earliest duplicate selection, URI-only subject matching across CIDs, distinct-actor totals, tied cursor pagination, page-only sidecar hydration, raw `via`/signature preservation, and actor queries without hydration.
 - Contribution exact-record retrieval, repeated publisher filters, tied ascending/descending cursor pagination, nullable publisher sidecars, and named errors.
 - Badge, badge-query, acknowledgement, contribution, and rights HTTP fixtures with CBOR-derived record CIDs; contribution DIDs are distinct from baseline fixture identities.
 - Location retrieval with nullable sidecars, repeated author/URI/location-type filters, unsupported-search errors, tied pagination in both directions, malformed/absent `createdAt` handling, and named errors.

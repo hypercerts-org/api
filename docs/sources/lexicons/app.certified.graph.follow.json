@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "record",
-      "description": "Record declaring a social 'follow' relationship of another account. Duplicate follows will be ignored by the AppView.",
+      "description": "Record declaring a social 'follow' relationship of another account.",
       "key": "tid",
       "record": {
         "type": "object",

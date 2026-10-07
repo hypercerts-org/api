@@ -20,7 +20,7 @@ Read the relevant reference, then inspect the exact operation in the [bundled Op
 
 ## Bundled API contract
 
-- [`references/openapi.json`](references/openapi.json) is a self-contained snapshot of all 55 query operations, including parameters, response schemas, declared XRPC errors, and their referenced schema definitions. The included contract makes the skill self-contained when installed separately.
+- [`references/openapi.json`](references/openapi.json) is a self-contained snapshot of all 59 query operations, including parameters, response schemas, declared XRPC errors, and their referenced schema definitions. The included contract makes the skill self-contained when installed separately.
 - To inspect an exact contract, find `/xrpc/<full NSID>` in the snapshot, read its operation, and follow any `#/components/schemas/...` references by schema name. Each operation and schema is stored on its own line for focused lookup.
 - The snapshot describes declared behavior, not endpoint availability or data freshness on a particular host. Its OpenAPI `info.version` is not the deployed server's version.
 - Use the API directly when a task needs live indexed results. Do not send extra diagnostic probes just to validate deployment; a deployment-specific availability check requires explicit approval for the target.
