@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { homedir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { checkLuaMaintainability } from './lua-maintainability.js';
 
 const defaultRoot = fileURLToPath(new URL('../', import.meta.url));
 
@@ -79,6 +80,68 @@ async function declaredLuaOutputs(root) {
   return outputs;
 }
 
+async function declaredLuaSourceMaps(root) {
+  const rootManifest = JSON.parse(await readFile(path.join(root, 'manifest.json'), 'utf8'));
+  const sourceMaps = new Map();
+  for (const modulePath of rootManifest.modules) {
+    const moduleFile = resolveInside(root, root, modulePath, 'Module manifest path');
+    const module = JSON.parse(await readFile(moduleFile, 'utf8'));
+    for (const asset of module.assets) {
+      if (asset.kind !== 'script' || asset.config?.script_type !== 'lua') continue;
+      const shared = asset.sharedSourcePaths
+        ?? (asset.sharedSourcePath ? [asset.sharedSourcePath] : []);
+      if (!Array.isArray(shared)) throw new Error(`${asset.id ?? 'Lua handler'} must declare sharedSourcePaths as an array`);
+      const declarations = [
+        ...shared.map((source) => ({ path: source, kind: 'shared' })),
+        { path: asset.sourcePath, kind: 'handler' },
+      ];
+      const ranges = [];
+      let nextLine = 1;
+      for (const declaration of declarations) {
+        if (!declaration.path) throw new Error(`${asset.id ?? 'Lua handler'} has no authored ${declaration.kind} source for bundle diagnostics`);
+        const sourceFile = resolveInside(root, path.dirname(moduleFile), declaration.path, `${asset.id ?? 'Lua handler'} ${declaration.kind} source`);
+        let source;
+        try {
+          source = await readFile(sourceFile, 'utf8');
+        } catch (error) {
+          throw new Error(`${asset.id ?? 'Lua handler'}: cannot map generated bundle to ${path.relative(root, sourceFile)}: ${error.message}`, { cause: error });
+        }
+        const trimmed = source.trimEnd();
+        const lineCount = trimmed.length === 0 ? 1 : (trimmed.match(/\n/g) ?? []).length + 1;
+        ranges.push({
+          startLine: nextLine,
+          endLine: nextLine + lineCount - 1,
+          sourceFile: path.relative(root, sourceFile),
+        });
+        nextLine += lineCount + 1;
+      }
+      const outputFile = resolveInside(root, path.dirname(moduleFile), asset.path, `Lua handler ${asset.id ?? '(unnamed)'} output path`);
+      sourceMaps.set(path.resolve(outputFile), { endpoint: asset.id ?? '(unnamed Lua handler)', ranges });
+    }
+  }
+  return sourceMaps;
+}
+
+function mapLuacheckOutput(output, root, sourceMaps) {
+  return output.replace(/^(.+):(\d+):(\d+): (.+)$/gm, (line, reportedPath, lineNumber, column, message) => {
+    const outputFile = path.resolve(root, reportedPath);
+    const sourceMap = sourceMaps.get(outputFile);
+    if (!sourceMap) return line;
+    const generatedLine = Number(lineNumber);
+    const range = sourceMap.ranges.find(({ startLine, endLine }) => generatedLine >= startLine && generatedLine <= endLine);
+    if (!range) return line;
+    const sourceLine = generatedLine - range.startLine + 1;
+    const generatedPath = path.relative(root, outputFile);
+    return `${range.sourceFile}:${sourceLine}:${column}: ${message} (in ${sourceMap.endpoint} bundle at ${generatedPath}:${generatedLine})`;
+  });
+}
+
+function emitLintOutput(output, log, stream) {
+  if (!output) return;
+  if (log === console.log) stream.write(output);
+  else log(output);
+}
+
 export async function lintLua({ root = defaultRoot, home = homedir(), spawn = spawnSync, log = console.log } = {}) {
   const allFiles = await luaFiles(path.join(root, 'lua'));
   if (allFiles.length === 0) {
@@ -103,12 +166,18 @@ export async function lintLua({ root = defaultRoot, home = homedir(), spawn = sp
     }
   }
 
+  const maintainability = await checkLuaMaintainability({ root });
+  for (const diagnostic of maintainability.diagnostics) log(`[Lua ${diagnostic.status}] ${diagnostic.message}`);
+  log(`Lua parameter contracts: ${maintainability.stats.parameterContractsVerified} verified, ${maintainability.stats.parameterContractsUnverified} unverified.`);
+
+  const sourceMaps = await declaredLuaSourceMaps(root);
   const args = [
     '--config',
     '.luacheckrc',
+    '--no-color',
     ...endpointFiles.map((file) => path.relative(root, file)),
   ];
-  const options = { cwd: root, stdio: 'inherit' };
+  const options = { cwd: root, encoding: 'utf8', stdio: 'pipe' };
   let result = spawn('luacheck', args, options);
   if (result.error?.code === 'ENOENT') {
     const localLuacheck = path.join(home, '.luarocks', 'bin', 'luacheck');
@@ -123,7 +192,10 @@ export async function lintLua({ root = defaultRoot, home = homedir(), spawn = sp
     throw new Error('Luacheck is missing. Install it with `luarocks --lua-version=5.4 --local install luacheck 1.2.0`.');
   }
   if (result.error) throw result.error;
-  return { status: result.status ?? 1 };
+  emitLintOutput(mapLuacheckOutput(String(result.stdout ?? ''), root, sourceMaps), log, process.stdout);
+  emitLintOutput(mapLuacheckOutput(String(result.stderr ?? ''), root, sourceMaps), log, process.stderr);
+  const maintainabilityFailed = maintainability.diagnostics.some(({ status }) => status === 'error');
+  return { status: Math.max(result.status ?? 1, maintainabilityFailed ? 1 : 0) };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
