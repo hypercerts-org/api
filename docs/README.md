@@ -18,7 +18,7 @@ Open <http://127.0.0.1:5173>. The explorer defaults to `https://api.test.hyperce
 To offer named servers, set `VITE_HAPPYVIEW_SERVERS` when starting the dev server or building the site:
 
 ```sh
-VITE_HAPPYVIEW_SERVERS='[{"label":"Staging","url":"https://staging.api.hypercerts.dev"},{"label":"Test","url":"https://test.api.hypercerts.dev"}]' pnpm docs:dev
+VITE_HAPPYVIEW_SERVERS='[{"label":"Staging","url":"https://api.staging.hypercerts.dev"},{"label":"Test","url":"https://test.api.hypercerts.dev"},{"label":"Production","url":"https://api.hypercerts.dev"}]' pnpm docs:dev
 ```
 
 The value must be a nonempty JSON array of labeled, distinct http(s) base URLs without credentials, query, or fragment. The first entry is the default; Local and Custom remain available. These URLs are public in the browser bundle, so do not include secrets. Changing a deployed site's configuration requires a rebuild and redeploy.
