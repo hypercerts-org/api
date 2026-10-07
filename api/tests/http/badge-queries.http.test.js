@@ -291,7 +291,7 @@ test('listBadgeAwards combines discriminating filters and traverses ties in both
   assert.deepEqual(supersededAcceptedRecipient.body.badgeAwards.map(({ uri }) => uri), [canonicalRecords.awardA.uri]);
 
   const unmatchedFilters = [
-    { authors: [badgeQueryDids.partner] },
+    { authors: [badgeQueryDids.unlistedAuthor] },
     { badgeUris: [partnerDefinitionUri] },
     { badgeTypes: ['recognition'] },
     { subjects: ['did:web:no-such-badge-recipient.example'] },
