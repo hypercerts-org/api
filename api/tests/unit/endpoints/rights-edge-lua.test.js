@@ -17,7 +17,7 @@ async function endpointSources(name) {
     'lua/shared/actorView.lua',
     'lua/shared/rightsView.lua',
   ];
-  if (name === 'listRights') shared.push('lua/shared/listValidation.lua', 'lua/shared/listQuery.lua');
+  if (name === 'listRights') shared.push('lua/shared/datetimeValidation.lua', 'lua/shared/listValidation.lua', 'lua/shared/listQuery.lua');
   return Promise.all([...shared, `lua/src/${name}.lua`].map(read));
 }
 
@@ -25,7 +25,7 @@ function runLua(program) {
   execFileSync('lua', ['-'], { input: program, encoding: 'utf8' });
 }
 
-test('getRights rejects malformed DID escapes, serializes nullable indexedAt, and reports missing records', async () => {
+test('getRights accepts opaque DID percent sequences and retains invalid-DID boundaries', async () => {
   const sources = await endpointSources('getRights');
   const program = [
     `local null_value = {}
@@ -35,13 +35,16 @@ test('getRights rejects malformed DID escapes, serializes nullable indexedAt, an
       if value == "rights-record" then return rights_record end
       error("unexpected JSON input")
     end }`,
-    `params = { uri = "at://did:plc:publisher%GG/org.hypercerts.claim.rights/key" }`,
-    `local query_count = 0
+    `local broad_uri = "at://did:plc:publisher%GG/org.hypercerts.claim.rights/key"
+    params = { uri = broad_uri }
+    local query_count = 0
+    local query_values = {}
     local record_exists = true
     db = {
       backend = function() return "postgres" end,
       raw = function(sql, values)
         query_count = query_count + 1
+        query_values[query_count] = values
         if values[1] == "org.hypercerts.claim.rights" then
           if not record_exists then return {} end
           return {{ uri = params.uri, did = "did:plc:publisher", cid = "cid", indexed_at = nil, record = "rights-record" }}
@@ -50,15 +53,19 @@ test('getRights rejects malformed DID escapes, serializes nullable indexedAt, an
       end
     }`,
     ...sources,
-    `local ok, err = pcall(handle)
-    assert(not ok and tostring(err):find("InvalidRequest", 1, true))
-    assert(query_count == 0, "malformed percent escapes must fail before DB access")
-    params.uri = "at://did:plc:publisher/org.hypercerts.claim.rights/key"
-    local response = handle()
+    `local response = handle()
+    assert(response.rights.uri == broad_uri and query_values[1][2] == broad_uri,
+      "opaque percent sequences in the DID must reach exact lookup unchanged")
     assert(response.rights.indexedAt == null_value, "SQL NULL is returned as JSON null")
     assert(response.rights.record.rightsName == "Terms")
     assert(response.rights.author.profile == null_value)
     assert(response.rights.author.organization == null_value)
+    assert(query_count == 3, "exact lookup and sidecar hydration should run")
+    params.uri = "at://did:plc:publisher%/org.hypercerts.claim.rights/key"
+    local invalid_ok, invalid_error = pcall(handle)
+    assert(not invalid_ok and tostring(invalid_error):find("InvalidRequest", 1, true))
+    assert(query_count == 3, "trailing percent remains an invalid DID boundary")
+    params.uri = "at://did:plc:publisher/org.hypercerts.claim.rights/key"
     record_exists = false
     local missing_ok, missing_error = pcall(handle)
     assert(not missing_ok and tostring(missing_error):find("RecordNotFound", 1, true))`,
@@ -111,7 +118,7 @@ test('listRights orders invalid or absent createdAt by indexed_at then row creat
   runLua(program);
 });
 
-test('listRights rejects malformed DID escapes and PostgreSQL year zero cursors before querying', async () => {
+test('listRights accepts broad DIDs in filters and cursors but rejects invalid DID and timestamp boundaries', async () => {
   const sources = await endpointSources('listRights');
   const program = [
     `local null_value = {}`,
@@ -130,20 +137,32 @@ test('listRights rejects malformed DID escapes and PostgreSQL year zero cursors 
       return hex('{"v":1,"d":"desc","t":"' .. timestamp .. '","u":"' .. uri .. '"}')
     end`,
     `local query_count = 0
+    local query_values = {}
     db = {
       backend = function() return "postgres" end,
-      raw = function() query_count = query_count + 1; return {} end
+      raw = function(sql, values)
+        query_count = query_count + 1
+        query_values[query_count] = values
+        return {}
+      end
     }
     toarray = function(value) return value end`,
     ...sources,
     `local function invalid_request()
+      local previous_queries = query_count
       local ok, err = pcall(handle)
       assert(not ok and tostring(err):find("InvalidRequest", 1, true))
-      assert(query_count == 0, "invalid inputs must fail before database access")
+      assert(query_count == previous_queries, "invalid inputs must fail before database access")
     end
     params = { authors = { "did:plc:publisher%GG" } }
-    invalid_request()
-    params = { cursor = cursor("2025-01-01T00:00:00Z", "at://did:plc:publisher%GG/org.hypercerts.claim.rights/key") }
+    local filtered = handle()
+    assert(#filtered.rights == 0 and query_values[1][2] == "did:plc:publisher%GG",
+      "opaque percent sequences in author DIDs must reach the list query")
+    local broad_cursor_uri = "at://did:plc:publisher%GG/org.hypercerts.claim.rights/key"
+    params = { cursor = cursor("2025-01-01T00:00:00Z", broad_cursor_uri) }
+    handle()
+    assert(query_values[2][3] == broad_cursor_uri, "broad DID cursor URI must reach the list query")
+    params = { authors = { "did:plc:publisher%" } }
     invalid_request()
     params = { cursor = cursor("0000-01-01T00:00:00Z", "at://did:plc:publisher/org.hypercerts.claim.rights/key") }
     invalid_request()`,

@@ -55,6 +55,9 @@
         "../../lua/shared/activityProjection.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/activity.lua",
+        "../../lua/shared/datetimeValidation.lua",
+        "../../lua/shared/listValidation.lua",
+        "../../lua/shared/createdAtSort.lua",
         "../../lua/shared/activityList.lua"
       ],
       "config": {
@@ -76,6 +79,9 @@
         "../../lua/shared/activityProjection.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/activity.lua",
+        "../../lua/shared/datetimeValidation.lua",
+        "../../lua/shared/listValidation.lua",
+        "../../lua/shared/createdAtSort.lua",
         "../../lua/shared/activityList.lua"
       ],
       "config": {

@@ -59,12 +59,20 @@ test('getContributorInformation exposes RecordNotFound as the pinned HappyView r
   assert.match(body.message, /RecordNotFound/);
 });
 
-test('getContributorInformation exposes InvalidRequest as the pinned HappyView runtime error', async () => {
-  const malformedUri = 'at://did:plc:mm%GG/org.hypercerts.claim.contributorInformation/3jzfcijpj2z2a';
-  const { response, body } = await getContributorInformation(malformedUri);
-  assert.equal(response.status, 500, JSON.stringify(body));
-  assert.equal(body.error, 'script_error');
-  assert.equal(body.errorType, 'runtime');
-  assert.equal(body.method, 'org.hypercerts.claim.getContributorInformation');
-  assert.match(body.message, /InvalidRequest/);
+test('getContributorInformation accepts opaque percent sequences in DIDs and retains DID boundaries', async () => {
+  const broadUri = 'at://did:plc:mm%GG/org.hypercerts.claim.contributorInformation/3jzfcijpj2z2a';
+  const broad = await getContributorInformation(broadUri);
+  assert.equal(broad.response.status, 500, JSON.stringify(broad.body));
+  assert.equal(broad.body.error, 'script_error');
+  assert.equal(broad.body.errorType, 'runtime');
+  assert.equal(broad.body.method, 'org.hypercerts.claim.getContributorInformation');
+  assert.match(broad.body.message, /RecordNotFound/, 'the broad DID must reach exact indexed lookup');
+
+  const trailingPercentUri = 'at://did:plc:mm%/org.hypercerts.claim.contributorInformation/3jzfcijpj2z2a';
+  const invalid = await getContributorInformation(trailingPercentUri);
+  assert.equal(invalid.response.status, 500, JSON.stringify(invalid.body));
+  assert.equal(invalid.body.error, 'script_error');
+  assert.equal(invalid.body.errorType, 'runtime');
+  assert.equal(invalid.body.method, 'org.hypercerts.claim.getContributorInformation');
+  assert.match(invalid.body.message, /InvalidRequest/);
 });

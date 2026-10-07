@@ -297,19 +297,32 @@ test("tag timestamps stay explicit null while missing sidecar timestamps stay om
   assert_equal(listed.author.organization.indexedAt, "2025-01-03T00:00:00Z", "list sidecar timestamp must remain unchanged")
 end)
 
-test("malformed percent DIDs and year-zero cursors are rejected before querying", function()
+test("opaque DID percent sequences reach tag queries while DID and cursor boundaries remain", function()
+  local broad_did = "did:plc:publisher%GG"
   reset_database()
-  params = { authors = { "did:plc:publisher%GG" } }
-  assert_error(list_workscope_tags, "InvalidRequest")
-  assert_equal(#db.calls, 0, "malformed author DIDs do not reach the database")
+  params = { authors = { broad_did } }
+  local listed = list_workscope_tags()
+  assert_equal(#listed.workscopeTags, 0)
+  assert_equal(db.calls[1].values[2], broad_did, "author DID must reach the list query unchanged")
 
-  params = { uri = "at://did:plc:publisher%GG/" .. TAG .. "/tag" }
-  assert_error(get_workscope_tag, "InvalidRequest")
-  assert_equal(#db.calls, 0, "malformed exact-lookup DIDs do not reach the database")
+  reset_database()
+  local broad_uri = "at://" .. broad_did .. "/" .. TAG .. "/tag"
+  db.lookup_rows[broad_uri] = row(broad_uri, broad_did, "bafyreitag-broad", "tag-a", "2025-01-03T00:00:00Z")
+  params = { uri = broad_uri }
+  local exact = get_workscope_tag()
+  assert_equal(exact.workscopeTag.uri, broad_uri)
+  assert_equal(db.calls[1].values[2], broad_uri, "exact URI must reach the lookup unchanged")
 
-  params = { cursor = cursor_token("2025-01-02T00:00:00Z", "at://did:plc:publisher%GG/" .. TAG .. "/tag") }
+  reset_database()
+  local cursor_uri = "at://did:plc:cursor%ZZ/" .. TAG .. "/tag"
+  params = { cursor = cursor_token("2025-01-02T00:00:00Z", cursor_uri) }
+  list_workscope_tags()
+  assert_equal(db.calls[1].values[3], cursor_uri, "broad DID in cursor URI must reach the list query")
+
+  reset_database()
+  params = { authors = { "did:plc:publisher%" } }
   assert_error(list_workscope_tags, "InvalidRequest")
-  assert_equal(#db.calls, 0, "malformed cursor URIs do not reach the database")
+  assert_equal(#db.calls, 0, "trailing percent remains an invalid DID boundary")
 
   params = { cursor = cursor_token("0000-01-01T00:00:00Z", uri_a) }
   assert_error(list_workscope_tags, "InvalidRequest")

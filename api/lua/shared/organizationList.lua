@@ -66,12 +66,6 @@ local function add_organization_types(where, values, organization_types)
     ") AS organization_type(value) WHERE organization_type.value IN (" .. table.concat(placeholders, ", ") .. "))"
 end
 
-local function cursor_encode(value)
-  return (json.encode(value):gsub(".", function(char)
-    return string.format("%02x", string.byte(char))
-  end))
-end
-
 local function cursor_decode(token, direction)
   if token == nil then return nil end
   if #token % 2 ~= 0 or token:find("[^0-9a-f]") then invalid("cursor is malformed") end
@@ -118,11 +112,7 @@ local function query_organizations(actors, organization_types, visibility, searc
 
   values[#values + 1] = limit + 1
   local ordering = direction == "asc" and "ASC" or "DESC"
-  local created = "organization.record::jsonb->>'createdAt'"
-  local zoned = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
-  local sort_key = "CASE WHEN jsonb_typeof(organization.record::jsonb->'createdAt') = 'string' AND " .. created .. " ~ '" .. zoned ..
-    "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created .. ", 'timestamptz') THEN (" .. created ..
-    ")::timestamptz ELSE COALESCE(organization.indexed_at::timestamptz, organization.created_at::timestamptz) END"
+  local sort_key = created_at_sort_expression("organization")
   local sql = "SELECT organization.uri, organization.did, organization.cid, organization.indexed_at::text AS indexed_at, " ..
     "organization.record::text AS record, to_char(sorted.sort_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp " ..
     "FROM happyview_records AS organization CROSS JOIN LATERAL (SELECT " .. sort_key .. " AS sort_at) AS sorted WHERE " ..
@@ -172,8 +162,7 @@ local function organizations_response(search_enabled)
 
   local limit = parse_list_limit(params)
 
-  local direction = scalar(params, "sortDirection") or "desc"
-  if direction ~= "asc" and direction ~= "desc" then invalid("sortDirection must be 'asc' or 'desc'") end
+  local direction = parse_sort_direction(params)
   local cursor = cursor_decode(scalar(params, "cursor"), direction)
   local actors_result, next_cursor = query_organizations(actors, organization_types, visibility, search, limit, cursor, direction)
   local response = { actors = toarray(actors_result) }

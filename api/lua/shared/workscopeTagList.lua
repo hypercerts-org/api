@@ -25,7 +25,7 @@ local function workscope_tag_array(key)
 
   local unique, seen = {}, {}
   for _, did in ipairs(supplied) do
-    if not workscope_tag_valid_did(did) then
+    if not valid_did(did) then
       invalid("each " .. key .. " value must be a valid DID; resolve handles to DIDs first")
     end
     if not seen[did] then

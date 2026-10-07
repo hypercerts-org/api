@@ -240,14 +240,18 @@ reset_db()
 expect_error(function() call_get({ uri = "at://publisher.example/org.hypercerts.context.measurement/3jzfcijpj2z2a" }) end, "InvalidRequest:")
 expect_error(function() call_get({ uri = "at://did:plc:measurements.test/org.hypercerts.context.evaluation/3jzfcijpj2z2a" }) end, "InvalidRequest:")
 expect_error(function() call_get({ uri = GET_URI, extra = "not allowed" }) end, "InvalidRequest:")
-for _, malformed_did in ipairs({ "did:plc:publisher%ZZ", "did:plc:publisher%A" }) do
+for _, broad_did in ipairs({ "did:plc:publisher%ZZ", "did:plc:publisher%A" }) do
   reset_db()
-  db.exactRows = { row_a }
-  expect_error(function()
-    call_get({ uri = "at://" .. malformed_did .. "/org.hypercerts.context.measurement/3jzfcijpj2z2a" })
-  end, "InvalidRequest:")
-  assert(#db.calls == 0, "malformed DID escapes in a get URI must fail before SQL")
+  db.exactRows = {}
+  local broad_uri = "at://" .. broad_did .. "/org.hypercerts.context.measurement/3jzfcijpj2z2a"
+  expect_error(function() call_get({ uri = broad_uri }) end, "RecordNotFound:")
+  assert(#db.calls == 1 and db.calls[1].values[2] == broad_uri, "broad DID syntax must reach exact lookup unchanged")
 end
+reset_db()
+expect_error(function()
+  call_get({ uri = "at://did:plc:publisher%/org.hypercerts.context.measurement/3jzfcijpj2z2a" })
+end, "InvalidRequest:")
+assert(#db.calls == 0, "a trailing percent remains an invalid DID boundary")
 reset_db()
 expect_error(function() call_get({ uri = GET_URI }) end, "RecordNotFound:")
 reset_db()
@@ -275,14 +279,18 @@ assert(rawget(list_with_nil_sidecar_timestamps.author.profile, "indexedAt") == n
 assert(rawget(list_with_nil_sidecar_timestamps.author.organization, "indexedAt") == nil, "listMeasurements must omit SQL-NULL organization indexedAt")
 profile_row.indexed_at, organization_row.indexed_at = profile_indexed_at, organization_indexed_at
 
-for _, malformed_did in ipairs({ "did:plc:publisher%ZZ", "did:plc:publisher%A" }) do
+for _, broad_did in ipairs({ "did:plc:publisher%ZZ", "did:plc:publisher%A" }) do
   for _, filters in ipairs({
-    { authors = { malformed_did } },
-    { subjects = { "at://" .. malformed_did .. "/org.hypercerts.claim.activity/3jzfcijpj2z2d" } },
+    { authors = { broad_did } },
+    { subjects = { "at://" .. broad_did .. "/org.hypercerts.claim.activity/3jzfcijpj2z2d" } },
   }) do
     reset_db()
-    expect_error(function() call_list(filters) end, "InvalidRequest:")
-    assert(#db.calls == 0, "malformed DID escapes in a list filter must fail before SQL")
+    db.listRows = {}
+    assert(#call_list(filters).measurements == 0)
+    local query = db.calls[1]
+    assert(query ~= nil, "broad DID list filters must reach SQL")
+    assert(query.values[2] == (filters.authors and broad_did or filters.subjects[1]),
+      "broad DID filter values must reach SQL unchanged")
   end
 end
 
@@ -403,18 +411,22 @@ local year_zero_json = json.encode({ v = 1, d = "asc", t = "0000-01-01T00:00:00.
 local year_zero_cursor = year_zero_json:gsub(".", function(char) return string.format("%02x", string.byte(char)) end)
 expect_error(function() call_list({ sortDirection = "asc", cursor = year_zero_cursor }) end, "InvalidRequest:")
 assert(#db.calls == 0, "year-zero cursor must be rejected before SQL")
-for _, malformed_did in ipairs({ "did:plc:publisher%ZZ", "did:plc:publisher%A" }) do
-  local cursor_json = json.encode({
-    v = 1,
-    d = "asc",
-    t = "2025-01-01T00:00:00.000000Z",
-    u = "at://" .. malformed_did .. "/org.hypercerts.context.measurement/3jzfcijpj2z2a",
-  })
-  local cursor = cursor_json:gsub(".", function(char) return string.format("%02x", string.byte(char)) end)
-  reset_db()
-  expect_error(function() call_list({ sortDirection = "asc", cursor = cursor }) end, "InvalidRequest:")
-  assert(#db.calls == 0, "cursor with malformed DID escapes must be rejected before SQL")
-end
-assert(#db.calls == 0, "invalid list requests must not reach the database")
+local broad_cursor_uri = "at://did:plc:publisher%ZZ/org.hypercerts.context.measurement/3jzfcijpj2z2a"
+local broad_cursor_json = json.encode({
+  v = 1,
+  d = "asc",
+  t = "2025-01-01T00:00:00.000000Z",
+  u = broad_cursor_uri,
+})
+local broad_cursor = broad_cursor_json:gsub(".", function(char) return string.format("%02x", string.byte(char)) end)
+reset_db()
+db.listRows = {}
+call_list({ sortDirection = "asc", cursor = broad_cursor })
+assert(#db.calls == 1 and db.calls[1].values[3] == broad_cursor_uri,
+  "cursor URI with a broad DID must reach the list query unchanged")
+
+reset_db()
+expect_error(function() call_list({ authors = { "did:plc:publisher%" } }) end, "InvalidRequest:")
+assert(#db.calls == 0, "trailing percent remains invalid before SQL")
 
 print("measurement behavior contracts passed")

@@ -91,33 +91,49 @@ ${assertions}
   assert.equal(execution.status, 0, execution.stderr || execution.stdout);
 }
 
-test('getEvmLink rejects malformed DID authorities but accepts percent-encoded DID characters', async () => {
+test('getEvmLink uses shared DID validation and preserves exact-URI constraints', async () => {
   const source = await getEvmLinkSource();
-  const malformedUris = [
+  const invalidUris = [
+    'at://did:plc1:abc/app.certified.link.evm/record',
+    'at://did:plc:abc:/app.certified.link.evm/record',
+    'at://did:plc:abc/app.certified.link.evm/record?version=1',
+    'at://did:plc:abc/app.certified.link.evm/record#fragment',
+  ];
+  const acceptedUris = [
     'at://did:plc:abc%GG/app.certified.link.evm/record',
     'at://did:plc:abc::def/app.certified.link.evm/record',
     'at://did:plc::abc/app.certified.link.evm/record',
-    'at://did:plc1:abc/app.certified.link.evm/record',
+    'at://did:web:example.com%3A3000:users:alice/app.certified.link.evm/record',
   ];
   const lua = `
 local null = {}
 json = { decode = function(value) if value == 'null' then return null end error('unexpected JSON') end }
 local lookup_count = 0
+local lookup_queries = {}
 params = {}
 db = {
   backend = function() return 'postgres' end,
-  raw = function() lookup_count = lookup_count + 1; return {} end,
+  raw = function(sql, values)
+    lookup_count = lookup_count + 1
+    lookup_queries[lookup_count] = { sql = sql, values = values }
+    return {}
+  end,
 }
 ${source}
-for _, malformed_uri in ipairs(${luaLiteral(malformedUris)}) do
-  params = { uri = malformed_uri }
+for _, invalid_uri in ipairs(${luaLiteral(invalidUris)}) do
+  params = { uri = invalid_uri }
   local ok, err = pcall(handle)
-  assert(not ok and tostring(err):find('InvalidRequest:', 1, true), 'malformed DID authorities must be rejected')
+  assert(not ok and tostring(err):find('InvalidRequest:', 1, true), 'invalid DID or URI constraints must be rejected')
 end
-params = { uri = 'at://did:web:example.com%3A3000:users:alice/app.certified.link.evm/record' }
-local ok, err = pcall(handle)
-assert(not ok and tostring(err):find('RecordNotFound:', 1, true), 'a valid percent-encoded DID must reach exact lookup')
-assert(lookup_count == 1, 'invalid DID authorities must be rejected before querying')
+assert(lookup_count == 0, 'invalid DID and query/fragment URIs must not reach exact lookup')
+local accepted_uris = ${luaLiteral(acceptedUris)}
+for index, accepted_uri in ipairs(accepted_uris) do
+  params = { uri = accepted_uri }
+  local ok, err = pcall(handle)
+  assert(not ok and tostring(err):find('RecordNotFound:', 1, true), 'shared-valid DIDs must reach exact lookup')
+  assert(lookup_queries[index].values[2] == accepted_uri, 'exact lookup must bind each accepted URI unchanged')
+end
+assert(lookup_count == #accepted_uris, 'each shared-valid DID must issue an exact lookup')
 `;
   const execution = spawnSync('lua5.4', ['-'], { input: lua, encoding: 'utf8' });
   assert.equal(execution.status, 0, execution.stderr || execution.stdout);
@@ -331,7 +347,7 @@ assert(second_query.sql:find(') > (($6)::timestamptz, $7)', 1, true), 'cursor mu
 ` });
 });
 
-test('listEvmLinks rejects malformed filters, page bounds, unknown parameters, and cursors before querying', async () => {
+test('listEvmLinks rejects invalid filters but accepts broad DIDs in actor filters and cursors', async () => {
   const cursorObject = { v: 1, d: 'asc', t: '2024-01-02T03:04:05Z', u: uri };
   const cursorJSON = JSON.stringify(cursorObject);
   const methodDid = 'did:plc1:abc';
@@ -339,12 +355,14 @@ test('listEvmLinks rejects malformed filters, page bounds, unknown parameters, a
   const methodCursor = { v: 1, d: 'asc', t: '2024-01-02T03:04:05Z', u: methodUri };
   const methodCursorJSON = JSON.stringify(methodCursor);
   const escapedDid = 'did:web:example.com%3A3000:users:alice';
+  const broadDids = ['did:plc:abc%GG', 'did:plc:abc::def', 'did:plc::abc'];
+  const broadCursorUri = 'at://did:plc:cursor%GG/app.certified.link.evm/key';
+  const broadCursor = { v: 1, d: 'asc', t: '2024-01-02T03:04:05Z', u: broadCursorUri };
+  const broadCursorJSON = JSON.stringify(broadCursor);
   const invalidRequests = [
     { addresses: ['0xnot-an-address'] },
     { actors: ['not-a-did'] },
-    { actors: ['did:plc:abc%GG'] },
-    { actors: ['did:plc:abc::def'] },
-    { actors: ['did:plc::abc'] },
+    { actors: ['did:plc:abc%'] },
     { actors: [methodDid] },
     { actors: Array.from({ length: 101 }, (_, index) => `did:plc:actor${index}`) },
     { addresses: Array(101).fill('0xAa00000000000000000000000000000000000001') },
@@ -361,6 +379,7 @@ test('listEvmLinks rejects malformed filters, page bounds, unknown parameters, a
     extraDecoded: [
       { json: cursorJSON, value: cursorObject },
       { json: methodCursorJSON, value: methodCursor },
+      { json: broadCursorJSON, value: broadCursor },
     ],
     assertions: `
 local invalid_requests = ${luaLiteral(invalidRequests)}
@@ -369,10 +388,24 @@ for _, request in ipairs(invalid_requests) do
   local ok, err = pcall(handle)
   assert(not ok and tostring(err):find('InvalidRequest:', 1, true), 'expected InvalidRequest for malformed query')
 end
+local broad_dids = ${luaLiteral(broadDids)}
+for index, broad_did in ipairs(broad_dids) do
+  params = { actors = { broad_did } }
+  local result = handle()
+  assert(#result.evmLinks == 0)
+  assert(list_calls == index and list_queries[index].values[2] == broad_did,
+    'broad DID actor filters must reach the query unchanged')
+end
 params = { actors = { '${escapedDid}' } }
 local valid_result = handle()
 assert(#valid_result.evmLinks == 0)
-assert(list_calls == 1 and list_queries[1].values[2] == '${escapedDid}', 'valid percent-encoded DIDs must reach the query')
+assert(list_calls == #broad_dids + 1 and list_queries[list_calls].values[2] == '${escapedDid}',
+  'percent-encoded DIDs must reach the query')
+params = { sortDirection = 'asc', cursor = '${Buffer.from(broadCursorJSON).toString('hex')}' }
+local cursor_result = handle()
+assert(#cursor_result.evmLinks == 0)
+assert(list_calls == #broad_dids + 2 and list_queries[list_calls].values[3] == '${broadCursorUri}',
+  'broad DID cursor URI must reach the query unchanged')
 `,
   });
 });

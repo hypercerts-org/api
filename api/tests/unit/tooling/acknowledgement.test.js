@@ -184,15 +184,17 @@ function runGetErrorCases() {
   const source = `
 local NULL = {}
 local calls, fail_at, return_record = 0, 0, false
+local query_values = {}
 json = { decode = function(value) if value == 'null' then return NULL end return {} end }
 toarray = function(value) return value end
 params = { uri = 'at://author.example/${ACKNOWLEDGEMENT}/ack-one' }
 db = {
   backend = function() return 'postgres' end,
-  raw = function()
+  raw = function(_, values)
     calls = calls + 1
+    query_values[calls] = values
     if calls == fail_at then error('fixture database failure') end
-    if return_record and calls == 2 then
+    if return_record and values[1] == '${ACKNOWLEDGEMENT}' then
       return {{ uri = '${acknowledgementUri}', did = '${authorDid}', cid = '${acknowledgementRow.cid}', indexed_at = '${createdAt}', record = 'acknowledgement-record' }}
     end
     return {}
@@ -201,19 +203,24 @@ db = {
 dofile('lua/endpoints/getAcknowledgement.lua')
 local ok, result = pcall(handle)
 assert(not ok and tostring(result):find('InvalidRequest:', 1, true))
-params = { uri = 'at://did:plc:publisher%GG/${ACKNOWLEDGEMENT}/ack-one' }
+local broad_uri = 'at://did:plc:publisher%GG/${ACKNOWLEDGEMENT}/ack-one'
+params = { uri = broad_uri }
 ok, result = pcall(handle)
-assert(not ok and tostring(result):find('InvalidRequest:', 1, true), 'malformed DID percent escape is rejected')
-assert(calls == 0, 'invalid URIs are rejected before querying')
+assert(not ok and tostring(result):find('RecordNotFound:', 1, true))
+assert(calls == 1 and query_values[1][2] == broad_uri, 'opaque percent sequences must reach exact lookup unchanged')
+params = { uri = 'at://did:plc:publisher%/${ACKNOWLEDGEMENT}/ack-one' }
+ok, result = pcall(handle)
+assert(not ok and tostring(result):find('InvalidRequest:', 1, true), 'trailing percent remains invalid')
+assert(calls == 1, 'invalid DID boundary must fail before querying')
 params = { uri = '${acknowledgementUri}' }
 ok, result = pcall(handle)
 assert(not ok and tostring(result):find('RecordNotFound:', 1, true))
-assert(calls == 1, 'valid missing URI performs one indexed lookup')
-return_record, fail_at = true, 3
+assert(calls == 2, 'valid missing URI performs one indexed lookup')
+return_record, fail_at = true, 4
 ok, result = pcall(handle)
 assert(not ok and tostring(result):find('AcknowledgementQueryFailed:', 1, true))
 assert(not tostring(result):find('RecordNotFound:', 1, true), 'hydration failure is not reported as a missing record')
-assert(calls == 3, 'publisher hydration failure reaches the PostgreSQL lookup')
+assert(calls == 4, 'publisher hydration failure reaches the PostgreSQL lookup')
 `;
   return spawnSync('lua5.4', ['-e', source], { cwd: root, encoding: 'utf8' });
 }
@@ -225,14 +232,18 @@ function runInvalidListParams() {
   const yearZeroCursor = Buffer.from(JSON.stringify({
     v: 1, d: 'desc', t: '0000-01-01T00:00:00.000000Z', u: acknowledgementUri,
   })).toString('hex');
+  const broadCursorUri = 'at://did:plc:publisher%GG/org.hypercerts.context.acknowledgement/ack-one';
+  const broadCursor = Buffer.from(JSON.stringify({
+    v: 1, d: 'desc', t: '2025-01-01T00:00:00.000000Z', u: broadCursorUri,
+  })).toString('hex');
   const invalidCases = [
     { unknown: 'x' },
     { authors: ['alice.example'] },
-    { authors: ['did:plc:publisher%GG'] },
+    { authors: ['did:plc:publisher%'] },
     { authors: Array(101).fill(authorDid) },
     { authors: [authorDid, 42] },
     { subjects: ['at://alice.example/org.hypercerts.claim.activity/activity-one'] },
-    { subjects: ['at://did:plc:publisher%GG/org.hypercerts.claim.activity/activity-one'] },
+    { subjects: ['at://did:plc:publisher%/org.hypercerts.claim.activity/activity-one'] },
     { subjects: ['at://did:plc:bbbbbbbbbbbbbbbb/org/activity-one'] },
     { limit: '0' },
     { limit: '101' },
@@ -245,6 +256,7 @@ function runInvalidListParams() {
   const source = `
 local NULL = {}
 local calls = 0
+local query_values = {}
 local function decode_cursor(value)
   return {
     v = tonumber(value:match('"v":(%d+)')),
@@ -262,7 +274,14 @@ json = {
   encode = function(value) return '{}' end,
 }
 toarray = function(value) return value end
-db = { backend = function() return 'postgres' end, raw = function() calls = calls + 1; return {} end }
+db = {
+  backend = function() return 'postgres' end,
+  raw = function(_, values)
+    calls = calls + 1
+    query_values[calls] = values
+    return {}
+  end,
+}
 dofile('lua/endpoints/listAcknowledgements.lua')
 local cases = ${lua(invalidCases)}
 for _, query in ipairs(cases) do
@@ -271,6 +290,17 @@ for _, query in ipairs(cases) do
   assert(not ok and tostring(result):find('InvalidRequest:', 1, true), 'invalid parameters must be rejected')
 end
 assert(calls == 0, 'invalid parameters are rejected before querying')
+local broad_did = 'did:plc:publisher%GG'
+local broad_subject = 'at://' .. broad_did .. '/org.hypercerts.claim.activity/activity-one'
+params = { authors = { broad_did }, subjects = { broad_subject } }
+local filtered = handle()
+assert(#filtered.acknowledgements == 0)
+assert(calls == 1 and query_values[1][2] == broad_did and query_values[1][3] == broad_subject,
+  'broad author and subject DIDs must reach the list query unchanged')
+params = { cursor = '${broadCursor}' }
+local paged = handle()
+assert(#paged.acknowledgements == 0 and calls == 2 and query_values[2][3] == '${broadCursorUri}',
+  'broad DID cursor URI must reach the list query unchanged')
 `;
   return spawnSync('lua5.4', ['-e', source], { cwd: root, encoding: 'utf8' });
 }
@@ -309,7 +339,7 @@ assert(not ok and tostring(failure):find('AcknowledgementQueryFailed:', 1, true)
   return spawnSync('lua5.4', ['-e', source], { cwd: root, encoding: 'utf8' });
 }
 
-test('getAcknowledgement rejects a non-DID URI, distinguishes a missing record, and reports query failures', () => {
+test('getAcknowledgement accepts broad DID syntax and preserves invalid-URI and query failures', () => {
   const result = runGetErrorCases();
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });

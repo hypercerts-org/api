@@ -58,18 +58,18 @@ local function parse_list_limit(params)
   return limit
 end
 
-local PROFILE = "app.certified.actor.profile"
-local ORGANIZATION = "app.certified.actor.organization"
-local NULL = json.decode("null")
-
-local function query(sql, values)
-  if db.backend() ~= "postgres" then error("OrganizationQueryFailed: organization API requires PostgreSQL", 0) end
-  local ok, result = pcall(db.raw, sql, values)
-  if not ok or type(result) ~= "table" then
-    error("OrganizationQueryFailed: organization lookup failed", 0)
-  end
-  return result
+local function parse_sort_direction(params)
+  local direction = scalar(params, "sortDirection") or "desc"
+  if direction ~= "asc" and direction ~= "desc" then invalid("sortDirection must be 'asc' or 'desc'") end
+  return direction
 end
+
+local function cursor_encode(value)
+  local encoded = json.encode(value)
+  return (encoded:gsub(".", function(char) return string.format("%02x", string.byte(char)) end))
+end
+
+local NULL = json.decode("null")
 
 local function record_view(row)
   return {
@@ -79,6 +79,18 @@ local function record_view(row)
     did = row.did,
     record = json.decode(row.record),
   }
+end
+
+local PROFILE = "app.certified.actor.profile"
+local ORGANIZATION = "app.certified.actor.organization"
+
+local function query(sql, values)
+  if db.backend() ~= "postgres" then error("OrganizationQueryFailed: organization API requires PostgreSQL", 0) end
+  local ok, result = pcall(db.raw, sql, values)
+  if not ok or type(result) ~= "table" then
+    error("OrganizationQueryFailed: organization lookup failed", 0)
+  end
+  return result
 end
 
 local function organization_actor_view(row)
@@ -114,6 +126,39 @@ local function hydrate_organization_actors(actors)
   for _, actor in ipairs(actors) do
     actor.profile = profiles[actor.did] and record_view(profiles[actor.did]) or NULL
   end
+end
+
+local CREATED_AT_SORT_COLUMNS = {
+  profile = { record = "record", indexed_at = "indexed_at", created_at = "created_at" },
+  organization = {
+    record = "organization.record",
+    indexed_at = "organization.indexed_at",
+    created_at = "organization.created_at",
+  },
+  activity = {
+    record = "activity.record",
+    indexed_at = "activity.indexed_at",
+    created_at = "activity.created_at",
+  },
+  collection = {
+    record = "collection.record",
+    indexed_at = "collection.indexed_at",
+    created_at = "collection.created_at",
+  },
+}
+local CREATED_AT_SORT_PATTERN = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
+
+local function created_at_sort_expression(source)
+  local columns = CREATED_AT_SORT_COLUMNS[source]
+  if not columns then
+    error("CreatedAtSortExpressionError: source must be 'profile', 'organization', 'activity', or 'collection'", 0)
+  end
+
+  local created = columns.record .. "::jsonb->>'createdAt'"
+  return "CASE WHEN jsonb_typeof(" .. columns.record .. "::jsonb->'createdAt') = 'string' AND " .. created ..
+    " ~ '" .. CREATED_AT_SORT_PATTERN .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created ..
+    ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE COALESCE(" .. columns.indexed_at ..
+    "::timestamptz, " .. columns.created_at .. "::timestamptz) END"
 end
 
 local function valid_organization_uri(value)
@@ -184,12 +229,6 @@ local function add_organization_types(where, values, organization_types)
     ") AS organization_type(value) WHERE organization_type.value IN (" .. table.concat(placeholders, ", ") .. "))"
 end
 
-local function cursor_encode(value)
-  return (json.encode(value):gsub(".", function(char)
-    return string.format("%02x", string.byte(char))
-  end))
-end
-
 local function cursor_decode(token, direction)
   if token == nil then return nil end
   if #token % 2 ~= 0 or token:find("[^0-9a-f]") then invalid("cursor is malformed") end
@@ -236,11 +275,7 @@ local function query_organizations(actors, organization_types, visibility, searc
 
   values[#values + 1] = limit + 1
   local ordering = direction == "asc" and "ASC" or "DESC"
-  local created = "organization.record::jsonb->>'createdAt'"
-  local zoned = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
-  local sort_key = "CASE WHEN jsonb_typeof(organization.record::jsonb->'createdAt') = 'string' AND " .. created .. " ~ '" .. zoned ..
-    "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created .. ", 'timestamptz') THEN (" .. created ..
-    ")::timestamptz ELSE COALESCE(organization.indexed_at::timestamptz, organization.created_at::timestamptz) END"
+  local sort_key = created_at_sort_expression("organization")
   local sql = "SELECT organization.uri, organization.did, organization.cid, organization.indexed_at::text AS indexed_at, " ..
     "organization.record::text AS record, to_char(sorted.sort_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp " ..
     "FROM happyview_records AS organization CROSS JOIN LATERAL (SELECT " .. sort_key .. " AS sort_at) AS sorted WHERE " ..
@@ -290,8 +325,7 @@ local function organizations_response(search_enabled)
 
   local limit = parse_list_limit(params)
 
-  local direction = scalar(params, "sortDirection") or "desc"
-  if direction ~= "asc" and direction ~= "desc" then invalid("sortDirection must be 'asc' or 'desc'") end
+  local direction = parse_sort_direction(params)
   local cursor = cursor_decode(scalar(params, "cursor"), direction)
   local actors_result, next_cursor = query_organizations(actors, organization_types, visibility, search, limit, cursor, direction)
   local response = { actors = toarray(actors_result) }
