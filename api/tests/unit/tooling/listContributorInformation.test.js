@@ -16,6 +16,7 @@ test('listContributorInformation filters repeated authors and resumes in the sel
     read('lua/shared/contributorInformationValidation.lua'),
     read('lua/shared/recordView.lua'),
     read('lua/shared/actorView.lua'),
+    read('lua/shared/datetimeValidation.lua'),
     read('lua/shared/listValidation.lua'),
     read('lua/shared/listQuery.lua'),
     read('lua/src/listContributorInformation.lua'),
@@ -91,14 +92,30 @@ assert(second_query.sql:find("(sorted.sort_at, contributor.uri) > (($4)::timesta
 assert(first_query.sql:find("COALESCE(contributor.indexed_at::timestamptz, contributor.created_at::timestamptz)", 1, true) ~= nil)
 local completed_pages = page
 params = { authors = { "did:plc:publisher%GG" } }
-local bad_author_ok, bad_author_error = pcall(function() return handle() end)
-assert(not bad_author_ok and tostring(bad_author_error):find("InvalidRequest:", 1, true) ~= nil)
-assert(page == completed_pages, "invalid author DID must be rejected before querying")
+local broad_author_result = handle()
+assert(#broad_author_result.contributorInformation == 0)
+assert(page == completed_pages + 1 and record_queries[page].values[2] == "did:plc:publisher%GG",
+  "opaque percent sequences in a DID must reach the list query unchanged")
+completed_pages = page
 params = { authors = { "did:plc:publisher%2Fid" } }
 local escaped_author_result = handle()
 assert(#escaped_author_result.contributorInformation == 0)
 assert(page == completed_pages + 1 and record_queries[page].values[2] == "did:plc:publisher%2Fid",
-  "a well-formed percent escape in a DID must remain accepted")
+  "percent-escaped characters in a DID must remain accepted")
+completed_pages = page
+for _, invalid_author in ipairs({ "alice.example", "did:plc:publisher%" }) do
+  params = { authors = { invalid_author } }
+  local invalid_author_ok, invalid_author_error = pcall(function() return handle() end)
+  assert(not invalid_author_ok and tostring(invalid_author_error):find("InvalidRequest:", 1, true) ~= nil)
+  assert(page == completed_pages, "invalid DIDs must be rejected before querying")
+end
+local broad_cursor_uri = "at://did:plc:publisher%GG/org.hypercerts.claim.contributorInformation/cursor"
+JSON_VALUES.cursor = { v = 1, d = "asc", t = "2026-01-03T00:00:00Z", u = broad_cursor_uri }
+params = { sortDirection = "asc", limit = "1", cursor = "637572736f72" }
+local broad_cursor_result = handle()
+assert(#broad_cursor_result.contributorInformation == 0)
+assert(page == completed_pages + 1 and record_queries[page].values[3] == broad_cursor_uri,
+  "broad DID cursor URI must reach the list query unchanged")
 completed_pages = page
 params = { limit = "101" }
 local invalid_limit_ok, invalid_limit_error = pcall(function() return handle() end)

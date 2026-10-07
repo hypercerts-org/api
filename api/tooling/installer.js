@@ -264,8 +264,7 @@ async function writeAssets(states, client, onProgress) {
   const changed = [];
   const total = states.filter(({ state }) => state !== 'unchanged').length;
   let progress = 0;
-  for (let i = 0; i < states.length; i++) {
-    const { asset, state } = states[i];
+  for (const [i, { asset, state }] of states.entries()) {
     if (state === 'unchanged') continue;
     progress++;
     onProgress?.(`[install ${progress}/${total}] ${asset.id}`);

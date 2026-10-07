@@ -58,6 +58,7 @@
       "sharedSourcePaths": [
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
+        "../../lua/shared/recordView.lua",
         "../../lua/shared/organization.lua"
       ],
       "config": {
@@ -76,6 +77,7 @@
       "sharedSourcePaths": [
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
+        "../../lua/shared/recordView.lua",
         "../../lua/shared/organization.lua"
       ],
       "config": {
@@ -94,8 +96,12 @@
       "sharedSourcePaths": [
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
+        "../../lua/shared/datetimeValidation.lua",
         "../../lua/shared/listValidation.lua",
+        "../../lua/shared/listQuery.lua",
+        "../../lua/shared/recordView.lua",
         "../../lua/shared/organization.lua",
+        "../../lua/shared/createdAtSort.lua",
         "../../lua/shared/organizationList.lua"
       ],
       "config": {
@@ -114,8 +120,12 @@
       "sharedSourcePaths": [
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
+        "../../lua/shared/datetimeValidation.lua",
         "../../lua/shared/listValidation.lua",
+        "../../lua/shared/listQuery.lua",
+        "../../lua/shared/recordView.lua",
         "../../lua/shared/organization.lua",
+        "../../lua/shared/createdAtSort.lua",
         "../../lua/shared/organizationList.lua"
       ],
       "config": {

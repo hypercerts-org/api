@@ -140,7 +140,7 @@ function handle()
     limit = true,
     cursor = true,
   })
-  local actors = array_values("actors", valid_evm_did, "valid DIDs")
+  local actors = array_values("actors", valid_did, "valid DIDs")
   local addresses = array_values("addresses", valid_evm_address, "a 0x-prefixed 40-digit hexadecimal EVM address", string.lower)
   local limit = parse_list_limit(params)
   local direction = parse_sort_direction(params)

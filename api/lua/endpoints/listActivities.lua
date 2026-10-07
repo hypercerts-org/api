@@ -129,26 +129,28 @@ local function activity_projection_hydrate_views(views)
         error("ActivityQueryFailed: activity contributors are not an array", 0)
       end
       local projections = {}
-      for contributor_index, source in ipairs(source_contributors) do
-        local projection = {}
-        for key, value in pairs(source) do projection[key] = value end
-        projection.contributorInformation = ACTIVITY_PROJECTION_NULL
-        projection.actor = ACTIVITY_PROJECTION_NULL
-        projections[contributor_index] = projection
+      for _, source in ipairs(source_contributors) do
+        if type(source) ~= "string" then
+          local projection = {}
+          for key, value in pairs(source) do projection[key] = value end
+          projection.contributorInformation = ACTIVITY_PROJECTION_NULL
+          projection.actor = ACTIVITY_PROJECTION_NULL
+          projections[#projections + 1] = projection
 
-        local identity = source.contributorIdentity
-        local resolution = { projection = projection }
-        if type(identity) == "table" and type(identity.uri) == "string" and type(identity.cid) == "string" then
-          local key = activity_projection_identity_key(identity.uri, identity.cid)
-          resolution.information_key = key
-          if not seen_references[key] then
-            seen_references[key] = true
-            references[#references + 1] = { uri = identity.uri, cid = identity.cid }
+          local identity = source.contributorIdentity
+          local resolution = { projection = projection }
+          if type(identity) == "table" and type(identity.uri) == "string" and type(identity.cid) == "string" then
+            local key = activity_projection_identity_key(identity.uri, identity.cid)
+            resolution.information_key = key
+            if not seen_references[key] then
+              seen_references[key] = true
+              references[#references + 1] = { uri = identity.uri, cid = identity.cid }
+            end
+          elseif type(identity) == "table" then
+            resolution.identifier = identity.identity
           end
-        elseif type(identity) == "table" then
-          resolution.identifier = identity.identity
+          contributor_resolutions[#contributor_resolutions + 1] = resolution
         end
-        contributor_resolutions[#contributor_resolutions + 1] = resolution
       end
       projected_contributors[view_index] = projections
     end
@@ -234,6 +236,70 @@ local function hydrate_activity_views(views)
   return activity_projection_hydrate_views(views)
 end
 
+local function valid_datetime(value)
+  if type(value) ~= "string" then return false end
+  local year, month, day, hour, minute, second, suffix = value:match(
+    "^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)(.*)$")
+  if not year then return false end
+  year, month, day = tonumber(year), tonumber(month), tonumber(day)
+  hour, minute, second = tonumber(hour), tonumber(minute), tonumber(second)
+  if month < 1 or month > 12 or hour > 23 or minute > 59 or second > 59 then return false end
+  local leap = year % 4 == 0 and (year % 100 ~= 0 or year % 400 == 0)
+  local month_days = { 31, leap and 29 or 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
+  if day < 1 or day > month_days[month] then return false end
+  local fraction, zone = suffix:match("^(%.%d+)(Z)$")
+  if not fraction then fraction, zone = suffix:match("^(%.%d+)([+-]%d%d:%d%d)$") end
+  if not fraction then zone = suffix:match("^(Z)$") end
+  if not zone then zone = suffix:match("^([+-]%d%d:%d%d)$") end
+  if not zone or zone == "-00:00" then return false end
+  if zone ~= "Z" then
+    local zh, zm = zone:match("^[+-](%d%d):(%d%d)$")
+    if not zh or tonumber(zh) > 23 or tonumber(zm) > 59 then return false end
+  end
+  return true
+end
+
+local function parse_list_limit(params)
+  local limit_value = scalar(params, "limit")
+  if limit_value and not limit_value:match("^%d+$") then invalid("limit must be an integer from 1 through 100") end
+  local limit = limit_value and tonumber(limit_value) or 25
+  if not limit or limit % 1 ~= 0 or limit < 1 or limit > 100 then invalid("limit must be an integer from 1 through 100") end
+  return limit
+end
+
+local CREATED_AT_SORT_COLUMNS = {
+  profile = { record = "record", indexed_at = "indexed_at", created_at = "created_at" },
+  organization = {
+    record = "organization.record",
+    indexed_at = "organization.indexed_at",
+    created_at = "organization.created_at",
+  },
+  activity = {
+    record = "activity.record",
+    indexed_at = "activity.indexed_at",
+    created_at = "activity.created_at",
+  },
+  collection = {
+    record = "collection.record",
+    indexed_at = "collection.indexed_at",
+    created_at = "collection.created_at",
+  },
+}
+local CREATED_AT_SORT_PATTERN = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
+
+local function created_at_sort_expression(source)
+  local columns = CREATED_AT_SORT_COLUMNS[source]
+  if not columns then
+    error("CreatedAtSortExpressionError: source must be 'profile', 'organization', 'activity', or 'collection'", 0)
+  end
+
+  local created = columns.record .. "::jsonb->>'createdAt'"
+  return "CASE WHEN jsonb_typeof(" .. columns.record .. "::jsonb->'createdAt') = 'string' AND " .. created ..
+    " ~ '" .. CREATED_AT_SORT_PATTERN .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created ..
+    ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE COALESCE(" .. columns.indexed_at ..
+    "::timestamptz, " .. columns.created_at .. "::timestamptz) END"
+end
+
 local function activity_scalar(values, key)
   if key == "hasOrganizationRecord" and type(values[key]) == "boolean" then
     return tostring(values[key])
@@ -283,40 +349,6 @@ local function activity_array(key, format)
   return unique
 end
 
-local function integer_limit()
-  local value = scalar(params, "limit")
-  if value == nil then return 25 end
-  if not value:match("^%d+$") then invalid("limit must be an integer from 1 through 100") end
-  local number = tonumber(value)
-  if not number or number < 1 or number > 100 then
-    invalid("limit must be an integer from 1 through 100")
-  end
-  return number
-end
-
-local function valid_activity_datetime(value)
-  if type(value) ~= "string" then return false end
-  local year, month, day, hour, minute, second, suffix = value:match(
-    "^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)(.*)$")
-  if not year then return false end
-  year, month, day = tonumber(year), tonumber(month), tonumber(day)
-  hour, minute, second = tonumber(hour), tonumber(minute), tonumber(second)
-  if month < 1 or month > 12 or hour > 23 or minute > 59 or second > 59 then return false end
-  local leap = year % 4 == 0 and (year % 100 ~= 0 or year % 400 == 0)
-  local days = { 31, leap and 29 or 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
-  if day < 1 or day > days[month] then return false end
-  local fraction, zone = suffix:match("^(%.%d+)(Z)$")
-  if not fraction then fraction, zone = suffix:match("^(%.%d+)([+-]%d%d:%d%d)$") end
-  if not fraction then zone = suffix:match("^(Z)$") end
-  if not zone then zone = suffix:match("^([+-]%d%d:%d%d)$") end
-  if not zone or zone == "-00:00" then return false end
-  if zone ~= "Z" then
-    local zh, zm = zone:match("^[+-](%d%d):(%d%d)$")
-    if not zh or tonumber(zh) > 23 or tonumber(zm) > 59 then return false end
-  end
-  return true
-end
-
 local function decode_activity_cursor(token, direction)
   if token == nil then return nil end
   if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
@@ -332,7 +364,7 @@ local function decode_activity_cursor(token, direction)
     if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
   end
   local valid, collection = valid_record_uri(value.u)
-  if not valid_activity_datetime(value.t) or not valid or collection ~= ACTIVITY then
+  if not valid_datetime(value.t) or not valid or collection ~= ACTIVITY then
     invalid("cursor is malformed")
   end
   return value
@@ -368,15 +400,6 @@ local function activity_contributor_match(values, dids)
     "OR substring(" .. identity .. " from '^at://([^/]+)/') IN (" .. set .. ") " ..
     "OR " .. information_identifier .. " IN (" .. set .. ") " ..
     "OR substring(" .. information_identifier .. " from '^at://([^/]+)/') IN (" .. set .. ")))"
-end
-
-local function activity_sort_expression()
-  local created = "activity.record::jsonb->>'createdAt'"
-  local zoned = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
-  return "CASE WHEN jsonb_typeof(activity.record::jsonb->'createdAt') = 'string' AND " .. created ..
-    " ~ '" .. zoned .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created ..
-    ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE " ..
-    "COALESCE(activity.indexed_at::timestamptz, activity.created_at::timestamptz) END"
 end
 
 local function activity_query(authors, has_organization_record, contributors, involved_actors, uris, search, limit, cursor, direction)
@@ -432,7 +455,7 @@ local function activity_query(authors, has_organization_record, contributors, in
   local sql = "SELECT activity.uri, activity.did, activity.cid, activity.indexed_at::text AS indexed_at, " ..
     "activity.record::text AS record, to_char(sorted.sort_at AT TIME ZONE 'UTC', " ..
     "'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp " ..
-    "FROM happyview_records AS activity CROSS JOIN LATERAL (SELECT " .. activity_sort_expression() .. " AS sort_at) AS sorted " ..
+    "FROM happyview_records AS activity CROSS JOIN LATERAL (SELECT " .. created_at_sort_expression("activity") .. " AS sort_at) AS sorted " ..
     "WHERE " .. table.concat(where, " AND ") .. " ORDER BY sorted.sort_at " .. ordering ..
     ", activity.uri " .. ordering .. " LIMIT $" .. #values
   local rows = query(sql, values)
@@ -488,7 +511,7 @@ local function activity_list_response(search_enabled)
   end
   local direction = scalar(params, "sortDirection") or "desc"
   if direction ~= "asc" and direction ~= "desc" then invalid("sortDirection must be 'asc' or 'desc'") end
-  local limit = integer_limit()
+  local limit = parse_list_limit(params)
   local cursor = decode_activity_cursor(scalar(params, "cursor"), direction)
   local activities, next_cursor = activity_query(
     authors, has_organization_record, contributors, involved_actors, uris, search, limit, cursor, direction)

@@ -54,6 +54,7 @@
         "../../lua/shared/query.lua",
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/datetimeValidation.lua",
         "../../lua/shared/listValidation.lua",
         "../../lua/shared/listQuery.lua",
         "../../lua/shared/recordView.lua",

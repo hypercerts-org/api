@@ -12,6 +12,7 @@ const sharedSources = [
   'lua/shared/didValidation.lua',
   'lua/shared/query.lua',
   'lua/shared/recordIdentifier.lua',
+  'lua/shared/datetimeValidation.lua',
   'lua/shared/listValidation.lua',
   'lua/shared/listQuery.lua',
   'lua/shared/recordView.lua',
@@ -215,12 +216,11 @@ test('getVocabTag reports RecordNotFound when the exact indexed URI is absent', 
   });
 });
 
-test('getVocabTag rejects wrong collections, handle authorities, and malformed percent escapes before querying', async () => {
+test('getVocabTag preserves collection and DID boundary checks while broad DIDs reach lookup', async () => {
   for (const invalidUri of [
     'at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.collection/3jzfcijpj2z2z',
     'at://climate.example/org.hypercerts.vocab.tag/3jzfcijpj2z2z',
-    'at://did:plc:abcdefghijklmnopqrstuvwx%ZZ/org.hypercerts.vocab.tag/3jzfcijpj2z2z',
-    'at://did:plc:abcdefghijklmnopqrstuvwx%2/org.hypercerts.vocab.tag/3jzfcijpj2z2z',
+    'at://did:plc:abcdefghijklmnopqrstuvwx%/org.hypercerts.vocab.tag/3jzfcijpj2z2z',
   ]) {
     await runLua({
       params: { uri: invalidUri },
@@ -228,6 +228,14 @@ test('getVocabTag rejects wrong collections, handle authorities, and malformed p
       assertions: 'assert(#calls == 0)',
     });
   }
+
+  const broadUri = 'at://did:plc:publisher%ZZ/org.hypercerts.vocab.tag/3jzfcijpj2z2z';
+  await runLua({
+    params: { uri: broadUri },
+    queryResults: [[]],
+    expectError: 'RecordNotFound:',
+    assertions: `assert(#calls == 1 and calls[1].values[2] == '${broadUri}')`,
+  });
 });
 
 test('listVocabTags defaults to 25 descending and omits a terminal cursor', async () => {
@@ -330,14 +338,13 @@ assert(calls[1].values[6] == 2)
   });
 });
 
-test('listVocabTags rejects malformed-percent authors and cursor URIs, repeated scalars, and changed filters before querying', async () => {
+test('listVocabTags rejects invalid authors and cursor URIs, repeated scalars, and changed filters before querying', async () => {
   const mismatchedFilterCursor = cursor({ authors: [firstAuthor] });
   const directionCursor = cursor({ direction: 'desc', authors: [firstAuthor] });
-  const malformedUriCursor = cursor({ recordUri: 'at://did:plc:abcdefghijklmnopqrstuvwx%ZZ/org.hypercerts.vocab.tag/rkey' });
+  const malformedUriCursor = cursor({ recordUri: 'at://did:plc:abcdefghijklmnopqrstuvwx%/org.hypercerts.vocab.tag/rkey' });
   for (const params of [
     { authors: ['climate.example'] },
-    { authors: ['did:plc:bad%ZZ'] },
-    { authors: ['did:plc:bad%2'] },
+    { authors: ['did:plc:bad%'] },
     { authors: Array(101).fill(firstAuthor) },
     { limit: ['1', '2'] },
     { sortDirection: ['asc', 'desc'] },
@@ -356,8 +363,8 @@ test('listVocabTags rejects malformed-percent authors and cursor URIs, repeated 
   }
 });
 
-test('vocabulary tag queries preserve valid percent-escaped DIDs', async () => {
-  const escapedDid = 'did:plc:abcdefghijklmnopqrst%2Fuvwxyz';
+test('vocabulary tag queries accept opaque DID percent sequences in records, filters, and cursors', async () => {
+  const escapedDid = 'did:plc:abcdefghijklmnopqrst%ZZ';
   const escapedUri = `at://${escapedDid}/org.hypercerts.vocab.tag/escaped`;
   const escapedRow = { ...tagRow, uri: escapedUri, did: escapedDid };
   await runLua({
@@ -375,6 +382,17 @@ assert(calls[1].values[2] == '${escapedUri}')
     assertions: `
 assert(#result.vocabTags == 0)
 assert(calls[1].values[2] == '${escapedDid}')
+`,
+  });
+
+  const broadCursorUri = `at://${escapedDid}/org.hypercerts.vocab.tag/prior`;
+  await runLua({
+    endpoint: 'listVocabTags',
+    params: { sortDirection: 'asc', cursor: cursor({ direction: 'asc', recordUri: broadCursorUri }) },
+    queryResults: [[]],
+    assertions: `
+assert(#result.vocabTags == 0)
+assert(calls[1].values[3] == '${broadCursorUri}')
 `,
   });
 });

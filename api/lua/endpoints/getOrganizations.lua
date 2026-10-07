@@ -27,18 +27,7 @@ local function scalar(params, key)
   return tostring(value)
 end
 
-local PROFILE = "app.certified.actor.profile"
-local ORGANIZATION = "app.certified.actor.organization"
 local NULL = json.decode("null")
-
-local function query(sql, values)
-  if db.backend() ~= "postgres" then error("OrganizationQueryFailed: organization API requires PostgreSQL", 0) end
-  local ok, result = pcall(db.raw, sql, values)
-  if not ok or type(result) ~= "table" then
-    error("OrganizationQueryFailed: organization lookup failed", 0)
-  end
-  return result
-end
 
 local function record_view(row)
   return {
@@ -48,6 +37,18 @@ local function record_view(row)
     did = row.did,
     record = json.decode(row.record),
   }
+end
+
+local PROFILE = "app.certified.actor.profile"
+local ORGANIZATION = "app.certified.actor.organization"
+
+local function query(sql, values)
+  if db.backend() ~= "postgres" then error("OrganizationQueryFailed: organization API requires PostgreSQL", 0) end
+  local ok, result = pcall(db.raw, sql, values)
+  if not ok or type(result) ~= "table" then
+    error("OrganizationQueryFailed: organization lookup failed", 0)
+  end
+  return result
 end
 
 local function organization_actor_view(row)
@@ -85,18 +86,6 @@ local function hydrate_organization_actors(actors)
   end
 end
 
-local function valid_organization_batch_did(value)
-  if not valid_did(value) then return false end
-
-  local percent = value:find("%", 1, true)
-  while percent do
-    local escape = value:sub(percent + 1, percent + 2)
-    if #escape ~= 2 or escape:find("[^%x]") then return false end
-    percent = value:find("%", percent + 3, true)
-  end
-  return true
-end
-
 local function requested_organization_actors(value)
   if value == nil then invalid("actors is required") end
 
@@ -124,7 +113,7 @@ local function requested_organization_actors(value)
 
   local unique, seen = {}, {}
   for _, did in ipairs(actors) do
-    if not valid_organization_batch_did(did) then invalid("each actors value must be a valid DID") end
+    if not valid_did(did) then invalid("each actors value must be a valid DID") end
     if not seen[did] then
       seen[did] = true
       unique[#unique + 1] = did

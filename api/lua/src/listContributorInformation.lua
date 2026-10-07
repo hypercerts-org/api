@@ -158,7 +158,7 @@ function handle()
     limit = true,
     cursor = true,
   })
-  local authors = contributor_information_array(params, "authors", contributor_information_did, "valid DIDs")
+  local authors = contributor_information_array(params, "authors", valid_did, "valid DIDs")
   local limit = parse_list_limit(params)
   local direction = parse_sort_direction(params)
   local cursor = contributor_information_cursor_decode(scalar(params, "cursor"), direction)

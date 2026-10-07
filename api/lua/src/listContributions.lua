@@ -25,7 +25,7 @@ local function contribution_authors()
 
   local authors, seen = {}, {}
   for _, did in ipairs(supplied) do
-    if not valid_contribution_did(did) then invalid("each authors value must be a valid DID; resolve handles to DIDs first") end
+    if not valid_did(did) then invalid("each authors value must be a valid DID; resolve handles to DIDs first") end
     if not seen[did] then
       seen[did] = true
       authors[#authors + 1] = did

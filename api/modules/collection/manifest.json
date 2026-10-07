@@ -41,6 +41,8 @@
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/collectionProjection.lua",
         "../../lua/shared/collection.lua",
+        "../../lua/shared/datetimeValidation.lua",
+        "../../lua/shared/createdAtSort.lua",
         "../../lua/shared/collectionList.lua"
       ],
       "config": {
@@ -73,6 +75,8 @@
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/collectionProjection.lua",
         "../../lua/shared/collection.lua",
+        "../../lua/shared/datetimeValidation.lua",
+        "../../lua/shared/createdAtSort.lua",
         "../../lua/shared/collectionList.lua"
       ],
       "config": {

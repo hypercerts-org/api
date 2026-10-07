@@ -47,7 +47,7 @@
         "record": { "type": "ref", "ref": "org.hypercerts.claim.activity" },
         "contributors": {
           "type": "array",
-          "description": "Hydrated contributor projection in the same order and with the same multiplicity as record.contributors; omitted only when the source field is absent.",
+          "description": "Hydrated projection of object entries in record.contributors, preserving their relative order and multiplicity; legacy string entries are skipped and the original record remains unchanged. Omitted only when the source field is absent; if it contains no object entries, this is an empty array.",
           "items": { "type": "ref", "ref": "#activityContributorView" }
         }
       }

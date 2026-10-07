@@ -3358,7 +3358,7 @@
         "tags": [
           "org.hypercerts.context"
         ],
-        "description": "Returns the indexed evaluation at the given AT-URI with its publisher and evaluator views. Authentication is not required.",
+        "description": "Returns the indexed evaluation at the given AT-URI with its publisher and evaluator views. Invalid evaluator entries are omitted from the hydrated projection while the original record is preserved. Authentication is not required.",
         "parameters": [
           {
             "name": "uri",
@@ -3692,7 +3692,7 @@
         "tags": [
           "org.hypercerts.context"
         ],
-        "description": "Lists indexed evaluations with optional publisher, evaluator, and subject filters. Values within each array filter use OR; distinct filters use AND. Authentication is not required.",
+        "description": "Lists indexed evaluations with optional publisher, evaluator, and subject filters. Values within each array filter use OR; distinct filters use AND. Records remain listed when evaluator entries cannot be projected; malformed entries are omitted from hydrated views while the original record is preserved. Authentication is not required.",
         "parameters": [
           {
             "name": "authors",
@@ -5770,7 +5770,7 @@
           },
           "contributors": {
             "type": "array",
-            "description": "Hydrated contributor projection in the same order and with the same multiplicity as record.contributors; omitted only when the source field is absent.",
+            "description": "Hydrated projection of object entries in record.contributors, preserving their relative order and multiplicity; legacy string entries are skipped and the original record remains unchanged. Omitted only when the source field is absent; if it contains no object entries, this is an empty array.",
             "items": {
               "$ref": "#/components/schemas/org.hypercerts.claim.getActivity.activityContributorView"
             }
@@ -6944,7 +6944,7 @@
       },
       "org.hypercerts.context.getEvaluation.hydratedEvaluationEvaluatorView": {
         "type": "object",
-        "description": "An original evaluator entry with its profile and organization sidecars looked up.",
+        "description": "A valid original evaluator entry with its profile and organization sidecars looked up.",
         "required": [
           "did",
           "hydrationStatus",
@@ -6984,7 +6984,7 @@
       },
       "org.hypercerts.context.getEvaluation.omittedEvaluationEvaluatorView": {
         "type": "object",
-        "description": "An original evaluator entry not hydrated.",
+        "description": "A valid original evaluator entry beyond the hydration position limit.",
         "required": [
           "did",
           "hydrationStatus"
@@ -7002,7 +7002,7 @@
       },
       "org.hypercerts.context.getEvaluation.evaluationView": {
         "type": "object",
-        "description": "Evaluation with the complete original record, hydrated publisher, and evaluator views. For hydrated actors, missing profile or organization sidecars are null; query or hydration failures fail the request.",
+        "description": "Evaluation with the original record, hydrated publisher, and evaluator projections. The record is not rewritten when evaluator data is malformed. A missing or non-array evaluator container yields an empty hydrated array; malformed entries are omitted. For hydrated actors, missing profile or organization sidecars are null; query or hydration failures fail the request. Evaluator arrays over 1000 entries still fail exact lookup and are skipped by lists.",
         "required": [
           "uri",
           "cid",
@@ -7037,7 +7037,7 @@
           },
           "evaluators": {
             "type": "array",
-            "description": "One-for-one projection of record.evaluators, preserving source order, duplicates, and entry fields. Entries after position 100 remain present with hydrationStatus \"omitted\" and no profile or organization.",
+            "description": "Dense projection of valid record.evaluators object entries with valid DIDs, preserving their source order and duplicates. Entries with malformed shapes or invalid DIDs are omitted without changing the original record; a missing or non-array source yields an empty array. Valid entries at source positions after 100 remain present with hydrationStatus \"omitted\" and no profile or organization. The raw evaluator array is limited to 1000 entries; over-limit records fail exact lookup and are skipped by lists.",
             "maxItems": 1000,
             "items": {
               "anyOf": [

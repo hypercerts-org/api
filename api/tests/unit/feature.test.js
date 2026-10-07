@@ -88,6 +88,7 @@ async function runListFeatures(params, queryResults, records = { 'feature-record
     'lua/shared/didValidation.lua',
     'lua/shared/query.lua',
     'lua/shared/recordIdentifier.lua',
+    'lua/shared/datetimeValidation.lua',
     'lua/shared/listValidation.lua',
     'lua/shared/listQuery.lua',
     'lua/shared/featureValidation.lua',
@@ -165,12 +166,18 @@ assert(calls[1].values[1] == '${FEATURE}' and calls[1].values[2] == '${FEATURE_U
 test('getFeature distinguishes invalid feature URIs from unindexed records', async () => {
   for (const uri of [
     'at://alice.example/org.hypercerts.entity.feature/forest-zone',
-    'at://did:web:example.org%GG/org.hypercerts.entity.feature/forest-zone',
+    'at://did:web:example.org%/org.hypercerts.entity.feature/forest-zone',
     `at://${FEATURE_DID}/app.certified.location/location-one`,
   ]) {
     const invalid = await runGetFeature({ params: { uri }, queryResults: [], expectedError: 'InvalidRequest:', expectedCalls: 0 });
     assert.equal(invalid.status, 0, `${invalid.stderr}${invalid.stdout}`);
   }
+  const broadUri = 'at://did:web:example.org%GG/org.hypercerts.entity.feature/forest-zone';
+  const broadMissing = await runGetFeature({ params: { uri: broadUri }, queryResults: [[]], expectedError: 'RecordNotFound:', expectedCalls: 1,
+    assertions: `assert(calls[1].values[2] == '${broadUri}', 'opaque percent sequence must reach exact lookup unchanged')`,
+  });
+  assert.equal(broadMissing.status, 0, `${broadMissing.stderr}${broadMissing.stdout}`);
+
   const missing = await runGetFeature({ params: { uri: FEATURE_URI }, queryResults: [[]], expectedError: 'RecordNotFound:', expectedCalls: 1 });
   assert.equal(missing.status, 0, `${missing.stderr}${missing.stdout}`);
 });
@@ -274,13 +281,22 @@ assert(not calls[1].sql:find('app.certified.actor.profile', 1, true))
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-test('listFeatures accepts well-formed percent escapes in DID identifiers', async () => {
-  const author = 'did:web:example.org%2Fteam';
+test('listFeatures accepts opaque percent sequences in DID filters and cursor URIs', async () => {
+  const author = 'did:web:example.org%GG';
   const result = await runListFeatures({ authors: [author] }, [[]], undefined, `
 assert(#result.features == 0 and result.cursor == nil and #calls == 1)
 assert(calls[1].values[1] == '${FEATURE}' and calls[1].values[2] == '${author}')
 `);
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
+
+  const cursorUri = `at://${author}/${FEATURE}/cursor-key`;
+  const cursor = Buffer.from(JSON.stringify({
+    v: 1, d: 'asc', t: '2025-01-02T03:04:05Z', u: cursorUri,
+  })).toString('hex');
+  const resumed = await runListFeatures({ sortDirection: 'asc', cursor }, [[]], undefined, `
+assert(#result.features == 0 and calls[1].values[3] == '${cursorUri}')
+`);
+  assert.equal(resumed.status, 0, `${resumed.stderr}${resumed.stdout}`);
 });
 
 test('listFeatures rejects unknown, malformed, repeated, and out-of-range inputs before querying', async () => {
@@ -289,7 +305,7 @@ test('listFeatures rejects unknown, malformed, repeated, and out-of-range inputs
   })).toString('hex');
   const malformedAuthorityCursor = Buffer.from(JSON.stringify({
     v: 1, d: 'desc', t: '2025-01-02T03:04:05Z',
-    u: 'at://did:web:example.org%GG/org.hypercerts.entity.feature/forest-zone',
+    u: 'at://did:web:example.org%/org.hypercerts.entity.feature/forest-zone',
   })).toString('hex');
   const yearZeroCursor = Buffer.from(JSON.stringify({
     v: 1, d: 'desc', t: '0000-01-01T00:00:00Z', u: FEATURE_URI,
@@ -298,7 +314,7 @@ test('listFeatures rejects unknown, malformed, repeated, and out-of-range inputs
     { unknown: 'value' },
     { authors: ['alice.example'] },
     { authors: ['did:plc:aaaaaaaaaaaaaaaaaaaaaaaa:'] },
-    { authors: ['did:web:example.org%GG'] },
+    { authors: ['did:web:example.org%'] },
     { authors: [42] },
     { authors: Array(101).fill(FEATURE_DID) },
     { types: ['t'.repeat(65)] },
