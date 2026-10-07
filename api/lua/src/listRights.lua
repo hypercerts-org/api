@@ -32,7 +32,7 @@ local function rights_list_array(value)
 
   local unique, seen = {}, {}
   for _, did in ipairs(supplied) do
-    if not rights_valid_did(did) then invalid("each authors value must be a valid DID") end
+    if not valid_did(did) then invalid("each authors value must be a valid DID") end
     if not seen[did] then
       seen[did] = true
       unique[#unique + 1] = did

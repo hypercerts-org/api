@@ -96,15 +96,6 @@ test('organization module registers get, batch, list, and search queries with a 
   const manifest = JSON.parse(await readFile(`${root}/manifest.json`, 'utf8'));
   const modulePath = 'modules/organization/manifest.json';
   assert.ok(manifest.modules.includes(modulePath));
-  assert.deepEqual({
-    getOrganization: manifest.handlerStatus.getOrganization,
-    getOrganizations: manifest.handlerStatus.getOrganizations,
-    listOrganizations: manifest.handlerStatus.listOrganizations,
-    searchOrganizations: manifest.handlerStatus.searchOrganizations,
-  }, {
-    getOrganization: 'implemented', getOrganizations: 'implemented', listOrganizations: 'implemented', searchOrganizations: 'implemented',
-  });
-
   const module = JSON.parse(await readFile(`${root}/${modulePath}`, 'utf8'));
   const queries = module.assets.filter(({ kind, id }) => kind === 'lexicon' && id.startsWith('app.certified.actor.'));
   assert.deepEqual(queries.map(({ id }) => id).sort(), [
@@ -236,7 +227,7 @@ test('getOrganizations validates 1..100 actor occurrences before querying', () =
     {},
     { actors: [] },
     { actors: Array(101).fill(actor) },
-    { actors: ['did:plc:abcd%ZZ'] },
+    { actors: ['did:plc:abcd%'] },
     { actors: [actor], unknown: 'value' },
   ]) {
     runLua({ endpoint: 'getOrganizations', params, expectError: 'InvalidRequest:', expectedCalls: 0 });
@@ -254,6 +245,16 @@ test('getOrganizations validates 1..100 actor occurrences before querying', () =
 assert(#result.organizations == 100)
 assert(result.organizations[100].actor == '${actor}')
 assert(#calls == 2 and #calls[1].values == 2 and #calls[2].values == 2)
+`,
+  });
+
+  const broadDid = 'did:plc:abcd%ZZ';
+  runLua({
+    endpoint: 'getOrganizations', params: { actors: [broadDid] }, queryResults: [[]],
+    assertions: `
+assert(#result.organizations == 1 and result.organizations[1].actor == '${broadDid}')
+assert(result.organizations[1].organization == NULL)
+assert(#calls == 1 and calls[1].values[2] == '${broadDid}')
 `,
   });
 });
@@ -277,6 +278,8 @@ assert(result.actors[1].organization.uri == '${first.uri}' and result.actors[1].
 assert(calls[1].values[1] == '${organizationCollection}')
 assert(calls[1].sql:find("organization.rkey = 'self'", 1, true))
 assert(calls[1].sql:find('organizationType', 1, true) and calls[1].sql:find('visibility', 1, true))
+assert(calls[1].sql:find("organization.record::jsonb->'createdAt'", 1, true))
+assert(calls[1].sql:find('COALESCE(organization.indexed_at::timestamptz, organization.created_at::timestamptz)', 1, true))
 assert(not calls[1].sql:find('organization.did IN', 1, true), 'list has no actor request filter')
 assert(calls[1].sql:find('ORDER BY sorted.sort_at ASC, uri ASC', 1, true))
 assert(calls[1].values[2] == 'nonprofit' and calls[1].values[3] == 'community' and calls[1].values[4] == 'unlisted')

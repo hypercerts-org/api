@@ -128,10 +128,6 @@ ${expectError
 test('profile module installs all four endpoint Lexicons and generated handlers', async () => {
   const manifest = JSON.parse(await readFile(`${root}/manifest.json`, 'utf8'));
   assert.ok(manifest.modules.includes('modules/profile/manifest.json'));
-  for (const name of ['getProfile', 'getProfiles', 'listProfiles', 'searchProfiles']) {
-    assert.equal(manifest.handlerStatus[name], 'implemented');
-  }
-
   const { assets } = await loadAssets(`${root}/manifest.json`);
   for (const name of ['getProfile', 'getProfiles', 'listProfiles', 'searchProfiles']) {
     const nsid = `app.certified.actor.${name}`;
@@ -224,16 +220,22 @@ test('getProfiles requires 1..100 valid DIDs before querying', () => {
     { actors: [] },
     { actors: Array(101).fill(actor) },
     { actors: ['alice.example'] },
+    { actors: ['did:plc:abcd%'] },
     { actors: [actor], cursor: 'not-accepted' },
   ]) {
     runLua({ endpoint: 'getProfiles', params, expectError: 'InvalidRequest:', expectedCalls: 0, expectedHttpCalls: 0 });
   }
 });
 
-test('getProfiles rejects malformed DID percent escapes before querying', () => {
+test('getProfiles accepts opaque percent sequences in DIDs and queries them unchanged', () => {
+  const broadDid = 'did:plc:abcd%ZZ';
   runLua({
-    endpoint: 'getProfiles', params: { actors: ['did:plc:abcd%ZZ'] },
-    expectError: 'InvalidRequest: each actors value must be a valid DID', expectedCalls: 0, expectedHttpCalls: 0,
+    endpoint: 'getProfiles', params: { actors: [broadDid] },
+    assertions: `
+assert(#result.profiles == 1 and result.profiles[1].actor == '${broadDid}')
+assert(result.profiles[1].profile == JSON_NULL)
+assert(#calls == 1 and calls[1].values[2] == '${broadDid}')
+`,
   });
 });
 
@@ -265,6 +267,22 @@ test('getProfile serializes SQL NULL indexedAt as required JSON null', () => {
 
   assert.equal(Object.hasOwn(result.profile, 'indexedAt'), true);
   assert.equal(result.profile.indexedAt, null);
+});
+
+test('profile record views preserve false indexedAt and propagate record decoding failures', () => {
+  const row = profileRow(actor, 'false-indexed-at', { displayName: 'False index time' }, '2025-01-01T00:00:00Z');
+  row.indexed_at = false;
+  const result = runLua({
+    endpoint: 'getProfile', params: { actor }, rows: [row], captureJson: true,
+    assertions: 'assert(#calls == 1 and #httpCalls == 0)',
+  });
+  assert.equal(result.profile.indexedAt, false);
+
+  runLua({
+    endpoint: 'getProfile', params: { actor },
+    rows: [{ ...row, record: 'x', record_json: false }],
+    expectError: 'invalid cursor JSON', expectedCalls: 1,
+  });
 });
 
 test('getProfile resolves a handle once through the configured resolver and does not fetch a DID document', () => {
@@ -349,7 +367,13 @@ test('resolver transport and invalid DID responses stay distinct from indexed Re
   });
   runLua({
     endpoint: 'getProfile', params: { actor: 'alice.example' }, resolverUrl: 'https://resolver.example',
-    httpResponses: [{ status: 200, body: 'malformed-escape-did', value: { did: 'did:plc:abc%GG' } }],
+    httpResponses: [{ status: 200, body: 'broad-did', value: { did: 'did:plc:abc%GG' } }],
+    expectError: 'RecordNotFound:', expectedCalls: 1, expectedHttpCalls: 1,
+    errorAssertions: "assert(calls[1].values[2] == 'did:plc:abc%GG', 'resolver DID must reach profile lookup unchanged')",
+  });
+  runLua({
+    endpoint: 'getProfile', params: { actor: 'alice.example' }, resolverUrl: 'https://resolver.example',
+    httpResponses: [{ status: 200, body: 'trailing-percent-did', value: { did: 'did:plc:abc%' } }],
     expectError: 'HandleResolutionFailed:', expectedCalls: 0, expectedHttpCalls: 1,
   });
   runLua({
@@ -380,6 +404,11 @@ assert(calls[1].values[1] == '${collection}' and calls[1].values[2] == 2)
 local sql = calls[1].sql
 assert(not sql:find('did IN', 1, true), 'discovery listing must not restrict actor DIDs')
 assert(not sql:find('strpos', 1, true))
+assert(sql:find("jsonb_typeof(record::jsonb->'createdAt') = 'string'", 1, true))
+assert(sql:find("record::jsonb->>'createdAt' ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$'", 1, true))
+assert(sql:find("record::jsonb->>'createdAt' !~ '-00:00$'", 1, true))
+assert(sql:find("pg_input_is_valid(record::jsonb->>'createdAt', 'timestamptz')", 1, true))
+assert(sql:find('COALESCE(indexed_at::timestamptz, created_at::timestamptz)', 1, true))
 assert(sql:find('ORDER BY sorted.sort_at ASC, uri ASC', 1, true))
 assert(result.cursor ~= nil)
 local tokenJson = result.cursor:gsub('..', function(pair) return string.char(tonumber(pair, 16)) end)

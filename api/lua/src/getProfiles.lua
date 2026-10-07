@@ -1,15 +1,3 @@
-local function valid_profile_batch_did(value)
-  if not valid_did(value) then return false end
-
-  local percent = value:find("%", 1, true)
-  while percent do
-    local escape = value:sub(percent + 1, percent + 2)
-    if #escape ~= 2 or escape:find("[^%x]") then return false end
-    percent = value:find("%", percent + 3, true)
-  end
-  return true
-end
-
 local function requested_actors(value)
   if value == nil then invalid("actors is required") end
 
@@ -29,7 +17,7 @@ local function requested_actors(value)
 
   local unique, seen = {}, {}
   for _, did in ipairs(actors) do
-    if not valid_profile_batch_did(did) then invalid("each actors value must be a valid DID") end
+    if not valid_did(did) then invalid("each actors value must be a valid DID") end
     if not seen[did] then
       seen[did] = true
       unique[#unique + 1] = did
@@ -53,7 +41,7 @@ local function get_profiles()
   local rows = query(sql, values)
 
   local profiles_by_did = {}
-  for _, row in ipairs(rows) do profiles_by_did[row.did] = row_view(row) end
+  for _, row in ipairs(rows) do profiles_by_did[row.did] = record_view(row) end
 
   local null = json.decode("null")
   local profiles = {}

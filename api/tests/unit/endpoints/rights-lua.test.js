@@ -94,6 +94,7 @@ async function listRightsSources() {
     read('lua/shared/recordView.lua'),
     read('lua/shared/actorView.lua'),
     read('lua/shared/rightsView.lua'),
+    read('lua/shared/datetimeValidation.lua'),
     read('lua/shared/listValidation.lua'),
     read('lua/shared/listQuery.lua'),
     read('lua/src/listRights.lua'),

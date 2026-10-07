@@ -157,7 +157,7 @@ assert(rawget(result.contribution.author.organization, 'indexedAt') == NULL)
 test('getContribution rejects non-exact URIs before querying and distinguishes missing records', () => {
   const invalidParams = [
     { uri: `at://alice.example/${CONTRIBUTION}/3jzfcijpj2z2a` },
-    { uri: `at://did:plc:%GG/${CONTRIBUTION}/3jzfcijpj2z2a` },
+    { uri: `at://did:plc:publisher%/${CONTRIBUTION}/3jzfcijpj2z2a` },
     { uri: `at://${publisherDid}/${PROFILE}/self` },
     { uri: [contributionUri, contributionUri] },
     { uri: contributionUri, extra: 'not-accepted' },
@@ -170,6 +170,16 @@ test('getContribution rejects non-exact URIs before querying and distinguishes m
     });
     assert.equal(result.status, 0, `${JSON.stringify(params)}\n${result.stderr}${result.stdout}`);
   }
+
+  const broadDid = 'did:plc:%GG';
+  const broadUri = `at://${broadDid}/${CONTRIBUTION}/broad-did`;
+  const broadLookup = runLuaEndpoint({
+    endpoint: 'getContribution', params: { uri: broadUri }, queryResults: [[]],
+    expectError: 'RecordNotFound:', assertions: `
+assert(#calls == 1 and calls[1].values[2] == ${lua(broadUri)}, 'opaque percent sequences must reach exact lookup unchanged')
+`,
+  });
+  assert.equal(broadLookup.status, 0, `${broadLookup.stderr}${broadLookup.stdout}`);
 
   const missing = runLuaEndpoint({
     endpoint: 'getContribution', params: { uri: contributionUri }, queryResults: [[]],
@@ -315,7 +325,7 @@ test('listContributions rejects malformed filters and sort-bound cursors before 
   const wrongDirectionJson = JSON.stringify(wrongDirection);
   const invalidParams = [
     { authors: ['alice.example'] },
-    { authors: ['did:plc:%GG'] },
+    { authors: ['did:plc:publisher%'] },
     { authors: Array(101).fill(publisherDid) },
     { authors: [{ did: publisherDid }] },
     { limit: '0' },
@@ -334,21 +344,36 @@ test('listContributions rejects malformed filters and sort-bound cursors before 
     });
     assert.equal(result.status, 0, `${JSON.stringify(params)}\n${result.stderr}${result.stdout}`);
   }
+
+  const broadDid = 'did:plc:%GG';
+  const broadFilter = runLuaEndpoint({
+    endpoint: 'listContributions', params: { authors: [broadDid] }, queryResults: [[]],
+    assertions: `assert(#result.contributions == 0 and calls[1].values[2] == ${lua(broadDid)})`,
+  });
+  assert.equal(broadFilter.status, 0, `${broadFilter.stderr}${broadFilter.stdout}`);
 });
 
-test('listContributions rejects cursor URIs with malformed DID percent escapes before querying', () => {
-  const cursor = {
-    v: 1, d: 'asc', t: '2025-01-01T00:00:00Z',
-    u: `at://did:plc:%GG/${CONTRIBUTION}/3jzfcijpj2z2a`,
-  };
+test('listContributions accepts opaque percent sequences in cursor DIDs and queries them', () => {
+  const broadUri = `at://did:plc:%GG/${CONTRIBUTION}/3jzfcijpj2z2a`;
+  const cursor = { v: 1, d: 'asc', t: '2025-01-01T00:00:00Z', u: broadUri };
   const cursorJson = JSON.stringify(cursor);
   const result = runLuaEndpoint({
     endpoint: 'listContributions',
     params: { cursor: Buffer.from(cursorJson).toString('hex'), sortDirection: 'asc' },
-    cursorFixtures: { [cursorJson]: cursor }, expectError: 'InvalidRequest:',
-    assertions: "assert(#calls == 0, 'malformed cursor authority must fail before querying')",
+    queryResults: [[]], cursorFixtures: { [cursorJson]: cursor },
+    assertions: `assert(#result.contributions == 0 and calls[1].values[3] == ${lua(broadUri)})`,
   });
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
+
+  const invalidCursor = { ...cursor, u: `at://did:plc:publisher%/${CONTRIBUTION}/3jzfcijpj2z2a` };
+  const invalidJson = JSON.stringify(invalidCursor);
+  const invalid = runLuaEndpoint({
+    endpoint: 'listContributions',
+    params: { cursor: Buffer.from(invalidJson).toString('hex'), sortDirection: 'asc' },
+    cursorFixtures: { [invalidJson]: invalidCursor }, expectError: 'InvalidRequest:',
+    assertions: "assert(#calls == 0, 'trailing percent must fail before querying')",
+  });
+  assert.equal(invalid.status, 0, `${invalid.stderr}${invalid.stdout}`);
 });
 
 test('listContributions rejects year-zero cursor timestamps before querying', () => {

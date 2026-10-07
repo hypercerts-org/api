@@ -45,7 +45,7 @@ local function measurement_array(key, format)
 
   local unique, seen = {}, {}
   for _, item in ipairs(supplied) do
-    if format == "did" and not measurement_valid_did(item) then
+    if format == "did" and not valid_did(item) then
       invalid("each " .. key .. " value must be a valid DID")
     elseif format == "at-uri" then
       local valid, collection = measurement_valid_record_uri(item)
