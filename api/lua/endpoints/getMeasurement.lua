@@ -84,22 +84,8 @@ end
 local MEASUREMENT = "org.hypercerts.context.measurement"
 local MEASUREMENT_NULL = json.decode("null")
 
-local function measurement_valid_did(value)
-  if not valid_did(value) then return false end
-  local position = 1
-  while true do
-    local percent = value:find("%", position, true)
-    if not percent then return true end
-    local hex = value:sub(percent + 1, percent + 2)
-    if #hex ~= 2 or hex:find("[^0-9A-Fa-f]") then return false end
-    position = percent + 3
-  end
-end
-
 local function measurement_valid_record_uri(value)
-  local valid, collection, authority = valid_record_uri(value)
-  if not valid then return false end
-  return measurement_valid_did(authority), collection
+  return valid_record_uri(value)
 end
 
 local function measurement_query(sql, values)

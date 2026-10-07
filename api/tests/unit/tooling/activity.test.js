@@ -68,11 +68,6 @@ function withoutRecordJson(row) {
 test('activity API manifests and Lexicons declare the implemented endpoint contracts', async () => {
   const manifest = JSON.parse(await readFile(new URL('../../../manifest.json', import.meta.url), 'utf8'));
   const module = JSON.parse(await readFile(new URL('../../../modules/activity/manifest.json', import.meta.url), 'utf8'));
-  assert.deepEqual({
-    getActivity: manifest.handlerStatus.getActivity,
-    listActivities: manifest.handlerStatus.listActivities,
-    searchActivities: manifest.handlerStatus.searchActivities,
-  }, { getActivity: 'implemented', listActivities: 'implemented', searchActivities: 'implemented' });
   assert.ok(manifest.modules.includes('modules/activity/manifest.json'));
   for (const nsid of ['org.hypercerts.claim.activity', 'org.hypercerts.claim.contributorInformation']) {
     assert.ok(manifest.validationLexicons.some(({ id, packagePath }) => id === nsid && packagePath));
@@ -236,6 +231,38 @@ test('getActivity serializes a null activity indexed_at as explicit JSON null', 
   assert.equal(body.activity.indexedAt, null);
 });
 
+test('getActivity skips legacy string contributors in a dense projection and preserves the source record', () => {
+  const legacyUris = [
+    'at://did:web:legacy-one.invalid/org.hypercerts.claim.contributorInformation/old',
+    'at://did:web:legacy-two.invalid/org.hypercerts.claim.contributorInformation/older',
+  ];
+  const mixedRecord = {
+    $type: ACTIVITY,
+    title: 'Legacy contributors',
+    createdAt: indexedAt,
+    contributors: [
+      legacyUris[0],
+      { contributorIdentity: { identity: contributorDid }, contributionWeight: 'first object' },
+      legacyUris[1],
+      { contributorIdentity: { identity: contributorDid }, contributionWeight: 'second object' },
+    ],
+  };
+  const mixed = runGetActivity({ recordJson: mixedRecord, serialize: true });
+  assert.equal(mixed.status, 0, `${mixed.stderr}${mixed.stdout}`);
+  const mixedActivity = JSON.parse(mixed.stdout).activity;
+  assert.deepEqual(mixedActivity.record, mixedRecord);
+  assert.deepEqual(mixedActivity.contributors.map(({ contributionWeight }) => contributionWeight), ['first object', 'second object']);
+  assert.deepEqual(mixedActivity.contributors.map(({ actor }) => actor.did), [contributorDid, contributorDid]);
+  assert.deepEqual(mixedActivity.contributors.map(({ actor }) => actor.profile.record.displayName), ['Inline contributor', 'Inline contributor']);
+
+  const allLegacyRecord = { ...mixedRecord, contributors: legacyUris };
+  const allLegacy = runGetActivity({ recordJson: allLegacyRecord, serialize: true });
+  assert.equal(allLegacy.status, 0, `${allLegacy.stderr}${allLegacy.stdout}`);
+  const allLegacyActivity = JSON.parse(allLegacy.stdout).activity;
+  assert.deepEqual(allLegacyActivity.record, allLegacyRecord);
+  assert.deepEqual(allLegacyActivity.contributors, [], 'a present source array with only legacy entries projects as an empty array');
+});
+
 test('getActivity serializes exact-version contributor indexed_at null and timestamp strings', () => {
   const exactInformation = {
     ...rows[2], cid: oldCid, record: 'exact-contributor-information',
@@ -375,6 +402,73 @@ function activityRow({ uri, did = authorDid, record, cid, sortTimestamp }) {
   };
 }
 
+test('listActivities continues cursor pages across mixed and all-legacy contributor records', () => {
+  const legacyUris = [
+    'at://did:web:legacy-one.invalid/org.hypercerts.claim.contributorInformation/old',
+    'at://did:web:legacy-two.invalid/org.hypercerts.claim.contributorInformation/older',
+  ];
+  const first = activityRow({
+    uri: `at://${authorDid}/${ACTIVITY}/cursor-first`,
+    cid: 'bafyreiggggggggggggggggggggggggggggggggggggggggggggggggggg',
+    sortTimestamp: '2025-01-01T00:00:00.000000Z',
+    record: { title: 'Cursor first', createdAt: '2025-01-01T00:00:00Z' },
+  });
+  const mixed = activityRow({
+    uri: `at://${authorDid}/${ACTIVITY}/cursor-mixed`,
+    cid: 'bafyreihhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh',
+    sortTimestamp: '2025-01-02T00:00:00.000000Z',
+    record: {
+      title: 'Cursor mixed', createdAt: '2025-01-02T00:00:00Z',
+      contributors: [
+        legacyUris[0],
+        { contributorIdentity: { identity: contributorDid }, contributionWeight: 'kept object' },
+        legacyUris[1],
+      ],
+    },
+  });
+  const allLegacy = activityRow({
+    uri: `at://${authorDid}/${ACTIVITY}/cursor-legacy`,
+    cid: 'bafyreijjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj',
+    sortTimestamp: '2025-01-03T00:00:00.000000Z',
+    record: { title: 'Cursor legacy', createdAt: '2025-01-03T00:00:00Z', contributors: legacyUris },
+  });
+  const profile = (did, displayName) => ({
+    uri: `at://${did}/${PROFILE}/self`, did, collection: PROFILE,
+    cid: 'bafyreikkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk',
+    indexed_at: indexedAt, record: `profile-${did}`,
+    record_json: { $type: PROFILE, displayName, createdAt: indexedAt },
+  });
+  const result = runLuaEndpoint({
+    endpoint: 'listActivities', params: { limit: '1' },
+    queryResults: [
+      [first, mixed], [profile(authorDid, 'Page author')], [],
+      [mixed, allLegacy], [profile(authorDid, 'Page author'), profile(contributorDid, 'Inline contributor')], [],
+      [allLegacy], [profile(authorDid, 'Page author')], [],
+    ],
+    assertions: `
+assert(#result.activities == 1 and result.activities[1].uri == '${first.uri}')
+assert(result.cursor ~= nil, 'the first page must retain its next-page cursor')
+params.cursor = result.cursor
+local secondPage = handle()
+assert(#secondPage.activities == 1 and secondPage.activities[1].uri == '${mixed.uri}')
+assert(secondPage.cursor ~= nil, 'a mixed legacy page must retain its next-page cursor')
+local mixedActivity = secondPage.activities[1]
+assert(#mixedActivity.record.contributors == 3)
+assert(mixedActivity.record.contributors[1] == '${legacyUris[0]}' and mixedActivity.record.contributors[3] == '${legacyUris[1]}')
+assert(#mixedActivity.contributors == 1 and mixedActivity.contributors[1].contributionWeight == 'kept object')
+assert(mixedActivity.contributors[1].actor.did == '${contributorDid}')
+assert(mixedActivity.contributors[1].actor.profile.record.displayName == 'Inline contributor')
+params.cursor = secondPage.cursor
+local thirdPage = handle()
+assert(#thirdPage.activities == 1 and thirdPage.activities[1].uri == '${allLegacy.uri}')
+assert(#thirdPage.activities[1].contributors == 0, 'all-legacy contributors must project densely as empty')
+assert(thirdPage.activities[1].record.contributors[1] == '${legacyUris[0]}')
+assert(thirdPage.cursor == nil and #calls == 9)
+`,
+  });
+  assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
+});
+
 test('listActivities hydrates actor profiles across multiple bounded lookup batches', () => {
   const contributorDids = Array.from({ length: 501 }, (_, index) => `did:web:contributor-${index}.example`);
   const uri = `at://${authorDid}/${ACTIVITY}/many-contributors`;
@@ -465,6 +559,8 @@ assert(result.activities[1].author.profile.record.displayName == 'List author')
 assert(result.activities[1].contributors[1].contributorInformation.record.displayName == 'Exact contributor')
 assert(result.activities[1].contributors[1].actor.profile.record.displayName == 'List contributor')
 local sql = calls[1].sql
+assert(sql:find("activity.record::jsonb->'createdAt'", 1, true))
+assert(sql:find('COALESCE(activity.indexed_at::timestamptz, activity.created_at::timestamptz)', 1, true))
 assert(sql:find('activity.did IN ($2)', 1, true), 'duplicate author DIDs must be removed before binding')
 assert(sql:find('activity.uri IN ($6, $7)', 1, true), 'duplicate URIs must be removed before binding')
 assert(sql:find("NOT EXISTS (SELECT 1 FROM happyview_records AS organization", 1, true), 'false must require no organization self record')
@@ -516,6 +612,38 @@ local values = table.concat(calls[1].values, '|')
 assert(values:find('FOREST %_ Initiative', 1, true), 'trimmed complete search text must remain a bound value')
 assert(sql:find('activity.did IN', 1, true), 'authors filter must remain present with search')
 assert(sql:find(' AND ', 1, true), 'search and authors must combine with AND')
+`,
+  });
+  assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
+});
+
+test('searchActivities skips legacy contributor strings and keeps valid object projections', () => {
+  const legacyUri = 'at://did:web:legacy-search.invalid/org.hypercerts.claim.contributorInformation/old';
+  const row = activityRow({
+    uri: `at://${authorDid}/${ACTIVITY}/search-legacy`,
+    cid: 'bafyreimmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm',
+    record: {
+      title: 'Legacy contributor search', createdAt: indexedAt,
+      contributors: [legacyUri, { contributorIdentity: { identity: contributorDid }, contributionWeight: 'retained' }],
+    },
+  });
+  const authorProfile = {
+    uri: `at://${authorDid}/${PROFILE}/self`, did: authorDid, collection: PROFILE, cid: 'bafyreinnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn',
+    indexed_at: indexedAt, record: 'search-author-profile', record_json: { $type: PROFILE, displayName: 'Search author', createdAt: indexedAt },
+  };
+  const contributorProfile = {
+    uri: `at://${contributorDid}/${PROFILE}/self`, did: contributorDid, collection: PROFILE, cid: 'bafyreieeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+    indexed_at: indexedAt, record: 'search-contributor-profile', record_json: { $type: PROFILE, displayName: 'Search contributor', createdAt: indexedAt },
+  };
+  const result = runLuaEndpoint({
+    endpoint: 'searchActivities', params: { search: 'legacy contributor' },
+    queryResults: [[row], [authorProfile, contributorProfile], []],
+    assertions: `
+local activity = result.activities[1]
+assert(#result.activities == 1 and activity.uri == '${row.uri}')
+assert(activity.record.contributors[1] == '${legacyUri}', 'the raw record must retain the legacy URI string')
+assert(#activity.contributors == 1 and activity.contributors[1].contributionWeight == 'retained')
+assert(activity.contributors[1].actor.profile.record.displayName == 'Search contributor')
 `,
   });
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);

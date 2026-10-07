@@ -60,6 +60,7 @@
       "sharedSourcePaths": [
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
+        "../../lua/shared/recordView.lua",
         "../../lua/shared/profile.lua",
         "../../lua/shared/profileLookup.lua"
       ],
@@ -79,6 +80,7 @@
       "sharedSourcePaths": [
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
+        "../../lua/shared/recordView.lua",
         "../../lua/shared/profile.lua"
       ],
       "config": {
@@ -97,8 +99,12 @@
       "sharedSourcePaths": [
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
+        "../../lua/shared/datetimeValidation.lua",
         "../../lua/shared/listValidation.lua",
+        "../../lua/shared/listQuery.lua",
+        "../../lua/shared/recordView.lua",
         "../../lua/shared/profile.lua",
+        "../../lua/shared/createdAtSort.lua",
         "../../lua/shared/profileList.lua"
       ],
       "config": {
@@ -117,8 +123,12 @@
       "sharedSourcePaths": [
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
+        "../../lua/shared/datetimeValidation.lua",
         "../../lua/shared/listValidation.lua",
+        "../../lua/shared/listQuery.lua",
+        "../../lua/shared/recordView.lua",
         "../../lua/shared/profile.lua",
+        "../../lua/shared/createdAtSort.lua",
         "../../lua/shared/profileList.lua"
       ],
       "config": {

@@ -1,6 +1,25 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
+function compareCodeUnits(left, right) {
+  if (left < right) return -1;
+  if (left > right) return 1;
+  return 0;
+}
+
+async function mapConcurrentInOrder(items, mapItem) {
+  const results = await Promise.all(items.map(async (item, index) => {
+    try {
+      return { ok: true, value: await mapItem(item, index) };
+    } catch (error) {
+      return { ok: false, error };
+    }
+  }));
+  const firstFailure = results.find(({ ok }) => !ok);
+  if (firstFailure) throw firstFailure.error;
+  return results.map(({ value }) => value);
+}
+
 function resolveInside(root, base, relativePath, description) {
   if (typeof relativePath !== 'string' || !relativePath.trim()) {
     throw new Error(`${description} must be a nonempty path in the API manifests`);
@@ -27,15 +46,17 @@ async function loadRegisteredApi(root) {
   const rootManifest = await readJson(manifestFile, 'root API manifest');
   if (!Array.isArray(rootManifest.modules)) throw new Error(`Root API manifest ${manifestFile} must declare a modules array`);
 
-  const modules = [];
-  const handlers = [];
-  const lexicons = new Map();
-  for (const modulePath of rootManifest.modules) {
+  const manifestEntries = await mapConcurrentInOrder(rootManifest.modules, async (modulePath) => {
     const moduleFile = resolveInside(packageRoot, packageRoot, modulePath, 'Module manifest path');
     const module = await readJson(moduleFile, 'module manifest');
     if (!Array.isArray(module.assets)) throw new Error(`Lua module manifest ${moduleFile} must declare an assets array`);
-    const entry = { file: moduleFile, assets: module.assets };
-    modules.push(entry);
+    return { moduleFile, module };
+  });
+  const modules = [];
+  const handlers = [];
+  const lexicons = new Map();
+  for (const { moduleFile, module } of manifestEntries) {
+    modules.push({ file: moduleFile, assets: module.assets });
     for (const asset of module.assets) {
       if (asset.kind === 'lexicon' && typeof asset.id === 'string') {
         const records = lexicons.get(asset.id) ?? [];
@@ -67,38 +88,39 @@ async function authoredSources(api, handlerRecord) {
     ...declaredSharedSources(asset).map((source) => ({ path: source, kind: 'shared' })),
     { path: asset.sourcePath, kind: 'handler' },
   ];
-  const sources = [];
-  const diagnostics = [];
-
-  for (const declaration of declarations) {
+  const results = await mapConcurrentInOrder(declarations, async (declaration) => {
     if (!declaration.path) {
-      diagnostics.push({
-        status: 'error',
-        code: 'lua-source-missing',
-        endpoint,
-        message: `${endpoint}: no authored ${declaration.kind} source is declared in ${path.relative(api.packageRoot, moduleFile)}; add ${declaration.kind === 'handler' ? 'sourcePath' : 'sharedSourcePaths'} to the module manifest.`,
-      });
-      continue;
+      return {
+        diagnostic: {
+          status: 'error',
+          code: 'lua-source-missing',
+          endpoint,
+          message: `${endpoint}: no authored ${declaration.kind} source is declared in ${path.relative(api.packageRoot, moduleFile)}; add ${declaration.kind === 'handler' ? 'sourcePath' : 'sharedSourcePaths'} to the module manifest.`,
+        },
+      };
     }
     const file = resolveInside(api.packageRoot, moduleDirectory, declaration.path, `${endpoint} ${declaration.kind} source`);
     const relativeFile = path.relative(api.packageRoot, file);
-    let source;
     try {
-      source = await readFile(file, 'utf8');
+      const source = await readFile(file, 'utf8');
+      return { source: { file, relativeFile, kind: declaration.kind, source } };
     } catch (error) {
       if (error.code !== 'ENOENT') throw error;
-      diagnostics.push({
-        status: 'error',
-        code: 'lua-source-missing',
-        endpoint,
-        file: relativeFile,
-        message: `${endpoint}: declared ${declaration.kind} Lua source ${relativeFile} is missing (from ${path.relative(api.packageRoot, moduleFile)}); restore it or correct the manifest source path.`,
-      });
-      continue;
+      return {
+        diagnostic: {
+          status: 'error',
+          code: 'lua-source-missing',
+          endpoint,
+          file: relativeFile,
+          message: `${endpoint}: declared ${declaration.kind} Lua source ${relativeFile} is missing (from ${path.relative(api.packageRoot, moduleFile)}); restore it or correct the manifest source path.`,
+        },
+      };
     }
-    sources.push({ file, relativeFile, kind: declaration.kind, source });
-  }
-  return { sources, diagnostics };
+  });
+  return {
+    sources: results.flatMap(({ source }) => source ? [source] : []),
+    diagnostics: results.flatMap(({ diagnostic }) => diagnostic ? [diagnostic] : []),
+  };
 }
 
 function longBracketEnd(source, start) {
@@ -109,74 +131,112 @@ function longBracketEnd(source, start) {
   return end < 0 ? source.length : end + close.length;
 }
 
+function countLineBreaks(source) {
+  return (source.match(/\n/g) ?? []).length;
+}
+
+function consumeLuaWhitespace(source, index, line) {
+  if (!/\s/.test(source[index])) return null;
+  return { index: index + 1, line: line + (source[index] === '\n' ? 1 : 0) };
+}
+
+function consumeLuaComment(source, index, line) {
+  if (!source.startsWith('--', index)) return null;
+  const longEnd = longBracketEnd(source, index + 2);
+  if (longEnd !== null) {
+    const comment = source.slice(index, longEnd);
+    return { index: longEnd, line: line + countLineBreaks(comment) };
+  }
+  const newline = source.indexOf('\n', index);
+  return { index: newline < 0 ? source.length : newline, line };
+}
+
+function consumeQuotedLuaString(source, index, line, tokens) {
+  const startLine = line;
+  const quote = source[index];
+  let value = '';
+  let staticValue = true;
+  let nextIndex = index + 1;
+  let nextLine = line;
+  while (nextIndex < source.length && source[nextIndex] !== quote) {
+    if (source[nextIndex] === '\n') nextLine += 1;
+    if (source[nextIndex] === '\\') {
+      staticValue = false;
+      nextIndex += Math.min(2, source.length - nextIndex);
+    } else {
+      value += source[nextIndex];
+      nextIndex += 1;
+    }
+  }
+  if (source[nextIndex] === quote) nextIndex += 1;
+  tokens.push({ type: 'string', value: staticValue ? value : null, line: startLine });
+  return { index: nextIndex, line: nextLine };
+}
+
+function consumeLongLuaString(source, index, line, tokens) {
+  const longEnd = source[index] === '[' ? longBracketEnd(source, index) : null;
+  if (longEnd === null) return null;
+  const raw = source.slice(index, longEnd);
+  tokens.push({ type: 'string', value: null, line });
+  return { index: longEnd, line: line + countLineBreaks(raw) };
+}
+
+function consumeLuaWord(source, index, line, tokens, pattern, type) {
+  const match = source.slice(index).match(pattern);
+  if (!match) return null;
+  tokens.push({ type, value: match[0], line });
+  return index + match[0].length;
+}
+
+function consumeLuaSymbol(source, index, line, tokens) {
+  const operator = ['...', '..', '==', '~=', '<=', '>=', '//', '::']
+    .find((candidate) => source.startsWith(candidate, index));
+  const value = operator ?? source[index];
+  tokens.push({ type: 'symbol', value, line });
+  return index + value.length;
+}
+
 function tokenizeLua(source) {
   const tokens = [];
   let index = 0;
   let line = 1;
   while (index < source.length) {
+    const whitespace = consumeLuaWhitespace(source, index, line);
+    if (whitespace !== null) {
+      index = whitespace.index;
+      line = whitespace.line;
+      continue;
+    }
+    const comment = consumeLuaComment(source, index, line);
+    if (comment !== null) {
+      index = comment.index;
+      line = comment.line;
+      continue;
+    }
     const char = source[index];
-    if (/\s/.test(char)) {
-      if (char === '\n') line += 1;
-      index += 1;
-      continue;
-    }
-    if (source.startsWith('--', index)) {
-      const commentStart = index + 2;
-      const longEnd = longBracketEnd(source, commentStart);
-      if (longEnd !== null) {
-        line += (source.slice(index, longEnd).match(/\n/g) ?? []).length;
-        index = longEnd;
-      } else {
-        const newline = source.indexOf('\n', index);
-        index = newline < 0 ? source.length : newline;
-      }
-      continue;
-    }
     if (char === '"' || char === "'") {
-      const startLine = line;
-      const quote = char;
-      index += 1;
-      let value = '';
-      let staticValue = true;
-      while (index < source.length && source[index] !== quote) {
-        if (source[index] === '\n') line += 1;
-        if (source[index] === '\\') {
-          staticValue = false;
-          index += Math.min(2, source.length - index);
-        } else {
-          value += source[index];
-          index += 1;
-        }
-      }
-      if (source[index] === quote) index += 1;
-      tokens.push({ type: 'string', value: staticValue ? value : null, line: startLine });
+      const string = consumeQuotedLuaString(source, index, line, tokens);
+      index = string.index;
+      line = string.line;
       continue;
     }
-    const longEnd = char === '[' ? longBracketEnd(source, index) : null;
-    if (longEnd !== null) {
-      const raw = source.slice(index, longEnd);
-      const startLine = line;
-      line += (raw.match(/\n/g) ?? []).length;
-      tokens.push({ type: 'string', value: null, line: startLine });
-      index = longEnd;
+    const longString = consumeLongLuaString(source, index, line, tokens);
+    if (longString !== null) {
+      index = longString.index;
+      line = longString.line;
       continue;
     }
-    const identifier = source.slice(index).match(/^[A-Za-z_][A-Za-z0-9_]*/);
-    if (identifier) {
-      tokens.push({ type: 'identifier', value: identifier[0], line });
-      index += identifier[0].length;
+    const identifierEnd = consumeLuaWord(source, index, line, tokens, /^[A-Za-z_]\w*/, 'identifier');
+    if (identifierEnd !== null) {
+      index = identifierEnd;
       continue;
     }
-    const number = source.slice(index).match(/^\d+(?:\.\d+)?/);
-    if (number) {
-      tokens.push({ type: 'number', value: number[0], line });
-      index += number[0].length;
+    const numberEnd = consumeLuaWord(source, index, line, tokens, /^\d+(?:\.\d+)?/, 'number');
+    if (numberEnd !== null) {
+      index = numberEnd;
       continue;
     }
-    const operator = ['...', '..', '==', '~=', '<=', '>=', '//', '::'].find((candidate) => source.startsWith(candidate, index));
-    const value = operator ?? char;
-    tokens.push({ type: 'symbol', value, line });
-    index += value.length;
+    index = consumeLuaSymbol(source, index, line, tokens);
   }
   return tokens;
 }
@@ -325,20 +385,25 @@ function queryParameters(lexicon) {
   if (main?.type !== 'query') return { status: 'unverified', reason: 'the registered Lexicon is not a recognizable query' };
   const parameters = main.parameters;
   if (parameters === undefined) return { status: 'verified', names: [] };
-  if (!parameters || parameters.type !== 'params' || !parameters.properties || typeof parameters.properties !== 'object' || Array.isArray(parameters.properties)) {
+  if (parameters?.type !== 'params' || !parameters.properties || typeof parameters.properties !== 'object' || Array.isArray(parameters.properties)) {
     return { status: 'unverified', reason: 'the Lexicon parameter schema is not a recognizable params object' };
   }
-  return { status: 'verified', names: Object.keys(parameters.properties).sort() };
+  return { status: 'verified', names: Object.keys(parameters.properties).sort(compareCodeUnits) };
 }
 
 function unverifiedParameter(id, file, reason, line) {
+  let location = '';
+  if (file) {
+    location = ` in ${file}`;
+    if (line) location += `:${line}`;
+  }
   return {
     status: 'unverified',
     code: 'parameter-contract-unverified',
     endpoint: id,
     file,
     line,
-    message: `${id}: parameter contract unverified${file ? ` in ${file}${line ? `:${line}` : ''}` : ''}: ${reason}`,
+    message: `${id}: parameter contract unverified${location}: ${reason}`,
   };
 }
 
@@ -384,11 +449,15 @@ async function compareParameterContracts(api, handlerRecord, sources) {
       query: true,
     };
   }
-  const actual = [...new Set(inspection.keys)].sort();
+  const actual = [...new Set(inspection.keys)].sort(compareCodeUnits);
   const missing = contract.names.filter((name) => !actual.includes(name));
   const extra = actual.filter((name) => !contract.names.includes(name));
   if (!missing.length && !extra.length) return { diagnostics: [], verified: true, query: true };
   const file = inspection.file;
+  const mismatchDetails = [];
+  if (missing.length) mismatchDetails.push(`missing: ${missing.join(', ')}`);
+  if (extra.length) mismatchDetails.push(`extra: ${extra.join(', ')}`);
+  const mismatchSuffix = mismatchDetails.length > 0 ? `; ${mismatchDetails.join('; ')}` : '';
   return {
     diagnostics: [{
       status: 'error',
@@ -400,7 +469,7 @@ async function compareParameterContracts(api, handlerRecord, sources) {
       actual,
       missing,
       extra,
-      message: `${asset.id}: Lua parameter allow-list in ${file}:${inspection.line} differs from its Lexicon${missing.length ? `; missing: ${missing.join(', ')}` : ''}${extra.length ? `; extra: ${extra.join(', ')}` : ''}`,
+      message: `${asset.id}: Lua parameter allow-list in ${file}:${inspection.line} differs from its Lexicon${mismatchSuffix}`,
     }],
     verified: true,
     query: true,
@@ -434,39 +503,48 @@ async function luacheckGlobals(root) {
   return globals;
 }
 
+function addFunctionDeclaration(tokens, index, blocks, declarations) {
+  if (tokens[index + 1]?.type !== 'identifier' || tokens[index + 2]?.value !== '(') return;
+  declarations.push({
+    name: tokens[index + 1].value,
+    line: tokens[index].line,
+    index,
+    topLevel: blocks.length === 0,
+    local: tokens[index - 1]?.value === 'local',
+  });
+}
+
+function updateFunctionBlocks(value, blocks, loopsAwaitingDo) {
+  if (value === 'function' || value === 'if' || value === 'repeat') {
+    blocks.push(value);
+    return loopsAwaitingDo;
+  }
+  if (value === 'for' || value === 'while') {
+    blocks.push('loop');
+    return loopsAwaitingDo + 1;
+  }
+  if (value === 'do') {
+    if (loopsAwaitingDo > 0) return loopsAwaitingDo - 1;
+    blocks.push('do');
+    return loopsAwaitingDo;
+  }
+  if (value === 'end' && blocks.length > 0 && blocks.at(-1) !== 'repeat') {
+    blocks.pop();
+    return loopsAwaitingDo;
+  }
+  if (value === 'until' && blocks.at(-1) === 'repeat') blocks.pop();
+  return loopsAwaitingDo;
+}
+
 function functionDeclarations(tokens) {
   const declarations = [];
   const blocks = [];
   let loopsAwaitingDo = 0;
   for (let index = 0; index < tokens.length; index += 1) {
     if (tokens[index].type !== 'identifier') continue;
-    const value = tokens[index].value;
-    if (value === 'function') {
-      if (tokens[index + 1]?.type === 'identifier' && tokens[index + 2]?.value === '(') {
-        declarations.push({
-          name: tokens[index + 1].value,
-          line: tokens[index].line,
-          index,
-          topLevel: blocks.length === 0,
-          local: tokens[index - 1]?.value === 'local',
-        });
-      }
-      blocks.push('function');
-    } else if (value === 'if') {
-      blocks.push('if');
-    } else if (value === 'for' || value === 'while') {
-      blocks.push('loop');
-      loopsAwaitingDo += 1;
-    } else if (value === 'do') {
-      if (loopsAwaitingDo > 0) loopsAwaitingDo -= 1;
-      else blocks.push('do');
-    } else if (value === 'repeat') {
-      blocks.push('repeat');
-    } else if (value === 'end') {
-      if (blocks.length > 0 && blocks.at(-1) !== 'repeat') blocks.pop();
-    } else if (value === 'until' && blocks.at(-1) === 'repeat') {
-      blocks.pop();
-    }
+    const { value } = tokens[index];
+    if (value === 'function') addFunctionDeclaration(tokens, index, blocks, declarations);
+    loopsAwaitingDo = updateFunctionBlocks(value, blocks, loopsAwaitingDo);
   }
   return declarations;
 }
@@ -495,84 +573,103 @@ function helperCatalog(sources) {
 }
 
 function helperAvailabilityDiagnostic(endpoint, source, call, definitions) {
-  const candidates = [...new Set(definitions.map(({ relativeFile }) => relativeFile))].sort();
+  const candidates = [...new Set(definitions.map(({ relativeFile }) => relativeFile))].sort(compareCodeUnits);
+  const candidateDetails = candidates.length > 0
+    ? `; same-name declarations exist in ${candidates.join(', ')}`
+    : '';
   return {
     status: 'unverified',
     code: 'helper-availability-unverified',
     endpoint,
     file: source.relativeFile,
     line: call.line,
-    message: `${endpoint}: cannot prove that shared helper ${call.name} at ${source.relativeFile}:${call.line} resolves to a top-level local declared earlier in this ordered bundle${candidates.length ? `; same-name declarations exist in ${candidates.join(', ')}` : ''}. Luacheck remains authoritative for undefined globals.`,
+    message: `${endpoint}: cannot prove that shared helper ${call.name} at ${source.relativeFile}:${call.line} resolves to a top-level local declared earlier in this ordered bundle${candidateDetails}. Luacheck remains authoritative for undefined globals.`,
+  };
+}
+
+function bundleFunctionDeclarations(tokenized) {
+  const declarations = new Map();
+  for (const { source, sourceIndex, tokens } of tokenized) {
+    for (const declaration of functionDeclarations(tokens)) {
+      const definitions = declarations.get(declaration.name) ?? [];
+      definitions.push({ ...declaration, sourceIndex, file: source.file, relativeFile: source.relativeFile });
+      declarations.set(declaration.name, definitions);
+    }
+  }
+  return declarations;
+}
+
+function helperIsVisible(declarations, name, sourceIndex, callIndex) {
+  return (declarations.get(name) ?? []).some((definition) => definition.local && definition.topLevel
+    && (definition.sourceIndex < sourceIndex || (definition.sourceIndex === sourceIndex && definition.index < callIndex)));
+}
+
+function missingHelperDiagnostic(endpoint, source, call, bundleFiles, catalog) {
+  const candidates = catalog.get(call.name) ?? [];
+  if (candidates.length === 0) return null;
+  const bundled = candidates.filter(({ file }) => bundleFiles.has(file));
+  if (bundled.length > 0) return helperAvailabilityDiagnostic(endpoint, source, call, bundled);
+  if (candidates.length !== 1 || !candidates[0].local || !candidates[0].topLevel) {
+    return helperAvailabilityDiagnostic(endpoint, source, call, candidates);
+  }
+  return {
+    status: 'warning',
+    code: 'missing-helper-dependency',
+    endpoint,
+    file: source.relativeFile,
+    line: call.line,
+    message: `${endpoint}: possible missing shared dependency for ${call.name} at ${source.relativeFile}:${call.line}; the only registered top-level local declaration is in ${candidates[0].relativeFile}. Add it to sharedSourcePaths if intended. Luacheck remains authoritative for undefined globals.`,
   };
 }
 
 function missingHelperDiagnostics(endpoint, sources, catalog, globals) {
-  const inBundle = new Map();
   const tokenized = sources.map((source, sourceIndex) => ({ source, sourceIndex, tokens: tokenizeLua(source.source) }));
-  for (const item of tokenized) {
-    for (const declaration of functionDeclarations(item.tokens)) {
-      const definitions = inBundle.get(declaration.name) ?? [];
-      definitions.push({ ...declaration, sourceIndex: item.sourceIndex, file: item.source.file, relativeFile: item.source.relativeFile });
-      inBundle.set(declaration.name, definitions);
-    }
-  }
-
+  const declarations = bundleFunctionDeclarations(tokenized);
+  const bundleFiles = new Set(tokenized.map(({ source }) => source.file));
   const diagnostics = [];
   const reported = new Set();
   for (const { source, sourceIndex, tokens } of tokenized) {
     for (const call of functionCalls(tokens)) {
-      if (globals.has(call.name)) continue;
-      const visible = (inBundle.get(call.name) ?? []).some((definition) => definition.local && definition.topLevel
-        && (definition.sourceIndex < sourceIndex || (definition.sourceIndex === sourceIndex && definition.index < call.index)));
-      if (visible) continue;
-      const candidates = catalog.get(call.name) ?? [];
-      if (candidates.length === 0) continue;
-
+      if (globals.has(call.name) || helperIsVisible(declarations, call.name, sourceIndex, call.index)) continue;
+      const diagnostic = missingHelperDiagnostic(endpoint, source, call, bundleFiles, catalog);
+      if (!diagnostic) continue;
       const key = `${source.file}:${call.line}:${call.name}`;
       if (reported.has(key)) continue;
       reported.add(key);
-      const bundleDeclarations = candidates.filter(({ file }) => tokenized.some(({ source: included }) => included.file === file));
-      if (bundleDeclarations.length > 0) {
-        diagnostics.push(helperAvailabilityDiagnostic(endpoint, source, call, bundleDeclarations));
-        continue;
-      }
-
-      if (candidates.length === 1 && candidates[0].local && candidates[0].topLevel) {
-        diagnostics.push({
-          status: 'warning',
-          code: 'missing-helper-dependency',
-          endpoint,
-          file: source.relativeFile,
-          line: call.line,
-          message: `${endpoint}: possible missing shared dependency for ${call.name} at ${source.relativeFile}:${call.line}; the only registered top-level local declaration is in ${candidates[0].relativeFile}. Add it to sharedSourcePaths if intended. Luacheck remains authoritative for undefined globals.`,
-        });
-      } else {
-        diagnostics.push(helperAvailabilityDiagnostic(endpoint, source, call, candidates));
-      }
+      diagnostics.push(diagnostic);
     }
   }
   return diagnostics;
 }
 
+function callArguments(tokens, openIndex) {
+  const close = matchingClose(tokens, openIndex, '(', ')');
+  return close < 0 ? null : splitTopLevel(tokens.slice(openIndex + 1, close), ',');
+}
+
+function directDbRawExpression(tokens, index) {
+  const isDbRaw = tokens[index].value === 'db' && tokens[index + 1].value === '.'
+    && tokens[index + 2].value === 'raw' && tokens[index + 3].value === '(';
+  if (!isDbRaw) return null;
+  const args = callArguments(tokens, index + 3);
+  return args?.[0]?.length ? { expression: args[0], line: tokens[index].line } : null;
+}
+
+function protectedDbRawExpression(tokens, index) {
+  if (tokens[index].value !== 'pcall' || tokens[index + 1].value !== '(') return null;
+  const args = callArguments(tokens, index + 1);
+  if (args?.[0]?.length !== 3 || args[0][0].value !== 'db' || args[0][1].value !== '.'
+    || args[0][2].value !== 'raw' || !args[1]?.length) return null;
+  return { expression: args[1], line: tokens[index].line };
+}
+
 function rawSqlExpressions(tokens) {
   const expressions = [];
   for (let index = 0; index + 3 < tokens.length; index += 1) {
-    const isDbRaw = tokens[index].value === 'db' && tokens[index + 1].value === '.'
-      && tokens[index + 2].value === 'raw' && tokens[index + 3].value === '(';
-    if (isDbRaw) {
-      const close = matchingClose(tokens, index + 3, '(', ')');
-      if (close >= 0) {
-        const args = splitTopLevel(tokens.slice(index + 4, close), ',');
-        if (args[0]?.length) expressions.push({ expression: args[0], line: tokens[index].line });
-      }
-    }
-
-    if (tokens[index].value !== 'pcall' || tokens[index + 1].value !== '(') continue;
-    const close = matchingClose(tokens, index + 1, '(', ')');
-    if (close < 0) continue;
-    const args = splitTopLevel(tokens.slice(index + 2, close), ',');
-    if (args[0]?.length === 3 && args[0][0].value === 'db' && args[0][1].value === '.' && args[0][2].value === 'raw'
-      && args[1]?.length) expressions.push({ expression: args[1], line: tokens[index].line });
+    const directExpression = directDbRawExpression(tokens, index);
+    if (directExpression) expressions.push(directExpression);
+    const protectedExpression = protectedDbRawExpression(tokens, index);
+    if (protectedExpression) expressions.push(protectedExpression);
   }
   return expressions;
 }
@@ -612,30 +709,28 @@ function sqlInterpolationDiagnostics(endpoint, sources) {
 }
 
 async function parameterCheck(api, handlersAndSources) {
-  const diagnostics = [];
-  let queryCount = 0;
-  let verifiedCount = 0;
-  let unverifiedCount = 0;
-  for (const item of handlersAndSources) {
-    const result = await compareParameterContracts(api, item.handler, item.sources);
-    diagnostics.push(...result.diagnostics);
-    if (!result.query) continue;
-    queryCount += 1;
-    if (result.verified) verifiedCount += 1;
-    else unverifiedCount += 1;
-  }
-  return { diagnostics, queryCount, verifiedCount, unverifiedCount };
+  const results = await mapConcurrentInOrder(handlersAndSources, ({ handler, sources }) => (
+    compareParameterContracts(api, handler, sources)
+  ));
+  const queries = results.filter(({ query }) => query);
+  const verifiedCount = queries.filter(({ verified }) => verified).length;
+  return {
+    diagnostics: results.flatMap(({ diagnostics }) => diagnostics),
+    queryCount: queries.length,
+    verifiedCount,
+    unverifiedCount: queries.length - verifiedCount,
+  };
 }
 
 async function loadHandlerSources(api) {
-  const loaded = [];
-  const diagnostics = [];
-  for (const handler of api.handlers) {
-    const result = await authoredSources(api, handler);
-    diagnostics.push(...result.diagnostics);
-    loaded.push({ handler, sources: result.sources });
-  }
-  return { loaded, diagnostics };
+  const results = await mapConcurrentInOrder(api.handlers, async (handler) => ({
+    handler,
+    ...await authoredSources(api, handler),
+  }));
+  return {
+    loaded: results.map(({ handler, sources }) => ({ handler, sources })),
+    diagnostics: results.flatMap(({ diagnostics }) => diagnostics),
+  };
 }
 
 async function allDeclaredSharedSources(api) {
@@ -646,15 +741,16 @@ async function allDeclaredSharedSources(api) {
       sourceDeclarations.set(file, path.relative(api.packageRoot, file));
     }
   }
-  const sources = [];
-  for (const [file, relativeFile] of sourceDeclarations) {
+  const declarations = [...sourceDeclarations];
+  const sources = await mapConcurrentInOrder(declarations, async ([file, relativeFile]) => {
     try {
-      sources.push({ file, relativeFile, source: await readFile(file, 'utf8') });
+      return { file, relativeFile, source: await readFile(file, 'utf8') };
     } catch (error) {
       if (error.code !== 'ENOENT') throw error;
+      return null;
     }
-  }
-  return sources;
+  });
+  return sources.filter((source) => source !== null);
 }
 
 export async function checkLuaParameterContracts({ root }) {

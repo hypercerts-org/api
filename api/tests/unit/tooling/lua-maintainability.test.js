@@ -48,6 +48,53 @@ test('parameter contracts report both missing and extra literal allow-list keys'
   });
 });
 
+test('parameter mismatch names retain UTF-16 code-unit ordering', async () => {
+  await withPackage(async (root) => {
+    const mismatch = (await checkLuaParameterContracts({ root }))[0];
+
+    assert.deepEqual(mismatch.expected, ['𐀀', '']);
+    assert.deepEqual(mismatch.actual, ['unexpected', '𐀀', '']);
+  }, {
+    parameters: ['', '𐀀'],
+    source: 'function handle()\n  keys_only(params, { [""] = true, ["𐀀"] = true, unexpected = true })\nend\n',
+  });
+});
+
+test('helper candidate paths retain UTF-16 code-unit ordering in diagnostics', async () => {
+  await withPackage(async (root) => {
+    const codePointPath = 'lua/shared/𐀀.lua';
+    const privateUsePath = 'lua/shared/.lua';
+    for (const file of [codePointPath, privateUsePath]) {
+      const fullPath = path.join(root, file);
+      await mkdir(path.dirname(fullPath), { recursive: true });
+      await writeFile(fullPath, 'local function helper() return true end\n');
+    }
+    await writeFile(path.join(root, 'lua/src/listThings.lua'), 'function handle() return helper() end\n');
+
+    const modulePath = path.join(root, 'modules/demo/manifest.json');
+    const module = JSON.parse(await readFile(modulePath, 'utf8'));
+    module.assets.push({
+      kind: 'script',
+      id: 'xrpc.query:org.example.helperCatalog',
+      path: '../../lua/endpoints/helperCatalog.lua',
+      sourcePath: '../../lua/src/helperCatalog.lua',
+      sharedSourcePaths: [`../../${privateUsePath}`, `../../${codePointPath}`],
+      config: { script_type: 'lua' },
+    });
+    await writeFile(modulePath, JSON.stringify(module));
+    await writeFile(path.join(root, 'lua/src/helperCatalog.lua'), 'function handle() return true end\n');
+
+    const { diagnostics } = await checkLuaMaintainability({ root });
+    const finding = diagnostics.find(({ code, endpoint }) => code === 'helper-availability-unverified'
+      && endpoint === 'xrpc.query:org.example.listThings');
+    assert.ok(finding);
+    assert.match(finding.message, /same-name declarations exist in lua\/shared\/𐀀\.lua, lua\/shared\/\.lua/);
+  }, {
+    parameters: ['authors'],
+    source: 'function handle() return helper() end\n',
+  });
+});
+
 test('matching literal parameter names pass, and Lua comments or strings are not code', async () => {
   await withPackage(async (root) => {
     const diagnostics = await checkLuaParameterContracts({ root });
@@ -56,6 +103,51 @@ test('matching literal parameter names pass, and Lua comments or strings are not
     parameters: ['authors', 'cursor'],
     source: '-- keys_only(params, { commented = true })\nfunction handle()\n  local note = "keys_only(params, { stringValue = true })"\n  keys_only(params, { authors = true, cursor = true })\nend\n',
   });
+});
+
+test('concurrent source reads retain handler and source declaration order', async () => {
+  await withPackage(async (root) => {
+    const modulePath = path.join(root, 'modules/demo/manifest.json');
+    const module = JSON.parse(await readFile(modulePath, 'utf8'));
+    const firstHandler = module.assets.find(({ kind, id }) => kind === 'script' && id === 'xrpc.query:org.example.listThings');
+    firstHandler.sourcePath = '../../lua/src/missingFirst.lua';
+    module.assets.push({
+      kind: 'script',
+      id: 'xrpc.query:org.example.secondThings',
+      path: '../../lua/endpoints/secondThings.lua',
+      sourcePath: '../../lua/src/missingSecond.lua',
+      sharedSourcePaths: [],
+      config: { script_type: 'lua' },
+    });
+    await writeFile(modulePath, JSON.stringify(module));
+
+    const { diagnostics } = await checkLuaMaintainability({ root });
+    assert.deepEqual(diagnostics.filter(({ code }) => code === 'lua-source-missing').map(({ file }) => file), [
+      'lua/shared/first.lua',
+      'lua/shared/second.lua',
+      'lua/src/missingFirst.lua',
+      'lua/src/missingSecond.lua',
+    ]);
+  }, {
+    parameters: ['authors'],
+    source: 'function handle() end\n',
+    sharedSourcePaths: ['../../lua/shared/first.lua', '../../lua/shared/second.lua'],
+  });
+});
+
+test('module reads report the first manifest-order error when later reads fail sooner', async () => {
+  await withPackage(async (root) => {
+    await writeFile(path.join(root, 'manifest.json'), JSON.stringify({ modules: [
+      'modules/first.json',
+      '../outside.json',
+    ] }));
+    await writeFile(path.join(root, 'modules/first.json'), JSON.stringify({ assets: 'not an array' }));
+
+    await assert.rejects(
+      checkLuaParameterContracts({ root }),
+      /Lua module manifest .* must declare an assets array/,
+    );
+  }, { parameters: ['authors'], source: 'function handle() end\n' });
 });
 
 test('qualified custom keys_only methods are unverified, not parameter allow-lists', async () => {

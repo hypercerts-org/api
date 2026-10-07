@@ -95,40 +95,12 @@ end
 
 local EVMLINK_COLLECTION = "app.certified.link.evm"
 
-local function valid_evm_did(value)
-  if type(value) ~= "string" or #value > 2048 then return false end
-  if not valid_did(value) then return false end
-  local method, specific = value:match("^did:([a-z]+):(.+)$")
-  if not method or not specific then return false end
-
-  local segment_length, index = 0, 1
-  while index <= #specific do
-    local char = specific:sub(index, index)
-    if char == ":" then
-      if segment_length == 0 then return false end
-      segment_length = 0
-      index = index + 1
-    elseif char == "%" then
-      local escape = specific:sub(index + 1, index + 2)
-      if #escape ~= 2 or escape:find("[^%x]") then return false end
-      segment_length = segment_length + 1
-      index = index + 3
-    elseif char:match("^[%w._%-]$") then
-      segment_length = segment_length + 1
-      index = index + 1
-    else
-      return false
-    end
-  end
-  return segment_length > 0
-end
-
 local function valid_evm_link_uri(value)
   if type(value) ~= "string" or value:find("[?#]") then return false end
   local valid, collection = valid_record_uri(value)
   if not valid or collection ~= EVMLINK_COLLECTION then return false end
   local authority = value:match("^at://([^/]+)/")
-  return valid_evm_did(authority)
+  return valid_did(authority)
 end
 
 local function evm_link_record_view(row)
@@ -320,7 +292,7 @@ function handle()
     limit = true,
     cursor = true,
   })
-  local actors = array_values("actors", valid_evm_did, "valid DIDs")
+  local actors = array_values("actors", valid_did, "valid DIDs")
   local addresses = array_values("addresses", valid_evm_address, "a 0x-prefixed 40-digit hexadecimal EVM address", string.lower)
   local limit = parse_list_limit(params)
   local direction = parse_sort_direction(params)

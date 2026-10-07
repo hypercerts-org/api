@@ -27,17 +27,9 @@ local function scalar(params, key)
   return tostring(value)
 end
 
-local PROFILE = "app.certified.actor.profile"
 local NULL = json.decode("null")
 
-local function query(sql, values)
-  if db.backend() ~= "postgres" then error("ProfileQueryFailed: profile API requires PostgreSQL", 0) end
-  local ok, result = pcall(db.raw, sql, values)
-  if not ok then error("ProfileQueryFailed: profile lookup failed", 0) end
-  return result
-end
-
-local function row_view(row)
+local function record_view(row)
   return {
     uri = row.uri,
     cid = row.cid,
@@ -47,16 +39,13 @@ local function row_view(row)
   }
 end
 
-local function valid_profile_batch_did(value)
-  if not valid_did(value) then return false end
+local PROFILE = "app.certified.actor.profile"
 
-  local percent = value:find("%", 1, true)
-  while percent do
-    local escape = value:sub(percent + 1, percent + 2)
-    if #escape ~= 2 or escape:find("[^%x]") then return false end
-    percent = value:find("%", percent + 3, true)
-  end
-  return true
+local function query(sql, values)
+  if db.backend() ~= "postgres" then error("ProfileQueryFailed: profile API requires PostgreSQL", 0) end
+  local ok, result = pcall(db.raw, sql, values)
+  if not ok then error("ProfileQueryFailed: profile lookup failed", 0) end
+  return result
 end
 
 local function requested_actors(value)
@@ -78,7 +67,7 @@ local function requested_actors(value)
 
   local unique, seen = {}, {}
   for _, did in ipairs(actors) do
-    if not valid_profile_batch_did(did) then invalid("each actors value must be a valid DID") end
+    if not valid_did(did) then invalid("each actors value must be a valid DID") end
     if not seen[did] then
       seen[did] = true
       unique[#unique + 1] = did
@@ -102,7 +91,7 @@ local function get_profiles()
   local rows = query(sql, values)
 
   local profiles_by_did = {}
-  for _, row in ipairs(rows) do profiles_by_did[row.did] = row_view(row) end
+  for _, row in ipairs(rows) do profiles_by_did[row.did] = record_view(row) end
 
   local null = json.decode("null")
   local profiles = {}

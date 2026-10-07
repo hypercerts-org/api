@@ -27,17 +27,9 @@ local function scalar(params, key)
   return tostring(value)
 end
 
-local PROFILE = "app.certified.actor.profile"
 local NULL = json.decode("null")
 
-local function query(sql, values)
-  if db.backend() ~= "postgres" then error("ProfileQueryFailed: profile API requires PostgreSQL", 0) end
-  local ok, result = pcall(db.raw, sql, values)
-  if not ok then error("ProfileQueryFailed: profile lookup failed", 0) end
-  return result
-end
-
-local function row_view(row)
+local function record_view(row)
   return {
     uri = row.uri,
     cid = row.cid,
@@ -45,6 +37,15 @@ local function row_view(row)
     did = row.did,
     record = json.decode(row.record),
   }
+end
+
+local PROFILE = "app.certified.actor.profile"
+
+local function query(sql, values)
+  if db.backend() ~= "postgres" then error("ProfileQueryFailed: profile API requires PostgreSQL", 0) end
+  local ok, result = pcall(db.raw, sql, values)
+  if not ok then error("ProfileQueryFailed: profile lookup failed", 0) end
+  return result
 end
 
 local function valid_handle(value)
@@ -173,25 +174,10 @@ local function resolver_base_url()
   return "https://" .. authority
 end
 
-local function valid_resolver_did(value)
-  if not valid_did(value) then return false end
-  local index = 1
-  while index <= #value do
-    if value:sub(index, index) == "%" then
-      local escape = value:sub(index + 1, index + 2)
-      if #escape ~= 2 or not escape:match("^%x%x$") then return false end
-      index = index + 3
-    else
-      index = index + 1
-    end
-  end
-  return true
-end
-
 local function resolve_handle(handle)
   local url = resolver_base_url() .. "/xrpc/com.atproto.identity.resolveHandle?handle=" .. encode_query_value(handle)
   local resolved = fetch_json(url)
-  if type(resolved.did) ~= "string" or not valid_resolver_did(resolved.did) then fail_resolution() end
+  if type(resolved.did) ~= "string" or not valid_did(resolved.did) then fail_resolution() end
   return resolved.did
 end
 
@@ -214,7 +200,7 @@ local function get_profile()
     "SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record FROM happyview_records WHERE collection = $1 AND did = $2 AND rkey = 'self' LIMIT 1",
     { PROFILE, did })
   if #rows == 0 then error("RecordNotFound: profile is not indexed", 0) end
-  return { profile = row_view(rows[1]) }
+  return { profile = record_view(rows[1]) }
 end
 
 function handle()
