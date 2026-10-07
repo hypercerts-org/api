@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { access, mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { buildLuaBundles } from '../../../tooling/lua-bundles.js';
 import { lintLua } from '../../../tooling/lint-lua.js';
 
 async function withTempRoot(run) {
@@ -17,17 +18,40 @@ async function withTempRoot(run) {
 async function declareLuaHandler(root, {
   manifestPath = 'modules/demo/manifest.json',
   outputPath = '../../lua/endpoints/getExample.lua',
+  sharedSourcePaths = [],
+  lexiconParameters,
 } = {}) {
   const moduleFile = path.join(root, 'modules', 'demo', 'manifest.json');
+  const sourceFile = path.join(root, 'lua', 'src', 'getExample.lua');
   await mkdir(path.dirname(moduleFile), { recursive: true });
+  await mkdir(path.dirname(sourceFile), { recursive: true });
+  try {
+    await access(sourceFile);
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+    await writeFile(sourceFile, 'function handle() end\n');
+  }
   await writeFile(path.join(root, 'manifest.json'), JSON.stringify({ modules: [manifestPath] }));
-  await writeFile(moduleFile, JSON.stringify({ assets: [{
+  const assets = [];
+  if (lexiconParameters) {
+    const lexiconFile = path.join(root, 'lexicons', 'getExample.json');
+    await mkdir(path.dirname(lexiconFile), { recursive: true });
+    await writeFile(lexiconFile, JSON.stringify({
+      lexicon: 1,
+      id: 'org.example.getExample',
+      defs: { main: { type: 'query', parameters: { type: 'params', properties: Object.fromEntries(lexiconParameters.map((name) => [name, { type: 'string' }])) } } },
+    }));
+    assets.push({ kind: 'lexicon', id: 'org.example.getExample', path: '../../lexicons/getExample.json' });
+  }
+  assets.push({
     kind: 'script',
     id: 'xrpc.query:org.example.getExample',
     path: outputPath,
     sourcePath: '../../lua/src/getExample.lua',
+    sharedSourcePaths,
     config: { script_type: 'lua' },
-  }] }));
+  });
+  await writeFile(moduleFile, JSON.stringify({ assets }));
 }
 
 test('skips Lua lint when the package has no Lua files', async () => {
@@ -141,10 +165,73 @@ test('runs Luacheck only against generated handlers declared by the module manif
 
     assert.deepEqual(result, { status: 0 });
     assert.equal(command, 'luacheck');
-    assert.deepEqual(args, ['--config', '.luacheckrc', 'lua/endpoints/getExample.lua']);
+    assert.deepEqual(args, ['--config', '.luacheckrc', '--no-color', 'lua/endpoints/getExample.lua']);
     assert.equal(options.cwd, root);
-    assert.equal(options.stdio, 'inherit');
+    assert.equal(options.encoding, 'utf8');
+    assert.equal(options.stdio, 'pipe');
   });
+});
+
+test('maps generated Luacheck locations back to authored Lua sources', async () => {
+  await withTempRoot(async (root) => {
+    const source = path.join(root, 'lua', 'src', 'getExample.lua');
+    const sharedSource = path.join(root, 'lua', 'shared', 'helper.lua');
+    const endpoint = path.join(root, 'lua', 'endpoints', 'getExample.lua');
+    await mkdir(path.dirname(source), { recursive: true });
+    await mkdir(path.dirname(sharedSource), { recursive: true });
+    await mkdir(path.dirname(endpoint), { recursive: true });
+    await writeFile(source, 'function handle()\n  missing_helper()\nend\n');
+    await writeFile(sharedSource, 'local function helper()\n  return true\nend\n');
+    await declareLuaHandler(root, { sharedSourcePaths: ['../../lua/shared/helper.lua'] });
+    await buildLuaBundles(root);
+    const output = [];
+
+    const result = await lintLua({
+      root,
+      log: (message) => output.push(message),
+      spawn: () => ({ status: 1, stdout: "lua/endpoints/getExample.lua:6:3: undefined variable 'missing_helper'\n", stderr: '' }),
+    });
+
+    assert.equal(result.status, 1);
+    assert.ok(output.some((message) => message.includes("lua/src/getExample.lua:2:3: undefined variable 'missing_helper'")));
+    assert.ok(output.some((message) => message.includes('in xrpc.query:org.example.getExample bundle at lua/endpoints/getExample.lua:6')));
+  });
+});
+
+test('fails on parameter mismatches but keeps SQL interpolation diagnostics advisory', async () => {
+  const cases = [
+    {
+      source: 'function handle()\n  keys_only(params, { authors = true })\nend\n',
+      status: 1,
+      finding: /differs from its Lexicon; missing: uri; extra: authors/,
+    },
+    {
+      source: 'function handle()\n  keys_only(params, { uri = true })\n  db.raw("SELECT * FROM records WHERE uri = " .. params.uri, {})\nend\n',
+      status: 0,
+      finding: /db.raw SQL text.*directly references params/,
+    },
+  ];
+  for (const scenario of cases) {
+    await withTempRoot(async (root) => {
+      const source = path.join(root, 'lua', 'src', 'getExample.lua');
+      const endpoint = path.join(root, 'lua', 'endpoints', 'getExample.lua');
+      await mkdir(path.dirname(source), { recursive: true });
+      await mkdir(path.dirname(endpoint), { recursive: true });
+      await writeFile(source, scenario.source);
+      await writeFile(endpoint, 'function handle() end\n');
+      await declareLuaHandler(root, { lexiconParameters: ['uri'] });
+      const output = [];
+
+      const result = await lintLua({
+        root,
+        log: (message) => output.push(message),
+        spawn: () => ({ status: 0, stdout: '', stderr: '' }),
+      });
+
+      assert.equal(result.status, scenario.status);
+      assert.ok(output.some((message) => scenario.finding.test(message)));
+    });
+  }
 });
 
 test('uses the default user-local LuaRocks binary when it is not on PATH', async () => {
@@ -172,7 +259,7 @@ test('uses the default user-local LuaRocks binary when it is not on PATH', async
 
     assert.deepEqual(result, { status: 0 });
     assert.deepEqual(commands.map(({ command }) => command), ['luacheck', localLuacheck]);
-    assert.deepEqual(commands[1].args, ['--config', '.luacheckrc', 'lua/endpoints/getExample.lua']);
+    assert.deepEqual(commands[1].args, ['--config', '.luacheckrc', '--no-color', 'lua/endpoints/getExample.lua']);
   });
 });
 
