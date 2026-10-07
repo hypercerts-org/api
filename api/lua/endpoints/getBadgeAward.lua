@@ -102,6 +102,8 @@ end
 local function recipient_did_expression()
   local subject = "award.record::jsonb->'subject'"
   return "CASE WHEN jsonb_typeof(" .. subject .. ") = 'string' THEN award.record::jsonb->>'subject' " ..
+    "WHEN jsonb_typeof(" .. subject .. ") = 'object' AND " .. subject .. "->>'$type' = 'app.certified.defs#did' " ..
+    "AND jsonb_typeof(" .. subject .. "->'did') = 'string' THEN " .. subject .. "->>'did' " ..
     "ELSE split_part(" .. subject .. "->>'uri', '/', 3) END"
 end
 

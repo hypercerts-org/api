@@ -237,8 +237,14 @@ local function add_subject_filter(where, values, subjects)
       values[#values + 1] = did
       placeholders[#placeholders + 1] = "$" .. #values
     end
-    clauses[#clauses + 1] = "(jsonb_typeof(award.record::jsonb->'subject') = 'string' AND " ..
-      "award.record::jsonb->>'subject' IN (" .. table.concat(placeholders, ",") .. "))"
+    local did_values = " IN (" .. table.concat(placeholders, ",") .. ")"
+    local subject = "award.record::jsonb->'subject'"
+    clauses[#clauses + 1] = "(jsonb_typeof(" .. subject .. ") = 'string' AND " ..
+      "award.record::jsonb->>'subject'" .. did_values .. ")"
+    clauses[#clauses + 1] = "(jsonb_typeof(" .. subject .. ") = 'object' AND " ..
+      subject .. "->>'$type' = 'app.certified.defs#did' AND " ..
+      "jsonb_typeof(" .. subject .. "->'did') = 'string' AND " ..
+      subject .. "->>'did'" .. did_values .. ")"
   end
   if #subjects.uris > 0 then
     local placeholders = {}
@@ -281,6 +287,8 @@ end
 local function recipient_did_expression()
   local subject = "award.record::jsonb->'subject'"
   return "CASE WHEN jsonb_typeof(" .. subject .. ") = 'string' THEN award.record::jsonb->>'subject' " ..
+    "WHEN jsonb_typeof(" .. subject .. ") = 'object' AND " .. subject .. "->>'$type' = 'app.certified.defs#did' " ..
+    "AND jsonb_typeof(" .. subject .. "->'did') = 'string' THEN " .. subject .. "->>'did' " ..
     "ELSE split_part(" .. subject .. "->>'uri', '/', 3) END"
 end
 
