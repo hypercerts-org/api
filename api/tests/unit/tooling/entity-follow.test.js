@@ -494,6 +494,7 @@ test('listEntityFollowing returns hydrated ActivityView and CollectionView union
   const activityCollection = 'org.hypercerts.claim.activity';
   const collectionCollection = 'org.hypercerts.collection';
   const activityUri = `at://${activityDid}/${activityCollection}/activity-one`;
+  const legacyContributorUri = `at://${activityDid}/org.hypercerts.claim.contributorInformation/legacy`;
   const collectionUri = `at://${collectionDid}/${collectionCollection}/collection-one`;
   const rawCollection = {
     $type: collectionCollection, title: 'Root collection', createdAt: '2025-01-01T00:00:00Z',
@@ -503,7 +504,10 @@ test('listEntityFollowing returns hydrated ActivityView and CollectionView union
     { uri: `at://${actor}/${entityFollow}/activity-follow`, did: actor, cid: 'bafy-fa', indexed_at: null, record: 'follow-activity', sort_timestamp: '2025-01-03T00:00:00.000000Z', follow_record: { $type: entityFollow, subject: { uri: activityUri }, createdAt: '2025-01-03T00:00:00Z' } },
     { uri: `at://${actor}/${entityFollow}/collection-follow`, did: actor, cid: 'bafy-fc', indexed_at: null, record: 'follow-collection', sort_timestamp: '2025-01-02T00:00:00.000000Z', follow_record: { $type: entityFollow, subject: { uri: collectionUri }, createdAt: '2025-01-02T00:00:00Z' } },
   ];
-  const activity = { uri: activityUri, did: activityDid, cid: 'bafy-activity-latest', indexed_at: null, record: 'activity-record', target_record: { $type: activityCollection, title: 'Resolved activity', createdAt: '2025-01-01T00:00:00Z' } };
+  const activity = { uri: activityUri, did: activityDid, cid: 'bafy-activity-latest', indexed_at: null, record: 'activity-record', target_record: {
+    $type: activityCollection, title: 'Resolved activity', createdAt: '2025-01-01T00:00:00Z',
+    contributors: [legacyContributorUri, { contributorIdentity: { identity: activityDid }, contributionWeight: 'retained' }],
+  } };
   const collection = { uri: collectionUri, did: collectionDid, cid: 'bafy-collection-latest', indexed_at: null, record: 'collection-record', target_record: rawCollection };
   const records = Object.fromEntries([
     ...follows.map(({ record, follow_record }) => [record, follow_record]),
@@ -544,6 +548,9 @@ assert(activity_item.entity['$type'] == 'org.hypercerts.claim.getActivity#activi
 assert(activity_item.uri == FIXTURE.activityUri and activity_item.entity.uri == FIXTURE.activityUri)
 assert(activity_item.entity.cid == 'bafy-activity-latest' and activity_item.entity.indexedAt == NULL_VALUE)
 assert(activity_item.entity.record.title == 'Resolved activity' and activity_item.entity.author.did == FIXTURE.activity.did)
+assert(activity_item.entity.record.contributors[1] == '${legacyContributorUri}', 'followed activity source record must retain the legacy URI')
+assert(#activity_item.entity.contributors == 1 and activity_item.entity.contributors[1].contributionWeight == 'retained')
+assert(activity_item.entity.contributors[1].actor.did == FIXTURE.activity.did)
 assert(activity_item.follow.uri == FIXTURE.follows[1].uri)
 assert(collection_item['$type'] == 'app.certified.graph.listEntityFollowing#entityFollowingItem')
 assert(collection_item.entity['$type'] == 'org.hypercerts.collection.getCollection#collectionView')

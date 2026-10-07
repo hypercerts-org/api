@@ -635,8 +635,9 @@ assert(second_page.items[1].record == NULL and second_page.cursor == nil)
 
 test('listCollectionItems preserves source order and weights and resolves only exact supported versions', () => {
   const itemCollectionUri = `at://${did}/${COLLECTION}/parent`;
-  const activityUri = `at://${did}/org.hypercerts.claim.activity/activity-one`;
   const featureDid = 'did:plc:eeeeeeeeeeeeeeeeeeeeeeee';
+  const activityUri = `at://${featureDid}/org.hypercerts.claim.activity/activity-one`;
+  const legacyContributorUri = `at://${did}/org.hypercerts.claim.contributorInformation/legacy`;
   const featureUri = `at://${featureDid}/org.hypercerts.entity.feature/feature-one`;
   const nestedUri = `at://${did}/${COLLECTION}/nested`;
   const activityCid = 'bafyreiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
@@ -658,6 +659,10 @@ test('listCollectionItems preserves source order and weights and resolves only e
     'parent-record': parentRecord,
     'activity-record': {
       $type: 'org.hypercerts.claim.activity', title: 'Resolved activity', createdAt: '2025-01-01T00:00:00Z',
+      contributors: [
+        legacyContributorUri,
+        { contributorIdentity: { identity: featureDid }, contributionWeight: 'retained' },
+      ],
     },
     'feature-record': {
       $type: 'org.hypercerts.entity.feature', type: 'zone', title: 'Resolved feature', createdAt: '2025-01-01T00:00:00Z',
@@ -675,7 +680,7 @@ test('listCollectionItems preserves source order and weights and resolves only e
       indexed_at: '2025-01-02T03:04:05.000Z', record: 'parent-record',
     },
     {
-      uri: activityUri, did, collection: 'org.hypercerts.claim.activity', cid: activityCid,
+      uri: activityUri, did: featureDid, collection: 'org.hypercerts.claim.activity', cid: activityCid,
       indexed_at: '2025-01-02T03:04:05.000Z', record: 'activity-record',
     },
     {
@@ -741,6 +746,10 @@ assert(result.items[1].itemIdentifier.uri == ${JSON.stringify(activityUri)} and 
 assert(result.items[1].record.uri == ${JSON.stringify(activityUri)})
 assert(result.items[1].record['$type'] == 'org.hypercerts.claim.getActivity#activityView')
 assert(result.items[1].record.record.title == 'Resolved activity')
+assert(result.items[1].record.record.contributors[1] == '${legacyContributorUri}', 'nested activity source record must retain the legacy URI')
+assert(#result.items[1].record.contributors == 1 and result.items[1].record.contributors[1].contributionWeight == 'retained')
+assert(result.items[1].record.contributors[1].actor.did == '${featureDid}')
+assert(result.items[1].record.contributors[1].actor.profile.record.displayName == 'Feature author')
 assert(result.items[2].record['$type'] == 'org.hypercerts.collection.listCollectionItems#collectionSummaryView')
 assert(result.items[2].record.title == 'Nested summary' and result.items[2].record.shortDescription == 'One level only')
 assert(result.items[3].itemWeight == '1.25')
