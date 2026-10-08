@@ -377,3 +377,39 @@ test('empty evaluation data produces gaps while successful bound checks remain d
   assert.equal(report.results.find(result => result.id.endsWith('/limit/1')).status, 'passed');
   assert.equal(report.results.find(result => result.id.endsWith('/invalid/limit')).status, 'failed');
 });
+
+test('invalid probes accept only the pinned named Lua runtime rejection', async () => {
+  const endpoint = 'app.certified.actor.listProfiles';
+  const runtimeBody = {
+    error: 'script_error',
+    errorType: 'runtime',
+    method: endpoint,
+    message: "InvalidRequest: invalid query parameter\nstack traceback:\n\t[C]: in function 'error'",
+  };
+  const scenarios = [
+    { name: 'runtime traceback is retained', status: 500, body: runtimeBody, expected: 'passed' },
+    { name: 'wrong error envelope', status: 500, body: { ...runtimeBody, error: 'InvalidRequest' }, reason: /script_error/ },
+    { name: 'wrong runtime error type', status: 500, body: { ...runtimeBody, errorType: 'request' }, reason: /runtime/ },
+    { name: 'wrong endpoint method', status: 500, body: { ...runtimeBody, method: 'app.certified.actor.searchProfiles' }, reason: /method/ },
+    { name: 'missing error name', status: 500, body: { ...runtimeBody, message: undefined }, reason: /message/ },
+    { name: 'incorrect error name', status: 500, body: { ...runtimeBody, message: 'RecordNotFound: missing record' }, reason: /InvalidRequest/ },
+    { name: 'wrong 4xx status', status: 400, body: runtimeBody, reason: /HTTP 500/ },
+    { name: 'successful response', status: 200, body: { profiles: [alice, bob] }, reason: /HTTP 500/ },
+  ];
+
+  for (const scenario of scenarios) {
+    const report = await run(endpoint, (_nsid, params) => {
+      if (params.limit === 101 || params.cursor === 'not-a-valid-cursor') {
+        return { status: scenario.status, body: scenario.body };
+      }
+      return { profiles: [alice, bob] };
+    });
+    const invalidResults = ['limit', 'cursor'].map(probe =>
+      report.results.find(result => result.id.endsWith(`/invalid/${probe}`)));
+
+    for (const result of invalidResults) {
+      assert.equal(result.status, scenario.expected ?? 'failed', `${scenario.name}: ${result.id}: ${result.reason}`);
+      if (scenario.reason) assert.match(result.reason, scenario.reason, `${scenario.name}: ${result.id}`);
+    }
+  }
+});
