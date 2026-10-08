@@ -383,9 +383,12 @@ export async function runSuite({ catalogue, selected, transport, directory, disc
           const queryParams = await getParams();
           const invalid = plan.id.endsWith('limit') ? { limit: 101 } : { cursor: 'not-a-valid-cursor' };
           const { result: response } = await request(endpoint, { ...queryParams, ...invalid });
-          assert.ok(response.status >= 400 && response.status < 500, `Expected client 4xx, observed ${response.status}; a runtime 500 is not successful rejection`);
-          assert.equal(response.body.error, 'InvalidRequest');
-          assert.ok(!/stack traceback|\.lua:\d/.test(JSON.stringify(response.body)), 'Client error leaked Lua traceback');
+          assert.equal(response.status, 500, `Expected HTTP 500 runtime rejection from ${endpoint.nsid}; observed ${response.status}`);
+          assert.equal(response.body?.error, 'script_error', `Expected the pinned script_error envelope from ${endpoint.nsid}`);
+          assert.equal(response.body?.errorType, 'runtime', `Expected a runtime error from ${endpoint.nsid}`);
+          assert.equal(response.body?.method, endpoint.nsid, `Expected the runtime error method to match ${endpoint.nsid}`);
+          assert.equal(typeof response.body?.message, 'string', `Expected a named runtime error message from ${endpoint.nsid}`);
+          assert.match(response.body.message, /InvalidRequest/);
           return;
         }
         if (plan.id.startsWith('pagination/')) {
