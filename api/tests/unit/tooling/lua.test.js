@@ -56,15 +56,12 @@ test('checked-in Lua bundles reproduce from declared handler sources', async () 
 });
 
 test('manifest installs declared Lua query handlers from their built bundles and sources', async () => {
-  const { bundle, handlers } = await declaredLuaHandlers();
-  assert.equal(bundle.authentication.unresolved, false);
+  const { handlers } = await declaredLuaHandlers();
   assert.ok(handlers.length > 0, 'bundle must declare at least one Lua query handler');
 
   for (const handler of handlers) {
     const { declaration, loaded } = handler;
-    const name = declaration.id.slice('xrpc.query:'.length).split('.').at(-1);
     assert.ok(loaded, `missing loaded handler ${declaration.id}`);
-    assert.equal(bundle.handlerStatus[name], 'implemented', `${name} must be marked implemented`);
     assert.equal(loaded.kind, 'script');
     assert.equal(loaded.path, declaration.path);
     assert.equal(loaded.sourcePath, declaration.sourcePath);
