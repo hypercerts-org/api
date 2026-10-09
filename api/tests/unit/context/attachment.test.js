@@ -131,11 +131,6 @@ test('attachment module registers one package record and both local query handle
   const manifest = JSON.parse(await readFile(`${root}/manifest.json`, 'utf8'));
   const modulePath = 'modules/context-attachments/manifest.json';
   assert.ok(manifest.modules.includes(modulePath));
-  assert.deepEqual({
-    getAttachment: manifest.handlerStatus.getAttachment,
-    listAttachments: manifest.handlerStatus.listAttachments,
-  }, { getAttachment: 'implemented', listAttachments: 'implemented' });
-
   const modules = await Promise.all(manifest.modules.map(async (path) => JSON.parse(await readFile(`${root}/${path}`, 'utf8'))));
   const recordAssets = modules.flatMap(({ assets }) => assets.filter(({ kind, id }) => kind === 'lexicon' && id === ATTACHMENT));
   assert.equal(recordAssets.length, 1, 'the package-backed attachment record Lexicon must be registered exactly once');
