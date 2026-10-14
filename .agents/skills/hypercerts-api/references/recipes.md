@@ -22,6 +22,15 @@ These recipes show endpoint choice and the data to carry between calls. For exac
 
 **Likely failure modes:** passing a record URI where the required collection URI belongs; discarding CID and accidentally displaying a different version; assuming nested collections are expanded; or assuming pages represent one immutable collection snapshot. Inspect `org.hypercerts.collection.listCollectionItems` and `org.hypercerts.collection.getCollection` in the [bundled OpenAPI contract](openapi.json) before relying on resolution details.
 
+## Check one actor's reactions for known subjects
+
+1. Call `app.certified.feed.getActorReactions` with `actor` as the repository-owner DID and `subjects` as 1–100 full record AT-URIs. Send each URI as a repeated unbracketed `subjects` query parameter; do not comma-join or bracket the key.
+2. Keep the input order and duplicates when the caller needs one result per occurrence. The response's `results` array preserves both and repeats the requested AT-URI in each item's `subject` field.
+3. Each result contains the actor's earliest indexed raw `like` and `repost` for that subject URI, or null for either reaction when none is indexed. Subject matching ignores CID. A non-null view preserves its reaction record `uri` and `cid`; retain them when the application needs to identify that record through a separate write-capable API.
+4. A null is a successful indexed absence, not proof that no source record exists. Query failures are errors, not null reactions. Consider index freshness before showing a definitive “not reacted” state.
+
+**Likely failure modes:** passing handles instead of a DID, sending a collection-less or malformed AT-URI, exceeding the 100-subject bound, deduplicating the response by URI when occurrences matter, or treating a failed indexed query as absence. Inspect the operation in the [bundled OpenAPI contract](openapi.json) and see [reliability.md](reliability.md).
+
 ## Load profile and organization context
 
 1. For one actor profile, call `app.certified.actor.getProfile` with a DID or handle. For many known actor DIDs, use `app.certified.actor.getProfiles` with repeated `actors` values; the returned results correspond to the input occurrences and `profile` can be null.

@@ -150,6 +150,15 @@
       }
     },
     {
+      "id": "app.certified.feed.getActorReactions",
+      "type": "query",
+      "module": "modules/feed-reactions/manifest.json",
+      "file": "sources/lexicons/app.certified.feed.getActorReactions.json",
+      "source": {
+        "path": "../../lexicons/app.certified.feed.getActorReactions.json"
+      }
+    },
+    {
       "id": "app.certified.feed.getActorReposts",
       "type": "query",
       "module": "modules/feed-reactions/manifest.json",
@@ -754,6 +763,15 @@
       "source": {
         "module": "modules/feed-reactions/manifest.json",
         "path": "../../lexicons/app.certified.feed.getActorLikes.json"
+      }
+    },
+    {
+      "id": "app.certified.feed.getActorReactions",
+      "file": "sources/lexicons/app.certified.feed.getActorReactions.json",
+      "kind": "endpoint",
+      "source": {
+        "module": "modules/feed-reactions/manifest.json",
+        "path": "../../lexicons/app.certified.feed.getActorReactions.json"
       }
     },
     {

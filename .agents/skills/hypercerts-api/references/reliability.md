@@ -27,12 +27,12 @@ For a potentially fresh record that is absent:
 
 ## Null, omitted, empty, not-found, and failure are different
 
-- **Null field:** the endpoint returned a known enclosing result, but one optional or nullable projection is unavailable/absent under that contract. Examples include a null profile in batch `getProfiles`, a null organization in `getOrganizations`, a null `follow` in `getFollow`, or a null resolved collection-item `record`. Preserve and render this state intentionally.
+- **Null field:** the endpoint returned a known enclosing result, but one optional or nullable projection is unavailable/absent under that contract. Examples include a null profile in batch `getProfiles`, a null organization in `getOrganizations`, a null `follow` in `getFollow`, a null resolved collection-item `record`, or a null `like`/`repost` from `getActorReactions` when that reaction is not indexed. Preserve and render this state intentionally.
 - **Batch relationship result:** `getFollows` and `getEntityFollows` return an explicit target and nullable `follow` for every input occurrence. Null means no relationship is indexed for that actor and target; a database/query failure remains an error and must not be converted to null.
 - **Omitted optional field:** the schema does not require the property in that condition. Do not treat omission as the same representation as explicit null unless the exact endpoint contract says so.
 - **Empty list:** the query succeeded and returned no matching items. It is not the same as an invalid query or failed hydration.
 - **Not-found error:** a `get...` query may declare `RecordNotFound` when no matching record is indexed. That is not necessarily a successful response containing a null record. Use the endpoint's own declared error contract.
-- **Query/hydration error:** an operation may fail if required indexed data cannot be queried or hydrated. Do not hide it by returning an empty list or null unless the endpoint explicitly defines that behavior.
+- **Query/hydration error:** an operation may fail if required indexed data cannot be queried or hydrated. `app.certified.feed.getActorReactions` returns `ActorReactionsQueryFailed` for a failed or malformed indexed lookup; it must not be interpreted as a successful null reaction. Do not hide query failures by returning an empty list or null unless the endpoint explicitly defines that behavior.
 - **Domain status:** `getBadgeAward` can return a valid award with `responseStatus: "unanswered"` and `recipientResponse: null`. That is neither a not-found error nor a failed request. The award view can separately have `badge: null` if its definition projection is unavailable.
 
 A nullable actor profile does not imply an invalid DID; a missing organization sidecar does not prove the actor is missing; an unavailable exact CID does not prove another version at that URI is absent.
