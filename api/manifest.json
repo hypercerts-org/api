@@ -75,6 +75,10 @@
       "path": "lexicons/app.certified.feed.getActorReactions.json"
     },
     {
+      "id": "app.certified.feed.getReactionCounts",
+      "path": "lexicons/app.certified.feed.getReactionCounts.json"
+    },
+    {
       "id": "app.certified.actor.profile",
       "packagePath": "lexicons/app/certified/actor/profile.json"
     },
