@@ -27,6 +27,7 @@ async function collectPages(nsid, outputKey, params, expectedUris) {
   for (let index = 0; index < expectedUris.length; index += 1) {
     const { response, body } = await request(nsid, { ...params, limit: 1, sortDirection: 'asc', cursor });
     assert.equal(response.status, 200, `${nsid}: ${JSON.stringify(body)}`);
+    assert.equal(body.totalCount, expectedUris.length);
     assert.equal(body[outputKey].length, 1);
     const [item] = body[outputKey];
     assert.equal(item.follow.uri, expectedUris[index]);
@@ -113,6 +114,23 @@ test('listEntityFollowers filters by target, deduplicates tied records, paginate
   assert.equal(items[2].did, graphDids.secondPublisher);
   assert.equal(items[2].profile, null);
   assert.equal(items[2].organization, null);
+
+  const beyondEndCursor = Buffer.from(JSON.stringify({
+    v: 1,
+    d: 'desc',
+    t: '2020-01-01T00:00:00.000000Z',
+    u: `at://${graphDids.publisher}/${entityFollowCollection}/beyond-end`,
+  }), 'utf8').toString('hex');
+  const { response, body } = await request('app.certified.graph.listEntityFollowers', {
+    entity: graphUris.followedFeature,
+    limit: 1,
+    sortDirection: 'desc',
+    cursor: beyondEndCursor,
+  });
+  assert.equal(response.status, 200, JSON.stringify(body));
+  assert.deepEqual(body.followers, []);
+  assert.equal(body.totalCount, 3);
+  assert.equal(Object.hasOwn(body, 'cursor'), false);
 });
 
 test('listEntityFollowing resolves supported feature targets and preserves unresolved target URIs across tied pages', async () => {

@@ -40,11 +40,26 @@ local function entity_follow_query_page(mode, identity, limit, cursor, direction
   values[#values + 1] = limit + 1
   local ordering = direction == "asc" and "ASC" or "DESC"
   local subject_uri = "record::jsonb->'subject'->>'uri'"
-  local sql = "WITH ranked_follows AS (SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record, sorted.sort_at, ROW_NUMBER() OVER (PARTITION BY did, " .. subject_uri .. " ORDER BY sorted.sort_at ASC, uri ASC) AS relationship_rank FROM happyview_records CROSS JOIN LATERAL (SELECT " .. entity_follow_sort_key() .. " AS sort_at) sorted WHERE " .. table.concat(filters, " AND ") .. "), " ..
-    "representatives AS (SELECT uri, did, cid, indexed_at, record, sort_at FROM ranked_follows WHERE relationship_rank = 1), " ..
-    "page AS (SELECT uri, did, cid, indexed_at, record, sort_at FROM representatives" .. cursor_filter .. " ORDER BY sort_at " .. ordering .. ", uri " .. ordering .. " LIMIT $" .. #values .. ") " ..
-    "SELECT page.uri, page.did, page.cid, page.indexed_at, page.record, to_char(page.sort_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp FROM page ORDER BY page.sort_at " .. ordering .. ", page.uri " .. ordering
+  local ranked_follows = "ranked_follows AS (SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record, sorted.sort_at, ROW_NUMBER() OVER (PARTITION BY did, " .. subject_uri .. " ORDER BY sorted.sort_at ASC, uri ASC) AS relationship_rank FROM happyview_records CROSS JOIN LATERAL (SELECT " .. entity_follow_sort_key() .. " AS sort_at) sorted WHERE " .. table.concat(filters, " AND ") .. ")"
+  local representatives = "representatives AS (SELECT uri, did, cid, indexed_at, record, sort_at FROM ranked_follows WHERE relationship_rank = 1)"
+  local page = "page AS (SELECT uri, did, cid, indexed_at, record, sort_at FROM representatives" .. cursor_filter .. " ORDER BY sort_at " .. ordering .. ", uri " .. ordering .. " LIMIT $" .. #values .. ")"
+  local sql
+  if mode == "followers" then
+    sql = "WITH " .. ranked_follows .. ", " .. representatives .. ", total AS (SELECT COUNT(*) AS total_count FROM representatives), " .. page .. " " ..
+      "SELECT page.uri, page.did, page.cid, page.indexed_at, page.record, total.total_count, to_char(page.sort_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp FROM total LEFT JOIN page ON TRUE ORDER BY page.sort_at " .. ordering .. ", page.uri " .. ordering
+  else
+    sql = "WITH " .. ranked_follows .. ", " .. representatives .. ", " .. page .. " " ..
+      "SELECT page.uri, page.did, page.cid, page.indexed_at, page.record, to_char(page.sort_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp FROM page ORDER BY page.sort_at " .. ordering .. ", page.uri " .. ordering
+  end
   local rows = entity_follow_query(sql, values)
+  local total_count
+  if mode == "followers" then
+    total_count = rows[1] and tonumber(rows[1].total_count)
+    if not total_count or total_count < 0 or total_count % 1 ~= 0 then
+      error("EntityFollowQueryFailed: entity-follow count unavailable", 0)
+    end
+    if rows[1].uri == nil then rows = {} end
+  end
   local more = #rows > limit
   if more then rows[#rows] = nil end
 
@@ -56,5 +71,5 @@ local function entity_follow_query_page(mode, identity, limit, cursor, direction
     end
     next_cursor = cursor_encode({ v = 1, d = direction, t = last.sort_timestamp, u = last.uri })
   end
-  return rows, next_cursor
+  return rows, next_cursor, total_count
 end
