@@ -23,6 +23,10 @@
       "path": "lexicons/app.certified.graph.getEntityFollow.json"
     },
     {
+      "id": "app.certified.graph.getEntityFollows",
+      "path": "lexicons/app.certified.graph.getEntityFollows.json"
+    },
+    {
       "id": "app.certified.graph.listEntityFollowers",
       "path": "lexicons/app.certified.graph.listEntityFollowers.json"
     },
@@ -33,6 +37,10 @@
     {
       "id": "app.certified.graph.getFollow",
       "path": "lexicons/app.certified.graph.getFollow.json"
+    },
+    {
+      "id": "app.certified.graph.getFollows",
+      "path": "lexicons/app.certified.graph.getFollows.json"
     },
     {
       "id": "app.certified.graph.listActorFollowers",

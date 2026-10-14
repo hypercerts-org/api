@@ -650,9 +650,11 @@ test('entity-follow module owns its view Lexicons and declares their shared depe
   const moduleIds = moduleManifest.assets.map(({ id }) => id).sort();
   assert.deepEqual(moduleIds, [
     'app.certified.graph.getEntityFollow',
+    'app.certified.graph.getEntityFollows',
     'app.certified.graph.listEntityFollowers',
     'app.certified.graph.listEntityFollowing',
     'xrpc.query:app.certified.graph.getEntityFollow',
+    'xrpc.query:app.certified.graph.getEntityFollows',
     'xrpc.query:app.certified.graph.listEntityFollowers',
     'xrpc.query:app.certified.graph.listEntityFollowing',
   ].sort());
@@ -687,6 +689,7 @@ test('entity-follow module owns its view Lexicons and declares their shared depe
     'app.certified.defs',
     'app.certified.graph.entityFollow',
     'app.certified.graph.getEntityFollow',
+    'app.certified.graph.getEntityFollows',
     'app.certified.graph.listEntityFollowers',
     'app.certified.graph.listEntityFollowing',
     'app.certified.signature.defs',
@@ -713,6 +716,7 @@ test('entity-follow module owns its view Lexicons and declares their shared depe
   assert.deepEqual(apiDefs.defs.organizationView.nullable, ['indexedAt']);
   for (const id of [
     'app.certified.graph.getEntityFollow',
+    'app.certified.graph.getEntityFollows',
     'app.certified.graph.listEntityFollowers',
     'app.certified.graph.listEntityFollowing',
   ]) {
@@ -722,6 +726,7 @@ test('entity-follow module owns its view Lexicons and declares their shared depe
     assert.equal(asset.config.backfill, false);
   }
   const get = localLexicons.get('app.certified.graph.getEntityFollow');
+  const getBatch = localLexicons.get('app.certified.graph.getEntityFollows');
   const followers = localLexicons.get('app.certified.graph.listEntityFollowers');
   const followingDoc = localLexicons.get('app.certified.graph.listEntityFollowing');
   assert.deepEqual(get.defs.entityFollowRecordView.nullable, ['indexedAt']);
@@ -735,6 +740,12 @@ test('entity-follow module owns its view Lexicons and declares their shared depe
   ]);
   assert.deepEqual(followingItem.properties.follow.ref, 'app.certified.graph.getEntityFollow#entityFollowRecordView');
   assert.deepEqual(Object.keys(get.defs.main.parameters.properties).sort(), ['actor', 'entity']);
+  assert.deepEqual(Object.keys(getBatch.defs.main.parameters.properties).sort(), ['actor', 'entities']);
+  assert.equal(getBatch.defs.main.parameters.properties.entities.minLength, 1);
+  assert.equal(getBatch.defs.main.parameters.properties.entities.maxLength, 100);
+  assert.deepEqual(getBatch.defs.output.required, ['results']);
+  assert.equal(getBatch.defs.entityFollowResult.properties.follow.ref, 'app.certified.graph.getEntityFollow#entityFollowRecordView');
+  assert.deepEqual(getBatch.defs.entityFollowResult.nullable, ['follow']);
   assert.deepEqual(get.defs.output.required, ['follow']);
   assert.deepEqual(get.defs.output.nullable, ['follow']);
   for (const [document, outputKey] of [[followers, 'followers'], [followingDoc, 'entities']]) {
@@ -763,4 +774,141 @@ assert(tostring(result) == 'InvalidRequest: unknown query parameter: bogus', tos
 assert(calls == 0, 'unknown parameters must be rejected before database access')
 `;
   runLua('listEntityFollowing', source);
+});
+
+test('getEntityFollows preserves request order and duplicates, matches target URIs, and returns raw nullable views', () => {
+  const missingEntity = `at://${author}/org.example.unsupported/missing`;
+  const rows = [
+    {
+      target: entityUri,
+      uri: `at://${actor}/${entityFollow}/3jzfcijpj2z2a`,
+      did: actor,
+      cid: 'bafy-earliest-entity-follow',
+      indexed_at: '2025-01-03T00:00:00Z',
+      record: 'entity-follow-earliest',
+      follow_record: { $type: entityFollow, subject: { $type: 'app.certified.defs#recordSubject', uri: entityUri }, createdAt: '2025-01-01T00:00:00Z' },
+    },
+    {
+      target: nextEntityUri,
+      uri: `at://${actor}/${entityFollow}/other-target`,
+      did: actor,
+      cid: 'bafy-other-entity-follow',
+      indexed_at: null,
+      record: 'entity-follow-other',
+      follow_record: { $type: entityFollow, subject: { $type: 'app.certified.defs#recordSubject', uri: nextEntityUri }, createdAt: '2025-01-02T00:00:00Z' },
+    },
+  ];
+  const records = Object.fromEntries(rows.map(({ record, follow_record }) => [record, follow_record]));
+  const source = `
+local FIXTURE = ${lua({ actor, entityUri, nextEntityUri, missingEntity, entityFollow, rows, records })}
+local NULL_VALUE, calls = {}, {}
+json = {
+  decode = function(value)
+    if value == 'null' then return NULL_VALUE end
+    if FIXTURE.records[value] then return FIXTURE.records[value] end
+    error('unexpected JSON decode input ' .. tostring(value))
+  end,
+}
+toarray = function(values) return values end
+params = { actor = FIXTURE.actor, entities = { FIXTURE.entityUri, FIXTURE.nextEntityUri, FIXTURE.missingEntity, FIXTURE.entityUri } }
+db = {
+  backend = function() return 'postgres' end,
+  raw = function(sql, values)
+    calls[#calls + 1] = { sql = sql, values = values }
+    return FIXTURE.rows
+  end,
+}
+dofile('lua/endpoints/getEntityFollows.lua')
+local ok, result = pcall(handle)
+assert(ok, tostring(result))
+assert(#result.results == 4)
+assert(result.results[1].entity == FIXTURE.entityUri and result.results[1].follow.uri == FIXTURE.rows[1].uri)
+assert(result.results[2].entity == FIXTURE.nextEntityUri and result.results[2].follow.uri == FIXTURE.rows[2].uri)
+assert(result.results[3].entity == FIXTURE.missingEntity and result.results[3].follow == NULL_VALUE)
+assert(result.results[4].entity == FIXTURE.entityUri and result.results[4].follow.uri == FIXTURE.rows[1].uri)
+assert(result.results[1].follow['$type'] == 'app.certified.graph.getEntityFollow#entityFollowRecordView')
+assert(result.results[2].follow.indexedAt == NULL_VALUE)
+assert(result.results[1].follow.record.subject.uri == FIXTURE.entityUri and result.results[1].follow.profile == nil)
+assert(#calls == 1, 'all targets must be resolved with one database query and no hydration')
+assert(calls[1].values[1] == FIXTURE.entityFollow and calls[1].values[2] == FIXTURE.actor)
+assert(#calls[1].values == 5 and calls[1].values[3] == FIXTURE.entityUri and calls[1].values[4] == FIXTURE.nextEntityUri and calls[1].values[5] == FIXTURE.missingEntity)
+assert(calls[1].sql:find('WITH requested(target) AS (VALUES ($3::text), ($4::text), ($5::text))', 1, true))
+assert(calls[1].sql:find("record::jsonb->'subject'->>'uri'", 1, true))
+assert(calls[1].sql:find('DISTINCT ON (requested.target)', 1, true))
+assert(calls[1].sql:find('ORDER BY requested.target, sorted.sort_at ASC, uri ASC', 1, true))
+assert(not calls[1].sql:find("record::jsonb->'subject'->>'cid'", 1, true), 'entity relationships match by URI independently of CID')
+`;
+  runLua('getEntityFollows', source);
+});
+
+test('getEntityFollows rejects malformed collection NSIDs but accepts valid arbitrary collections', () => {
+  const malformedEntityUri = `at://${author}/bad%20collection/key`;
+  const arbitraryCollectionUri = `at://${author}/com.example.arbitrary/key`;
+  const source = `
+local NULL_VALUE, calls = {}, 0
+json = { decode = function(value) if value == 'null' then return NULL_VALUE end return {} end }
+toarray = function(values) return values end
+params = { actor = '${actor}', entities = { '${malformedEntityUri}' } }
+db = {
+  backend = function() return 'postgres' end,
+  raw = function() calls = calls + 1; return {} end,
+}
+dofile('lua/endpoints/getEntityFollows.lua')
+local ok, result = pcall(handle)
+assert(not ok and tostring(result):find('InvalidRequest: each entities value must be full AT-URI with a DID authority and valid collection NSID', 1, true), tostring(result))
+assert(calls == 0, 'malformed collection NSIDs must be rejected before querying')
+
+params = { actor = '${actor}', entities = { '${arbitraryCollectionUri}' } }
+ok, result = pcall(handle)
+assert(ok, tostring(result))
+assert(#result.results == 1 and result.results[1].entity == '${arbitraryCollectionUri}')
+assert(result.results[1].follow == NULL_VALUE, 'valid arbitrary collection NSIDs remain accepted when no follow exists')
+assert(calls == 1, 'valid arbitrary collections reach the database lookup')
+`;
+  runLua('getEntityFollows', source);
+});
+
+test('getEntityFollows rejects invalid or oversized target arrays before querying and surfaces database failures', () => {
+  const oversizedUris = Array.from({ length: 3 }, (_, index) => `at://${author}/${'x'.repeat(2500)}/target-${index}`);
+  const invalidSource = `
+local calls = 0
+json = { decode = function(value) if value == 'null' then return {} end return {} end }
+toarray = function(values) return values end
+params = REQUEST_PARAMS
+db = {
+  backend = function() return 'postgres' end,
+  raw = function() calls = calls + 1; return {} end,
+}
+dofile('lua/endpoints/getEntityFollows.lua')
+local ok, result = pcall(handle)
+assert(not ok and tostring(result):find('InvalidRequest:', 1, true), tostring(result))
+assert(calls == 0, 'invalid batch requests must fail before querying')
+`;
+  for (const params of [
+    { actor, entities: [] },
+    { actor },
+    { actor, entities: [entityUri, 'not-an-at-uri'] },
+    { actor, entities: [`at://${author}/org.example.collection/.`] },
+    { actor, entities: Array(101).fill(entityUri) },
+    { actor, entities: oversizedUris },
+    { actor, entities: [entityUri], unexpected: 'value' },
+    { actor: 'alice.example', entities: [entityUri] },
+  ]) {
+    const source = invalidSource.replace('REQUEST_PARAMS', lua(params));
+    runLua('getEntityFollows', source);
+  }
+
+  const failureSource = `
+json = { decode = function(value) if value == 'null' then return {} end return {} end }
+toarray = function(values) return values end
+params = { actor = '${actor}', entities = { '${entityUri}' } }
+db = {
+  backend = function() return 'postgres' end,
+  raw = function() error('fixture database failure') end,
+}
+dofile('lua/endpoints/getEntityFollows.lua')
+local ok, result = pcall(handle)
+assert(not ok and tostring(result):find('EntityFollowQueryFailed:', 1, true), tostring(result))
+`;
+  runLua('getEntityFollows', failureSource);
 });

@@ -67,6 +67,28 @@ test('getEntityFollow returns explicit null for an unindexed actor-entity pair',
   assert.deepEqual(body, { follow: null });
 });
 
+test('getEntityFollows preserves URI order and duplicates with explicit targets and raw nullable representatives', async () => {
+  const missingEntity = `at://${graphDids.entityAuthor}/org.hypercerts.entity.feature/not-indexed`;
+  const entities = [graphUris.followedFeature, graphUris.unresolvedFeature, missingEntity, graphUris.followedFeature];
+  const { response, body } = await request('app.certified.graph.getEntityFollows', {
+    actor: graphDids.publisher,
+    entities,
+  });
+
+  assert.equal(response.status, 200, JSON.stringify(body));
+  assert.deepEqual(body.results.map(({ entity }) => entity), entities);
+  assert.deepEqual(body.results.map(({ follow }) => follow?.uri ?? null), [
+    `at://${graphDids.publisher}/${entityFollowCollection}/3jzfcijpj2z2a`,
+    `at://${graphDids.publisher}/${entityFollowCollection}/3jzfcijpj2z2c`,
+    null,
+    `at://${graphDids.publisher}/${entityFollowCollection}/3jzfcijpj2z2a`,
+  ]);
+  assert.equal(body.results[0].follow.$type, 'app.certified.graph.getEntityFollow#entityFollowRecordView');
+  assert.equal(body.results[0].follow.did, graphDids.publisher);
+  assert.equal(body.results[0].follow.record.subject.uri, graphUris.followedFeature);
+  assert.equal(Object.hasOwn(body.results[0].follow, 'profile'), false);
+});
+
 test('listEntityFollowers filters by target, deduplicates tied records, paginates, and returns nullable sidecars', async () => {
   const items = await collectPages(
     'app.certified.graph.listEntityFollowers',
@@ -139,6 +161,10 @@ test('entity-follow input failures use the pinned HappyView runtime error respon
     {
       nsid: 'app.certified.graph.getEntityFollow',
       params: { actor: graphDids.publisher, entity: 'not-an-at-uri' },
+    },
+    {
+      nsid: 'app.certified.graph.getEntityFollows',
+      params: { actor: graphDids.publisher, entities: [graphUris.followedFeature, 'not-an-at-uri'] },
     },
     {
       nsid: 'app.certified.graph.listEntityFollowers',

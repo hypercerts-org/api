@@ -186,12 +186,30 @@
       }
     },
     {
+      "id": "app.certified.graph.getEntityFollows",
+      "type": "query",
+      "module": "modules/entity-follow/manifest.json",
+      "file": "sources/lexicons/app.certified.graph.getEntityFollows.json",
+      "source": {
+        "path": "../../lexicons/app.certified.graph.getEntityFollows.json"
+      }
+    },
+    {
       "id": "app.certified.graph.getFollow",
       "type": "query",
       "module": "modules/actor-follow/manifest.json",
       "file": "sources/lexicons/app.certified.graph.getFollow.json",
       "source": {
         "path": "../../lexicons/app.certified.graph.getFollow.json"
+      }
+    },
+    {
+      "id": "app.certified.graph.getFollows",
+      "type": "query",
+      "module": "modules/actor-follow/manifest.json",
+      "file": "sources/lexicons/app.certified.graph.getFollows.json",
+      "source": {
+        "path": "../../lexicons/app.certified.graph.getFollows.json"
       }
     },
     {
@@ -807,12 +825,30 @@
       }
     },
     {
+      "id": "app.certified.graph.getEntityFollows",
+      "file": "sources/lexicons/app.certified.graph.getEntityFollows.json",
+      "kind": "endpoint",
+      "source": {
+        "module": "modules/entity-follow/manifest.json",
+        "path": "../../lexicons/app.certified.graph.getEntityFollows.json"
+      }
+    },
+    {
       "id": "app.certified.graph.getFollow",
       "file": "sources/lexicons/app.certified.graph.getFollow.json",
       "kind": "endpoint",
       "source": {
         "module": "modules/actor-follow/manifest.json",
         "path": "../../lexicons/app.certified.graph.getFollow.json"
+      }
+    },
+    {
+      "id": "app.certified.graph.getFollows",
+      "file": "sources/lexicons/app.certified.graph.getFollows.json",
+      "kind": "endpoint",
+      "source": {
+        "module": "modules/actor-follow/manifest.json",
+        "path": "../../lexicons/app.certified.graph.getFollows.json"
       }
     },
     {

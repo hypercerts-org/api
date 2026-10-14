@@ -37,6 +37,8 @@ Do not use `authors[]=` or comma-joined values unless that exact endpoint contra
 
 A useful starting distinction: arrays often mean “any of these” for a filter, while separate filters may combine with AND, but this is **not a universal rule**. For example, the bundled collection contract says `tagUris` requires every supplied tag URI, while `itemUris` matches URI without CID. Confirm the exact operation before relying on filter logic.
 
+The batch relationship checks `app.certified.graph.getFollows` and `app.certified.graph.getEntityFollows` each take one `actor` and 1–100 repeated, unbracketed `subjects` or `entities` values. Keep duplicates if the caller supplied them: each output `results` entry echoes its target and preserves its position. The encoded GET request-target must stay within 7,000 bytes. A null `follow` means only that no indexed relationship was found; database failures are errors, not nulls.
+
 ## Keep page requests cursor-consistent
 
 For a list/search operation whose output has a cursor, keep a base set of all non-cursor parameters and replace only the cursor on continuation. Preserve repeated array values, filters, `search`, `limit`, and `sortDirection` exactly. The example below is illustrative; verify the chosen endpoint's cursor binding and response-array name.

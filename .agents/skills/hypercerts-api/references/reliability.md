@@ -28,6 +28,7 @@ For a potentially fresh record that is absent:
 ## Null, omitted, empty, not-found, and failure are different
 
 - **Null field:** the endpoint returned a known enclosing result, but one optional or nullable projection is unavailable/absent under that contract. Examples include a null profile in batch `getProfiles`, a null organization in `getOrganizations`, a null `follow` in `getFollow`, or a null resolved collection-item `record`. Preserve and render this state intentionally.
+- **Batch relationship result:** `getFollows` and `getEntityFollows` return an explicit target and nullable `follow` for every input occurrence. Null means no relationship is indexed for that actor and target; a database/query failure remains an error and must not be converted to null.
 - **Omitted optional field:** the schema does not require the property in that condition. Do not treat omission as the same representation as explicit null unless the exact endpoint contract says so.
 - **Empty list:** the query succeeded and returned no matching items. It is not the same as an invalid query or failed hydration.
 - **Not-found error:** a `get...` query may declare `RecordNotFound` when no matching record is indexed. That is not necessarily a successful response containing a null record. Use the endpoint's own declared error contract.

@@ -1643,6 +1643,73 @@
         ]
       }
     },
+    "/xrpc/app.certified.graph.getEntityFollows": {
+      "get": {
+        "operationId": "app_certified_graph_getEntityFollows",
+        "tags": [
+          "app.certified.graph"
+        ],
+        "description": "Returns the representative raw entity-follow record, or null, for each requested actor-to-entity relationship. Authentication is not required. Supply 1–100 repeated entities values; the encoded GET request-target must not exceed 7,000 bytes.",
+        "parameters": [
+          {
+            "name": "actor",
+            "in": "query",
+            "required": true,
+            "description": "DID that published the entity-follow records.",
+            "schema": {
+              "type": "string",
+              "format": "did",
+              "maxLength": 2048
+            }
+          },
+          {
+            "name": "entities",
+            "in": "query",
+            "required": true,
+            "description": "Full entity AT-URIs using DID authorities, supplied as repeated unbracketed query values. Matching uses the subject URI and ignores CID; every occurrence is returned in request order, including duplicates.",
+            "schema": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "at-uri",
+                "maxLength": 8192
+              }
+            },
+            "style": "form",
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app.certified.graph.getEntityFollows.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "app.certified.graph.getEntityFollows",
+        "x-hypercerts-coverage": "manifest-registered",
+        "x-hypercerts-source": {
+          "module": "modules/entity-follow/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "The actor DID, entities array, an entity AT-URI, request-target length, or another query parameter is invalid."
+          },
+          {
+            "name": "EntityFollowQueryFailed",
+            "description": "The indexed entity-follow relationships could not be queried."
+          }
+        ]
+      }
+    },
     "/xrpc/app.certified.graph.getFollow": {
       "get": {
         "operationId": "app_certified_graph_getFollow",
@@ -1693,6 +1760,73 @@
           {
             "name": "InvalidRequest",
             "description": "A DID or query parameter is invalid."
+          }
+        ]
+      }
+    },
+    "/xrpc/app.certified.graph.getFollows": {
+      "get": {
+        "operationId": "app_certified_graph_getFollows",
+        "tags": [
+          "app.certified.graph"
+        ],
+        "description": "Returns the representative raw follow record, or null, for each requested actor-to-actor relationship. Authentication is not required. Supply 1–100 repeated subjects values; the encoded GET request-target must not exceed 7,000 bytes.",
+        "parameters": [
+          {
+            "name": "actor",
+            "in": "query",
+            "required": true,
+            "description": "DID of the actor who published the follow records.",
+            "schema": {
+              "type": "string",
+              "format": "did",
+              "maxLength": 2048
+            }
+          },
+          {
+            "name": "subjects",
+            "in": "query",
+            "required": true,
+            "description": "Subject DIDs to check, supplied as repeated unbracketed query values. Every occurrence is returned in the same order, including duplicates.",
+            "schema": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "did",
+                "maxLength": 2048
+              }
+            },
+            "style": "form",
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app.certified.graph.getFollows.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "app.certified.graph.getFollows",
+        "x-hypercerts-coverage": "manifest-registered",
+        "x-hypercerts-source": {
+          "module": "modules/actor-follow/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "The actor DID, subjects array, request-target length, or another query parameter is invalid."
+          },
+          {
+            "name": "ActorFollowQueryFailed",
+            "description": "The indexed follow relationships could not be queried."
           }
         ]
       }
@@ -5923,6 +6057,45 @@
           }
         }
       },
+      "app.certified.graph.getEntityFollows.entityFollowResult": {
+        "type": "object",
+        "required": [
+          "entity",
+          "follow"
+        ],
+        "properties": {
+          "entity": {
+            "type": "string",
+            "description": "Entity AT-URI from the corresponding request occurrence.",
+            "format": "at-uri"
+          },
+          "follow": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/app.certified.graph.getEntityFollow.entityFollowRecordView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "app.certified.graph.getEntityFollows.output": {
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "properties": {
+          "results": {
+            "type": "array",
+            "description": "One result per supplied entity occurrence, in request order.",
+            "items": {
+              "$ref": "#/components/schemas/app.certified.graph.getEntityFollows.entityFollowResult"
+            }
+          }
+        }
+      },
       "app.certified.graph.follow.main": {
         "type": "record",
         "description": "Record declaring a social 'follow' relationship of another account."
@@ -5982,6 +6155,45 @@
                 "type": "null"
               }
             ]
+          }
+        }
+      },
+      "app.certified.graph.getFollows.followResult": {
+        "type": "object",
+        "required": [
+          "subject",
+          "follow"
+        ],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "description": "Subject DID from the corresponding request occurrence.",
+            "format": "did"
+          },
+          "follow": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/app.certified.graph.getFollow.followRecordView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "app.certified.graph.getFollows.output": {
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "properties": {
+          "results": {
+            "type": "array",
+            "description": "One result per supplied subject occurrence, in request order.",
+            "items": {
+              "$ref": "#/components/schemas/app.certified.graph.getFollows.followResult"
+            }
           }
         }
       },

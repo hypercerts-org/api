@@ -217,6 +217,10 @@ test('actor list input failures use the pinned HappyView runtime error response'
       nsid: 'app.certified.graph.listActorFollowing',
       params: { actor: graphDids.publisher, sortDirection: 'sideways' },
     },
+    {
+      nsid: 'app.certified.graph.getFollows',
+      params: { actor: graphDids.publisher, subjects: [graphDids.primarySubject, 'not-a-did'] },
+    },
   ];
 
   for (const { nsid, params } of cases) {

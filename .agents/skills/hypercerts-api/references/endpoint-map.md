@@ -1,6 +1,6 @@
 # Endpoint map: choose by consumer task
 
-This task index lists the 59 public query NSIDs in the bundled [OpenAPI contract](openapi.json). It helps choose an operation but does not replace its exact contract: inspect that operation and its referenced schemas for required parameters, types, defaults, limits, filter semantics, response fields, and declared errors. The static snapshot describes the contract, not availability or freshness on a selected deployment.
+This task index lists the 61 public query NSIDs in the bundled [OpenAPI contract](openapi.json). It helps choose an operation but does not replace its exact contract: inspect that operation and its referenced schemas for required parameters, types, defaults, limits, filter semantics, response fields, and declared errors. The static snapshot describes the contract, not availability or freshness on a selected deployment.
 
 ## Fast selection rules
 
@@ -8,7 +8,7 @@ This task index lists the 59 public query NSIDs in the bundled [OpenAPI contract
 - **Known actor DIDs in a batch:** prefer `getProfiles` or `getOrganizations`; batch results may have nullable per-actor values. Their batch inputs are DIDs, not handles.
 - **Browse or filter without free text:** choose `list...` in the relevant domain.
 - **Text discovery:** use `search...` only where listed below. A search query is not interchangeable with a list filter, and search semantics vary by endpoint.
-- **Relationship checks:** use `get...Follow` for a single pair; list queries answer who follows whom or which entities an actor follows.
+- **Relationship checks:** use `get...Follow` for a single pair, or `getFollows` / `getEntityFollows` to check repeated target values for one actor. List queries answer who follows whom or which entities an actor follows.
 - **Feed reactions:** use `getLikes` or `getReposts` for distinct actors reacting to a subject URI, or `getActorLikes` / `getActorReposts` for an actor's own raw representative reactions.
 
 Inspect the exact operation in the bundled OpenAPI contract before constructing a request: names such as `authors`, `actors`, `uri`, and `collection` have endpoint-specific meanings. Do not infer that a filter, search operation, output array name, or error exists just because a related endpoint has one.
@@ -69,14 +69,16 @@ Choose `listCollectionItems` when the caller needs the referenced item versions,
 
 An `unanswered` award is a successful indexed award result, not a not-found response. See [the badge recipe](recipes.md#read-badge-award-response-status).
 
-## Follow relationships (7)
+## Follow relationships (9)
 
 | User task | Query NSID | Practical choice |
 |---|---|---|
 | Check one actor-to-actor follow | `app.certified.graph.getFollow` | Supply actor and subject DIDs; the representative `follow` may be null when none is indexed. |
+| Check one actor against many subject DIDs | `app.certified.graph.getFollows` | Supply 1–100 repeated `subjects` values; each `{subject, follow}` result preserves input order and duplicates. |
 | List an actor's followers | `app.certified.graph.listActorFollowers` | `actor` is the followed actor DID. |
 | List actors an actor follows | `app.certified.graph.listActorFollowing` | `actor` is the follower DID. |
 | Check one actor-to-entity follow | `app.certified.graph.getEntityFollow` | Supply actor DID and entity AT-URI; check its nullable/error contract. |
+| Check one actor against many entity AT-URIs | `app.certified.graph.getEntityFollows` | Supply 1–100 repeated `entities` values; matching is by URI, each `{entity, follow}` preserves input order and duplicates, and the encoded GET request-target is capped at 7,000 bytes. |
 | List actors following an entity | `app.certified.graph.listEntityFollowers` | `entity` is an entity AT-URI. |
 | List entities an actor follows | `app.certified.graph.listEntityFollowing` | `actor` is an actor DID; targets are hydrated from indexed records. |
 | Browse recent raw follow records | `app.certified.graph.listRecentFollows` | Beta feed across publishers; `before` and pagination have distinct feed semantics. Not a per-actor relationship check. |
