@@ -7,6 +7,7 @@ const likesEndpoint = 'app.certified.feed.getLikes';
 const repostsEndpoint = 'app.certified.feed.getReposts';
 const actorLikesEndpoint = 'app.certified.feed.getActorLikes';
 const actorRepostsEndpoint = 'app.certified.feed.getActorReposts';
+const actorReactionsEndpoint = 'app.certified.feed.getActorReactions';
 const likeCollection = 'app.certified.feed.like';
 const repostCollection = 'app.certified.feed.repost';
 
@@ -169,6 +170,35 @@ test('actor reaction queries deduplicate subject URIs and return raw records wit
     assert.deepEqual(first.record.signatures[0].signature, { $bytes: collection === likeCollection ? 'AQID' : 'BAUG' });
     assert.equal(first[relationKey], undefined, 'actor endpoints expose raw record views, not subject actor views');
   }
+});
+
+test('getActorReactions preserves requested occurrences and returns raw reaction views or null', async () => {
+  const missingSubject = `at://${reactionDids.target}/org.example.unindexed/missing`;
+  const subjects = [reactionUris.otherSubject, reactionUris.subject, missingSubject, reactionUris.subject];
+  const { response, body } = await request(actorReactionsEndpoint, {
+    actor: reactionDids.actorA,
+    subjects,
+  });
+
+  assert.equal(response.status, 200, JSON.stringify(body));
+  assert.deepEqual(body.results, [
+    {
+      subject: reactionUris.otherSubject,
+      like: recordView(fixtureRow(`at://${reactionDids.actorA}/${likeCollection}/3jzfcijpj2z2f`)),
+      repost: recordView(fixtureRow(`at://${reactionDids.actorA}/${repostCollection}/3jzfcijpj2z2e`)),
+    },
+    {
+      subject: reactionUris.subject,
+      like: recordView(fixtureRow(`at://${reactionDids.actorA}/${likeCollection}/3jzfcijpj2z2a`)),
+      repost: recordView(fixtureRow(`at://${reactionDids.actorA}/${repostCollection}/3jzfcijpj2z2a`)),
+    },
+    { subject: missingSubject, like: null, repost: null },
+    {
+      subject: reactionUris.subject,
+      like: recordView(fixtureRow(`at://${reactionDids.actorA}/${likeCollection}/3jzfcijpj2z2a`)),
+      repost: recordView(fixtureRow(`at://${reactionDids.actorA}/${repostCollection}/3jzfcijpj2z2a`)),
+    },
+  ]);
 });
 
 test('actor reaction queries keyset-page URI ties in descending order without hydration', async () => {
