@@ -88,11 +88,17 @@ function runLua({
   expectError,
   expectedCalls,
   assertions,
+  queryResult,
 }) {
   const endpointPath = `lua/endpoints/${endpoint}.lua`;
+  const queryResultLua = queryResult === undefined ? 'rows' : lua(queryResult);
   assert.ok(existsSync(`${root}/${endpointPath}`), `${endpointPath} must be generated before exercising the handler`);
   const records = Object.fromEntries([
-    ...rows.filter(({ recordValue }) => recordValue).map(({ record, recordValue }) => [record, recordValue]),
+    ...rows.flatMap((row) => [
+      ...(row.recordValue ? [[row.record, row.recordValue]] : []),
+      ...(row.likeRecordValue ? [[row.like_record, row.likeRecordValue]] : []),
+      ...(row.repostRecordValue ? [[row.repost_record, row.repostRecordValue]] : []),
+    ]),
     ...profiles.map(({ record, recordValue }) => [record, recordValue]),
     ...organizations.map(({ record, recordValue }) => [record, recordValue]),
   ]);
@@ -133,6 +139,8 @@ db = {
     if ${failure === 'repost' ? 'true' : 'false'} and values[1] == '${collections.Repost}' then error('injected query failure') end
     if ${failure === 'profile' ? 'true' : 'false'} and values[1] == '${profileCollection}' then error('injected profile failure') end
     if ${failure === 'organization' ? 'true' : 'false'} and values[1] == '${organizationCollection}' then error('injected organization failure') end
+    if ${failure === 'actorReactions' ? 'true' : 'false'} and '${endpoint}' == 'getActorReactions' then error('injected actor reactions failure') end
+    if '${endpoint}' == 'getActorReactions' then return ${queryResultLua} end
     if values[1] == '${collections.Like}' or values[1] == '${collections.Repost}' then return rows end
     if values[1] == '${profileCollection}' then return profiles end
     if values[1] == '${organizationCollection}' then return organizations end
@@ -251,6 +259,110 @@ assert(calls[1].values[3] == 26, 'limit defaults to 25 and fetches one lookahead
   });
 });
 
+function actorReactionResultRow(ordinal, requestedSubject, like, repost) {
+  const row = { request_ordinal: ordinal, requested_subject: requestedSubject };
+  for (const [kind, reaction] of [['like', like], ['repost', repost]]) {
+    row[`${kind}_present`] = reaction !== null;
+    if (reaction === null) continue;
+    row[`${kind}_uri`] = reaction.uri;
+    row[`${kind}_cid`] = reaction.cid;
+    row[`${kind}_indexed_at`] = reaction.indexed_at;
+    row[`${kind}_did`] = reaction.did;
+    row[`${kind}_record`] = reaction.record;
+    row[`${kind}RecordValue`] = reaction.recordValue;
+  }
+  return row;
+}
+
+test('getActorReactions keeps subject occurrences ordered and returns raw like/repost views in one parameterized query', () => {
+  const firstSubject = 'at://did:plc:cccccccccccccccccccccccc/org.example.subject/first';
+  const secondSubject = 'at://did:plc:cccccccccccccccccccccccc/org.example.subject/second';
+  const like = reactionRow('Like', actor, 'batch-like', '2025-01-03T00:00:00Z', {
+    subject: { uri: firstSubject, cid: 'bafy-like-subject-version' },
+    via: { uri: 'at://did:plc:dddddddddddddddddddddddd/app.certified.feed.repost/via', cid: 'bafy-via' },
+  });
+  const repost = reactionRow('Repost', actor, 'batch-repost', '2025-01-02T00:00:00Z', {
+    subject: { uri: firstSubject, cid: 'bafy-repost-subject-version' },
+  });
+  runLua({
+    endpoint: 'getActorReactions',
+    params: { actor, subjects: [firstSubject, secondSubject, firstSubject] },
+    rows: [
+      actorReactionResultRow(3, firstSubject, like, repost),
+      actorReactionResultRow(2, secondSubject, null, null),
+      actorReactionResultRow(1, firstSubject, like, repost),
+    ],
+    assertions: `
+assert(#result.results == 3 and #calls == 1)
+assert(result.results[1].subject == '${firstSubject}')
+assert(result.results[2].subject == '${secondSubject}')
+assert(result.results[3].subject == '${firstSubject}', 'duplicate subject occurrences retain their position')
+assert(result.results[1].like.uri == '${like.uri}' and result.results[1].like.cid == '${like.cid}')
+assert(result.results[1].repost.uri == '${repost.uri}' and result.results[1].repost.cid == '${repost.cid}')
+assert(result.results[1].like.did == '${actor}' and result.results[1].like.indexedAt == '${indexedAt}')
+assert(result.results[1].like.record.subject.cid == 'bafy-like-subject-version')
+assert(result.results[1].like.record.via.uri == 'at://did:plc:dddddddddddddddddddddddd/app.certified.feed.repost/via')
+assert(result.results[3].like.uri == result.results[1].like.uri and result.results[3].repost.uri == result.results[1].repost.uri)
+assert(result.results[2].like == NULL_VALUE and result.results[2].repost == NULL_VALUE, 'successful absence is explicit null')
+local sql = calls[1].sql
+assert(sql:find('ROW_NUMBER() OVER', 1, true) ~= nil)
+local ranking = sql:match('ROW_NUMBER%(%) OVER %((.-)%) AS reaction_rank')
+assert(ranking and ranking:find('PARTITION BY reaction.collection', 1, true) ~= nil)
+assert(ranking:find('ORDER BY sorted.sort_at ASC, reaction.uri ASC', 1, true) ~= nil)
+assert(sql:find('COALESCE(indexed_at::timestamptz, created_at::timestamptz)', 1, true) ~= nil)
+assert(sql:find('${collections.Like}', 1, true) ~= nil and sql:find('${collections.Repost}', 1, true) ~= nil)
+assert(sql:find('request_ordinal', 1, true) ~= nil and sql:find('LEFT JOIN', 1, true) ~= nil)
+assert(sql:find('did = $1', 1, true) ~= nil, 'actor identity is a bound query parameter')
+assert(sql:find('${actor}', 1, true) == nil and sql:find('${firstSubject}', 1, true) == nil and sql:find('${secondSubject}', 1, true) == nil)
+assert(#calls[1].values == 4 and calls[1].values[1] == '${actor}')
+assert(calls[1].values[2] == '${firstSubject}' and calls[1].values[3] == '${secondSubject}' and calls[1].values[4] == '${firstSubject}')
+`,
+  });
+});
+
+test('getActorReactions accepts 100 subject occurrences but rejects larger batches before querying', () => {
+  const subjects = Array.from({ length: 100 }, (_, index) =>
+    `at://did:plc:cccccccccccccccccccccccc/org.example.subject/${index + 1}`);
+  const emptyRows = subjects.map((subjectUri, index) => actorReactionResultRow(index + 1, subjectUri, null, null));
+  runLua({
+    endpoint: 'getActorReactions',
+    params: { actor, subjects },
+    rows: emptyRows,
+    assertions: `assert(#result.results == 100 and #calls == 1 and #calls[1].values == 101)`,
+  });
+  runLua({
+    endpoint: 'getActorReactions',
+    params: { actor, subjects: [...subjects, subjects[0]] },
+    expectError: 'InvalidRequest:',
+    expectedCalls: 0,
+  });
+});
+
+test('getActorReactions rejects malformed query results and database failures instead of returning nulls', () => {
+  const invalidResponses = [
+    { rows: [] },
+    { rows: [{ request_ordinal: 1, requested_subject: subject }] },
+    { rows: [{ request_ordinal: 1, requested_subject: subject, like_present: true, like_uri: `at://${actor}/${collections.Like}/partial` }] },
+    { rows: [], queryResult: false },
+  ];
+  for (const response of invalidResponses) {
+    runLua({
+      endpoint: 'getActorReactions',
+      params: { actor, subjects: [subject] },
+      ...response,
+      expectError: 'ActorReactionsQueryFailed:',
+      expectedCalls: 1,
+    });
+  }
+  runLua({
+    endpoint: 'getActorReactions',
+    params: { actor, subjects: [subject] },
+    failure: 'actorReactions',
+    expectError: 'ActorReactionsQueryFailed:',
+    expectedCalls: 1,
+  });
+});
+
 test('reaction requests reject invalid identifiers, repeated/unknown parameters, and malformed or mismatched cursors before querying', () => {
   const cases = [
     { endpoint: 'getLikes', params: { subject: 'alice.example' } },
@@ -264,6 +376,15 @@ test('reaction requests reject invalid identifiers, repeated/unknown parameters,
     { endpoint: 'getActorReposts', params: { actor, cursor: 'not-hex' } },
     { endpoint: 'getLikes', params: { subject, cursor: cursor({ direction: 'asc' }), sortDirection: 'desc' } },
     { endpoint: 'getReposts', params: { subject, cursor: cursor({ uri: `at://${actor}/${collections.Like}/other` }) } },
+    { endpoint: 'getActorReactions', params: { subjects: [subject] } },
+    { endpoint: 'getActorReactions', params: { actor } },
+    { endpoint: 'getActorReactions', params: { actor, subjects: [] } },
+    { endpoint: 'getActorReactions', params: { actor: 'alice.example', subjects: [subject] } },
+    { endpoint: 'getActorReactions', params: { actor, subjects: ['at://alice.example/org.example.subject/key'] } },
+    { endpoint: 'getActorReactions', params: { actor, subjects: ['at://did:plc:cccccccccccccccccccccccc/bad%20collection/key'] } },
+    { endpoint: 'getActorReactions', params: { actor, subjects: [subject], unexpected: 'value' } },
+    { endpoint: 'getActorReactions', params: { actor, subjects: { malformed: true } } },
+    { endpoint: 'getActorReactions', params: { actor, subjects: Array.from({ length: 101 }, () => subject) } },
   ];
   for (const { endpoint, params } of cases) {
     runLua({ endpoint, params, expectError: 'InvalidRequest:', expectedCalls: 0 });

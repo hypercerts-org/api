@@ -39,6 +39,22 @@ A useful starting distinction: arrays often mean “any of these” for a filter
 
 The batch relationship checks `app.certified.graph.getFollows` and `app.certified.graph.getEntityFollows` each take one `actor` and 1–100 repeated, unbracketed `subjects` or `entities` values. Keep duplicates if the caller supplied them: each output `results` entry echoes its target and preserves its position. The encoded GET request-target must stay within 7,000 bytes. A null `follow` means only that no indexed relationship was found; database failures are errors, not nulls.
 
+### Batch an actor's reactions for known subjects
+
+`app.certified.feed.getActorReactions` requires one actor DID and 1–100 full record AT-URIs with DID authorities, not handle authorities. Encode `subjects` as repeated, unbracketed query parameters; keep input order and duplicates if each occurrence matters:
+
+```ts
+const params = new URLSearchParams();
+params.set("actor", actorDid);
+for (const subject of subjectUris) params.append("subjects", subject);
+const url = new URL(
+  `/xrpc/app.certified.feed.getActorReactions?${params.toString()}`,
+  apiBase,
+);
+```
+
+The response contains one `results` item per supplied occurrence in that same order. Each item repeats the explicit `subject` AT-URI and has `like` and `repost` fields that are either raw record views or null. Matching ignores the subject CID. A null means the successful indexed lookup found no such reaction; a query failure is an error, not null. Preserve a non-null view's `uri` and `cid` when you need to identify that reaction record elsewhere.
+
 ## Keep page requests cursor-consistent
 
 For a list/search operation whose output has a cursor, keep a base set of all non-cursor parameters and replace only the cursor on continuation. Preserve repeated array values, filters, `search`, `limit`, and `sortDirection` exactly. The example below is illustrative; verify the chosen endpoint's cursor binding and response-array name.

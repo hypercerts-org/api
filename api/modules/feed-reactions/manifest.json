@@ -43,6 +43,13 @@
       "dependsOn": ["app.certified.feed.getReposts"]
     },
     {
+      "kind": "lexicon",
+      "id": "app.certified.feed.getActorReactions",
+      "path": "../../lexicons/app.certified.feed.getActorReactions.json",
+      "config": { "backfill": false },
+      "dependsOn": ["app.certified.feed.getLikes", "app.certified.feed.getReposts"]
+    },
+    {
       "kind": "script",
       "id": "xrpc.query:app.certified.feed.getLikes",
       "path": "../../lua/endpoints/getLikes.lua",
@@ -117,6 +124,21 @@
       ],
       "config": { "script_type": "lua", "description": "Feed reaction API handler" },
       "dependsOn": ["app.certified.feed.getActorReposts"]
+    },
+    {
+      "kind": "script",
+      "id": "xrpc.query:app.certified.feed.getActorReactions",
+      "path": "../../lua/endpoints/getActorReactions.lua",
+      "sourcePath": "../../lua/src/getActorReactions.lua",
+      "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/query.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/recordView.lua",
+        "../../lua/shared/feedActorReactions.lua"
+      ],
+      "config": { "script_type": "lua", "description": "Actor feed reaction API handler" },
+      "dependsOn": ["app.certified.feed.getActorReactions"]
     }
   ]
 }

@@ -5,12 +5,12 @@
   },
   "runtimeValidation": "not-assessed",
   "deploymentValidation": "not-assessed",
-  "endpointCount": 61,
+  "endpointCount": 62,
   "methods": {
-    "GET": 61
+    "GET": 62
   },
   "inclusion": {
-    "manifest-registered": 61
+    "manifest-registered": 62
   },
   "unresolvedReferences": [],
   "endpoints": [
@@ -106,6 +106,12 @@
     },
     {
       "id": "app.certified.feed.getActorLikes",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/feed-reactions/manifest.json"
+    },
+    {
+      "id": "app.certified.feed.getActorReactions",
       "method": "GET",
       "inclusion": "manifest-registered",
       "module": "modules/feed-reactions/manifest.json"
