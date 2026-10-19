@@ -14,6 +14,18 @@
     },
     {
       "kind": "lexicon",
+      "id": "app.certified.graph.getEntityFollows",
+      "path": "../../lexicons/app.certified.graph.getEntityFollows.json",
+      "config": {
+        "backfill": false,
+        "target_collection": "app.certified.graph.entityFollow"
+      },
+      "dependsOn": [
+        "app.certified.graph.getEntityFollow"
+      ]
+    },
+    {
+      "kind": "lexicon",
       "id": "app.certified.graph.listEntityFollowers",
       "path": "../../lexicons/app.certified.graph.listEntityFollowers.json",
       "config": {
@@ -58,6 +70,26 @@
       },
       "dependsOn": [
         "app.certified.graph.getEntityFollow"
+      ]
+    },
+    {
+      "kind": "script",
+      "id": "xrpc.query:app.certified.graph.getEntityFollows",
+      "path": "../../lua/endpoints/getEntityFollows.lua",
+      "sourcePath": "../../lua/src/getEntityFollows.lua",
+      "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/query.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/entityFollow.lua",
+        "../../lua/shared/followBatch.lua"
+      ],
+      "config": {
+        "script_type": "lua",
+        "description": "Entity follow API handler"
+      },
+      "dependsOn": [
+        "app.certified.graph.getEntityFollows"
       ]
     },
     {

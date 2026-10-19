@@ -56,7 +56,7 @@ The HTTP gate fails if it discovers no suites, executes no `node:test` cases, or
 - Context attachment and evaluation retrieval with publisher/evaluator sidecar hydration, list filters, pagination across tied `createdAt` values, and named runtime errors.
 - Activity retrieval with contributor-sidecar hydration, author/organization/contributor/URI filters, tied timestamp pagination, and literal wildcard search.
 - Collection retrieval with CBOR-derived CIDs, location/tag projections, author, organization, item and tag filters, title/shortDescription search, `createdAt`/URI pagination ties, and source-order item pagination with exact-version resolution.
-- Graph actor/entity lookups and lists, tied-key pagination, nullable profile/organization sidecars, entity target resolution, and the global recent-follows `before` filter.
+- Graph actor/entity lookups and lists, tied-key pagination, nullable profile/organization sidecars, entity target resolution, and the global recent-follows `before` filter. The `getFollows` and `getEntityFollows` batch queries also cover repeated target order and duplicates, explicit target keys, nullable raw views, and invalid-entry rejection.
 - Feed-reaction subject and actor queries, earliest duplicate selection, URI-only subject matching across CIDs, distinct-actor totals, tied cursor pagination, page-only sidecar hydration, raw `via`/signature preservation, and actor queries without hydration.
 - Contribution exact-record retrieval, repeated publisher filters, tied ascending/descending cursor pagination, nullable publisher sidecars, and named errors.
 - Badge, badge-query, acknowledgement, contribution, and rights HTTP fixtures with CBOR-derived record CIDs; contribution DIDs are distinct from baseline fixture identities.

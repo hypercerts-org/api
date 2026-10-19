@@ -6,6 +6,10 @@ This package owns the shared API installer and build tooling, pinned upstream Le
 
 Use the [`docs/` endpoint explorer](../docs/) and generated [OpenAPI reference](../docs/openapi.json) for endpoint names and contracts. The [coverage report](../docs/coverage.json) lists manifest-registered operations; inclusion does not imply runtime or deployment validation. See [docs/README.md](../docs/README.md) to run the explorer locally and refresh its committed reference.
 
+## Graph follow capability
+
+`modules/actor-follow/manifest.json` provides `app.certified.graph.getFollows` for checking up to 100 subject DIDs against one actor. `modules/entity-follow/manifest.json` provides `app.certified.graph.getEntityFollows` for checking up to 100 entity AT-URIs against one actor. Supply targets as repeated query parameters; both queries preserve every input position and duplicate, return the original target beside its raw nullable representative, and reject the whole request when any target is invalid. The encoded GET request-target is bounded to 7,000 bytes. A null follow means no indexed relationship; database failures remain errors.
+
 ## Feed reaction capability
 
 `modules/feed-reactions/manifest.json` owns the like and repost record schemas and four public queries: `app.certified.feed.getLikes`, `getReposts`, `getActorLikes`, and `getActorReposts`. The root manifest includes this independently installable module in the aggregate bundle. Its record schemas enable backfill, and queries read the current indexed records directly; deleted reactions therefore stop appearing once removed from HappyView's index, without a separate stored count.

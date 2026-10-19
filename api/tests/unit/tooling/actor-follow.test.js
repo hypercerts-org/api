@@ -140,9 +140,11 @@ test('actor-follow module installs the follow record schema, three queries, and 
   const expected = [
     followCollection,
     'app.certified.graph.getFollow',
+    'app.certified.graph.getFollows',
     'app.certified.graph.listActorFollowers',
     'app.certified.graph.listActorFollowing',
     'xrpc.query:app.certified.graph.getFollow',
+    'xrpc.query:app.certified.graph.getFollows',
     'xrpc.query:app.certified.graph.listActorFollowers',
     'xrpc.query:app.certified.graph.listActorFollowing',
   ];
@@ -153,6 +155,7 @@ test('actor-follow module installs the follow record schema, three queries, and 
     [
       ...expected.filter((id) => id.startsWith('xrpc.query:app.certified.graph.')),
       'xrpc.query:app.certified.graph.getEntityFollow',
+      'xrpc.query:app.certified.graph.getEntityFollows',
       'xrpc.query:app.certified.graph.listEntityFollowers',
       'xrpc.query:app.certified.graph.listEntityFollowing',
       'xrpc.query:app.certified.graph.listRecentFollows',
@@ -165,11 +168,18 @@ test('actor-follow query Lexicons validate the endpoint inputs, nullable lookup,
   const byId = new Map(documents.map((document) => [document.id, document]));
   const follow = byId.get(followCollection);
   const getFollow = byId.get('app.certified.graph.getFollow');
+  const getFollows = byId.get('app.certified.graph.getFollows');
   const followers = byId.get('app.certified.graph.listActorFollowers');
   const following = byId.get('app.certified.graph.listActorFollowing');
-  assert.ok(follow && getFollow && followers && following, 'the follow record and all query Lexicons belong to the validation closure');
+  assert.ok(follow && getFollow && getFollows && followers && following, 'the follow record and all query Lexicons belong to the validation closure');
   assert.equal(lexicons.getDefOrThrow(followCollection).type, 'record');
   assert.deepEqual(Object.keys(getFollow.defs.main.parameters.properties).sort(), ['actor', 'subject']);
+  assert.deepEqual(Object.keys(getFollows.defs.main.parameters.properties).sort(), ['actor', 'subjects']);
+  assert.equal(getFollows.defs.main.parameters.properties.subjects.minLength, 1);
+  assert.equal(getFollows.defs.main.parameters.properties.subjects.maxLength, 100);
+  assert.deepEqual(getFollows.defs.output.required, ['results']);
+  assert.equal(getFollows.defs.followResult.properties.follow.ref, 'lex:app.certified.graph.getFollow#followRecordView');
+  assert.deepEqual(getFollows.defs.followResult.nullable, ['follow']);
   assert.deepEqual(getFollow.defs.output.required, ['follow']);
   assert.deepEqual(getFollow.defs.output.nullable, ['follow']);
   assert.deepEqual(Object.keys(followers.defs.main.parameters.properties).sort(), ['actor', 'cursor', 'limit', 'sortDirection']);
@@ -421,6 +431,54 @@ test('actor-follow queries reject invalid DIDs, limits, scalar repetition, unkno
     runLua({ endpoint: 'listActorFollowers', params, expectError: 'InvalidRequest:' });
   }
   runLua({ endpoint: 'getFollow', params: { actor, subject: 'alice.example' }, expectError: 'InvalidRequest:' });
+});
+
+test('getFollows preserves requested positions and nulls while selecting one raw representative per subject in one query', () => {
+  const tiedEarliest = {
+    ...followRow('3jzfcijpj2z2a', actor, actor, '2025-01-01T00:00:00Z', { subjectDid: subject }),
+    target: subject,
+  };
+  const otherSubject = 'did:plc:dddddddddddddddddddddddd';
+  const otherFollow = {
+    ...followRow('other-subject', actor, actor, '2025-01-02T00:00:00Z', { subjectDid: otherSubject }),
+    target: otherSubject,
+  };
+  const output = runLua({
+    endpoint: 'getFollows', params: { actor, subjects: [subject, otherSubject, follower, subject] },
+    rows: [tiedEarliest, otherFollow],
+    assertions: `
+assert(#result.results == 4)
+assert(result.results[1].subject == '${subject}' and result.results[1].follow.uri == '${tiedEarliest.uri}')
+assert(result.results[2].subject == '${otherSubject}' and result.results[2].follow.uri == '${otherFollow.uri}')
+assert(result.results[3].subject == '${follower}' and result.results[3].follow == NULL_VALUE)
+assert(result.results[4].subject == '${subject}' and result.results[4].follow.uri == '${tiedEarliest.uri}')
+assert(result.results[1].follow.did == '${actor}' and result.results[1].follow.record.subject == '${subject}')
+assert(result.results[1].follow.profile == nil, 'batch checks return the raw existing follow view without enrichment')
+assert(#calls == 1, 'all distinct targets must be looked up in one database query')
+assert(calls[1].values[1] == '${followCollection}' and calls[1].values[2] == '${actor}')
+assert(#calls[1].values == 5 and calls[1].values[3] == '${subject}' and calls[1].values[4] == '${otherSubject}' and calls[1].values[5] == '${follower}', 'duplicates are removed only from bound lookup targets')
+assert(calls[1].sql:find('WITH requested(target) AS (VALUES ($3::text), ($4::text), ($5::text))', 1, true))
+assert(calls[1].sql:find('DISTINCT ON (requested.target)', 1, true))
+assert(calls[1].sql:find('ORDER BY requested.target, sorted.sort_at ASC, uri ASC', 1, true))
+`,
+  });
+  assert.equal(output, '');
+});
+
+test('getFollows rejects invalid or oversized target arrays before querying and surfaces database failures', () => {
+  const oversizedUrlTargets = Array.from({ length: 4 }, (_, index) => `did:plc:${'a'.repeat(2039)}${index}`);
+  for (const params of [
+    { actor },
+    { actor, subjects: [] },
+    { actor, subjects: [subject, 'alice.example'] },
+    { actor, subjects: Array(101).fill(subject) },
+    { actor, subjects: oversizedUrlTargets },
+    { actor, subjects: [subject], unexpected: 'value' },
+    { actor: 'alice.example', subjects: [subject] },
+  ]) runLua({ endpoint: 'getFollows', params, expectError: 'InvalidRequest:', expectedCalls: 0 });
+
+  runLua({ endpoint: 'getFollows', params: { actor, subjects: [subject] }, backend: 'sqlite', expectError: 'ActorFollowQueryFailed:', expectedCalls: 0 });
+  runLua({ endpoint: 'getFollows', params: { actor, subjects: [subject] }, queryFailure: true, expectError: 'ActorFollowQueryFailed:', expectedCalls: 1 });
 });
 
 test('actor-follow queries surface the beta PostgreSQL-only and operational failure errors', () => {

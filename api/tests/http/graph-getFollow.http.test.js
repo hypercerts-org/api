@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { contractUrl, requireContractTarget } from './helpers.js';
-import { graphDids } from './fixtures/graph-follows.fixture.js';
+import { graphDids, seedRows } from './fixtures/graph-follows.fixture.js';
 
 const endpoint = 'app.certified.graph.getFollow';
 const baseUrl = requireContractTarget();
@@ -49,4 +49,34 @@ test('getFollow returns explicit null when the actor-subject pair is not indexed
 
   assert.equal(response.status, 200, JSON.stringify(body));
   assert.deepEqual(body, { follow: null });
+});
+
+test('getFollows preserves subject order and duplicates with explicit targets and raw nullable representatives', async () => {
+  const subjects = [graphDids.primarySubject, graphDids.thirdFollower, graphDids.secondSubject, graphDids.primarySubject];
+  const response = await fetch(contractUrl(baseUrl, 'app.certified.graph.getFollows', {
+    actor: graphDids.publisher,
+    subjects,
+  }), {
+    headers: { accept: 'application/json' },
+    signal: AbortSignal.timeout(10_000),
+  });
+  const body = await response.json();
+
+  assert.equal(response.status, 200, JSON.stringify(body));
+  assert.deepEqual(body.results.map(({ subject }) => subject), subjects);
+  assert.deepEqual(body.results.map(({ follow }) => follow?.uri ?? null), [
+    `at://${graphDids.publisher}/app.certified.graph.follow/3jzfcijpj2z2a`,
+    null,
+    `at://${graphDids.publisher}/app.certified.graph.follow/3jzfcijpj2z2c`,
+    `at://${graphDids.publisher}/app.certified.graph.follow/3jzfcijpj2z2a`,
+  ]);
+  const earliest = seedRows.find(({ uri }) => uri === `at://${graphDids.publisher}/app.certified.graph.follow/3jzfcijpj2z2a`);
+  assert.deepEqual(body.results[0].follow, {
+    uri: earliest.uri,
+    cid: earliest.cid,
+    indexedAt: earliest.indexedAt,
+    did: earliest.did,
+    record: earliest.record,
+  });
+  assert.equal(Object.hasOwn(body.results[0].follow, 'profile'), false);
 });
