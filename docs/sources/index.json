@@ -177,6 +177,15 @@
       }
     },
     {
+      "id": "app.certified.feed.getReactionCounts",
+      "type": "query",
+      "module": "modules/feed-reactions/manifest.json",
+      "file": "sources/lexicons/app.certified.feed.getReactionCounts.json",
+      "source": {
+        "path": "../../lexicons/app.certified.feed.getReactionCounts.json"
+      }
+    },
+    {
       "id": "app.certified.feed.getReposts",
       "type": "query",
       "module": "modules/feed-reactions/manifest.json",
@@ -790,6 +799,15 @@
       "source": {
         "module": "modules/feed-reactions/manifest.json",
         "path": "../../lexicons/app.certified.feed.getLikes.json"
+      }
+    },
+    {
+      "id": "app.certified.feed.getReactionCounts",
+      "file": "sources/lexicons/app.certified.feed.getReactionCounts.json",
+      "kind": "endpoint",
+      "source": {
+        "module": "modules/feed-reactions/manifest.json",
+        "path": "../../lexicons/app.certified.feed.getReactionCounts.json"
       }
     },
     {

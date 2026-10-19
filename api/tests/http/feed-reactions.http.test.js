@@ -8,6 +8,7 @@ const repostsEndpoint = 'app.certified.feed.getReposts';
 const actorLikesEndpoint = 'app.certified.feed.getActorLikes';
 const actorRepostsEndpoint = 'app.certified.feed.getActorReposts';
 const actorReactionsEndpoint = 'app.certified.feed.getActorReactions';
+const reactionCountsEndpoint = 'app.certified.feed.getReactionCounts';
 const likeCollection = 'app.certified.feed.like';
 const repostCollection = 'app.certified.feed.repost';
 
@@ -138,6 +139,22 @@ test('getReposts returns total distinct reposters and earliest raw reposts with 
   assert.equal(body.reposts[1].organization, null);
 });
 
+test('getReactionCounts batches repeated subjects and counts distinct publishers by subject URI only', async () => {
+  const missingSubject = `at://${reactionDids.target}/org.example.unindexed/missing`;
+  const { response, body } = await request(reactionCountsEndpoint, {
+    subjects: [reactionUris.subject, reactionUris.otherSubject, reactionUris.subject, missingSubject],
+  });
+
+  assert.equal(response.status, 200, JSON.stringify(body));
+  assert.deepEqual(body.counts, [
+    { subject: reactionUris.subject, likeCount: 3, repostCount: 2 },
+    { subject: reactionUris.otherSubject, likeCount: 1, repostCount: 1 },
+    { subject: reactionUris.subject, likeCount: 3, repostCount: 2 },
+    { subject: missingSubject, likeCount: 0, repostCount: 0 },
+  ]);
+  assert.deepEqual(Object.keys(body), ['counts']);
+});
+
 test('actor reaction queries deduplicate subject URIs and return raw records without hydration or counts', async () => {
   for (const { endpoint, collection, outputKey, relationKey } of [
     { endpoint: actorLikesEndpoint, collection: likeCollection, outputKey: 'likes', relationKey: 'like' },
@@ -228,11 +245,18 @@ test('actor reaction queries keyset-page URI ties in descending order without hy
 });
 
 test('reaction endpoints expose named request errors for invalid pagination and identifiers', async () => {
+  const tooManySubjects = Array(101).fill(reactionUris.subject);
   const cases = [
     { endpoint: likesEndpoint, params: { subject: 'alice.example' } },
     { endpoint: repostsEndpoint, params: { subject: reactionUris.subject, limit: 101 } },
     { endpoint: actorLikesEndpoint, params: { actor: 'alice.example' } },
     { endpoint: actorRepostsEndpoint, params: { actor: reactionDids.actorA, sortDirection: 'sideways' } },
+    { endpoint: reactionCountsEndpoint, params: {} },
+    { endpoint: reactionCountsEndpoint, params: { subjects: ['alice.example'] } },
+    { endpoint: reactionCountsEndpoint, params: { subjects: ['at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/invalid/key'] } },
+    { endpoint: reactionCountsEndpoint, params: { subjects: ['at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa%GG/org.example.subject/key'] } },
+    { endpoint: reactionCountsEndpoint, params: { subjects: tooManySubjects } },
+    { endpoint: reactionCountsEndpoint, params: { 'subjects[]': [reactionUris.subject] } },
   ];
   for (const { endpoint, params } of cases) {
     const { response, body } = await request(endpoint, params);

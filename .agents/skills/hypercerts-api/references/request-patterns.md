@@ -54,6 +54,7 @@ const url = new URL(
 ```
 
 The response contains one `results` item per supplied occurrence in that same order. Each item repeats the explicit `subject` AT-URI and has `like` and `repost` fields that are either raw record views or null. Matching ignores the subject CID. A null means the successful indexed lookup found no such reaction; a query failure is an error, not null. Preserve a non-null view's `uri` and `cid` when you need to identify that reaction record elsewhere.
+`app.certified.feed.getReactionCounts` accepts 1–100 full subject record AT-URIs with DID authorities, not handle authorities. Append each value under the unbracketed `subjects` key; do not use `subjects[]` or comma-join values. Its response has one entry per input occurrence in the same order, including duplicates. A zero count means no matching indexed reaction publishers were found at query time; counts may change as indexing changes.
 
 ## Keep page requests cursor-consistent
 

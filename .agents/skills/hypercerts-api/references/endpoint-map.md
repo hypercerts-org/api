@@ -1,6 +1,6 @@
 # Endpoint map: choose by consumer task
 
-This task index lists the 62 public query NSIDs in the bundled [OpenAPI contract](openapi.json). It helps choose an operation but does not replace its exact contract: inspect that operation and its referenced schemas for required parameters, types, defaults, limits, filter semantics, response fields, and declared errors. The static snapshot describes the contract, not availability or freshness on a selected deployment.
+This task index lists the public query NSIDs in the bundled [OpenAPI contract](openapi.json). It helps choose an operation but does not replace its exact contract: inspect that operation and its referenced schemas for required parameters, types, defaults, limits, filter semantics, response fields, and declared errors. The static snapshot describes the contract, not availability or freshness on a selected deployment.
 
 ## Fast selection rules
 
@@ -9,7 +9,7 @@ This task index lists the 62 public query NSIDs in the bundled [OpenAPI contract
 - **Browse or filter without free text:** choose `list...` in the relevant domain.
 - **Text discovery:** use `search...` only where listed below. A search query is not interchangeable with a list filter, and search semantics vary by endpoint.
 - **Relationship checks:** use `get...Follow` for a single pair, or `getFollows` / `getEntityFollows` to check repeated target values for one actor. List queries answer who follows whom or which entities an actor follows.
-- **Feed reactions:** use `getLikes` or `getReposts` for distinct actors reacting to one subject URI, `getActorLikes` / `getActorReposts` for one actor's raw representative reactions, or `getActorReactions` to check one actor across a bounded set of known subject URIs.
+- **Feed reactions:** use `getLikes` or `getReposts` for distinct actors reacting to one subject URI, `getActorLikes` / `getActorReposts` for one actor's raw representative reactions, `getActorReactions` to check one actor across a bounded set of known subject URIs, or `getReactionCounts` for indexed like and repost counts across known subjects.
 
 Inspect the exact operation in the bundled OpenAPI contract before constructing a request: names such as `authors`, `actors`, `uri`, and `collection` have endpoint-specific meanings. Do not infer that a filter, search operation, output array name, or error exists just because a related endpoint has one.
 
@@ -85,7 +85,7 @@ An `unanswered` award is a successful indexed award result, not a not-found resp
 
 Do not confuse actor follows with entity follows; their identifiers and list outputs differ. Recent raw follows preserve duplicates and are not a snapshot; consult that endpoint's description before using cursors.
 
-## Feed reactions (5)
+## Feed reactions (6)
 
 | User task | Query NSID | Practical choice |
 |---|---|---|
@@ -94,6 +94,7 @@ Do not confuse actor follows with entity follows; their identifiers and list out
 | List an actor's likes | `app.certified.feed.getActorLikes` | `actor` is a repository-owner DID. Returns raw like records, one per subject URI; subjects need not be indexed. |
 | List an actor's reposts | `app.certified.feed.getActorReposts` | `actor` is a repository-owner DID. Returns raw repost records, one per subject URI; subjects need not be indexed. |
 | Check an actor's reactions for known subjects | `app.certified.feed.getActorReactions` | Supply `actor` as a DID and `subjects` as 1–100 repeated full record AT-URIs. Returns one result per input occurrence in order, including duplicates; matching ignores CID, and missing indexed likes/reposts are null. Raw views retain reaction URIs. |
+| Get reaction counts for subjects | `app.certified.feed.getReactionCounts` | Pass 1–100 full subject record AT-URIs with DID authorities, not handle authorities, as repeated, unbracketed `subjects` parameters. Results preserve input order and duplicates; counts are distinct indexed publisher DIDs matching subject URI regardless of CID or subject-record indexing. |
 
 Paginated reaction-list queries use the earliest record per author/subject URI, with reaction URI ascending on ties, and sort pages by the representative's `createdAt` and URI. `getActorReactions` uses the same representative selection but preserves request order and has no pagination. Check each operation for exact cursor and response details.
 

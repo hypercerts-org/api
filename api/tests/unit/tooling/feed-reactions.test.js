@@ -135,6 +135,7 @@ db = {
   backend = function() return '${backend}' end,
   raw = function(sql, values)
     calls[#calls + 1] = { sql = sql, values = values }
+    if ${failure === 'reaction-counts' ? 'true' : 'false'} then error('injected reaction count query failure') end
     if ${failure === 'reaction' ? 'true' : 'false'} and values[1] == '${collections.Like}' then error('injected query failure') end
     if ${failure === 'repost' ? 'true' : 'false'} and values[1] == '${collections.Repost}' then error('injected query failure') end
     if ${failure === 'profile' ? 'true' : 'false'} and values[1] == '${profileCollection}' then error('injected profile failure') end
@@ -225,6 +226,77 @@ assert(calls[1].values[3] == 26, 'subject queries default to 25 and fetch one lo
     params: { subject },
     rows: [{ total_count: 0 }],
     assertions: 'assert(result.repostCount == 0 and #result.reposts == 0 and result.cursor == nil)',
+  });
+});
+
+test('getReactionCounts batches subjects and preserves duplicate input order with zero counts for unmatched subjects', () => {
+  const missingSubject = 'at://did:plc:eeeeeeeeeeeeeeeeeeeeeeee/org.example.subject/missing';
+  runLua({
+    endpoint: 'getReactionCounts',
+    params: { subjects: [subject, missingSubject, subject] },
+    rows: [{ subject_uri: subject, like_count: '2', repost_count: '1' }],
+    assertions: `
+assert(#result.counts == 3)
+assert(result.counts[1].subject == '${subject}' and result.counts[1].likeCount == 2 and result.counts[1].repostCount == 1)
+assert(result.counts[2].subject == '${missingSubject}' and result.counts[2].likeCount == 0 and result.counts[2].repostCount == 0)
+assert(result.counts[3].subject == '${subject}' and result.counts[3].likeCount == 2 and result.counts[3].repostCount == 1)
+assert(#calls == 1, 'one batched database query must serve all requested subject occurrences')
+`,
+  });
+});
+
+test('getReactionCounts accepts 100 repeated values but rejects empty, oversized, malformed, and unknown inputs before querying', () => {
+  runLua({
+    endpoint: 'getReactionCounts',
+    params: { subjects: Array(100).fill(subject) },
+    assertions: 'assert(#result.counts == 100 and #calls == 1)',
+  });
+
+  const tooManySubjects = Array.from({ length: 101 }, (_, index) => `at://did:plc:ffffffffffffffffffffffff/org.example.subject/${index}`);
+  for (const params of [
+    {},
+    { subjects: [] },
+    { subjects: tooManySubjects },
+    { subjects: ['alice.example'] },
+    { subjects: { repeated: true } },
+    { subjects: [subject], extra: 'unsupported' },
+  ]) {
+    runLua({ endpoint: 'getReactionCounts', params, expectError: 'InvalidRequest:', expectedCalls: 0 });
+  }
+});
+
+test('getReactionCounts rejects an invalid subject collection NSID before querying', () => {
+  runLua({
+    endpoint: 'getReactionCounts',
+    params: { subjects: ['at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/invalid/key'] },
+    expectError: 'InvalidRequest:',
+    expectedCalls: 0,
+  });
+});
+
+test('getReactionCounts rejects malformed percent escapes in subject DIDs before querying', () => {
+  runLua({
+    endpoint: 'getReactionCounts',
+    params: { subjects: ['at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa%GG/org.example.subject/key'] },
+    expectError: 'InvalidRequest:',
+    expectedCalls: 0,
+  });
+});
+
+test('getReactionCounts reports named operational errors for database failures', () => {
+  runLua({
+    endpoint: 'getReactionCounts',
+    params: { subjects: [subject] },
+    failure: 'reaction-counts',
+    expectError: 'ReactionCountQueryFailed:',
+    expectedCalls: 1,
+  });
+  runLua({
+    endpoint: 'getReactionCounts',
+    params: { subjects: [subject] },
+    backend: 'sqlite',
+    expectError: 'ReactionCountQueryFailed:',
+    expectedCalls: 0,
   });
 });
 

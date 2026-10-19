@@ -1573,6 +1573,61 @@
         ]
       }
     },
+    "/xrpc/app.certified.feed.getReactionCounts": {
+      "get": {
+        "operationId": "app_certified_feed_getReactionCounts",
+        "tags": [
+          "app.certified.feed"
+        ],
+        "description": "Returns current indexed like and repost counts for a list of subject records. No authentication is required. Counts are distinct publisher DIDs and match subject.uri regardless of CID or whether the subject is indexed.",
+        "parameters": [
+          {
+            "name": "subjects",
+            "in": "query",
+            "required": true,
+            "description": "Pass 1–100 full DID-authority subject record AT-URIs as repeated, unbracketed subjects query parameters.",
+            "schema": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "at-uri"
+              }
+            },
+            "style": "form",
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app.certified.feed.getReactionCounts.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "app.certified.feed.getReactionCounts",
+        "x-hypercerts-coverage": "manifest-registered",
+        "x-hypercerts-source": {
+          "module": "modules/feed-reactions/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "The subjects list is empty, has more than 100 entries, or contains an invalid subject AT-URI; correct the list and retry."
+          },
+          {
+            "name": "ReactionCountQueryFailed",
+            "description": "The indexed like or repost count query failed; retry the request."
+          }
+        ]
+      }
+    },
     "/xrpc/app.certified.feed.getReposts": {
       "get": {
         "operationId": "app_certified_feed_getReposts",
@@ -6045,6 +6100,46 @@
           "cursor": {
             "type": "string",
             "description": "Next-page cursor; omitted when pagination is complete."
+          }
+        }
+      },
+      "app.certified.feed.getReactionCounts.subjectReactionCount": {
+        "type": "object",
+        "required": [
+          "subject",
+          "likeCount",
+          "repostCount"
+        ],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "description": "Subject AT-URI requested by the caller; matching ignores the subject CID.",
+            "format": "at-uri"
+          },
+          "likeCount": {
+            "type": "integer",
+            "description": "Number of distinct indexed publisher DIDs with a current like whose subject.uri matches this URI; zero when no matching likes are indexed.",
+            "minimum": 0
+          },
+          "repostCount": {
+            "type": "integer",
+            "description": "Number of distinct indexed publisher DIDs with a current repost whose subject.uri matches this URI; zero when no matching reposts are indexed.",
+            "minimum": 0
+          }
+        }
+      },
+      "app.certified.feed.getReactionCounts.output": {
+        "type": "object",
+        "required": [
+          "counts"
+        ],
+        "properties": {
+          "counts": {
+            "type": "array",
+            "description": "One entry for each requested subject, in request order. Repeated input URIs produce repeated entries. Counts reflect current indexed state and may change between requests.",
+            "items": {
+              "$ref": "#/components/schemas/app.certified.feed.getReactionCounts.subjectReactionCount"
+            }
           }
         }
       },

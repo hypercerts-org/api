@@ -12,9 +12,11 @@ Use the [`docs/` endpoint explorer](../docs/) and generated [OpenAPI reference](
 
 ## Feed reaction capability
 
-`modules/feed-reactions/manifest.json` owns the like and repost record schemas and five public queries: `app.certified.feed.getLikes`, `getReposts`, `getActorLikes`, `getActorReposts`, and `getActorReactions`. The root manifest includes this independently installable module in the aggregate bundle. Its record schemas enable backfill, and queries read the current indexed records directly; deleted reactions therefore stop appearing once removed from HappyView's index, without a separate stored count.
+`modules/feed-reactions/manifest.json` owns the like and repost record schemas and six public queries: `app.certified.feed.getLikes`, `getReposts`, `getActorLikes`, `getActorReposts`, `getActorReactions`, and `getReactionCounts`. The root manifest includes this independently installable module in the aggregate bundle. Its record schemas enable backfill, and queries read the current indexed records directly; deleted reactions therefore stop appearing once removed from HappyView's index, without a separate stored count.
 
 Subject queries match by AT-URI without requiring a subject CID match, return one earliest reaction per author, and include a distinct-actor total with nullable profile and organization sidecars. Actor list queries return raw reaction records without subject hydration. `getActorReactions` looks up one actor's like and repost across 1–100 subject AT-URIs, preserving input order and duplicates; each raw reaction view retains its record URI, and a missing indexed reaction is null. Query failures return errors, not nulls. The four list queries use bounded `createdAt`/URI cursor pagination; the batch lookup is not paginated.
+
+`getReactionCounts` accepts 1–100 repeated, unbracketed `subjects` values and returns one ordered count pair per input occurrence, counting distinct indexed publisher DIDs by subject URI across both reaction collections. Its counts do not require the subject record to be indexed and may change as reaction indexing changes.
 
 ## Local validation
 
