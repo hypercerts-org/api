@@ -8,8 +8,8 @@ local function list_entity_followers()
   local limit = parse_list_limit(params)
   local direction = parse_sort_direction(params)
   local cursor = entity_follow_decode_cursor(scalar(params, "cursor"), direction)
-  local rows, next_cursor = entity_follow_query_page("followers", entity_uri, limit, cursor, direction)
-  local response = { followers = toarray(entity_follow_follower_views(rows)) }
+  local rows, next_cursor, total_count = entity_follow_query_page("followers", entity_uri, limit, cursor, direction)
+  local response = { followers = toarray(entity_follow_follower_views(rows)), totalCount = total_count }
   if next_cursor then response.cursor = next_cursor end
   return response
 end

@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Lists actors following an entity AT-URI. No authentication is required; duplicate actor–entity relationships use the earliest createdAt, with URI ascending on ties. Only the returned page is hydrated: missing profile and organization sidecars are null, while lookup failures return errors rather than partial pages.",
+      "description": "Lists actors following an entity AT-URI. No authentication is required; duplicate actor–entity relationships use the earliest createdAt, with URI ascending on ties. totalCount reports distinct relationships before cursor and limit. Only the returned page is hydrated: missing profile and organization sidecars are null, while lookup failures return errors rather than partial pages.",
       "parameters": {
         "type": "params",
         "required": ["entity"],
@@ -32,9 +32,10 @@
     },
     "output": {
       "type": "object",
-      "required": ["followers"],
+      "required": ["followers", "totalCount"],
       "properties": {
         "followers": { "type": "array", "items": { "type": "ref", "ref": "#entityFollowerView" } },
+        "totalCount": { "type": "integer", "minimum": 0, "description": "Count of distinct actor–entity relationships after duplicate records are collapsed, before cursor and limit are applied." },
         "cursor": { "type": "string", "description": "Next-page cursor; omitted when no more results are available." }
       }
     }

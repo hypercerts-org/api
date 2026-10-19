@@ -79,7 +79,7 @@ An `unanswered` award is a successful indexed award result, not a not-found resp
 | List actors an actor follows | `app.certified.graph.listActorFollowing` | `actor` is the follower DID. |
 | Check one actor-to-entity follow | `app.certified.graph.getEntityFollow` | Supply actor DID and entity AT-URI; check its nullable/error contract. |
 | Check one actor against many entity AT-URIs | `app.certified.graph.getEntityFollows` | Supply 1–100 repeated `entities` values; matching is by URI, each `{entity, follow}` preserves input order and duplicates, and the encoded GET request-target is capped at 7,000 bytes. |
-| List actors following an entity | `app.certified.graph.listEntityFollowers` | `entity` is an entity AT-URI. |
+| List actors following an entity | `app.certified.graph.listEntityFollowers` | `entity` is an entity AT-URI; `totalCount` reports distinct relationships before cursor and limit, including on empty pages. |
 | List entities an actor follows | `app.certified.graph.listEntityFollowing` | `actor` is an actor DID; targets are hydrated from indexed records. |
 | Browse recent raw follow records | `app.certified.graph.listRecentFollows` | Beta feed across publishers; `before` and pagination have distinct feed semantics. Not a per-actor relationship check. |
 

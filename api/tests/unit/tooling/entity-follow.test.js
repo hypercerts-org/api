@@ -119,7 +119,7 @@ db = {
 dofile('lua/endpoints/listEntityFollowing.lua')
 local ok, result = pcall(handle)
 assert(ok, tostring(result))
-assert(#result.entities == 1 and result.cursor ~= nil)
+assert(#result.entities == 1 and result.cursor ~= nil and result.totalCount == nil)
 local item = result.entities[1]
 assert(item.uri == FIXTURE.entityUri)
 assert(item.follow.uri == FIXTURE.follows[1].uri and item.follow.did == FIXTURE.actor)
@@ -271,7 +271,7 @@ test('entity-follow listing selects earliest representatives before direction-bo
   for (const scenario of cases) {
     const follows = scenario.rows.map(({ did, key, createdAt, timestamp }) => ({
       uri: `at://${did}/${entityFollow}/${key}`, did, cid: `bafy-${key}`,
-      indexed_at: '2025-01-05T00:00:00Z', record: key, sort_timestamp: timestamp,
+      indexed_at: '2025-01-05T00:00:00Z', record: key, sort_timestamp: timestamp, total_count: 4,
       follow_record: { $type: entityFollow, subject: { uri: followedEntity }, createdAt },
     }));
     const records = Object.fromEntries(follows.map(({ record, follow_record }) => [record, follow_record]));
@@ -314,7 +314,7 @@ db = {
 dofile('lua/endpoints/listEntityFollowers.lua')
 local ok, result = pcall(handle)
 assert(ok, tostring(result))
-assert(#result.followers == 1 and result.cursor ~= nil and result.totalCount == nil)
+assert(#result.followers == 1 and result.cursor ~= nil and result.totalCount == 4)
 assert(result.followers[1].did == '${scenario.rows[0].did}')
 assert(result.followers[1].follow.record.createdAt == '${scenario.rows[0].createdAt}')
 local sql = calls[1].sql
@@ -327,8 +327,11 @@ assert(sql:find('ORDER BY sorted.sort_at ASC, uri ASC', 1, true), 'choose the ea
 assert(sql:find("jsonb_typeof(record::jsonb->'createdAt') = 'string'", 1, true))
 assert(sql:find('ELSE COALESCE(indexed_at::timestamptz, created_at::timestamptz) END', 1, true))
 local representative = assert(sql:find('relationship_rank = 1', 1, true))
+local total_cte = assert(sql:find('total AS (SELECT COUNT(*) AS total_count FROM representatives)', 1, true))
+local page_cte = assert(sql:find('page AS (SELECT', 1, true))
 local cursor_filter = assert(sql:find('(sort_at, uri) ${scenario.operator}', 1, true))
-assert(representative < cursor_filter, 'apply the cursor only after representative selection')
+assert(representative < total_cte and total_cte < page_cte and page_cte < cursor_filter,
+  'count deduplicated relationships before cursor-filtered page selection')
 assert(sql:find('ORDER BY sort_at ${scenario.ordering}, uri ${scenario.ordering}', 1, true))
 local token_json = result.cursor:gsub('..', function(pair) return string.char(tonumber(pair, 16)) end)
 local token = decode_cursor(token_json)
@@ -418,8 +421,8 @@ test('listEntityFollowers preserves follower identity and hydrates profiles and 
   const lookahead = 'did:plc:dddddddddddddddddddddddd';
   const entity = 'at://did:plc:eeeeeeeeeeeeeeeeeeeeeeee/org.hypercerts.entity.feature/target';
   const follows = [
-    { uri: `at://${follower}/${entityFollow}/incoming`, did: follower, cid: 'bafy-incoming', indexed_at: null, record: 'follow-incoming', sort_timestamp: '2025-01-03T00:00:00.000000Z', follow_record: { $type: entityFollow, subject: { uri: entity }, createdAt: '2025-01-03T00:00:00Z' } },
-    { uri: `at://${lookahead}/${entityFollow}/lookahead`, did: lookahead, cid: 'bafy-lookahead', indexed_at: '2025-01-02T00:00:00Z', record: 'follow-lookahead', sort_timestamp: '2025-01-02T00:00:00.000000Z', follow_record: { $type: entityFollow, subject: { uri: entity }, createdAt: '2025-01-02T00:00:00Z' } },
+    { uri: `at://${follower}/${entityFollow}/incoming`, did: follower, cid: 'bafy-incoming', indexed_at: null, record: 'follow-incoming', sort_timestamp: '2025-01-03T00:00:00.000000Z', total_count: 5, follow_record: { $type: entityFollow, subject: { uri: entity }, createdAt: '2025-01-03T00:00:00Z' } },
+    { uri: `at://${lookahead}/${entityFollow}/lookahead`, did: lookahead, cid: 'bafy-lookahead', indexed_at: '2025-01-02T00:00:00Z', record: 'follow-lookahead', sort_timestamp: '2025-01-02T00:00:00.000000Z', total_count: 5, follow_record: { $type: entityFollow, subject: { uri: entity }, createdAt: '2025-01-02T00:00:00Z' } },
   ];
   const profile = { uri: `at://${follower}/${profileCollection}/self`, did: follower, cid: 'bafy-incoming-profile', indexed_at: '2025-01-01T00:00:00Z', record: 'incoming-profile', sidecar_record: { $type: profileCollection, displayName: 'Incoming follower' } };
   const organization = { uri: `at://${follower}/${organizationCollection}/self`, did: follower, cid: 'bafy-incoming-org', indexed_at: '2025-01-01T00:00:00Z', record: 'incoming-org', sidecar_record: { $type: organizationCollection, organizationType: ['nonprofit'] } };
@@ -467,7 +470,7 @@ db = {
 dofile('lua/endpoints/listEntityFollowers.lua')
 local ok, result = pcall(handle)
 assert(ok, tostring(result))
-assert(#result.followers == 1 and result.cursor ~= nil and result.totalCount == nil)
+assert(#result.followers == 1 and result.cursor ~= nil and result.totalCount == 5)
 local item = result.followers[1]
 assert(item.did == FIXTURE.follows[1].did and item.follow.did == FIXTURE.follows[1].did)
 assert(item['$type'] == 'app.certified.graph.listEntityFollowers#entityFollowerView')
@@ -484,6 +487,61 @@ assert(calls[3].values[1] == FIXTURE.organizationCollection and calls[3].values[
 local token_json = result.cursor:gsub('..', function(pair) return string.char(tonumber(pair, 16)) end)
 local token = decode_cursor(token_json)
 assert(token.u == FIXTURE.follows[1].uri and token.d == 'desc')
+`;
+  runLua('listEntityFollowers', source);
+});
+
+test('listEntityFollowers retains the deduplicated total on an empty beyond-end page', () => {
+  const entity = 'at://did:plc:eeeeeeeeeeeeeeeeeeeeeeee/org.hypercerts.entity.feature/target';
+  const cursor = Buffer.from(JSON.stringify({
+    v: 1,
+    d: 'desc',
+    t: '2025-01-01T00:00:00.000000Z',
+    u: `at://${actor}/${entityFollow}/cursor`,
+  }), 'utf8').toString('hex');
+  const source = `
+local FIXTURE = ${lua({ actor, entityFollow, entity })}
+local calls = {}
+local totalCount = 4
+local NULL_VALUE = {}
+json = {
+  decode = function(value)
+    if value == 'null' then return NULL_VALUE end
+    return {
+      v = tonumber(value:match('"v":(%d+)')),
+      d = value:match('"d":"([^"]*)"'),
+      t = value:match('"t":"([^"]*)"'),
+      u = value:match('"u":"([^"]*)"'),
+    }
+  end,
+}
+toarray = function(value) return value end
+params = { entity = FIXTURE.entity, limit = '1', sortDirection = 'desc', cursor = '${cursor}' }
+db = {
+  backend = function() return 'postgres' end,
+  raw = function(sql, values)
+    calls[#calls + 1] = { sql = sql, values = values }
+    if values[1] == FIXTURE.entityFollow then
+      if sql:find('LEFT JOIN page', 1, true) then return { { total_count = totalCount } } end
+      return {}
+    end
+    error('empty follower pages must not hydrate sidecars')
+  end,
+}
+dofile('lua/endpoints/listEntityFollowers.lua')
+local ok, result = pcall(handle)
+assert(ok, tostring(result))
+assert(#result.followers == 0 and result.cursor == nil)
+assert(result.totalCount == 4 and type(result.totalCount) == 'number')
+assert(#calls == 1)
+local sql = calls[1].sql
+assert(sql:find('total AS (SELECT COUNT(*) AS total_count FROM representatives)', 1, true))
+assert(sql:find('LEFT JOIN page ON TRUE', 1, true), 'preserve the aggregate row when the cursor yields no page rows')
+totalCount = 0
+ok, result = pcall(handle)
+assert(ok, tostring(result))
+assert(#result.followers == 0 and result.totalCount == 0, 'an empty relationship set returns a numeric zero')
+assert(#calls == 2)
 `;
   runLua('listEntityFollowers', source);
 });
@@ -748,12 +806,15 @@ test('entity-follow module owns its view Lexicons and declares their shared depe
   assert.deepEqual(getBatch.defs.entityFollowResult.nullable, ['follow']);
   assert.deepEqual(get.defs.output.required, ['follow']);
   assert.deepEqual(get.defs.output.nullable, ['follow']);
-  for (const [document, outputKey] of [[followers, 'followers'], [followingDoc, 'entities']]) {
-    assert.equal(document.defs.main.parameters.properties.limit.minimum, 1);
-    assert.equal(document.defs.main.parameters.properties.limit.maximum, 100);
-    assert.deepEqual(document.defs.output.required, [outputKey]);
-    assert.equal(Object.hasOwn(document.defs.output.properties, 'totalCount'), false);
-  }
+  assert.equal(followers.defs.main.parameters.properties.limit.minimum, 1);
+  assert.equal(followers.defs.main.parameters.properties.limit.maximum, 100);
+  assert.deepEqual(followers.defs.output.required, ['followers', 'totalCount']);
+  assert.equal(followers.defs.output.properties.totalCount.type, 'integer');
+  assert.equal(followers.defs.output.properties.totalCount.minimum, 0);
+  assert.equal(Object.hasOwn(followingDoc.defs.output.properties, 'totalCount'), false);
+  assert.deepEqual(followingDoc.defs.output.required, ['entities']);
+  assert.equal(followingDoc.defs.main.parameters.properties.limit.minimum, 1);
+  assert.equal(followingDoc.defs.main.parameters.properties.limit.maximum, 100);
 });
 
 test('listEntityFollowing names unknown query parameters in InvalidRequest diagnostics', () => {
