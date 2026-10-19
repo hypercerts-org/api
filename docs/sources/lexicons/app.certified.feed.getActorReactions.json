@@ -19,7 +19,7 @@
           },
           "subjects": {
             "type": "array",
-            "description": "One or more full record AT-URIs, supplied as repeated unbracketed query values. Results preserve each occurrence and its input order.",
+            "description": "One or more full record AT-URIs with DID authorities, not handle authorities, supplied as repeated unbracketed query values. Results preserve each occurrence and its input order.",
             "minLength": 1,
             "maxLength": 100,
             "items": {

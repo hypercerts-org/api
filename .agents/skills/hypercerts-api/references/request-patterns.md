@@ -41,9 +41,10 @@ The batch relationship checks `app.certified.graph.getFollows` and `app.certifie
 
 ### Batch an actor's reactions for known subjects
 
-`app.certified.feed.getActorReactions` requires one actor DID and 1–100 full record AT-URIs. Encode `subjects` as repeated, unbracketed query parameters; keep input order and duplicates if each occurrence matters:
+`app.certified.feed.getActorReactions` requires one actor DID and 1–100 full record AT-URIs with DID authorities, not handle authorities. Encode `subjects` as repeated, unbracketed query parameters; keep input order and duplicates if each occurrence matters:
 
 ```ts
+const params = new URLSearchParams();
 params.set("actor", actorDid);
 for (const subject of subjectUris) params.append("subjects", subject);
 const url = new URL(
