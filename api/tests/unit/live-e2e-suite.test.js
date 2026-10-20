@@ -58,7 +58,7 @@ const evaluationRow = (rkey, evaluator) => ({
   evaluators: [{ did: evaluationDid, hydrationStatus: 'hydrated', profile: null, organization: null }],
 });
 
-async function run(endpointName, reply) {
+async function run(endpointName, reply, { discoveryPages = 1 } = {}) {
   const catalogue = await loadCatalogue();
   const selected = catalogue.endpoints.filter(endpoint => endpoint.nsid === endpointName);
   const directory = await mkdtemp(path.join(tmpdir(), 'live-suite-'));
@@ -69,10 +69,184 @@ async function run(endpointName, reply) {
       ? { sequence: this.attempts, ...response }
       : { sequence: this.attempts, status: 200, body: response };
   } };
-  const report = await runSuite({ catalogue, selected, transport, directory, discoveryPages: 1 });
+  const report = await runSuite({ catalogue, selected, transport, directory, discoveryPages });
   assert.deepEqual(JSON.parse(await readFile(path.join(directory, 'report.json'), 'utf8')).counts, report.counts);
   return report;
 }
+
+test('batch follow checks call the endpoint and catch reordered or missing positive relationships', async () => {
+  const follows = graphOrderRows.map(row => row.follow);
+  for (const mode of ['correct', 'missing', 'reordered']) {
+    let calls = 0;
+    const report = await run('app.certified.graph.getFollows', (nsid, params) => {
+      if (nsid.endsWith('listRecentFollows')) return { follows };
+      if (nsid.endsWith('getFollow')) return { follow: follows.find(row => row.record.subject === params.subject) ?? null };
+      calls++;
+      const results = params.subjects.map(subject => ({ subject, follow: mode === 'missing' ? null : follows.find(row => row.record.subject === subject) ?? null }));
+      return { results: mode === 'reordered' ? [...results.slice(1), results[0]] : results };
+    });
+    assert.ok(calls > 0, 'Batch endpoint must actually be exercised');
+    const outcome = report.results.find(row => row.id.endsWith('/roundtrip'));
+    assert.equal(outcome.status, mode === 'correct' ? 'passed' : 'failed', outcome.reason);
+  }
+});
+
+test('reaction count checks detect schema-valid wrong counts using independent subject queries', async () => {
+  for (const broken of [false, true]) {
+    const report = await run('app.certified.feed.getReactionCounts', (nsid, params) => {
+      if (nsid.endsWith('listActivities')) return { activities: [alice, bob] };
+      if (nsid.endsWith('getLikes')) return { likeCount: 2, likes: [] };
+      if (nsid.endsWith('getReposts')) return { repostCount: 0, reposts: [] };
+      return { counts: params.subjects.map(subject => ({ subject, likeCount: broken ? 0 : 2, repostCount: 0 })) };
+    });
+    const outcome = report.results.find(row => row.id.endsWith('/roundtrip'));
+    assert.equal(outcome.status, broken ? 'failed' : 'passed', outcome.reason);
+  }
+});
+
+test('entity batch follows preserve duplicates and compare raw records to single lookups', async () => {
+  const follows = graphOrderRows.map(row => ({ ...row.follow, record: { ...row.follow.record, $type: 'app.certified.graph.entityFollow', subject: { uri: alice.uri, cid } } }));
+  for (const broken of [false, true]) {
+    const report = await run('app.certified.graph.getEntityFollows', (nsid, params) => {
+      if (nsid.endsWith('listRecentFollows')) return { follows };
+      if (nsid.endsWith('getEntityFollow')) return { follow: follows[0] };
+      const results = params.entities.map(entity => ({ entity, follow: follows[0] }));
+      return { results: broken ? results.slice(1) : results };
+    });
+    const outcome = report.results.find(row => row.id.endsWith('/roundtrip'));
+    assert.equal(outcome.status, broken ? 'failed' : 'passed', outcome.reason);
+  }
+});
+
+test('actor reaction batches detect false nulls against independent actor history', async () => {
+  const like = { ...alice, uri: `at://${alice.did}/app.certified.feed.like/test`, record: { $type: 'app.certified.feed.like', createdAt: alice.indexedAt, subject: { uri: bob.uri, cid } } };
+  for (const broken of [false, true]) {
+    const report = await run('app.certified.feed.getActorReactions', (nsid, params) => {
+      if (nsid.endsWith('listProfiles')) return { profiles: [alice] };
+      if (nsid.endsWith('getActorLikes')) return { likes: [like] };
+      if (nsid.endsWith('getActorReposts')) return { reposts: [] };
+      return { results: params.subjects.map(subject => ({ subject, like: broken ? null : like, repost: null })) };
+    });
+    const outcome = report.results.find(row => row.id.endsWith('/roundtrip'));
+    assert.equal(outcome.status, broken ? 'failed' : 'passed', outcome.reason);
+  }
+});
+
+test('follower totals are checked against complete distinct scans and page size', async () => {
+  const follow = { ...graphOrderRows[0].follow, record: { ...graphOrderRows[0].follow.record, $type: 'app.certified.graph.entityFollow', subject: { uri: alice.uri, cid } } };
+  const follower = { did: follow.did, profile: null, organization: null, follow };
+  for (const mode of ['correct', 'wrong-total', 'page-dependent']) {
+    const report = await run('app.certified.graph.listEntityFollowers', (nsid, params) => {
+      if (nsid.endsWith('listRecentFollows')) return { follows: [follow] };
+      return { followers: [follower], totalCount: mode === 'wrong-total' || (mode === 'page-dependent' && params.limit === 1) ? 2 : 1 };
+    });
+    const outcome = report.results.find(row => row.id.endsWith('/count/consistency'));
+    assert.equal(outcome?.status, mode === 'correct' ? 'passed' : 'failed', outcome?.reason);
+  }
+});
+
+test('truncated actor history cannot prove a null reaction', async () => {
+  const like = { ...alice, uri: `at://${alice.did}/app.certified.feed.like/test`, record: { $type: 'app.certified.feed.like', createdAt: alice.indexedAt, subject: { uri: bob.uri, cid } } };
+  const report = await run('app.certified.feed.getActorReactions', (nsid, params) => {
+    if (nsid.endsWith('listProfiles')) return { profiles: [alice] };
+    if (nsid.endsWith('getActorLikes')) return { likes: [like] };
+    if (nsid.endsWith('getActorReposts')) return { reposts: [], cursor: 'more-reposts' };
+    return { results: params.subjects.map(subject => ({ subject, like, repost: null })) };
+  });
+  const outcome = report.results.find(row => row.id.endsWith('/roundtrip'));
+  assert.equal(outcome.status, 'insufficient-data', outcome.reason);
+  assert.match(outcome.reason, /history is truncated/);
+});
+
+test('truncated follower scans do not claim exact count coverage', async () => {
+  const follow = { ...graphOrderRows[0].follow, record: { ...graphOrderRows[0].follow.record, $type: 'app.certified.graph.entityFollow', subject: { uri: alice.uri, cid } } };
+  const follower = { did: follow.did, profile: null, organization: null, follow };
+  const report = await run('app.certified.graph.listEntityFollowers', nsid => {
+    if (nsid.endsWith('listRecentFollows')) return { follows: [follow] };
+    return { followers: [follower], totalCount: 5, cursor: 'more-followers' };
+  });
+  const outcome = report.results.find(row => row.id.endsWith('/count/consistency'));
+  assert.equal(outcome.status, 'insufficient-data', outcome.reason);
+  assert.match(outcome.reason, /scan is truncated/);
+});
+
+test('follower totals remain valid on an empty cursor page and changed totals fail', async () => {
+  const follow = { ...graphOrderRows[0].follow, record: { ...graphOrderRows[0].follow.record, $type: 'app.certified.graph.entityFollow', subject: { uri: alice.uri, cid } } };
+  const follower = { did: follow.did, profile: null, organization: null, follow };
+  for (const broken of [false, true]) {
+    const report = await run('app.certified.graph.listEntityFollowers', (nsid, params) => {
+      if (nsid.endsWith('listRecentFollows')) return { follows: [follow] };
+      if (params.cursor) return { followers: [], totalCount: broken ? 0 : 1 };
+      return { followers: [follower], totalCount: 1, cursor: 'empty-next-page' };
+    }, { discoveryPages: 2 });
+    const outcome = report.results.find(row => row.id.endsWith('/count/consistency'));
+    assert.equal(outcome.status, broken ? 'failed' : 'passed', outcome.reason);
+  }
+});
+
+test('batch comparisons accept contract-declared nullable single follows', async () => {
+  const follows = [graphOrderRows[0].follow, { ...graphOrderRows[1].follow, did: bob.did, uri: `at://${bob.did}/app.certified.graph.follow/other` }];
+  const report = await run('app.certified.graph.getFollows', (nsid, params) => {
+    if (nsid.endsWith('listRecentFollows')) return { follows };
+    if (nsid.endsWith('getFollow')) return { follow: follows.find(row => row.did === params.actor && row.record.subject === params.subject) ?? null };
+    return { results: params.subjects.map(subject => ({ subject, follow: follows.find(row => row.did === params.actor && row.record.subject === subject) ?? null })) };
+  });
+  const outcome = report.results.find(row => row.id.endsWith('/roundtrip'));
+  assert.equal(outcome.status, 'passed', outcome.reason);
+  assert.equal(report.schemaFindings.length, 0);
+});
+
+test('reaction lists use reaction arrays and raw reaction ordering with count checks', async () => {
+  const likes = graphOrderRows.map(row => ({ ...row.follow, uri: row.follow.uri.replace('app.certified.graph.follow', 'app.certified.feed.like'), record: { $type: 'app.certified.feed.like', subject: { uri: alice.uri, cid }, createdAt: row.follow.record.createdAt } }));
+  for (const actorList of [false, true]) {
+    const endpoint = `app.certified.feed.${actorList ? 'getActorLikes' : 'getLikes'}`;
+    const report = await run(endpoint, (nsid, params) => {
+      if (nsid.endsWith('listProfiles')) return { profiles: [alice] };
+      if (nsid.endsWith('listActivities')) return { activities: [alice] };
+      if (params.limit === 101 || params.cursor === 'not-a-valid-cursor') return { status: 500, body: { error: 'script_error', errorType: 'runtime', method: nsid, message: 'InvalidRequest' } };
+      const ordered = params.sortDirection === 'asc' ? likes : [...likes].reverse();
+      const start = params.cursor ? 2 : 0;
+      const rows = ordered.slice(start, start + (params.limit ?? 25));
+      return { likes: actorList ? rows : rows.map(like => ({ did: like.did, profile: null, organization: null, like })), ...(!actorList ? { likeCount: 4 } : {}), ...(start + rows.length < likes.length ? { cursor: 'next' } : {}) };
+    });
+    for (const suffix of ['baseline', 'pagination/asc', 'pagination/desc']) {
+      const outcome = report.results.find(row => row.id.endsWith('/' + suffix));
+      assert.equal(outcome?.status, 'passed', outcome?.reason);
+    }
+  }
+});
+
+test('batch input probes fail successful responses rather than reporting rejection coverage', async () => {
+  for (const rejects of [false, true]) {
+    const follows = graphOrderRows.map(row => row.follow);
+    const report = await run('app.certified.graph.getFollows', (nsid, params) => {
+      if (nsid.endsWith('listRecentFollows')) return { follows };
+      if (nsid.endsWith('getFollow')) return { follow: follows.find(row => row.record.subject === params.subject) ?? null };
+      const invalid = !params.subjects.length || params.subjects.length > 100 || params.subjects[0] === 'not-a-valid-target';
+      if (invalid && rejects) return { status: 500, body: { error: 'script_error', errorType: 'runtime', method: nsid, message: 'InvalidRequest' } };
+      return { results: params.subjects.map(subject => ({ subject, follow: follows.find(row => row.record.subject === subject) ?? null })) };
+    });
+    const probes = report.results.filter(row => row.id.includes('/invalid/batch-'));
+    assert.equal(probes.length, 3);
+    assert.ok(probes.every(row => row.status === (rejects ? 'passed' : 'failed')));
+  }
+});
+
+test('record lookup rejection probes still execute when discovery has no positive records', async () => {
+  for (const [getter, source, key] of [['org.hypercerts.entity.getFeature', 'org.hypercerts.entity.listFeatures', 'features'], ['org.hypercerts.context.getAcknowledgement', 'org.hypercerts.context.listAcknowledgements', 'acknowledgements']]) {
+    let probes = 0;
+    const report = await run(getter, (nsid, params) => {
+      if (nsid === source) return { [key]: [] };
+      probes++;
+      assert.equal(params.uri, 'not-an-at-uri');
+      return { status: 500, body: { error: 'script_error', errorType: 'runtime', method: nsid, message: 'InvalidRequest' } };
+    });
+    assert.equal(probes, 1);
+    const outcome = report.results.find(row => row.id.endsWith('/invalid/uri'));
+    assert.equal(outcome?.status, 'passed', outcome?.reason);
+    assert.equal(report.results.find(row => row.id.endsWith('/roundtrip')).status, 'insufficient-data');
+  }
+});
 
 test('live runner catches ignored actor filters and a known-positive omission, not just HTTP 200', async () => {
   for (const [body, symptom] of [[{ profiles: [alice, bob] }, /violates actors/], [{ profiles: [] }, /Filter omitted/]]) {

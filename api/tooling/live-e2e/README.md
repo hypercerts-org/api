@@ -15,7 +15,7 @@ node api/tooling/live-e2e/cli.mjs --catalogue \
   --endpoint org.hypercerts.claim.listActivities
 ```
 
-The catalogue is generated from `api/manifest.json` and its module registrations, not all files in the Lexicon directory. This checkout lists 55 endpoints and 860 default cases, including 461 nonempty filter-presence shapes. These counts describe planned checks, not executed or positive coverage. Search endpoints include both unrestricted blank search and nonblank search combinations; this expands the original audit's shape inventory. Case IDs are stable endpoint NSIDs followed by a case name.
+The catalogue is generated from `api/manifest.json` and its module registrations, not all files in the Lexicon directory. Use `--list` and `--catalogue` to inspect the endpoints and planned cases in this checkout. Catalogue inclusion describes planned checks, not executed or positive coverage. Search endpoints include both unrestricted blank search and nonblank search combinations; this expands the original audit's shape inventory. Case IDs are stable endpoint NSIDs followed by a case name.
 
 An explicit `--run`, `--target`, and `--budget` are required to contact any server:
 
@@ -29,7 +29,7 @@ node api/tooling/live-e2e/cli.mjs --run \
 
 Omit `--endpoint` to select all registered endpoints. Repeat it to select several. A target may be an API origin or its `/xrpc` URL. Requests do not require credentials. Never point this runner at an admin endpoint or use it to install/seed records.
 
-Selecting a lookup also permits GET requests to its discovery source, displayed by `--list` and `--catalogue`. Actor/entity relationships use `app.certified.graph.listRecentFollows`; embedded items use `org.hypercerts.collection.listCollections`. The badge-award relationship case additionally reads `app.certified.badge.listBadgeResponses`. It does not contact Hyperindex or upstream PDSes.
+Selecting a lookup also permits GET requests to its discovery source, displayed by `--list` and `--catalogue`. Actor/entity relationships use `app.certified.graph.listRecentFollows`; embedded items use `org.hypercerts.collection.listCollections`. The badge-award relationship case additionally reads `app.certified.badge.listBadgeResponses`. Feed subject queries and count batches discover subject URIs through `org.hypercerts.claim.listActivities`. Actor feed queries and reaction batches discover actors through `app.certified.actor.listProfiles`. Actor-reaction batches sample up to ten distinct actors' likes and reposts until a positive subject is found; no usable reactions means a data gap. Batch comparisons permit related reads from `getFollow`, `getEntityFollow`, `getLikes`, `getReposts`, `getActorLikes`, and `getActorReposts` as applicable. They do not contact Hyperindex or upstream PDSes.
 
 ## Test catalogue
 
@@ -38,13 +38,16 @@ Selecting a lookup also permits GET requests to its discovery source, displayed 
 | Case ID | Assertion and data requirement |
 | --- | --- |
 | `baseline` | HTTP 200 and minimum response structure. Full pinned Lexicon validation is recorded separately as a schema failure and does not by itself block semantic cases. Activities/profiles need at least two baseline records; other datasets need one. Sparse records are reported as gaps. |
-| `roundtrip` | Discovered URI, CID, and raw record survive lookup. Actor batches preserve order and repeated actor occurrences. Graph lookups preserve the requested relationship, without assuming a recent raw follow is the deduplicated representative. |
+| `roundtrip` | Discovered URI, CID, and raw record survive lookup. Actor batches preserve order and repeated actor occurrences. Follow and reaction batches preserve target order and duplicates; raw follow results match single lookups, reaction counts match subject-query totals, and actor reactions match bounded actor histories. A missing reaction is asserted null only when the comparison history is complete. Graph lookups preserve the requested relationship, without assuming a recent raw follow is the deduplicated representative. |
+| `count/consistency` | Entity follower totals agree with a complete bounded scan of distinct actors and are independent of limit and cursor. Truncated scans are gaps for exact count verification, not positive coverage. |
 | `filters/<names>` | Every nonempty subset of supported optional semantic filters, plus nonblank search where available. Predicates use returned raw fields; all selected filters are ANDed. A known-positive record must remain present. An empty result is never positive coverage. |
 | `multi/<name>` | Two distinct real values use OR and retain known matches for both. **Exception:** collection `tagUris` requires all supplied tags (AND), including a known record containing both. |
 | `value/<name>/<value>` | Each declared enum value, and both boolean values, has a positive anchor or an explicit gap. |
 | `relationship/recipient-response` | Badge award status and recipient response match independently listed response history, with recipient-author and exact award URI/CID matching. Latest `indexedAt`, then URI, wins. Complete bounded response history is required. |
 | `limit/1`, `limit/2`, `limit/default`, `limit/100` | Requested/default page bounds are respected. These can pass on an empty dataset and do not count as positive filter coverage. |
 | `pagination/asc`, `pagination/desc` | Server-issued continuation, replay, and two small pages versus one larger slice; no duplicate identities and timestamp/URI ordering. Ascending exists only where supported. Embedded collection items preserve source order/multiplicity and exact resolved URI/CID. Requires a cursor. |
+| `invalid/uri` | Record getters reject a malformed AT-URI using the pinned named runtime envelope. This probe does not require positive indexed records. |
+| `invalid/batch-empty`, `invalid/batch-entry`, `invalid/batch-overflow` | Batch target inputs reject an empty list, malformed entry, and 101 occurrences with the pinned named runtime rejection. These probes do not require indexed positive anchors. |
 | `invalid/limit`, `invalid/cursor` | Sampled invalid requests return the pinned Lua runtime rejection: HTTP 500 with `error: "script_error"`, `errorType: "runtime"`, the endpoint NSID in `method`, and `InvalidRequest` in `message`. Runtime traceback text may be present. |
 | `traversal` | Opt-in scan reaches termination within the page cap; record identities are not duplicated. Embedded items are compared against source order and multiplicity. A remaining cursor means incomplete coverage. |
 
@@ -69,6 +72,8 @@ node api/tooling/live-e2e/cli.mjs --run \
 
 Live requests are serialized, spaced at least 1 second apart, use a 30-second timeout, and reject redirects. `--interval-ms` can increase pacing. Every started live request consumes budget, including failed transports, discovery, and negative probes. There are no retries; HTTP 429 stops further requests. Other API errors are retained as failures, while unrelated selected endpoints can continue within budget. Schema findings and failed shared-source observations also make the run fail. A partial source whose continuation actually failed (for example, HTTP 500) still retains its rows, but increments `sourceFailures` and exits 1; partial sources caused only by unavailable evidence, a stop, or the page bound remain incomplete and exit 2. Case outcomes remain attributed to the selected endpoint and are not multiplied for each dependent case.
 
+Batch parity and follower totals compare multiple reads and share the approved request budget. Reaction discovery samples at most ten actors and the first page of each reaction collection; it does not search all actors for positive anchors. Actor-history comparisons and follower scans use `--discovery-pages`; unavailable anchors or incomplete comparisons are gaps rather than proven absence.
+
 Reads are not snapshot-isolated. A changing cursor replay, record CID, or slice comparison is a failed consistency assertion that needs investigation; it is not automatically proof of a server defect. Ordering checks become gaps if the response does not expose a usable timestamp and the actual database fallback is hidden.
 
 ## Offline replay
@@ -80,7 +85,7 @@ node api/tooling/live-e2e/cli.mjs --replay /path/to/captured/evidence \
   --out /path/to/new/replay-output
 ```
 
-The input must contain the original `plan.json` and numbered request artifacts. Replay matches the exact GET method, NSID, and decoded query parameters; repeated parameter values and their order are preserved, while percent-encoding differences such as `%20` versus an equivalent decoded space do not affect matching. It uses only the captured HTTP status and body. Missing or incomplete captures are `not-run` with an unavailable-evidence reason; they are never converted to data gaps, synthesized, or fetched. Reusing a capture for repeated identical evaluations is deterministic and marked in request evidence. Reports show zero live requests separately from replay evaluations and captured request sequences used. The source evidence is read-only; output must be a fresh directory. `--endpoint` may narrow replay to endpoints listed in the captured plan.
+The input must contain the original `plan.json` and numbered request artifacts. Replay matches the exact GET method, NSID, and decoded query parameters; repeated parameter values and their order are preserved, while percent-encoding differences such as `%20` versus an equivalent decoded space do not affect matching. Empty input arrays omit the query key, just as the live transport does; a single empty string remains a distinct request. It uses only the captured HTTP status and body. Missing or incomplete captures are `not-run` with an unavailable-evidence reason; they are never converted to data gaps, synthesized, or fetched. Reusing a capture for repeated identical evaluations is deterministic and marked in request evidence. Reports show zero live requests separately from replay evaluations and captured request sequences used. The source evidence is read-only; output must be a fresh directory. `--endpoint` may narrow replay to endpoints listed in the captured plan.
 
 ## Evidence and exit status
 

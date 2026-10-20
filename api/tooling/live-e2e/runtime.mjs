@@ -78,7 +78,8 @@ function queryGroupsFromParams(params) {
   const groups = new Map();
   for (const [key, value] of Object.entries(params)) {
     const values = Array.isArray(value) ? value : [value];
-    groups.set(key, values.map(item => String(item)));
+    // An empty array emits no query key on the wire, unlike a single empty string.
+    if (values.length) groups.set(key, values.map(item => String(item)));
   }
   return groups;
 }

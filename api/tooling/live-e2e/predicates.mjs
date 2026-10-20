@@ -8,6 +8,8 @@ const values = value => (Array.isArray(value) ? value : [value]).map(reference).
 export const view = row => {
   const item = object(row);
   if (item.follow && typeof item.follow === 'object') return view(item.follow);
+  if (item.like && typeof item.like === 'object') return view(item.like);
+  if (item.repost && typeof item.repost === 'object') return view(item.repost);
   if (item.organization && typeof item.organization === 'object') return view(item.organization);
   return item;
 };

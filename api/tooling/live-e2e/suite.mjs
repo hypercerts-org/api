@@ -3,6 +3,7 @@ import { appendFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { jsonToLex } from '@atproto/lexicon';
 import { casesFor } from './catalogue.mjs';
+import { batchDefinition, batchParams, checkBatch } from './batches.mjs';
 import { filterValues, identity, matches, view } from './predicates.mjs';
 import { executeCase, Gap, paginate, Stopped, UnavailableEvidence } from './runtime.mjs';
 
@@ -24,6 +25,7 @@ function acceptsParameter(endpoint, key, value, validator) {
   try { validator.assertValidXrpcParams(endpoint.nsid, params); return true; } catch { return false; }
 }
 function seedParams(endpoint, seeds, validator) {
+  if (batchDefinition(endpoint.nsid)) return batchParams(endpoint, seeds, validator);
   const params = {};
   const required = endpoint.params.required ?? [];
   if (required.includes('search')) params.search = '';
@@ -54,7 +56,8 @@ function seedParams(endpoint, seeds, validator) {
       candidates = actors.length ? [[...actors.slice(0, 2), actors[0]]] : [];
     }
     if (key === 'collection') candidates = seeds.filter(row => Array.isArray(object(object(row).record).items) && object(row).uri).map(row => row.uri);
-    if (key === 'actor' && endpoint.nsid.startsWith('app.certified.actor.')) candidates = seeds.map(row => object(row).did);
+    if (key === 'subject' && endpoint.nsid.startsWith('app.certified.feed.')) candidates = seeds.map(row => view(row).uri);
+    if (key === 'actor' && (endpoint.nsid.startsWith('app.certified.actor.') || endpoint.nsid.startsWith('app.certified.feed.'))) candidates = seeds.map(row => object(row).did);
     const value = candidates.find(candidate => candidate !== undefined && acceptsParameter(endpoint, key, candidate, validator));
     positive(value !== undefined, `No usable, schema-valid discovery anchor for required ${key}; inspect source observations or expand discovery.`);
     params[key] = value;
@@ -99,7 +102,7 @@ function minimumResponseError(endpoint, body) {
   if (!Object.hasOwn(body, endpoint.resultKey)) return `HTTP 200 response from ${endpoint.nsid} is missing required ${endpoint.resultKey}.`;
   const schema = endpoint.resultSchema;
   const value = body[endpoint.resultKey];
-  if (value === null && schema.nullable) return null;
+  if (value === null && (schema.nullable || endpoint.document.defs.output.nullable?.includes(endpoint.resultKey))) return null;
   if (schema.type === 'array' && !Array.isArray(value)) return `HTTP 200 response from ${endpoint.nsid} has non-array ${endpoint.resultKey}.`;
   if (['object', 'ref', 'union'].includes(schema.type) && (!value || typeof value !== 'object' || Array.isArray(value))) return `HTTP 200 response from ${endpoint.nsid} has non-object ${endpoint.resultKey}.`;
   if (schema.type === 'string' && typeof value !== 'string') return `HTTP 200 response from ${endpoint.nsid} has non-string ${endpoint.resultKey}.`;
@@ -238,7 +241,27 @@ export async function runSuite({ catalogue, selected, transport, directory, disc
     const getParams = async (forceSeeds = false) => {
       if (!params) {
         const requiredAnchor = (endpoint.params.required ?? []).some(key => key !== 'search');
-        try { params = seedParams(endpoint, (forceSeeds || requiredAnchor) ? await getSeeds() : [], catalogue.validator); }
+        try {
+          let anchors = (forceSeeds || requiredAnchor) ? await getSeeds() : [];
+          if (endpoint.nsid === 'app.certified.feed.getActorReactions') {
+            const actors = [...new Set(anchors.map(row => row?.did).filter(did => typeof did === 'string'))].slice(0, 10);
+            positive(actors.length, 'No actor available for reaction discovery.');
+            const reactions = [];
+            for (const actor of actors) {
+              const candidate = { actor, subjects: [anchors.find(row => row?.did === actor)?.uri] };
+              try { catalogue.validator.assertValidXrpcParams(endpoint.nsid, candidate); } catch { continue; }
+              for (const kind of ['Likes', 'Reposts']) {
+                const related = catalogue.endpoints.find(item => item.nsid === `app.certified.feed.getActor${kind}`);
+                const body = await call(related, { actor, limit: 100 }, { role: 'related-endpoint' });
+                reactions.push(...body[kind.toLowerCase()].map(row => ({ uri: row?.record?.subject?.uri, did: actor })));
+              }
+              if (reactions.length) break;
+            }
+            anchors = reactions;
+            positive(anchors.length, 'No positive actor reaction anchor in the bounded sample.');
+          }
+          params = seedParams(endpoint, anchors, catalogue.validator);
+        }
         catch (error) {
           if (error instanceof Gap && sources.get(endpoint.source)?.observation.complete === false) noAnchorFromDiscovery(endpoint.source, error.message);
           throw error;
@@ -263,7 +286,13 @@ export async function runSuite({ catalogue, selected, transport, directory, disc
           const query = await getParams(true);
           const response = baseline ?? await call(endpoint, query);
           const returned = response[endpoint.resultKey];
-          if (params.actors) {
+          if (batchDefinition(endpoint.nsid)) {
+            await checkBatch(endpoint, query, response, async (nsid, relatedParams) => {
+              const related = catalogue.endpoints.find(item => item.nsid === nsid);
+              assert.ok(related, `Batch comparison endpoint ${nsid} is not registered`);
+              return call(related, relatedParams, { role: 'related-endpoint' });
+            }, discoveryPages);
+          } else if (params.actors) {
             assert.ok(Array.isArray(returned), 'Batch lookup result is not an array');
             assert.deepEqual(returned.map(row => object(row).actor), params.actors, 'Batch must preserve requested actor occurrence order');
             for (const row of returned) {
@@ -373,6 +402,33 @@ export async function runSuite({ catalogue, selected, transport, directory, disc
           positive(scan.rows.length, 'No positive matches returned');
           return { records: scan.rows.length, complete: scan.complete };
         }
+        if (plan.id === 'count/consistency') {
+          const query = await getParams();
+          let total;
+          let cursor;
+          let observed = 0;
+          const identities = new Set();
+          for (let page = 0; page < discoveryPages; page++) {
+            const body = await call(endpoint, { ...query, limit: 100, ...(cursor ? { cursor } : {}) });
+            total ??= body.totalCount;
+            assert.equal(body.totalCount, total, 'totalCount changed across cursors; inspect concurrent indexing');
+            for (const row of body[endpoint.resultKey]) {
+              assert.ok(!identities.has(row.did), 'Follower count scan repeated an actor');
+              identities.add(row.did);
+            }
+            observed += body[endpoint.resultKey].length;
+            assert.ok(total >= observed, 'totalCount is smaller than observed distinct followers');
+            cursor = body.cursor;
+            if (!cursor) break;
+          }
+          if (!cursor) assert.equal(total, observed, 'totalCount differs from complete distinct follower scan');
+          for (const limit of [1, 2]) {
+            const body = await call(endpoint, { ...query, limit });
+            assert.equal(body.totalCount, total, 'totalCount depends on limit; inspect concurrent indexing');
+          }
+          if (cursor) throw new Gap('Follower scan is truncated; exact total cannot be established within the page bound.');
+          return { records: observed, complete: true };
+        }
         if (plan.id.startsWith('limit/')) {
           const queryParams = await getParams();
           const body = await call(endpoint, { ...queryParams, ...(plan.limit === 'default' ? {} : { limit: plan.limit }) });
@@ -380,8 +436,16 @@ export async function runSuite({ catalogue, selected, transport, directory, disc
           return { records: body[endpoint.resultKey].length };
         }
         if (plan.id.startsWith('invalid/')) {
-          const queryParams = await getParams();
-          const invalid = plan.id.endsWith('limit') ? { limit: 101 } : { cursor: 'not-a-valid-cursor' };
+          // Rejection probes need legal control values, not indexed positive anchors.
+          const queryParams = plan.id.startsWith('invalid/batch-') || plan.id === 'invalid/uri'
+            ? Object.fromEntries((endpoint.params.required ?? []).map(key => [key, placeholder(endpoint.params.properties[key])]))
+            : await getParams();
+          let invalid = plan.id.endsWith('limit') ? { limit: 101 } : plan.id === 'invalid/uri' ? { uri: 'not-an-at-uri' } : { cursor: 'not-a-valid-cursor' };
+          if (plan.id.startsWith('invalid/batch-')) {
+            const key = batchDefinition(endpoint.nsid).key;
+            const target = queryParams[key][0];
+            invalid = { [key]: plan.id.endsWith('empty') ? [] : plan.id.endsWith('entry') ? ['not-a-valid-target'] : Array(101).fill(target) };
+          }
           const { result: response } = await request(endpoint, { ...queryParams, ...invalid });
           assert.equal(response.status, 500, `Expected HTTP 500 runtime rejection from ${endpoint.nsid}; observed ${response.status}`);
           assert.equal(response.body?.error, 'script_error', `Expected the pinned script_error envelope from ${endpoint.nsid}`);

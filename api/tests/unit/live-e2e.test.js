@@ -55,6 +55,21 @@ test('offline replay preserves repeated query values and missing evidence cannot
   assert.equal(networkCalls, 0);
 });
 
+test('offline replay matches empty arrays exactly as the GET transport omits them', async () => {
+  const directory = await mkdtemp(path.join(tmpdir(), 'live-e2e-empty-replay-'));
+  const nsid = 'app.certified.graph.getFollows';
+  const params = { actor: 'did:plc:aaaaaaaaaaaaaaaaaaaaaaaa', subjects: [] };
+  const transport = createTransport({ target: 'https://example.test', budget: 1, interval: 0, directory,
+    fetch: async () => new Response('{"error":"script_error","message":"InvalidRequest"}', { status: 500 }) });
+  const original = await transport.request(nsid, params);
+  const replay = await createReplayTransport({ evidenceDirectory: directory, target: 'https://example.test' });
+  const response = await replay.request(nsid, params);
+  assert.equal(response.status, 500);
+  assert.deepEqual(response.body, original.body);
+  assert.equal(replay.attempts, 0);
+  await assert.rejects(replay.request(nsid, { ...params, subjects: [''] }), UnavailableEvidence);
+});
+
 test('malformed captured JSON is unavailable evidence with provenance and no network fallback', async () => {
   const evidenceDirectory = await mkdtemp(path.join(tmpdir(), 'live-e2e-malformed-replay-'));
   const filename = path.join(evidenceDirectory, '000007.json');
