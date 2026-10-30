@@ -1,4 +1,4 @@
 packages:
-  - api
-  - client
+  - happyview-modules
+  - packages/*
   - docs

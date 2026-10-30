@@ -8498,6 +8498,6 @@
       }
     }
   },
-  "x-hypercerts-source": "api/manifest.json; @hypercerts-org/lexicon@1.5.0",
+  "x-hypercerts-source": "happyview-modules/manifest.json; @hypercerts-org/lexicon@1.5.0",
   "x-hypercerts-unresolved-references": []
 }

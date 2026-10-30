@@ -7,7 +7,7 @@ import * as api from "@hypercerts-org/api";
 
 const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
 const manifest = JSON.parse(
-  await readFile(new URL("../../api/manifest.json", import.meta.url), "utf8"),
+  await readFile(new URL("../../../happyview-modules/manifest.json", import.meta.url), "utf8"),
 );
 
 /**
@@ -30,7 +30,7 @@ test("LEXICON_VERSION matches the package metadata", () => {
 const lookup = (root, nsid) =>
   nsid.split(".").reduce((node, part) => /** @type {any} */ (node)?.[part], root);
 
-test("every Lexicon in api/manifest.json is at its NSID path", async () => {
+test("every Lexicon in happyview-modules/manifest.json is at its NSID path", async () => {
   const records = await import("@hypercerts-org/lexicon/records");
   const sources = manifest.validationLexicons;
   const queryIds = sources

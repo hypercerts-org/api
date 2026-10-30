@@ -17,11 +17,11 @@ Do not add one for documentation-only or test-only changes, changes to the separ
 
 ## Package and version bump
 
-The bundle is versioned as one unit. The Changeset frontmatter must target only `@hypercerts-org/hypercerts-api`:
+The bundle is versioned as one unit. The Changeset frontmatter must target only `@hypercerts-org/happyview-modules`:
 
 ```md
 ---
-'@hypercerts-org/hypercerts-api': patch
+'@hypercerts-org/happyview-modules': patch
 ---
 
 A short, clear summary of the change.
@@ -58,18 +58,18 @@ Use bullets only when there are several distinct actions or changes to scan. Omi
 
 ## Procedure
 
-1. Check the actual diff and read `.changeset/README.md` plus `api/README.md` for the current scope and release behavior.
-2. Run `pnpm changeset` and select `@hypercerts-org/hypercerts-api`, or create a descriptive Markdown file under `.changeset/` with the required frontmatter.
+1. Check the actual diff and read `.changeset/README.md` plus `happyview-modules/README.md` for the current scope and release behavior.
+2. Run `pnpm changeset` and select `@hypercerts-org/happyview-modules`, or create a descriptive Markdown file under `.changeset/` with the required frontmatter.
 3. Write and review the summary using the plain-language guidance above. Make any adaptation steps concrete and accurate.
 4. Run `pnpm changeset status` to check that the Changeset is valid and targets the intended package.
 
 ## Release context
 
-`@hypercerts-org/hypercerts-api` is marked `"private": true` in `api/package.json`, which prevents it from being published to npm. This flag applies to the package, not the public GitHub repository. Changesets creates a release pull request that updates `api/package.json` and `api/CHANGELOG.md`. After that pull request is merged, CI validates the merged commit and creates a version tag and public GitHub Release. Operators install from the tagged source; this process does not deploy the bundle to a HappyView instance.
+`@hypercerts-org/happyview-modules` is marked `"private": true` in `happyview-modules/package.json`, which prevents it from being published to npm. This flag applies to the package, not the public GitHub repository. Changesets creates a release pull request that updates `happyview-modules/package.json` and `happyview-modules/CHANGELOG.md`. After that pull request is merged, CI validates the merged commit and creates a version tag and public GitHub Release. Operators install from the tagged source; this process does not deploy the bundle to a HappyView instance.
 
 ## Repository references
 
 - `.changeset/README.md` — package scope, bump rules, and release process.
 - `.changeset/config.json` — Changesets configuration and ignored packages.
-- `api/package.json` — package name and version.
-- `api/README.md` — bundle installation and distribution details.
+- `happyview-modules/package.json` — package name and version.
+- `happyview-modules/README.md` — bundle installation and distribution details.

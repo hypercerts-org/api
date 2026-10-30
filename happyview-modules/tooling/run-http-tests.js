@@ -461,7 +461,7 @@ async function installAndSeedApi(context) {
     HAPPYVIEW_ADMIN_TOKEN: context.adminToken,
     HYPERCERTS_HANDLE_RESOLVER_URL: 'https://resolver.invalid',
   };
-  run('pnpm', ['--filter', '@hypercerts-org/hypercerts-api', 'run', 'install:api'], {
+  run('pnpm', ['--filter', '@hypercerts-org/happyview-modules', 'run', 'install:api'], {
     env: installerEnv,
     timeoutMs: 180_000,
     label: 'Checkout API manifest install into disposable HappyView',

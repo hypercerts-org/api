@@ -167,10 +167,10 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           set -euo pipefail
-          package_name="$(node --print "require('./api/package.json').name")"
-          version="$(node --print "require('./api/package.json').version")"
+          package_name="$(node --print "require('./happyview-modules/package.json').name")"
+          version="$(node --print "require('./happyview-modules/package.json').version")"
           if [ -z "$package_name" ] || [ -z "$version" ]; then
-            echo "::error::Could not derive the API bundle name and version from api/package.json"
+            echo "::error::Could not derive the API bundle name and version from happyview-modules/package.json"
             exit 1
           fi
           tag="${package_name}@${version}"

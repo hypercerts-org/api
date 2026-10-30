@@ -6,7 +6,7 @@ Run the integrated check with:
 pnpm lint:lua
 ```
 
-`pnpm check` includes this command through `pnpm lint`. The checker reads only modules listed in `api/manifest.json` and their manifest-declared assets and Lua sources. It does not scan standalone Lexicon files that are not registered by those modules. Generated endpoint bundles remain the input to Luacheck; diagnostics with a generated-bundle location are mapped back to the ordered `sharedSourcePaths` and handler `sourcePath` that produced that line. Adding `lint-lua.js` to the TypeScript `checkJs` file set is deferred; this change does not extend that configuration.
+`pnpm check` includes this command through `pnpm lint`. The checker reads only modules listed in `happyview-modules/manifest.json` and their manifest-declared assets and Lua sources. It does not scan standalone Lexicon files that are not registered by those modules. Generated endpoint bundles remain the input to Luacheck; diagnostics with a generated-bundle location are mapped back to the ordered `sharedSourcePaths` and handler `sourcePath` that produced that line. Adding `lint-lua.js` to the TypeScript `checkJs` file set is deferred; this change does not extend that configuration.
 
 ## Findings and severity
 

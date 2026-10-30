@@ -10,13 +10,13 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const clientRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const packageJson = readJson(path.join(clientRoot, "package.json"));
+const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const packageJson = readJson(path.join(packageRoot, "package.json"));
 /** @param {string} name */
 const pinned = (name) => {
   const version = packageJson.devDependencies?.[name];
   if (!version) throw new Error(`check-package: ${name} must be a devDependency`);
-  return version.replace(/^file:/, `file:${clientRoot}/`);
+  return version.replace(/^file:/, `file:${packageRoot}/`);
 };
 
 // Child processes must not inherit the parent's npm and pnpm settings.
@@ -38,7 +38,7 @@ try {
 
 /** @param {string} dest */
 function packPackage(dest) {
-  run("pnpm", ["pack", "--pack-destination", dest], clientRoot);
+  run("pnpm", ["pack", "--pack-destination", dest], packageRoot);
   const tarball = readdirSync(dest).find((file) => /^hypercerts-org-api-.*\.tgz$/.test(file));
   if (!tarball) throw new Error("check-package: no tarball produced for @hypercerts-org/api");
 

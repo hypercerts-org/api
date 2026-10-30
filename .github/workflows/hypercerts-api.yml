@@ -159,8 +159,8 @@ jobs:
             "$runner_temp"/hypercerts-http-*/compose.env) ;;
             *) echo "Refusing cleanup for credentials outside RUNNER_TEMP: $env_file" >&2; exit 1 ;;
           esac
-          compose_file="$(realpath "$GITHUB_WORKSPACE/api/docker-compose.contracts.yml")"
-          compose=(docker compose --project-name "$project" --env-file "$env_file" --project-directory "$GITHUB_WORKSPACE/api" -f "$compose_file")
+          compose_file="$(realpath "$GITHUB_WORKSPACE/happyview-modules/docker-compose.contracts.yml")"
+          compose=(docker compose --project-name "$project" --env-file "$env_file" --project-directory "$GITHUB_WORKSPACE/happyview-modules" -f "$compose_file")
           container_ids="$("${compose[@]}" ps --all --quiet)"
           while IFS= read -r id; do
             [[ -n "$id" ]] || continue

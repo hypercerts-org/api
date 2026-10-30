@@ -7,7 +7,7 @@ import test from 'node:test';
 import { collectDocumentationSources } from '../scripts/refresh-sources.mjs';
 
 const docsRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const apiRoot = path.resolve(docsRoot, '..', 'api');
+const apiRoot = path.resolve(docsRoot, '..', 'happyview-modules');
 
 async function readJson(file) {
   return JSON.parse(await readFile(file, 'utf8'));

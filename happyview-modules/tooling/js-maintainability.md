@@ -7,7 +7,7 @@ inputs.
 
 ## ESLint restrictions
 
-The package ESLint config applies these rules to JavaScript files under `api/`:
+The package ESLint config applies these rules to JavaScript files under `happyview-modules/`:
 
 - Named `exec` and `execSync` imports from `node:child_process` and
   `child_process` are rejected, including locally renamed imports. Namespace
@@ -38,7 +38,7 @@ mind during review.
 
 ## Type checking
 
-`api/tsconfig.json` enables `checkJs`, `strict`, and `noUncheckedIndexedAccess`
+`happyview-modules/tsconfig.json` enables `checkJs`, `strict`, and `noUncheckedIndexedAccess`
 for `tooling/installer.js`, `tooling/run-http-tests.js`, and `tooling/seed.js`.
 `lint-lua.js` is outside this iteration's selected typecheck scope. Installer
 progress iteration uses `states.entries()` so the state is

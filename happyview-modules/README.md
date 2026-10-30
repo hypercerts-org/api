@@ -33,10 +33,10 @@ PSQL_PATH="$(command -v psql)" pnpm test:http
 
 ## Install a released API bundle
 
-Releases version the installable API bundle in this package; they do not publish to npm or deploy to a HappyView instance. GitHub Releases and tagged source archives are the distribution channel. Choose an `@hypercerts-org/hypercerts-api@X.Y.Z` release tag, clone that snapshot, install its pinned dependencies from the repository root, then run the installer from `api/`:
+Releases version the installable API bundle in this package; they do not publish to npm or deploy to a HappyView instance. GitHub Releases and tagged source archives are the distribution channel. Choose an `@hypercerts-org/happyview-modules@X.Y.Z` release tag (releases up to 0.2.0, before the package was renamed, are tagged `@hypercerts-org/hypercerts-api@X.Y.Z`), clone that snapshot, install its pinned dependencies from the repository root, then run the installer from `happyview-modules/`:
 
 ```sh
-git clone --depth 1 --branch '@hypercerts-org/hypercerts-api@X.Y.Z' https://github.com/hypercerts-org/api.git hypercerts-api
+git clone --depth 1 --branch '@hypercerts-org/happyview-modules@X.Y.Z' https://github.com/hypercerts-org/api.git hypercerts-api
 cd hypercerts-api
 pnpm install --frozen-lockfile
 cd api

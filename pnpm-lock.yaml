@@ -15,7 +15,38 @@ importers:
         specifier: 3.0.2
         version: 3.0.2
 
-  api:
+  docs:
+    dependencies:
+      '@hypercerts-org/ui-react':
+        specifier: 0.2.0
+        version: 0.2.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@scalar/api-reference-react':
+        specifier: ^0.9.75
+        version: 0.9.75(react@19.3.0)(tailwindcss@4.3.3)(typescript@7.0.2)(zod@4.6.5)
+      react:
+        specifier: ^19.3.0
+        version: 19.3.0
+      react-dom:
+        specifier: ^19.3.0
+        version: 19.3.0(react@19.3.0)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: ^19.3.0
+        version: 19.3.0(@types/react@19.3.0)
+      '@vitejs/plugin-react':
+        specifier: ^6.0.1
+        version: 6.1.1(vite@8.3.1(@types/node@24.19.2)(yaml@2.9.1))
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+      vite:
+        specifier: ^8.3.1
+        version: 8.3.1(@types/node@24.19.2)(yaml@2.9.1)
+
+  happyview-modules:
     dependencies:
       '@atcute/cbor':
         specifier: 2.3.2
@@ -49,7 +80,7 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
-  client:
+  packages/api:
     devDependencies:
       '@atproto/lex':
         specifier: 0.4.2
@@ -59,7 +90,7 @@ importers:
         version: 2.6.3
       '@hypercerts-org/lexicon':
         specifier: file:vendor/hypercerts-org-lexicon-1.7.0.tgz
-        version: file:client/vendor/hypercerts-org-lexicon-1.7.0.tgz(@atproto/lex@0.4.2)
+        version: file:packages/api/vendor/hypercerts-org-lexicon-1.7.0.tgz(@atproto/lex@0.4.2)
       '@types/node':
         specifier: 24.19.2
         version: 24.19.2
@@ -69,37 +100,6 @@ importers:
       vite:
         specifier: 8.3.5
         version: 8.3.5(@types/node@24.19.2)(yaml@2.9.1)
-
-  docs:
-    dependencies:
-      '@hypercerts-org/ui-react':
-        specifier: 0.2.0
-        version: 0.2.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@scalar/api-reference-react':
-        specifier: ^0.9.75
-        version: 0.9.75(react@19.3.0)(tailwindcss@4.3.3)(typescript@7.0.2)(zod@4.6.5)
-      react:
-        specifier: ^19.3.0
-        version: 19.3.0
-      react-dom:
-        specifier: ^19.3.0
-        version: 19.3.0(react@19.3.0)
-    devDependencies:
-      '@types/react':
-        specifier: ^19.3.0
-        version: 19.3.0
-      '@types/react-dom':
-        specifier: ^19.3.0
-        version: 19.3.0(@types/react@19.3.0)
-      '@vitejs/plugin-react':
-        specifier: ^6.0.1
-        version: 6.1.1(vite@8.3.1(@types/node@24.19.2)(yaml@2.9.1))
-      typescript:
-        specifier: ^7.0.2
-        version: 7.0.2
-      vite:
-        specifier: ^8.3.1
-        version: 8.3.1(@types/node@24.19.2)(yaml@2.9.1)
 
 packages:
 
@@ -558,8 +558,8 @@ packages:
     peerDependencies:
       '@atproto/xrpc': '*'
 
-  '@hypercerts-org/lexicon@file:client/vendor/hypercerts-org-lexicon-1.7.0.tgz':
-    resolution: {integrity: sha512-K2A8fRxPD9iCCJJeLrFCRRwPy/3LgSpb4xFEI+eBagO2t7PIkcQ9FOc3WIwwdjcE6CISpkSV3Spta2RICNGn8w==, tarball: file:client/vendor/hypercerts-org-lexicon-1.7.0.tgz}
+  '@hypercerts-org/lexicon@file:packages/api/vendor/hypercerts-org-lexicon-1.7.0.tgz':
+    resolution: {integrity: sha512-K2A8fRxPD9iCCJJeLrFCRRwPy/3LgSpb4xFEI+eBagO2t7PIkcQ9FOc3WIwwdjcE6CISpkSV3Spta2RICNGn8w==, tarball: file:packages/api/vendor/hypercerts-org-lexicon-1.7.0.tgz}
     version: 1.7.0
     peerDependencies:
       '@atproto/lex': ^0.4.2
@@ -3141,7 +3141,7 @@ snapshots:
       '@atproto/xrpc': 0.8.13
       multiformats: 13.4.2
 
-  '@hypercerts-org/lexicon@file:client/vendor/hypercerts-org-lexicon-1.7.0.tgz(@atproto/lex@0.4.2)':
+  '@hypercerts-org/lexicon@file:packages/api/vendor/hypercerts-org-lexicon-1.7.0.tgz(@atproto/lex@0.4.2)':
     dependencies:
       '@atproto/lexicon': 0.6.2
       multiformats: 13.4.2

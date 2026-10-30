@@ -33,11 +33,11 @@ ESM only. `@atproto/lex` and `@hypercerts-org/lexicon` are peer dependencies; in
 
 ## How it is generated
 
-`pnpm generate` (or `pnpm client:generate` from the repository root) runs `lex build --index-file` over the Lexicons declared in `api/manifest.json` `validationLexicons`: the API's own Lexicons from `api/lexicons/`, and the record Lexicons they reference, read from the installed `@hypercerts-org/lexicon`. It keeps the modules of the API's own Lexicons and the namespace modules on the path to them, points every other import or re-export at `@hypercerts-org/lexicon/records/<nsid path>` (and fails if a module is missing there), writes `src/lexicons/` and `src/index.ts`, and records the Lexicon version in `package.json`.
+`pnpm generate` (or `pnpm client:generate` from the repository root) runs `lex build --index-file` over the Lexicons declared in `happyview-modules/manifest.json` `validationLexicons`: the API's own Lexicons from `happyview-modules/lexicons/`, and the record Lexicons they reference, read from the installed `@hypercerts-org/lexicon`. It keeps the modules of the API's own Lexicons and the namespace modules on the path to them, points every other import or re-export at `@hypercerts-org/lexicon/records/<nsid path>` (and fails if a module is missing there), writes `src/lexicons/` and `src/index.ts`, and records the Lexicon version in `package.json`.
 
 Generated files start with a banner naming `scripts/generate.js`, which rewrites lex's output. They are committed, unlike in the lexicon repository: `src/` is what reviewers see change when an API Lexicon changes, and `pnpm check:generated` fails when it is stale. Do not edit them.
 
-Regenerate whenever a query Lexicon, `api/manifest.json`, the `@hypercerts-org/lexicon` version or the `@atproto/lex` version (including a lockfile change to its generator dependencies) changes.
+Regenerate whenever a query Lexicon, `happyview-modules/manifest.json`, the `@hypercerts-org/lexicon` version or the `@atproto/lex` version (including a lockfile change to its generator dependencies) changes.
 
 The generator works around [bluesky-social/atproto#5738](https://github.com/bluesky-social/atproto/issues/5738), broken imports for queries under a record NSID. Remove the workaround once it is fixed upstream.
 
@@ -47,7 +47,7 @@ The generator works around [bluesky-social/atproto#5738](https://github.com/blue
 
 ## Commands
 
-Run from `client/`:
+Run from `packages/api/`:
 
 | Command                                           | What it does                                                                                                                                                              |
 | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
