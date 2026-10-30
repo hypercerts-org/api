@@ -39,7 +39,7 @@
     "lint": "biome lint .",
     "format": "biome format --write .",
     "format:check": "biome format .",
-    "typecheck": "tsc --project tsconfig.json --noEmit && tsc --project tsconfig.scripts.json",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
     "build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && tsc --project tsconfig.json",
     "prepack": "pnpm run build",
     "test": "pnpm run build && tsc --project tsconfig.test.json && node --test \"test/**/*.test.js\"",

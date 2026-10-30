@@ -149,8 +149,8 @@ const exportRank = (line) =>
  * order leaks into its output: the exports of namespace modules and the
  * imports of `.defs` modules. Namespace modules get a record's own exports
  * first, then the child namespaces by name; `.defs` modules import their
- * dependencies by name. The same rules as the lexicon repository's
- * scripts/generate-records.js.
+ * dependencies by name. This matters here because the output is committed
+ * and check:generated compares it.
  * @param {string} source
  * @param {boolean} isDefs
  */
