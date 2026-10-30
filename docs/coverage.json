@@ -1,7 +1,7 @@
 {
   "source": {
     "apiManifest": "api/manifest.json",
-    "pinnedLexiconPackage": "1.5.0"
+    "pinnedLexiconPackage": "1.6.0"
   },
   "runtimeValidation": "not-assessed",
   "deploymentValidation": "not-assessed",

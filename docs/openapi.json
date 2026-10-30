@@ -7887,7 +7887,7 @@
       },
       "org.hypercerts.context.attachment.main": {
         "type": "record",
-        "description": "An attachment providing commentary, context, evidence, or documentary material related to a hypercert record (e.g. an activity, project, claim, or evaluation)."
+        "description": "An attachment providing commentary, context, evidence, or documentary material related to a hypercert record (e.g. an activity, project, claim, or evaluation) or related to an account profile."
       },
       "org.hypercerts.context.getAttachment.attachmentView": {
         "type": "object",
@@ -8273,7 +8273,7 @@
       },
       "org.hypercerts.funding.receipt.main": {
         "type": "record",
-        "description": "Records a funding receipt for a payment from one user to another user. It may be recorded by the recipient, by the sender, or by a third party. The sender may remain anonymous."
+        "description": "Records a payment from a sender to a recipient. Any party may record it, and the sender may stay anonymous. When the sender chose the recipient, record one receipt to the final recipient even if platforms or hosts passed the funds on. When an intermediary chose (regranting), record the payment into it and each onward payment as separate receipts. A receipt may be updated in place under the same record key: its URI does not change, so references by URI keep resolving, but a strongRef (as likes and reposts use) still pins the earlier CID, and signatures bind to content and must be renewed. An earlier version cannot be recalled from readers that kept it."
       },
       "org.hypercerts.funding.getReceipt.receiptView": {
         "type": "object",
@@ -8498,6 +8498,6 @@
       }
     }
   },
-  "x-hypercerts-source": "api/manifest.json; @hypercerts-org/lexicon@1.5.0",
+  "x-hypercerts-source": "api/manifest.json; @hypercerts-org/lexicon@1.6.0",
   "x-hypercerts-unresolved-references": []
 }
