@@ -556,13 +556,15 @@ packages:
       '@atproto/xrpc': '*'
 
   '@hypercerts-org/lexicon@file:client/vendor/hypercerts-org-lexicon-1.7.0.tgz':
-    resolution: {integrity: sha512-0z9Cpphr3UHost0Ufib4FaXbOih7L/Z0N1R3I+p/lI8fep9yO0f8Tuqcp2v/xTaED/5WeVfRTReZMZZARFClKQ==, tarball: file:client/vendor/hypercerts-org-lexicon-1.7.0.tgz}
+    resolution: {integrity: sha512-7meKO/1EG4Hz8UYWFdnQJnH0gQvRuok1dvzNAdcTMbYAwsknrZF+GwX9R4758j5yFUjK+ttsKfP7gbUwp78AyA==, tarball: file:client/vendor/hypercerts-org-lexicon-1.7.0.tgz}
     version: 1.7.0
     peerDependencies:
       '@atproto/lex': ^0.4.2
       '@atproto/xrpc': '*'
     peerDependenciesMeta:
       '@atproto/lex':
+        optional: true
+      '@atproto/xrpc':
         optional: true
 
   '@hypercerts-org/ui-react@0.2.0':
@@ -2982,10 +2984,10 @@ snapshots:
   '@hypercerts-org/lexicon@file:client/vendor/hypercerts-org-lexicon-1.7.0.tgz(@atproto/lex@0.4.2)(@atproto/xrpc@0.8.13)':
     dependencies:
       '@atproto/lexicon': 0.6.2
-      '@atproto/xrpc': 0.8.13
       multiformats: 13.4.2
     optionalDependencies:
       '@atproto/lex': 0.4.2
+      '@atproto/xrpc': 0.8.13
 
   '@hypercerts-org/ui-react@0.2.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
     dependencies:

@@ -27,18 +27,31 @@ test("LEXICON_VERSION matches the package metadata", () => {
   assert.equal(api.LEXICON_VERSION, packageJson.hypercerts.lexiconVersion);
 });
 
-test("every query Lexicon in api/manifest.json is exported by its short name", () => {
-  const queryIds = manifest.validationLexicons
+/**
+ * Follows an NSID through lex's namespace tree: org.hypercerts.claim.getActivity.
+ * @param {object} root
+ * @param {string} nsid
+ * @returns {any}
+ */
+const lookup = (root, nsid) =>
+  nsid.split(".").reduce((node, part) => /** @type {any} */ (node)?.[part], root);
+
+test("every Lexicon in api/manifest.json is at its NSID path", async () => {
+  const records = await import("@hypercerts-org/lexicon/records");
+  const sources = manifest.validationLexicons;
+  const queryIds = sources
     .filter((/** @type {any} */ source) => source.path && !source.id.endsWith(".defs"))
     .map((/** @type {any} */ source) => source.id);
   assert.ok(queryIds.length > 0);
   for (const id of queryIds) {
-    const name = id.split(".").at(-1);
-    assert.equal(
-      /** @type {any} */ (api)[name]?.nsid,
-      id,
-      `${name} should be the query definition for ${id}`,
-    );
+    assert.equal(lookup(api, id)?.main?.nsid, id, `${id} should be its query definition`);
+  }
+  // Records and other referenced definitions are the lexicon package's own
+  // modules, not copies.
+  for (const source of sources.filter((/** @type {any} */ source) => source.packagePath)) {
+    const fromApi = lookup(api, source.id);
+    assert.ok(fromApi, `${source.id} should be in the tree`);
+    assert.equal(fromApi.main, lookup(records, source.id).main, `${source.id} is not shared`);
   }
 });
 
@@ -50,7 +63,10 @@ test("a query sends its NSID and parameters and returns the validated body", asy
     fetch: stubFetch({ badgeAwards: [] }, requests),
   });
 
-  const body = await client.call(api.listBadgeAwards, { authors: ["did:plc:abc123"], limit: 5 });
+  const body = await client.call(api.app.certified.badge.listBadgeAwards, {
+    authors: ["did:plc:abc123"],
+    limit: 5,
+  });
 
   assert.deepEqual(body, { badgeAwards: [] });
   assert.equal(requests.length, 1);
@@ -64,7 +80,10 @@ test("response validation rejects a body that does not match the Lexicon", async
     service: "https://api.example",
     fetch: stubFetch({ badgeAwards: "nope" }, []),
   });
-  await assert.rejects(client.call(api.listBadgeAwards, {}), XrpcResponseValidationError);
+  await assert.rejects(
+    client.call(api.app.certified.badge.listBadgeAwards, {}),
+    XrpcResponseValidationError,
+  );
 });
 
 test("embedded records are validated with the schemas from @hypercerts-org/lexicon/records", async () => {
@@ -87,7 +106,7 @@ test("embedded records are validated with the schemas from @hypercerts-org/lexic
     service: "https://api.example",
     fetch: stubFetch({ activity: view }, []),
   });
-  const body = await valid.call(api.getActivity, { uri });
+  const body = await valid.call(api.org.hypercerts.claim.getActivity, { uri });
   assert.equal(body.activity.record.title, "Reforestation");
 
   const broken = { ...view, record: { ...view.record, title: 42 } };
@@ -95,5 +114,8 @@ test("embedded records are validated with the schemas from @hypercerts-org/lexic
     service: "https://api.example",
     fetch: stubFetch({ activity: broken }, []),
   });
-  await assert.rejects(invalid.call(api.getActivity, { uri }), XrpcResponseValidationError);
+  await assert.rejects(
+    invalid.call(api.org.hypercerts.claim.getActivity, { uri }),
+    XrpcResponseValidationError,
+  );
 });

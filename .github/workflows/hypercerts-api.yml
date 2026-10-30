@@ -69,6 +69,9 @@ jobs:
       - name: Build API Lua bundles and explorer
         run: pnpm build
 
+      - name: Check the packed @hypercerts-org/api in a clean consumer
+        run: pnpm --filter @hypercerts-org/api run check:package
+
   runtime-contracts:
     name: HTTP tests (HappyView + PostgreSQL)
     runs-on: ubuntu-latest

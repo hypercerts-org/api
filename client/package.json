@@ -36,6 +36,7 @@
     "build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && tsc --project tsconfig.json",
     "prepack": "pnpm run build",
     "test": "pnpm run build && tsc --project tsconfig.test.json && node --test \"test/**/*.test.js\"",
+    "check:package": "node scripts/check-package.js",
     "check": "pnpm run check:generated && pnpm run lint && pnpm run format:check && pnpm run typecheck && pnpm run test"
   },
   "peerDependencies": {

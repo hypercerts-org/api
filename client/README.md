@@ -4,20 +4,26 @@ TypeScript query definitions and types for the Hypercerts API, for use with [`@a
 
 ```ts
 import { Client } from "@atproto/lex";
-import { getActivity, listBadgeAwards, type ActivityView } from "@hypercerts-org/api";
+import { app, org } from "@hypercerts-org/api";
 
 const api = new Client("https://api.hypercerts.dev");
-const { activity } = await api.call(getActivity, { uri });
-const { badgeAwards, cursor } = await api.call(listBadgeAwards, { authors: [did], limit: 50 });
+const { activity } = await api.call(org.hypercerts.claim.getActivity, { uri });
+const { badgeAwards, cursor } = await api.call(app.certified.badge.listBadgeAwards, {
+  authors: [did],
+  limit: 50,
+});
+
+type ActivityView = org.hypercerts.claim.getActivity.ActivityView;
+type Activity = org.hypercerts.claim.activity.Main; // the record, from @hypercerts-org/lexicon
 ```
 
 ## What it contains
 
-- One query definition per endpoint, exported by its short name (`getActivity`, `listBadgeAwards`). `Client.call` uses it for the NSID, the parameters and response validation.
-- The types of each query's parameters and views (`ActivityView`, `OrganizationActorView`). Each query and defs Lexicon is also exported as a namespace for the types every query shares or that more than one Lexicon defines differently: `GetActivity.$Params`, `GetBadgeDefinition.BadgeDefinitionView`, `ApiDefs.ProfileView`.
-- `LEXICON_VERSION`: the `@hypercerts-org/lexicon` version the definitions were generated from, also in `package.json` as `hypercerts.lexiconVersion`.
+The package exports [lex's NSID namespace tree](https://www.npmjs.com/package/@atproto/lex) (`app`, `com`, `org`, `pub`), the same layout as `@hypercerts-org/lexicon/records`, so every name is an NSID:
 
-Records embedded in views are not copied: their schemas and types are imported from [`@hypercerts-org/lexicon/records`](https://github.com/hypercerts-org/hypercerts-lexicon), so `ActivityView["record"]` is the same type as the lexicon package's `Activity`.
+- Each query is at its NSID path (`org.hypercerts.claim.getActivity`), for `Client.call`, with its parameter and view types on the same path (`.$Params`, `.ActivityView`). Shared views are in `org.hypercerts.api.defs` and `org.hypercerts.entity.defs`.
+- Records and the other definitions views embed are in the same tree, but they are the modules of [`@hypercerts-org/lexicon/records`](https://github.com/hypercerts-org/hypercerts-lexicon), re-exported, not copied: `org.hypercerts.claim.activity` is the same module in both packages, and `ActivityView["record"]` is `org.hypercerts.claim.activity.Main`. An app can import everything from this package.
+- `LEXICON_VERSION`: the `@hypercerts-org/lexicon` version the definitions were generated from, also in `package.json` as `hypercerts.lexiconVersion`.
 
 ESM only. `@atproto/lex` and `@hypercerts-org/lexicon` are peer dependencies; install versions in the declared ranges.
 
@@ -27,11 +33,11 @@ ESM only. `@atproto/lex` and `@hypercerts-org/lexicon` are peer dependencies; in
 
 ## How it is generated
 
-`pnpm generate` (or `pnpm client:generate` from the repository root) runs `lex build` over the Lexicons declared in `api/manifest.json` `validationLexicons`: the API's own Lexicons from `api/lexicons/`, and the record Lexicons they reference, read from the installed `@hypercerts-org/lexicon`. It keeps only the API's own Lexicons, points their imports of records at `@hypercerts-org/lexicon/records/<nsid path>.defs` (and fails if a module is missing there), writes `src/lexicons/` and `src/index.ts`, and records the Lexicon version in `package.json`. Generated files are committed; do not edit them.
+`pnpm generate` (or `pnpm client:generate` from the repository root) runs `lex build --index-file` over the Lexicons declared in `api/manifest.json` `validationLexicons`: the API's own Lexicons from `api/lexicons/`, and the record Lexicons they reference, read from the installed `@hypercerts-org/lexicon`. It keeps the modules of the API's own Lexicons and the namespace modules on the path to them, points every other import or re-export at `@hypercerts-org/lexicon/records/<nsid path>` (and fails if a module is missing there), writes `src/lexicons/` and `src/index.ts`, and records the Lexicon version in `package.json`.
 
-Regenerate whenever a query Lexicon, `api/manifest.json`, the `@hypercerts-org/lexicon` version or the `@atproto/lex` version (including a lockfile change to its generator dependencies) changes. `pnpm check:generated` fails when the committed output is stale.
+Generated files are committed, unlike in the lexicon repository: `src/` is what reviewers see change when an API Lexicon changes, and `pnpm check:generated` fails when it is stale. Do not edit them.
 
-The root type exports are stable on purpose: generation fails when the set of view names defined by more than one Lexicon changes (`knownAmbiguousTypes` in `scripts/generate.js`), because a new duplicate would silently remove a root export.
+Regenerate whenever a query Lexicon, `api/manifest.json`, the `@hypercerts-org/lexicon` version or the `@atproto/lex` version (including a lockfile change to its generator dependencies) changes.
 
 The generator works around [bluesky-social/atproto#5738](https://github.com/bluesky-social/atproto/issues/5738), broken imports for queries under a record NSID. Remove the workaround once it is fixed upstream.
 
@@ -51,6 +57,7 @@ Run from `client/`:
 | `pnpm typecheck`                                  | Type-check `src/` and `scripts/`                                                                                        |
 | `pnpm build`                                      | Clean and compile to `dist/` (also runs before `pnpm pack`)                                                             |
 | `pnpm test`                                       | Build, type-check `test/types.ts` against the built package, and call queries through a `Client` with a stubbed `fetch` |
+| `pnpm check:package`                              | Pack, install the tarball in an empty project and check it in Node and TypeScript (needs network; CI runs it)           |
 
 Tooling follows the SDK repository (TECH-748): Biome, TypeScript 7, ESM, Node 24 or later. `exactOptionalPropertyTypes` is off because code generated by `@atproto/lex` 0.4.2 does not compile with it.
 
