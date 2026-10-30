@@ -48,19 +48,17 @@ async function manifestLexicons() {
 // (org.hypercerts.collection.getCollection). Remove once fixed upstream.
 /** @param {string} dir */
 async function fixLexImports(dir) {
-  for (const entry of await readdir(dir, { withFileTypes: true })) {
-    const file = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      await fixLexImports(file);
-    } else if (entry.name.endsWith(".ts")) {
+  const entries = await readdir(dir, { recursive: true, withFileTypes: true });
+  const files = entries.filter((entry) => entry.isFile() && entry.name.endsWith(".ts"));
+  await Promise.all(
+    files.map(async (entry) => {
+      const file = path.join(entry.parentPath, entry.name);
       const source = await readFile(file, "utf8");
-      const fixed = source.replaceAll(
-        'from "./.defs.js"',
-        `from "../${path.basename(dir)}.defs.js"`,
-      );
+      const parent = path.basename(entry.parentPath);
+      const fixed = source.replaceAll('from "./.defs.js"', `from "../${parent}.defs.js"`);
       if (fixed !== source) await writeFile(file, fixed);
-    }
-  }
+    }),
+  );
 }
 
 /** @param {string} id */
@@ -86,37 +84,63 @@ function namespaceName(id) {
     : capitalize(name);
 }
 
+/** @param {string} a @param {string} b */
+const byString = (a, b) => a.localeCompare(b);
+
+/**
+ * Reads the type names each generated Lexicon module exports, and the names
+ * more than one module exports.
+ * @param {string} srcDir
+ * @param {string[]} ids
+ */
+async function collectTypes(srcDir, ids) {
+  const sources = await Promise.all(
+    ids.map((id) => readFile(path.join(srcDir, `${modulePath(id).slice(2, -3)}.defs.ts`), "utf8")),
+  );
+  /** @type {Map<string, string[]>} */
+  const typesById = new Map(ids.map((id, index) => [id, exportedTypeNames(sources[index] ?? "")]));
+  const counts = new Map();
+  for (const name of [...typesById.values()].flat()) counts.set(name, (counts.get(name) ?? 0) + 1);
+  const ambiguous = [...counts]
+    .filter(([, count]) => count > 1)
+    .map(([name]) => name)
+    .sort(byString);
+  return { typesById, ambiguous };
+}
+
+/**
+ * Export lines for one Lexicon module: the query definition by its short name
+ * (queries only), the module as a namespace, and its unambiguous type names.
+ * @param {string} id
+ * @param {string | undefined} query
+ * @param {string[]} types
+ */
+function exportLines(id, query, types) {
+  const from = JSON.stringify(modulePath(id));
+  const lines = [""];
+  if (query) lines.push(`export { default as ${query} } from ${from};`);
+  lines.push(`export * as ${namespaceName(id)} from ${from};`);
+  if (types.length > 0) lines.push(`export type { ${types.join(", ")} } from ${from};`);
+  return lines;
+}
+
 /**
  * @param {string} srcDir
  * @param {Array<{ id: string; local: boolean; lexicon: any }>} lexicons
  * @param {string} lexiconVersion
  */
 async function writeIndex(srcDir, lexicons, lexiconVersion) {
-  const local = lexicons.filter((entry) => entry.local).sort((a, b) => a.id.localeCompare(b.id));
-  const queries = local.filter((entry) => entry.lexicon.defs?.main?.type === "query");
-  const defs = local.filter((entry) => entry.lexicon.defs?.main === undefined);
-
-  /** @type {Map<string, string[]>} */
-  const typeOwners = new Map();
-  /** @type {Map<string, string[]>} */
-  const typesById = new Map();
-  for (const { id } of [...queries, ...defs]) {
-    const source = await readFile(
-      path.join(srcDir, `${modulePath(id).slice(2, -3)}.defs.ts`),
-      "utf8",
-    );
-    const names = exportedTypeNames(source);
-    typesById.set(id, names);
-    for (const name of names) typeOwners.set(name, [...(typeOwners.get(name) ?? []), id]);
-  }
+  const local = lexicons.filter((entry) => entry.local).sort((a, b) => byString(a.id, b.id));
+  const queryIds = local
+    .filter((entry) => entry.lexicon.defs?.main?.type === "query")
+    .map((entry) => entry.id);
+  const defsIds = local
+    .filter((entry) => entry.lexicon.defs?.main === undefined)
+    .map((entry) => entry.id);
+  const ids = [...queryIds, ...defsIds];
   // Some API Lexicons define different views under the same name; those stay
   // reachable only through their Lexicon's namespace.
-  const ambiguous = [...typeOwners]
-    .filter(([, ids]) => ids.length > 1)
-    .map(([name]) => name)
-    .sort();
-  /** @param {string} id */
-  const rootTypes = (id) => (typesById.get(id) ?? []).filter((name) => !ambiguous.includes(name));
+  const { typesById, ambiguous } = await collectTypes(srcDir, ids);
 
   /** @type {Set<string>} */
   const exportNames = new Set();
@@ -136,22 +160,14 @@ async function writeIndex(srcDir, lexicons, lexiconVersion) {
     "/** Version of @hypercerts-org/lexicon these definitions were generated from. */",
     `export const LEXICON_VERSION = ${JSON.stringify(lexiconVersion)};`,
   );
-  for (const { id } of [...queries, ...defs]) {
-    const from = JSON.stringify(modulePath(id));
-    const namespace = namespaceName(id);
-    const query = queries.some((entry) => entry.id === id)
-      ? /** @type {string} */ (id.split(".").at(-1))
-      : undefined;
-    for (const name of [query, namespace]) {
-      if (name === undefined) continue;
+  for (const id of ids) {
+    const query = queryIds.includes(id) ? id.split(".").at(-1) : undefined;
+    for (const name of [query, namespaceName(id)].filter((name) => name !== undefined)) {
       if (exportNames.has(name)) throw new Error(`Two API Lexicons export ${name}`);
       exportNames.add(name);
     }
-    lines.push("");
-    if (query) lines.push(`export { default as ${query} } from ${from};`);
-    lines.push(`export * as ${namespace} from ${from};`);
-    const types = rootTypes(id);
-    if (types.length > 0) lines.push(`export type { ${types.join(", ")} } from ${from};`);
+    const types = (typesById.get(id) ?? []).filter((name) => !ambiguous.includes(name));
+    lines.push(...exportLines(id, query, types));
   }
   await writeFile(path.join(srcDir, "index.ts"), `${lines.join("\n")}\n`);
 }
@@ -161,9 +177,11 @@ async function generate(srcDir, lexiconVersion) {
   const lexicons = await manifestLexicons();
   const inputDir = await mkdtemp(path.join(tmpdir(), "hypercerts-api-lexicons-"));
   try {
-    for (const { id, lexicon } of lexicons) {
-      await writeFile(path.join(inputDir, `${id}.json`), JSON.stringify(lexicon));
-    }
+    await Promise.all(
+      lexicons.map(({ id, lexicon }) =>
+        writeFile(path.join(inputDir, `${id}.json`), JSON.stringify(lexicon)),
+      ),
+    );
     execFileSync(
       lexBin,
       ["build", "--lexicons", inputDir, "--out", path.join(srcDir, "lexicons"), "--clear"],
@@ -178,20 +196,14 @@ async function generate(srcDir, lexiconVersion) {
   await writeIndex(srcDir, lexicons, lexiconVersion);
 }
 
-/** @param {string} dir @param {string} [prefix] @returns {Promise<Map<string, string>>} */
-async function readTree(dir, prefix = "") {
-  /** @type {Map<string, string>} */
-  const files = new Map();
-  for (const entry of await readdir(dir, { withFileTypes: true }).catch(() => [])) {
-    const relative = path.join(prefix, entry.name);
-    if (entry.isDirectory()) {
-      for (const [file, content] of await readTree(path.join(dir, entry.name), relative))
-        files.set(file, content);
-    } else {
-      files.set(relative, await readFile(path.join(dir, entry.name), "utf8"));
-    }
-  }
-  return files;
+/** @param {string} dir @returns {Promise<Map<string, string>>} */
+async function readTree(dir) {
+  const entries = await readdir(dir, { recursive: true, withFileTypes: true }).catch(() => []);
+  const files = entries
+    .filter((entry) => entry.isFile())
+    .map((entry) => path.join(entry.parentPath, entry.name));
+  const contents = await Promise.all(files.map((file) => readFile(file, "utf8")));
+  return new Map(files.map((file, index) => [path.relative(dir, file), contents[index] ?? ""]));
 }
 
 async function main() {
@@ -217,12 +229,13 @@ async function main() {
     const actual = await readTree(srcDir);
     const stale = [...new Set([...expected.keys(), ...actual.keys()])]
       .filter((file) => expected.get(file) !== actual.get(file))
-      .sort();
+      .sort(byString);
     if (packageJson.hypercerts?.lexiconVersion !== lexiconVersion)
       stale.unshift("package.json (hypercerts.lexiconVersion)");
     if (stale.length > 0) {
+      const list = stale.map((file) => `  ${file}`).join("\n");
       console.error(
-        `Generated sources are stale. Run \`pnpm --filter @hypercerts-org/api generate\`.\n${stale.map((file) => `  ${file}`).join("\n")}`,
+        `Generated sources are stale. Run \`pnpm --filter @hypercerts-org/api generate\`.\n${list}`,
       );
       process.exitCode = 1;
       return;
