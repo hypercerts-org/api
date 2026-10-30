@@ -5,6 +5,7 @@ This repository builds and installs Hypercerts API modules for HappyView. `api/m
 ## Repository map
 
 - `api/` — installer, manifests, Lua handlers, shared tooling, and unit/HTTP tests.
+- `client/` — `@hypercerts-org/api`, TypeScript query definitions and types generated from the API's query Lexicons. See [client/README.md](client/README.md).
 - `docs/` — endpoint explorer, generated OpenAPI reference, Lexicon snapshots, coverage report, and explorer tests.
 - `.changeset/` — release notes and versioning metadata.
 - `.github/` — GitHub workflows.
@@ -20,7 +21,7 @@ pnpm check
 pnpm build
 ```
 
-`pnpm check` validates generated handlers, lint, types, API unit tests, and endpoint explorer tests, including read-only docs freshness checks. `pnpm build` refreshes declared Lua bundles and builds the endpoint explorer. These commands do not contact or install to HappyView.
+`pnpm check` validates generated handlers, lint, types, API unit tests, endpoint explorer tests, including read-only docs freshness checks, and the `@hypercerts-org/api` package. `pnpm build` refreshes declared Lua bundles, builds the endpoint explorer and builds `@hypercerts-org/api`. These commands do not contact or install to HappyView.
 
 For installed-endpoint HTTP tests, run:
 

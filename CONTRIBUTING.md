@@ -23,6 +23,14 @@ pnpm docs:sync
 
 This updates `docs/sources/index.json`, the committed Lexicon snapshots, `docs/openapi.json`, and `docs/coverage.json`. It uses the repository-pinned `@hypercerts-org/lexicon` dependency and makes no HappyView requests. Coverage reports manifest inclusion only; it does not validate runtime behavior or deployment. See [docs/README.md](docs/README.md) for the source and snapshot policy.
 
+The same changes require regenerating the `@hypercerts-org/api` TypeScript package:
+
+```sh
+pnpm client:generate
+```
+
+`pnpm check` fails while the committed output in `client/src/` is stale. See [client/README.md](client/README.md).
+
 ## HTTP runtime tests
 
 `pnpm test:http` runs the suites in `api/tests/http` against the activity, badge-definition, badge-query, EVM-link, acknowledgement, collection, context-measurement, context attachment and evaluation, contributor-information, funding, location, profile, organization, feature, work-scope-tag, rights, vocabulary-tag, graph, contribution, and feed-reaction query XRPC endpoints installed from this checkout. These tests exercise real HTTP behavior against PostgreSQL, not only Lua handlers with a fake database.

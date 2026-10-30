@@ -1,0 +1,49 @@
+{
+  "name": "@hypercerts-org/api",
+  "version": "0.0.0",
+  "private": true,
+  "description": "TypeScript query definitions and types for the Hypercerts API, for use with @atproto/lex",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "hypercerts": {
+    "lexiconVersion": "1.5.0"
+  },
+  "scripts": {
+    "generate": "node scripts/generate.js",
+    "check:generated": "node scripts/generate.js --check",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "build": "tsc --project tsconfig.json",
+    "test": "pnpm run build && tsc --project tsconfig.scripts.json && node --test test/",
+    "check": "pnpm run check:generated && pnpm run lint && pnpm run format:check && pnpm run typecheck && pnpm run test"
+  },
+  "peerDependencies": {
+    "@atproto/lex": "^0.4.2"
+  },
+  "devDependencies": {
+    "@atproto/lex": "0.4.2",
+    "@biomejs/biome": "2.6.3",
+    "@types/node": "24.3.0",
+    "typescript": "7.0.2"
+  }
+}
