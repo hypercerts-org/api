@@ -47,11 +47,18 @@ test("every Lexicon in api/manifest.json is at its NSID path", async () => {
     assert.equal(lookup(api, id)?.main?.nsid, id, `${id} should be its query definition`);
   }
   // Records and other referenced definitions are the lexicon package's own
-  // modules, not copies.
+  // modules, not copies: every export is the same object. (A record that also
+  // has queries under its NSID, like org.hypercerts.collection, is a different
+  // namespace object here, with the query modules added.)
   for (const source of sources.filter((/** @type {any} */ source) => source.packagePath)) {
     const fromApi = lookup(api, source.id);
+    const fromRecords = lookup(records, source.id);
     assert.ok(fromApi, `${source.id} should be in the tree`);
-    assert.equal(fromApi.main, lookup(records, source.id).main, `${source.id} is not shared`);
+    const keys = Object.keys(fromRecords);
+    assert.ok(keys.length > 0, `${source.id} should have exports`);
+    for (const key of keys) {
+      assert.equal(fromApi[key], fromRecords[key], `${source.id}.${key} is not shared`);
+    }
   }
 });
 

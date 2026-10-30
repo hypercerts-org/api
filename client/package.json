@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "description": "TypeScript query definitions and types for the Hypercerts API, for use with @atproto/lex",
-  "license": "MIT",
+  "license": "MIT OR Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hypercerts-org/api.git",
+    "directory": "client"
+  },
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -15,7 +20,9 @@
   },
   "files": [
     "dist",
-    "src"
+    "src",
+    "LICENSE-APACHE",
+    "LICENSE-MIT"
   ],
   "engines": {
     "node": ">=24"
@@ -47,7 +54,8 @@
     "@atproto/lex": "0.4.2",
     "@biomejs/biome": "2.6.3",
     "@hypercerts-org/lexicon": "file:vendor/hypercerts-org-lexicon-1.7.0.tgz",
-    "@types/node": "24.3.0",
-    "typescript": "7.0.2"
+    "@types/node": "24.19.2",
+    "typescript": "7.0.2",
+    "vite": "8.3.5"
   }
 }

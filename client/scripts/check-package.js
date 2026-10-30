@@ -1,77 +1,117 @@
-// Checks the packed package the way a consumer installs it: `pnpm pack`
-// (which builds), then install the tarball with @hypercerts-org/lexicon and
-// @atproto/lex in an empty project outside this repository, import it in
-// Node and typecheck a TypeScript consumer. Needs network access for
-// `npm install`.
+// Packs @hypercerts-org/api and installs the tarball, with @hypercerts-org/lexicon
+// and @atproto/lex, into a consumer project outside the workspace, then checks
+// it the way the SDK repository checks its packages: Node imports it, a
+// TypeScript consumer typechecks, and Vite bundles it for the browser. This
+// catches packaging errors (bad exports, missing files, workspace: specifiers)
+// that the workspace hides. Needs network access for `pnpm install`.
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { createRequire } from "node:module";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const clientRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const packageJson = JSON.parse(readFileSync(path.join(clientRoot, "package.json"), "utf8"));
-const require = createRequire(path.join(clientRoot, "package.json"));
-const lexVersion = packageJson.devDependencies["@atproto/lex"];
-const typescriptVersion = JSON.parse(
-  readFileSync(require.resolve("typescript/package.json"), "utf8"),
-).version;
-// The lexicon dependency as declared: a version, or a tarball path until
-// @hypercerts-org/lexicon/records is on npm.
-const lexiconSpec = packageJson.devDependencies["@hypercerts-org/lexicon"].replace(
-  /^file:/,
-  `${clientRoot}/`,
-);
+const packageJson = readJson(path.join(clientRoot, "package.json"));
+/** @param {string} name */
+const pinned = (name) => {
+  const version = packageJson.devDependencies?.[name];
+  if (!version) throw new Error(`check-package: ${name} must be a devDependency`);
+  return version.replace(/^file:/, `file:${clientRoot}/`);
+};
 
 // Child processes must not inherit the parent's npm and pnpm settings.
 const childEnv = Object.fromEntries(
   Object.entries(process.env).filter(([key]) => !key.toLowerCase().startsWith("npm_config_")),
 );
 
-/** @param {string} command @param {string[]} args @param {string} cwd */
-const run = (command, args, cwd, timeout = 300_000) =>
-  execFileSync(command, args, { cwd, env: childEnv, encoding: "utf8", stdio: "pipe", timeout });
-
-const workDir = mkdtempSync(path.join(tmpdir(), "hypercerts-api-package-"));
+const work = mkdtempSync(path.join(tmpdir(), "hypercerts-api-consumer-"));
 try {
-  run("pnpm", ["pack", "--pack-destination", workDir], clientRoot);
-  const tarball = path.join(workDir, `hypercerts-org-api-${packageJson.version}.tgz`);
-  const consumerDir = path.join(workDir, "consumer");
-  mkdirSync(consumerDir);
-  writeFileSync(
-    path.join(consumerDir, "package.json"),
-    JSON.stringify({ name: "consumer", private: true, type: "module" }),
-  );
-  run(
-    "npm",
-    [
-      "install",
-      "--silent",
-      "--no-audit",
-      "--no-fund",
-      tarball,
-      lexiconSpec,
-      `@atproto/lex@${lexVersion}`,
-      `typescript@${typescriptVersion}`,
-    ],
-    consumerDir,
-  );
+  const tarball = packPackage(work);
+  const consumer = createConsumer(work, tarball);
+  checkNode(consumer);
+  checkTypes(consumer);
+  checkBrowserBuild(consumer);
+  console.log("check-package: all consumer checks passed");
+} finally {
+  rmSync(work, { recursive: true, force: true });
+}
 
-  writeFileSync(
-    path.join(consumerDir, "runtime.js"),
-    `import { LEXICON_VERSION, org } from "@hypercerts-org/api";
+/** @param {string} dest */
+function packPackage(dest) {
+  run("pnpm", ["pack", "--pack-destination", dest], clientRoot);
+  const tarball = readdirSync(dest).find((file) => /^hypercerts-org-api-.*\.tgz$/.test(file));
+  if (!tarball) throw new Error("check-package: no tarball produced for @hypercerts-org/api");
+
+  const extracted = path.join(dest, "extracted");
+  mkdirSync(extracted);
+  run("tar", ["-xzf", path.join(dest, tarball), "-C", extracted], dest);
+  const packedManifest = readFileSync(path.join(extracted, "package", "package.json"), "utf8");
+  if (packedManifest.includes("workspace:")) {
+    throw new Error("check-package: packed package still contains workspace: specifiers");
+  }
+  const licenses = readdirSync(path.join(extracted, "package")).filter((f) =>
+    /^LICEN[CS]E/i.test(f),
+  );
+  if (licenses.join(",") !== "LICENSE-APACHE,LICENSE-MIT") {
+    throw new Error(`check-package: expected LICENSE-APACHE and LICENSE-MIT, got ${licenses}`);
+  }
+  return path.join(dest, tarball);
+}
+
+/** @param {string} dir @param {string} tarball */
+function createConsumer(dir, tarball) {
+  const consumer = path.join(dir, "consumer");
+  mkdirSync(path.join(consumer, "src"), { recursive: true });
+  writeJson(path.join(consumer, "package.json"), {
+    name: "consumer",
+    private: true,
+    type: "module",
+    dependencies: {
+      "@hypercerts-org/api": `file:${tarball}`,
+      "@hypercerts-org/lexicon": pinned("@hypercerts-org/lexicon"),
+      "@atproto/lex": pinned("@atproto/lex"),
+    },
+    devDependencies: { typescript: pinned("typescript"), vite: pinned("vite") },
+  });
+  writeJson(path.join(consumer, "tsconfig.json"), {
+    compilerOptions: {
+      target: "es2024",
+      module: "nodenext",
+      moduleResolution: "nodenext",
+      strict: true,
+      noEmit: true,
+      skipLibCheck: true,
+      types: [],
+      lib: ["es2024", "dom"],
+    },
+    include: ["src"],
+  });
+  // --ignore-workspace keeps pnpm from treating the temp dir as part of this
+  // repo. @atproto/lex depends on core-js, whose only install script prints a
+  // banner; pnpm 11 and later fail on unapproved scripts unless told not to.
+  run(
+    "pnpm",
+    ["install", "--ignore-workspace", "--no-frozen-lockfile", "--config.strict-dep-builds=false"],
+    consumer,
+  );
+  return consumer;
+}
+
+/** @param {string} consumer */
+function checkNode(consumer) {
+  const script = `import { LEXICON_VERSION, org } from "@hypercerts-org/api";
 import { org as records } from "@hypercerts-org/lexicon/records";
 if (org.hypercerts.claim.getActivity.main.nsid !== "org.hypercerts.claim.getActivity") throw new Error("query");
 if (org.hypercerts.claim.activity.main !== records.hypercerts.claim.activity.main) throw new Error("records are not shared");
-if (LEXICON_VERSION !== ${JSON.stringify(packageJson.hypercerts.lexiconVersion)}) throw new Error("LEXICON_VERSION");
-`,
-  );
-  run("node", ["runtime.js"], consumerDir, 120_000);
-  console.log("✅ The packed package imports in Node (ESM) and shares record modules");
+if (LEXICON_VERSION !== ${JSON.stringify(packageJson.hypercerts.lexiconVersion)}) throw new Error("LEXICON_VERSION");`;
+  run("node", ["--input-type=module", "-e", script], consumer);
+  console.log("check-package: Node imports the package and shares record modules");
+}
 
+/** @param {string} consumer */
+function checkTypes(consumer) {
   writeFileSync(
-    path.join(consumerDir, "types.ts"),
+    path.join(consumer, "src", "types.ts"),
     `import { Client } from "@atproto/lex";
 import { org } from "@hypercerts-org/api";
 import { org as records } from "@hypercerts-org/lexicon/records";
@@ -85,24 +125,59 @@ export async function record(): Promise<records.hypercerts.claim.activity.Main> 
 export const missing = () => api.call(org.hypercerts.claim.getActivity, {});
 `,
   );
-  run(
-    path.join(consumerDir, "node_modules/.bin/tsc"),
-    [
-      "--noEmit",
-      "--strict",
-      "--skipLibCheck",
-      "--module",
-      "nodenext",
-      "--moduleResolution",
-      "nodenext",
-      "--target",
-      "es2022",
-      "types.ts",
-    ],
-    consumerDir,
-    120_000,
+  run("pnpm", ["exec", "tsc", "-p", "tsconfig.json"], consumer);
+  console.log("check-package: a TypeScript consumer typechecks against the declarations");
+}
+
+/** @param {string} consumer */
+function checkBrowserBuild(consumer) {
+  writeFileSync(
+    path.join(consumer, "src", "main.ts"),
+    `import { Client } from "@atproto/lex";
+import { org } from "@hypercerts-org/api";
+const api = new Client("https://api.example");
+api.call(org.hypercerts.claim.getActivity, { uri: "at://did:plc:abc123/org.hypercerts.claim.activity/3k2abc" })
+  .then(({ activity }) => console.log(activity.record.title), console.error);
+`,
   );
-  console.log("✅ A TypeScript consumer typechecks against the installed declarations");
-} finally {
-  rmSync(workDir, { recursive: true, force: true });
+  writeFileSync(
+    path.join(consumer, "index.html"),
+    '<!doctype html><html><body><script type="module" src="/src/main.ts"></script></body></html>\n',
+  );
+  run("pnpm", ["exec", "vite", "build", "--logLevel", "warn"], consumer);
+  const assets = path.join(consumer, "dist", "assets");
+  const bundle = readdirSync(assets)
+    .filter((file) => file.endsWith(".js"))
+    .map((file) => readFileSync(path.join(assets, file), "utf8"))
+    .join("\n");
+  // The query and the record schema its view embeds are bundled; queries and
+  // records it does not use are tree-shaken.
+  for (const expected of ["org.hypercerts.claim.getActivity", "shortDescription"]) {
+    if (!bundle.includes(expected)) throw new Error(`check-package: bundle lacks ${expected}`);
+  }
+  for (const unused of [
+    "app.certified.graph.listActorFollowers",
+    "org.hypercerts.funding.listReceipts",
+  ]) {
+    if (bundle.includes(unused)) throw new Error(`check-package: bundle includes ${unused}`);
+  }
+  const kib = Math.round(Buffer.byteLength(bundle) / 1024);
+  console.log(
+    `check-package: Vite bundles one query for the browser (${kib} KiB), unused ones left out`,
+  );
+}
+
+/** @param {string} command @param {string[]} args @param {string} cwd */
+function run(command, args, cwd) {
+  execFileSync(command, args, { cwd, env: childEnv, stdio: "inherit", timeout: 300_000 });
+}
+
+/** @param {string} file */
+function readJson(file) {
+  return JSON.parse(readFileSync(file, "utf8"));
+}
+
+/** @param {string} file @param {unknown} value */
+function writeJson(file, value) {
+  writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`);
 }
