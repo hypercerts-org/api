@@ -1,6 +1,6 @@
 {
   "source": {
-    "apiManifest": "api/manifest.json",
+    "apiManifest": "happyview-modules/manifest.json",
     "pinnedLexiconPackage": "1.5.0"
   },
   "runtimeValidation": "not-assessed",
