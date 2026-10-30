@@ -34,7 +34,7 @@
     "format:check": "biome format .",
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "build": "tsc --project tsconfig.json",
-    "test": "pnpm run build && tsc --project tsconfig.scripts.json && node --test test/",
+    "test": "pnpm run build && tsc --project tsconfig.scripts.json && node --test \"test/**/*.test.js\"",
     "check": "pnpm run check:generated && pnpm run lint && pnpm run format:check && pnpm run typecheck && pnpm run test"
   },
   "peerDependencies": {
