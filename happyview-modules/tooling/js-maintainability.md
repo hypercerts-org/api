@@ -60,7 +60,7 @@ pnpm --dir api run test:unit
 Focused checks for these safeguards and their owners are:
 
 ```sh
-cd api
+cd happyview-modules
 pnpm exec eslint --max-warnings=0 --report-unused-disable-directives \
   eslint.config.js tooling/installer.js tooling/run-http-tests.js tooling/seed.js \
   tests/unit/tooling/eslint-maintainability.test.js

@@ -39,7 +39,7 @@ Releases version the installable API bundle in this package; they do not publish
 git clone --depth 1 --branch '@hypercerts-org/happyview-modules@X.Y.Z' https://github.com/hypercerts-org/api.git hypercerts-api
 cd hypercerts-api
 pnpm install --frozen-lockfile
-cd api
+cd happyview-modules
 HYPERCERTS_HANDLE_RESOLVER_URL='https://resolver.example' \
 HAPPYVIEW_BASE_URL='https://your-happyview.example' \
 HAPPYVIEW_ADMIN_TOKEN='<scoped-admin-token>' \

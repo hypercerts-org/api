@@ -36,7 +36,7 @@ This requires Docker Compose, `psql`, and the pinned PostgreSQL and HappyView im
 Install workspace dependencies first, then run the installer from `happyview-modules/` with an approved HappyView URL and scoped admin token. For bundles that include `app.certified.actor.getProfile`, also set `HYPERCERTS_HANDLE_RESOLVER_URL` to an HTTPS origin without credentials, path, query, or fragment:
 
 ```sh
-cd api
+cd happyview-modules
 HYPERCERTS_HANDLE_RESOLVER_URL='https://resolver.example' \
 HAPPYVIEW_BASE_URL='https://your-happyview.example' \
 HAPPYVIEW_ADMIN_TOKEN='<scoped-admin-token>' \
