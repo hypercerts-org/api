@@ -13,7 +13,7 @@ This repository builds and installs Hypercerts API modules for HappyView. `api/m
 
 ## Checks
 
-Run from the repository root:
+Use Node 24, as pinned in `.nvmrc` (CI reads the same file). Run from the repository root:
 
 ```sh
 pnpm install --frozen-lockfile
