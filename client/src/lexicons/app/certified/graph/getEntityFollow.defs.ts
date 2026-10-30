@@ -3,7 +3,7 @@
  */
 
 import { l } from "@atproto/lex";
-import * as GraphEntityFollow from "./entityFollow.defs.js";
+import * as GraphEntityFollow from "@hypercerts-org/lexicon/records/app/certified/graph/entityFollow.defs";
 
 const $nsid = "app.certified.graph.getEntityFollow";
 

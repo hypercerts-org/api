@@ -57,6 +57,9 @@ importers:
       '@biomejs/biome':
         specifier: 2.6.3
         version: 2.6.3
+      '@hypercerts-org/lexicon':
+        specifier: file:vendor/hypercerts-org-lexicon-1.7.0.tgz
+        version: file:client/vendor/hypercerts-org-lexicon-1.7.0.tgz(@atproto/lex@0.4.2)(@atproto/xrpc@0.8.13)
       '@types/node':
         specifier: 24.3.0
         version: 24.3.0
@@ -551,6 +554,16 @@ packages:
     resolution: {integrity: sha512-zg7//t8Mghrb6Z2fsSE0dIaNlGn6vBC5Hy8s7xodF7Fb1cpxUA3iLvzfvGQfR7yNV62o4bUyLlPE6Ez10eqfaQ==}
     peerDependencies:
       '@atproto/xrpc': '*'
+
+  '@hypercerts-org/lexicon@file:client/vendor/hypercerts-org-lexicon-1.7.0.tgz':
+    resolution: {integrity: sha512-0z9Cpphr3UHost0Ufib4FaXbOih7L/Z0N1R3I+p/lI8fep9yO0f8Tuqcp2v/xTaED/5WeVfRTReZMZZARFClKQ==, tarball: file:client/vendor/hypercerts-org-lexicon-1.7.0.tgz}
+    version: 1.7.0
+    peerDependencies:
+      '@atproto/lex': ^0.4.2
+      '@atproto/xrpc': '*'
+    peerDependenciesMeta:
+      '@atproto/lex':
+        optional: true
 
   '@hypercerts-org/ui-react@0.2.0':
     resolution: {integrity: sha512-3/8PJluH07euvnAliQaIYGsVrrpTApeo/NgwoHMQpRTf8PXOagoEhnv/NffSgJNfTKao5ShKLCk5F5I6gpKLLw==}
@@ -2965,6 +2978,14 @@ snapshots:
       '@atproto/lexicon': 0.6.2
       '@atproto/xrpc': 0.8.13
       multiformats: 13.4.2
+
+  '@hypercerts-org/lexicon@file:client/vendor/hypercerts-org-lexicon-1.7.0.tgz(@atproto/lex@0.4.2)(@atproto/xrpc@0.8.13)':
+    dependencies:
+      '@atproto/lexicon': 0.6.2
+      '@atproto/xrpc': 0.8.13
+      multiformats: 13.4.2
+    optionalDependencies:
+      '@atproto/lex': 0.4.2
 
   '@hypercerts-org/ui-react@0.2.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
     dependencies:

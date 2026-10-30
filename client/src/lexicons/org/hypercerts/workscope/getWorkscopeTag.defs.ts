@@ -4,7 +4,7 @@
 
 import { l } from "@atproto/lex";
 import * as ApiDefs from "../api/defs.defs.js";
-import * as WorkscopeTag from "./tag.defs.js";
+import * as WorkscopeTag from "@hypercerts-org/lexicon/records/org/hypercerts/workscope/tag.defs";
 
 const $nsid = "org.hypercerts.workscope.getWorkscopeTag";
 

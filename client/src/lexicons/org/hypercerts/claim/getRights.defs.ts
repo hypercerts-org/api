@@ -4,7 +4,7 @@
 
 import { l } from "@atproto/lex";
 import * as ApiDefs from "../api/defs.defs.js";
-import * as ClaimRights from "./rights.defs.js";
+import * as ClaimRights from "@hypercerts-org/lexicon/records/org/hypercerts/claim/rights.defs";
 
 const $nsid = "org.hypercerts.claim.getRights";
 

@@ -3,7 +3,7 @@
  */
 
 import { l } from "@atproto/lex";
-import * as FeedLike from "./like.defs.js";
+import * as FeedLike from "@hypercerts-org/lexicon/records/app/certified/feed/like.defs";
 import * as ApiDefs from "../../../org/hypercerts/api/defs.defs.js";
 
 const $nsid = "app.certified.feed.getLikes";

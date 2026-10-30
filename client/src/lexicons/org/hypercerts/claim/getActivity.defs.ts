@@ -4,9 +4,9 @@
 
 import { l } from "@atproto/lex";
 import * as ApiDefs from "../api/defs.defs.js";
-import * as ClaimActivity from "./activity.defs.js";
-import * as RepoStrongRef from "../../../com/atproto/repo/strongRef.defs.js";
-import * as ClaimContributorInformation from "./contributorInformation.defs.js";
+import * as ClaimActivity from "@hypercerts-org/lexicon/records/org/hypercerts/claim/activity.defs";
+import * as RepoStrongRef from "@hypercerts-org/lexicon/records/com/atproto/repo/strongRef.defs";
+import * as ClaimContributorInformation from "@hypercerts-org/lexicon/records/org/hypercerts/claim/contributorInformation.defs";
 
 const $nsid = "org.hypercerts.claim.getActivity";
 

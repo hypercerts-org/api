@@ -4,7 +4,7 @@
 
 import { l } from "@atproto/lex";
 import * as ApiDefs from "../api/defs.defs.js";
-import * as FundingReceipt from "./receipt.defs.js";
+import * as FundingReceipt from "@hypercerts-org/lexicon/records/org/hypercerts/funding/receipt.defs";
 
 const $nsid = "org.hypercerts.funding.getReceipt";
 

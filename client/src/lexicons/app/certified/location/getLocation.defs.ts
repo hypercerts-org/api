@@ -4,7 +4,7 @@
 
 import { l } from "@atproto/lex";
 import * as ApiDefs from "../../../org/hypercerts/api/defs.defs.js";
-import * as CertifiedLocation from "../location.defs.js";
+import * as CertifiedLocation from "@hypercerts-org/lexicon/records/app/certified/location.defs";
 
 const $nsid = "app.certified.location.getLocation";
 

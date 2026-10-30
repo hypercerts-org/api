@@ -4,11 +4,12 @@
 
 // Query definitions for @atproto/lex, one per endpoint, and the types of
 // their parameters and views. Each query and defs Lexicon is also exported
-// as a namespace (GetActivity.$Params, ApiDefs.ProfileView).
+// as a namespace (GetActivity.$Params, ApiDefs.ProfileView). Record types
+// come from @hypercerts-org/lexicon/records.
 // Defined differently by more than one Lexicon, so namespace-only: BadgeDefinitionView, ContributorInformationView, FeatureView.
 
 /** Version of @hypercerts-org/lexicon these definitions were generated from. */
-export const LEXICON_VERSION = "1.5.0";
+export const LEXICON_VERSION = "1.7.0";
 
 export { default as getOrganization } from "./lexicons/app/certified/actor/getOrganization.js";
 export * as GetOrganization from "./lexicons/app/certified/actor/getOrganization.js";

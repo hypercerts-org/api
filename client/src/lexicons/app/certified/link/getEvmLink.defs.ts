@@ -4,7 +4,7 @@
 
 import { l } from "@atproto/lex";
 import * as ApiDefs from "../../../org/hypercerts/api/defs.defs.js";
-import * as LinkEvm from "./evm.defs.js";
+import * as LinkEvm from "@hypercerts-org/lexicon/records/app/certified/link/evm.defs";
 
 const $nsid = "app.certified.link.getEvmLink";
 

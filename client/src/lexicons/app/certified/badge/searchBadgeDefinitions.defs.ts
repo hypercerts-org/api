@@ -4,7 +4,7 @@
 
 import { l } from "@atproto/lex";
 import * as ApiDefs from "../../../org/hypercerts/api/defs.defs.js";
-import * as BadgeDefinition from "./definition.defs.js";
+import * as BadgeDefinition from "@hypercerts-org/lexicon/records/app/certified/badge/definition.defs";
 
 const $nsid = "app.certified.badge.searchBadgeDefinitions";
 

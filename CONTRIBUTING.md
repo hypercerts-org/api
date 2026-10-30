@@ -2,7 +2,7 @@
 
 ## Set up and validate
 
-Use the repository-pinned pnpm version. From the repository root:
+Use Node 24 (pinned in `.nvmrc`, which CI also reads) and the repository-pinned pnpm version. From the repository root:
 
 ```sh
 pnpm install --frozen-lockfile
@@ -11,7 +11,7 @@ pnpm check
 pnpm build
 ```
 
-`pnpm test:unit` runs the discovered tests under `api/tests/unit`; unit tests use local fixtures and fake process/network adapters, and do not seed a database or contact HappyView. `pnpm check` also checks generated-source freshness, JavaScript and Lua lint, types, and endpoint tests. `pnpm build` emits Lua handlers declared by the root and module manifests. Shared Lua files are bundled into capability handlers rather than installed independently.
+`pnpm test:unit` runs the discovered tests under `api/tests/unit`; unit tests use local fixtures and fake process/network adapters, and do not seed a database or contact HappyView. `pnpm check` also checks generated-source freshness, JavaScript and Lua lint, types, endpoint tests, and the `@hypercerts-org/api` package in `client/`. `pnpm build` emits Lua handlers declared by the root and module manifests, builds the endpoint explorer, and builds `@hypercerts-org/api`. Shared Lua files are bundled into capability handlers rather than installed independently.
 
 ## API reference snapshots
 
@@ -23,7 +23,7 @@ pnpm docs:sync
 
 This updates `docs/sources/index.json`, the committed Lexicon snapshots, `docs/openapi.json`, and `docs/coverage.json`. It uses the repository-pinned `@hypercerts-org/lexicon` dependency and makes no HappyView requests. Coverage reports manifest inclusion only; it does not validate runtime behavior or deployment. See [docs/README.md](docs/README.md) for the source and snapshot policy.
 
-The same changes require regenerating the `@hypercerts-org/api` TypeScript package:
+The same changes, and changes to the `@hypercerts-org/lexicon` or `@atproto/lex` version in `client/package.json`, require regenerating the `@hypercerts-org/api` TypeScript package:
 
 ```sh
 pnpm client:generate

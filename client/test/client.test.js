@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { Client } from "@atproto/lex";
+import { Client, XrpcResponseValidationError } from "@atproto/lex";
 import * as api from "@hypercerts-org/api";
 
 const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
@@ -64,5 +64,36 @@ test("response validation rejects a body that does not match the Lexicon", async
     service: "https://api.example",
     fetch: stubFetch({ badgeAwards: "nope" }, []),
   });
-  await assert.rejects(client.call(api.listBadgeAwards, {}));
+  await assert.rejects(client.call(api.listBadgeAwards, {}), XrpcResponseValidationError);
+});
+
+test("embedded records are validated with the schemas from @hypercerts-org/lexicon/records", async () => {
+  const view = {
+    uri: "at://did:plc:abc123/org.hypercerts.claim.activity/3k2abc",
+    cid: "bafyreie5737gdxlw5i64vzichcalba3z2v5n6icifvx5xytvske7mr3hpm",
+    indexedAt: "2026-10-30T12:00:00.000Z",
+    did: "did:plc:abc123",
+    author: { did: "did:plc:abc123", handle: null, profile: null, organization: null },
+    record: {
+      $type: "org.hypercerts.claim.activity",
+      title: "Reforestation",
+      shortDescription: "Planting native trees.",
+      createdAt: "2026-10-30T12:00:00.000Z",
+    },
+    contributors: [],
+  };
+  const uri = /** @type {const} */ ("at://did:plc:abc123/org.hypercerts.claim.activity/3k2abc");
+  const valid = new Client({
+    service: "https://api.example",
+    fetch: stubFetch({ activity: view }, []),
+  });
+  const body = await valid.call(api.getActivity, { uri });
+  assert.equal(body.activity.record.title, "Reforestation");
+
+  const broken = { ...view, record: { ...view.record, title: 42 } };
+  const invalid = new Client({
+    service: "https://api.example",
+    fetch: stubFetch({ activity: broken }, []),
+  });
+  await assert.rejects(invalid.call(api.getActivity, { uri }), XrpcResponseValidationError);
 });

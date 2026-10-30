@@ -3,11 +3,11 @@
  */
 
 import { l } from "@atproto/lex";
-import * as ActorProfile from "../../../app/certified/actor/profile.defs.js";
-import * as ActorOrganization from "../../../app/certified/actor/organization.defs.js";
-import * as CertifiedLocation from "../../../app/certified/location.defs.js";
-import * as VocabTag from "../vocab/tag.defs.js";
-import * as HypercertsCollection from "../collection.defs.js";
+import * as ActorProfile from "@hypercerts-org/lexicon/records/app/certified/actor/profile.defs";
+import * as ActorOrganization from "@hypercerts-org/lexicon/records/app/certified/actor/organization.defs";
+import * as CertifiedLocation from "@hypercerts-org/lexicon/records/app/certified/location.defs";
+import * as VocabTag from "@hypercerts-org/lexicon/records/org/hypercerts/vocab/tag.defs";
+import * as HypercertsCollection from "@hypercerts-org/lexicon/records/org/hypercerts/collection.defs";
 
 const $nsid = "org.hypercerts.collection.getCollection";
 

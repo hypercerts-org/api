@@ -4,7 +4,7 @@
 
 import { l } from "@atproto/lex";
 import * as ApiDefs from "../api/defs.defs.js";
-import * as ContextEvaluation from "./evaluation.defs.js";
+import * as ContextEvaluation from "@hypercerts-org/lexicon/records/org/hypercerts/context/evaluation.defs";
 
 const $nsid = "org.hypercerts.context.getEvaluation";
 

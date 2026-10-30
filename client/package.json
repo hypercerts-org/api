@@ -24,7 +24,7 @@
     "access": "public"
   },
   "hypercerts": {
-    "lexiconVersion": "1.5.0"
+    "lexiconVersion": "1.7.0"
   },
   "scripts": {
     "generate": "node scripts/generate.js",
@@ -32,17 +32,20 @@
     "lint": "biome lint .",
     "format": "biome format --write .",
     "format:check": "biome format .",
-    "typecheck": "tsc --project tsconfig.json --noEmit",
-    "build": "tsc --project tsconfig.json",
-    "test": "pnpm run build && tsc --project tsconfig.scripts.json && node --test \"test/**/*.test.js\"",
+    "typecheck": "tsc --project tsconfig.json --noEmit && tsc --project tsconfig.scripts.json",
+    "build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && tsc --project tsconfig.json",
+    "prepack": "pnpm run build",
+    "test": "pnpm run build && tsc --project tsconfig.test.json && node --test \"test/**/*.test.js\"",
     "check": "pnpm run check:generated && pnpm run lint && pnpm run format:check && pnpm run typecheck && pnpm run test"
   },
   "peerDependencies": {
-    "@atproto/lex": "^0.4.2"
+    "@atproto/lex": "^0.4.2",
+    "@hypercerts-org/lexicon": "^1.7.0"
   },
   "devDependencies": {
     "@atproto/lex": "0.4.2",
     "@biomejs/biome": "2.6.3",
+    "@hypercerts-org/lexicon": "file:vendor/hypercerts-org-lexicon-1.7.0.tgz",
     "@types/node": "24.3.0",
     "typescript": "7.0.2"
   }

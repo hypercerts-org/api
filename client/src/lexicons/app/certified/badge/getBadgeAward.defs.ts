@@ -3,10 +3,10 @@
  */
 
 import { l } from "@atproto/lex";
-import * as BadgeDefinition from "./definition.defs.js";
-import * as BadgeResponse from "./response.defs.js";
+import * as BadgeDefinition from "@hypercerts-org/lexicon/records/app/certified/badge/definition.defs";
+import * as BadgeResponse from "@hypercerts-org/lexicon/records/app/certified/badge/response.defs";
 import * as ApiDefs from "../../../org/hypercerts/api/defs.defs.js";
-import * as BadgeAward from "./award.defs.js";
+import * as BadgeAward from "@hypercerts-org/lexicon/records/app/certified/badge/award.defs";
 
 const $nsid = "app.certified.badge.getBadgeAward";
 
