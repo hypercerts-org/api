@@ -6,7 +6,7 @@ import path from 'node:path';
 
 const docsRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const repositoryRoot = path.resolve(docsRoot, '..');
-const apiRoot = path.join(repositoryRoot, 'api');
+const apiRoot = path.join(repositoryRoot, 'happyview-modules');
 const usage = 'Usage: pnpm docs:sync';
 
 function isInside(parent, candidate) {
@@ -45,7 +45,7 @@ function pinnedLexiconPackageRoot(apiRoot, packageName) {
     return path.dirname(requireFromApi.resolve(`${packageName}/package.json`));
   } catch (error) {
     throw new Error(
-      `Cannot resolve ${packageName} from api/package.json. Install the repository-pinned dependencies with ` +
+      `Cannot resolve ${packageName} from happyview-modules/package.json. Install the repository-pinned dependencies with ` +
         '`pnpm install --frozen-lockfile`, then rerun `pnpm check` or `pnpm docs:sync`.',
       { cause: error },
     );
@@ -75,10 +75,10 @@ function indexValidationSources(sources) {
   const validationSources = new Map();
   for (const source of sources ?? []) {
     if (!source.id || validationSources.has(source.id)) {
-      throw new Error(`api/manifest.json has a missing or duplicate validation Lexicon ID: ${source.id ?? '(missing)'}`);
+      throw new Error(`happyview-modules/manifest.json has a missing or duplicate validation Lexicon ID: ${source.id ?? '(missing)'}`);
     }
     if (!source.path && !source.packagePath) {
-      throw new Error(`api/manifest.json has no source path for validation Lexicon ${source.id}`);
+      throw new Error(`happyview-modules/manifest.json has no source path for validation Lexicon ${source.id}`);
     }
     validationSources.set(source.id, source);
   }
@@ -154,7 +154,7 @@ export async function collectDocumentationSources(options = {}) {
     }
     if (source.packagePath) {
       if (!packageVersion) {
-        throw new Error(`api/package.json does not pin ${packageName}, required by ${label}.`);
+        throw new Error(`happyview-modules/package.json does not pin ${packageName}, required by ${label}.`);
       }
       const resolvedPackageRoot = await getPackageRoot();
       const file = resolveFromInside(resolvedPackageRoot, resolvedPackageRoot, source.packagePath, `${label} packagePath`);
@@ -176,7 +176,7 @@ export async function collectDocumentationSources(options = {}) {
     if (existing) return existing.lexicon;
     const source = validationSources.get(id);
     if (!source) {
-      throw new Error(`Cannot resolve Lexicon reference ${JSON.stringify(reference)}: ${id} is not declared in api/manifest.json validationLexicons.`);
+      throw new Error(`Cannot resolve Lexicon reference ${JSON.stringify(reference)}: ${id} is not declared in happyview-modules/manifest.json validationLexicons.`);
     }
     const lexicon = await readSource(source, currentApiRoot, `Validation Lexicon ${id}`);
     if (lexicon.id !== id) {
@@ -242,9 +242,9 @@ export async function collectDocumentationSources(options = {}) {
       source: { path: sourcePath },
     }));
   const index = {
-    apiManifest: 'api/manifest.json',
+    apiManifest: 'happyview-modules/manifest.json',
     pinnedLexiconPackage: packageVersion ?? null,
-    sourcePolicy: 'Explorer operations are the query/procedure Lexicons declared by modules in api/manifest.json. Referenced schemas are resolved from that manifest and its pinned Lexicon package; no remote refs are fetched.',
+    sourcePolicy: 'Explorer operations are the query/procedure Lexicons declared by modules in happyview-modules/manifest.json. Referenced schemas are resolved from that manifest and its pinned Lexicon package; no remote refs are fetched.',
     runtimeValidation: 'not-assessed',
     deploymentValidation: 'not-assessed',
     endpoints,
@@ -260,7 +260,7 @@ export async function collectDocumentationSources(options = {}) {
 
 async function main() {
   if (process.argv.includes('--help') || process.argv.includes('-h')) {
-    console.log(`${usage}\nRefreshes docs/sources/index.json, committed Lexicon snapshots, OpenAPI, and coverage from api/manifest.json.`);
+    console.log(`${usage}\nRefreshes docs/sources/index.json, committed Lexicon snapshots, OpenAPI, and coverage from happyview-modules/manifest.json.`);
     return;
   }
   if (process.argv.length > 2) {

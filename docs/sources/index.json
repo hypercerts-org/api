@@ -1,7 +1,7 @@
 {
-  "apiManifest": "api/manifest.json",
+  "apiManifest": "happyview-modules/manifest.json",
   "pinnedLexiconPackage": "1.5.0",
-  "sourcePolicy": "Explorer operations are the query/procedure Lexicons declared by modules in api/manifest.json. Referenced schemas are resolved from that manifest and its pinned Lexicon package; no remote refs are fetched.",
+  "sourcePolicy": "Explorer operations are the query/procedure Lexicons declared by modules in happyview-modules/manifest.json. Referenced schemas are resolved from that manifest and its pinned Lexicon package; no remote refs are fetched.",
   "runtimeValidation": "not-assessed",
   "deploymentValidation": "not-assessed",
   "endpoints": [

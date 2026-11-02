@@ -31,7 +31,7 @@ From the workspace root, run:
 pnpm docs:sync
 ```
 
-The command reads `api/manifest.json`, the registered module manifests, local API Lexicons, and the pinned `@hypercerts-org/lexicon` package. It refreshes the endpoint index, committed Lexicon snapshots, `openapi.json`, and `coverage.json`. Schema references are resolved locally; the command does not fetch remote Lexicons or contact HappyView. Install the repository-pinned dependencies first with `pnpm install --frozen-lockfile`.
+The command reads `happyview-modules/manifest.json`, the registered module manifests, local API Lexicons, and the pinned `@hypercerts-org/lexicon` package. It refreshes the endpoint index, committed Lexicon snapshots, `openapi.json`, and `coverage.json`. Schema references are resolved locally; the command does not fetch remote Lexicons or contact HappyView. Install the repository-pinned dependencies first with `pnpm install --frozen-lockfile`.
 
 The exact explorer operations and their module inclusion come from the manifest. `coverage.json` describes manifest inclusion only; it does not claim runtime or deployment validation. The endpoint test suite, also run by the workspace-root `pnpm check`, performs a read-only freshness check of the full index metadata, every referenced snapshot (including pinned package schemas), OpenAPI, and coverage against the current API sources. That check requires the pinned Lexicon dependency, but the explorer build and runtime still use committed snapshots without needing an API checkout.
 

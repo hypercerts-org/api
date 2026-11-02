@@ -1,0 +1,61 @@
+{
+  "name": "@hypercerts-org/api",
+  "version": "0.0.0",
+  "private": true,
+  "description": "TypeScript query definitions and types for the Hypercerts API, for use with @atproto/lex",
+  "license": "MIT OR Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hypercerts-org/api.git",
+    "directory": "packages/api"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src",
+    "LICENSE-APACHE",
+    "LICENSE-MIT"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "hypercerts": {
+    "lexiconVersion": "1.7.0"
+  },
+  "scripts": {
+    "generate": "node scripts/generate.js",
+    "check:generated": "node scripts/generate.js --check",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && tsc --project tsconfig.json",
+    "prepack": "pnpm run build",
+    "test": "pnpm run build && tsc --project tsconfig.test.json && node --test \"test/**/*.test.js\"",
+    "check:package": "node scripts/check-package.js",
+    "check": "pnpm run check:generated && pnpm run lint && pnpm run format:check && pnpm run typecheck && pnpm run test"
+  },
+  "peerDependencies": {
+    "@atproto/lex": "^0.4.2",
+    "@hypercerts-org/lexicon": "^1.7.0"
+  },
+  "devDependencies": {
+    "@atproto/lex": "0.4.2",
+    "@biomejs/biome": "2.6.3",
+    "@hypercerts-org/lexicon": "file:vendor/hypercerts-org-lexicon-1.7.0.tgz",
+    "@types/node": "24.19.2",
+    "typescript": "7.0.2",
+    "vite": "8.3.5"
+  }
+}

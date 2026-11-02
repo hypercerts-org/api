@@ -13,6 +13,6 @@ test('source refresh help describes the manifest-driven workspace command', () =
   });
   assert.equal(result.status, 0);
   assert.match(result.stdout, /Usage: pnpm docs:sync/);
-  assert.match(result.stdout, /api\/manifest\.json/);
+  assert.match(result.stdout, /happyview-modules\/manifest\.json/);
   assert.equal(result.stderr, '');
 });
