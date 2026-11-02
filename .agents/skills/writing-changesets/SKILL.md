@@ -17,7 +17,7 @@ Do not add one for documentation-only or test-only changes, changes to the separ
 
 ## Package and version bump
 
-The bundle is versioned as one unit. The Changeset frontmatter must target only `@hypercerts-org/happyview-modules`:
+The bundle is versioned as one unit. The repository's other released package, the `@hypercerts-org/api` client, is not released yet and is in the Changesets `ignore` list (see `packages/api/README.md`), so until that changes the Changeset frontmatter must target only `@hypercerts-org/happyview-modules`:
 
 ```md
 ---
