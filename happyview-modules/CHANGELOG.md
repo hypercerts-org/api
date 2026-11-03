@@ -1,4 +1,4 @@
-# @hypercerts-org/hypercerts-api
+# @hypercerts-org/happyview-modules
 
 ## 0.3.0
 
