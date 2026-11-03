@@ -1,5 +1,23 @@
 # @hypercerts-org/hypercerts-api
 
+## 0.3.0
+
+### Minor Changes
+
+- [#43](https://github.com/hypercerts-org/api/pull/43) [`9328ee5`](https://github.com/hypercerts-org/api/commit/9328ee568c369eefba41976ccf533790c4c90805) Thanks [@Kzoeps](https://github.com/Kzoeps)! - Add `app.certified.feed.getActorReactions` to return an actor's indexed likes and reposts for up to 100 subject records in one request, preserving request order and duplicates.
+
+- [#42](https://github.com/hypercerts-org/api/pull/42) [`3ad86a8`](https://github.com/hypercerts-org/api/commit/3ad86a8691736d03e647673a285469a59db7c45f) Thanks [@Kzoeps](https://github.com/Kzoeps)! - Clients can check multiple actor or entity follow relationships in one request. The new batch queries return one explicitly keyed result for each supplied target, preserving request order and duplicates; null means no indexed relationship, while lookup failures remain errors.
+
+- [#40](https://github.com/hypercerts-org/api/pull/40) [`51b2ed2`](https://github.com/hypercerts-org/api/commit/51b2ed29d5a91b38879cc79f7ba7d209da3166a3) Thanks [@Kzoeps](https://github.com/Kzoeps)! - Add a public query that returns like and repost counts for up to 100 subject records at a time.
+
+- [#41](https://github.com/hypercerts-org/api/pull/41) [`98825dd`](https://github.com/hypercerts-org/api/commit/98825dd56d6eed734d96aa64e25c6bcdf3fb825a) Thanks [@Kzoeps](https://github.com/Kzoeps)! - Entity follower results now include `totalCount`, the number of distinct actor–entity relationships before pagination. The count is also returned when a page has no followers.
+
+- [#46](https://github.com/hypercerts-org/api/pull/46) [`b6ae142`](https://github.com/hypercerts-org/api/commit/b6ae142e3ca66f8d16e599065f794782d400c8ec) Thanks [@kristoferlund](https://github.com/kristoferlund)! - Validate records against `@hypercerts-org/lexicon` 1.6.0 (was 1.5.0). Records may now carry the optional `langs` field and `app.certified.signature.defs#createdVia` signatures, and funding receipts may omit `amount` and `currency`. Records using these are accepted and served unchanged; no record that validated before is rejected. Operators must reinstall the bundle for the running indexer to use the new Lexicons.
+
+### Patch Changes
+
+- [#45](https://github.com/hypercerts-org/api/pull/45) [`8e080e4`](https://github.com/hypercerts-org/api/commit/8e080e4b9f09ebb3ee8d33df6fffc58e05beec58) Thanks [@kristoferlund](https://github.com/kristoferlund)! - Rename the package from `@hypercerts-org/hypercerts-api` to `@hypercerts-org/happyview-modules`, and its directory from `api/` to `happyview-modules/`, so the name says what it is and `@hypercerts-org/api` is free for the TypeScript package. Release tags from this release on are `@hypercerts-org/happyview-modules@X.Y.Z`; earlier releases keep their `@hypercerts-org/hypercerts-api@X.Y.Z` tags. The installer is run from `happyview-modules/` instead of `api/`; the modules themselves are unchanged.
+
 ## 0.2.0
 
 ### Minor Changes
