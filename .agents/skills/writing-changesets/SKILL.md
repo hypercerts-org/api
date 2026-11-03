@@ -17,7 +17,7 @@ Do not add one for documentation-only or test-only changes, changes to the separ
 
 ## Package and version bump
 
-The bundle is versioned as one unit. The repository's other released package, the `@hypercerts-org/api` client, is not released yet and is in the Changesets `ignore` list (see `packages/api/README.md`), so until that changes the Changeset frontmatter must target only `@hypercerts-org/happyview-modules`:
+The bundle is versioned as one unit. The repository's other released package, the `@hypercerts-org/api` client (`packages/api/`), has its own version and is published to npm; target it when a change alters its query definitions, types or `@hypercerts-org/lexicon` version, and give each package its own entry when a change touches both. For the bundle:
 
 ```md
 ---
@@ -59,7 +59,7 @@ Use bullets only when there are several distinct actions or changes to scan. Omi
 ## Procedure
 
 1. Check the actual diff and read `.changeset/README.md` plus `happyview-modules/README.md` for the current scope and release behavior.
-2. Run `pnpm changeset` and select `@hypercerts-org/happyview-modules`, or create a descriptive Markdown file under `.changeset/` with the required frontmatter.
+2. Run `pnpm changeset` and select the affected packages, or create a descriptive Markdown file under `.changeset/` with the required frontmatter.
 3. Write and review the summary using the plain-language guidance above. Make any adaptation steps concrete and accurate.
 4. Run `pnpm changeset status` to check that the Changeset is valid and targets the intended package.
 

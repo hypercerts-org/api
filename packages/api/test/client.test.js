@@ -21,6 +21,16 @@ test("LEXICON_VERSION matches the package metadata", () => {
   assert.equal(api.LEXICON_VERSION, packageJson.hypercerts.lexiconVersion);
 });
 
+// The client's record types must describe what the server modules validate.
+test("the client and the server modules use the same @hypercerts-org/lexicon", async () => {
+  const modules = JSON.parse(
+    await readFile(new URL("../../../happyview-modules/package.json", import.meta.url), "utf8"),
+  );
+  const serverVersion = modules.dependencies["@hypercerts-org/lexicon"];
+  assert.equal(packageJson.devDependencies["@hypercerts-org/lexicon"], serverVersion);
+  assert.equal(api.LEXICON_VERSION, serverVersion);
+});
+
 /**
  * Follows an NSID through lex's namespace tree: org.hypercerts.claim.getActivity.
  * @param {object} root
@@ -31,7 +41,7 @@ const lookup = (root, nsid) =>
   nsid.split(".").reduce((node, part) => /** @type {any} */ (node)?.[part], root);
 
 test("every Lexicon in happyview-modules/manifest.json is at its NSID path", async () => {
-  const records = await import("@hypercerts-org/lexicon/records");
+  const records = await import("@hypercerts-org/lexicon");
   const sources = manifest.validationLexicons;
   const queryIds = sources
     .filter((/** @type {any} */ source) => source.path && !source.id.endsWith(".defs"))
@@ -56,7 +66,7 @@ test("every Lexicon in happyview-modules/manifest.json is at its NSID path", asy
   }
 });
 
-test("embedded records are validated with the schemas from @hypercerts-org/lexicon/records", async () => {
+test("embedded records are validated with the schemas from @hypercerts-org/lexicon", async () => {
   const view = {
     uri: "at://did:plc:abc123/org.hypercerts.claim.activity/3k2abc",
     cid: "bafyreie5737gdxlw5i64vzichcalba3z2v5n6icifvx5xytvske7mr3hpm",

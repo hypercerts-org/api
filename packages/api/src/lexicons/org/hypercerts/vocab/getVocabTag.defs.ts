@@ -4,7 +4,7 @@
 
 import { l } from "@atproto/lex";
 import * as ApiDefs from "../api/defs.defs.js";
-import * as VocabTag from "@hypercerts-org/lexicon/records/org/hypercerts/vocab/tag.defs";
+import * as VocabTag from "@hypercerts-org/lexicon/org/hypercerts/vocab/tag.defs";
 
 const $nsid = "org.hypercerts.vocab.getVocabTag";
 

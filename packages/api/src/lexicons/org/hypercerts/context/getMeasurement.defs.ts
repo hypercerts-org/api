@@ -4,7 +4,7 @@
 
 import { l } from "@atproto/lex";
 import * as ApiDefs from "../api/defs.defs.js";
-import * as ContextMeasurement from "@hypercerts-org/lexicon/records/org/hypercerts/context/measurement.defs";
+import * as ContextMeasurement from "@hypercerts-org/lexicon/org/hypercerts/context/measurement.defs";
 
 const $nsid = "org.hypercerts.context.getMeasurement";
 

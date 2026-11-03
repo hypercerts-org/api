@@ -5,8 +5,8 @@
 import { l } from "@atproto/lex";
 import * as ClaimGetActivity from "../claim/getActivity.defs.js";
 import * as CollectionGetCollection from "./getCollection.defs.js";
-import * as EntityFeature from "@hypercerts-org/lexicon/records/org/hypercerts/entity/feature.defs";
-import * as RepoStrongRef from "@hypercerts-org/lexicon/records/com/atproto/repo/strongRef.defs";
+import * as EntityFeature from "@hypercerts-org/lexicon/org/hypercerts/entity/feature.defs";
+import * as RepoStrongRef from "@hypercerts-org/lexicon/com/atproto/repo/strongRef.defs";
 
 const $nsid = "org.hypercerts.collection.listCollectionItems";
 

@@ -4,7 +4,7 @@
 
 import { l } from "@atproto/lex";
 import * as ApiDefs from "../api/defs.defs.js";
-import * as ContextAttachment from "@hypercerts-org/lexicon/records/org/hypercerts/context/attachment.defs";
+import * as ContextAttachment from "@hypercerts-org/lexicon/org/hypercerts/context/attachment.defs";
 
 const $nsid = "org.hypercerts.context.getAttachment";
 

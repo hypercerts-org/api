@@ -4,7 +4,7 @@
 
 import { l } from "@atproto/lex";
 import * as ApiDefs from "../../../org/hypercerts/api/defs.defs.js";
-import * as FeedRepost from "@hypercerts-org/lexicon/records/app/certified/feed/repost.defs";
+import * as FeedRepost from "@hypercerts-org/lexicon/app/certified/feed/repost.defs";
 
 const $nsid = "app.certified.feed.getReposts";
 

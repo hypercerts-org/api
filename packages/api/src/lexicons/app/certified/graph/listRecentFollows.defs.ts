@@ -3,8 +3,8 @@
  */
 
 import { l } from "@atproto/lex";
-import * as GraphEntityFollow from "@hypercerts-org/lexicon/records/app/certified/graph/entityFollow.defs";
-import * as GraphFollow from "@hypercerts-org/lexicon/records/app/certified/graph/follow.defs";
+import * as GraphEntityFollow from "@hypercerts-org/lexicon/app/certified/graph/entityFollow.defs";
+import * as GraphFollow from "@hypercerts-org/lexicon/app/certified/graph/follow.defs";
 
 const $nsid = "app.certified.graph.listRecentFollows";
 

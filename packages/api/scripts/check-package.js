@@ -16,7 +16,7 @@ const packageJson = readJson(path.join(packageRoot, "package.json"));
 const pinned = (name) => {
   const version = packageJson.devDependencies?.[name];
   if (!version) throw new Error(`check-package: ${name} must be a devDependency`);
-  return version.replace(/^file:/, `file:${packageRoot}/`);
+  return version;
 };
 
 // Child processes must not inherit the parent's npm and pnpm settings.
@@ -94,7 +94,7 @@ function createConsumer(dir, tarball) {
 /** @param {string} consumer */
 function checkNode(consumer) {
   const script = `import { LEXICON_VERSION, org } from "@hypercerts-org/api";
-import { org as records } from "@hypercerts-org/lexicon/records";
+import { org as records } from "@hypercerts-org/lexicon";
 if (org.hypercerts.claim.getActivity.main.nsid !== "org.hypercerts.claim.getActivity") throw new Error("query");
 if (org.hypercerts.claim.activity.main !== records.hypercerts.claim.activity.main) throw new Error("records are not shared");
 if (LEXICON_VERSION !== ${JSON.stringify(packageJson.hypercerts.lexiconVersion)}) throw new Error("LEXICON_VERSION");`;
@@ -108,7 +108,7 @@ function checkTypes(consumer) {
     path.join(consumer, "src", "types.ts"),
     `import { Client } from "@atproto/lex";
 import { org } from "@hypercerts-org/api";
-import { org as records } from "@hypercerts-org/lexicon/records";
+import { org as records } from "@hypercerts-org/lexicon";
 const api = new Client("https://api.example");
 const uri = "at://did:plc:abc123/org.hypercerts.claim.activity/3k2abc" as const;
 export async function record(): Promise<records.hypercerts.claim.activity.Main> {

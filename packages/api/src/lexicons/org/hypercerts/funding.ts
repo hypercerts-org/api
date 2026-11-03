@@ -4,4 +4,4 @@
 
 export * as getReceipt from "./funding/getReceipt.js";
 export * as listReceipts from "./funding/listReceipts.js";
-export * as receipt from "@hypercerts-org/lexicon/records/org/hypercerts/funding/receipt";
+export * as receipt from "@hypercerts-org/lexicon/org/hypercerts/funding/receipt";

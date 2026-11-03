@@ -2,7 +2,7 @@
 // (tsconfig.test.json), never run. Each @ts-expect-error must stay an error.
 import { Client } from "@atproto/lex";
 import { app, org } from "@hypercerts-org/api";
-import type { org as records } from "@hypercerts-org/lexicon/records";
+import type { org as records } from "@hypercerts-org/lexicon";
 
 const api = new Client("https://api.example");
 const uri = "at://did:plc:abc123/org.hypercerts.claim.activity/3k2abc" as const;
@@ -14,7 +14,7 @@ export async function views(): Promise<ActivityView> {
   return activity;
 }
 
-// Records in the API tree are the modules of @hypercerts-org/lexicon/records.
+// Records in the API tree are the modules of @hypercerts-org/lexicon.
 export const record = (view: ActivityView): records.hypercerts.claim.activity.Main => view.record;
 export const sameRecord = (
   activity: records.hypercerts.claim.activity.Main,

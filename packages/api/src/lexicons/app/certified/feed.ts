@@ -8,5 +8,5 @@ export * as getActorReposts from "./feed/getActorReposts.js";
 export * as getLikes from "./feed/getLikes.js";
 export * as getReactionCounts from "./feed/getReactionCounts.js";
 export * as getReposts from "./feed/getReposts.js";
-export * as like from "@hypercerts-org/lexicon/records/app/certified/feed/like";
-export * as repost from "@hypercerts-org/lexicon/records/app/certified/feed/repost";
+export * as like from "@hypercerts-org/lexicon/app/certified/feed/like";
+export * as repost from "@hypercerts-org/lexicon/app/certified/feed/repost";

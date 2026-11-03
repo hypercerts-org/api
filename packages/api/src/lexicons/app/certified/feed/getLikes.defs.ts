@@ -4,7 +4,7 @@
 
 import { l } from "@atproto/lex";
 import * as ApiDefs from "../../../org/hypercerts/api/defs.defs.js";
-import * as FeedLike from "@hypercerts-org/lexicon/records/app/certified/feed/like.defs";
+import * as FeedLike from "@hypercerts-org/lexicon/app/certified/feed/like.defs";
 
 const $nsid = "app.certified.feed.getLikes";
 
