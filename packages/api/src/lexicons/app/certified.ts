@@ -4,9 +4,9 @@
 
 export * as actor from "./certified/actor.js";
 export * as badge from "./certified/badge.js";
-export * as defs from "@hypercerts-org/lexicon/records/app/certified/defs";
+export * as defs from "@hypercerts-org/lexicon/app/certified/defs";
 export * as feed from "./certified/feed.js";
 export * as graph from "./certified/graph.js";
 export * as link from "./certified/link.js";
 export * as location from "./certified/location.js";
-export * as signature from "@hypercerts-org/lexicon/records/app/certified/signature";
+export * as signature from "@hypercerts-org/lexicon/app/certified/signature";

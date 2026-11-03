@@ -4,4 +4,4 @@
 
 export * as getVocabTag from "./vocab/getVocabTag.js";
 export * as listVocabTags from "./vocab/listVocabTags.js";
-export * as tag from "@hypercerts-org/lexicon/records/org/hypercerts/vocab/tag";
+export * as tag from "@hypercerts-org/lexicon/org/hypercerts/vocab/tag";

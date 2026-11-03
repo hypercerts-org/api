@@ -3,7 +3,7 @@
 This repository releases two packages, each with its own version:
 
 - `@hypercerts-org/happyview-modules`: the installable API bundle (Lua modules, Lexicons and installer). Released as a Git tag and GitHub Release, not published to npm; operators retrieve the tagged source from this public repository and install it into their own HappyView instance.
-- `@hypercerts-org/api`: the TypeScript query definitions and types for clients. Published to npm, with a Git tag and GitHub Release. Not released yet; see [packages/api/README.md](../packages/api/README.md#versioning-and-releases).
+- `@hypercerts-org/api`: the TypeScript query definitions and types for clients. Published to npm, with a Git tag and GitHub Release.
 
 Add a Changeset when a pull request changes what either package ships. Run:
 

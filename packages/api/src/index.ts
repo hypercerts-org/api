@@ -4,9 +4,9 @@
 
 // lex's NSID namespace tree for the Hypercerts API: queries are generated
 // here; the records and other definitions they reference come from
-// @hypercerts-org/lexicon/records, so org.hypercerts.claim.activity is the same
+// @hypercerts-org/lexicon, so org.hypercerts.claim.activity is the same
 // module in both packages.
 export * from "./lexicons/index.js";
 
 /** Version of @hypercerts-org/lexicon these definitions were generated from. */
-export const LEXICON_VERSION = "1.7.0";
+export const LEXICON_VERSION = "2.0.0";

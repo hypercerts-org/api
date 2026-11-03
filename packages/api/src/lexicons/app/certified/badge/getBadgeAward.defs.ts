@@ -4,9 +4,9 @@
 
 import { l } from "@atproto/lex";
 import * as ApiDefs from "../../../org/hypercerts/api/defs.defs.js";
-import * as BadgeAward from "@hypercerts-org/lexicon/records/app/certified/badge/award.defs";
-import * as BadgeDefinition from "@hypercerts-org/lexicon/records/app/certified/badge/definition.defs";
-import * as BadgeResponse from "@hypercerts-org/lexicon/records/app/certified/badge/response.defs";
+import * as BadgeAward from "@hypercerts-org/lexicon/app/certified/badge/award.defs";
+import * as BadgeDefinition from "@hypercerts-org/lexicon/app/certified/badge/definition.defs";
+import * as BadgeResponse from "@hypercerts-org/lexicon/app/certified/badge/response.defs";
 
 const $nsid = "app.certified.badge.getBadgeAward";
 

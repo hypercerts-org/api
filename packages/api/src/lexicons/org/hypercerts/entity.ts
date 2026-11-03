@@ -3,6 +3,6 @@
  */
 
 export * as defs from "./entity/defs.js";
-export * as feature from "@hypercerts-org/lexicon/records/org/hypercerts/entity/feature";
+export * as feature from "@hypercerts-org/lexicon/org/hypercerts/entity/feature";
 export * as getFeature from "./entity/getFeature.js";
 export * as listFeatures from "./entity/listFeatures.js";

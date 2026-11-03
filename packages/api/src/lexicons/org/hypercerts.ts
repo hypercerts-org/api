@@ -6,7 +6,7 @@ export * as api from "./hypercerts/api.js";
 export * as claim from "./hypercerts/claim.js";
 export * as collection from "./hypercerts/collection.js";
 export * as context from "./hypercerts/context.js";
-export * as defs from "@hypercerts-org/lexicon/records/org/hypercerts/defs";
+export * as defs from "@hypercerts-org/lexicon/org/hypercerts/defs";
 export * as entity from "./hypercerts/entity.js";
 export * as funding from "./hypercerts/funding.js";
 export * as vocab from "./hypercerts/vocab.js";

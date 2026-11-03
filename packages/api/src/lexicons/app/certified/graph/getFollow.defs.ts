@@ -4,7 +4,7 @@
 
 import { l } from "@atproto/lex";
 import * as ApiDefs from "../../../org/hypercerts/api/defs.defs.js";
-import * as GraphFollow from "@hypercerts-org/lexicon/records/app/certified/graph/follow.defs";
+import * as GraphFollow from "@hypercerts-org/lexicon/app/certified/graph/follow.defs";
 
 const $nsid = "app.certified.graph.getFollow";
 

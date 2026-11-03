@@ -3,11 +3,11 @@
  */
 
 import { l } from "@atproto/lex";
-import * as ActorOrganization from "@hypercerts-org/lexicon/records/app/certified/actor/organization.defs";
-import * as ActorProfile from "@hypercerts-org/lexicon/records/app/certified/actor/profile.defs";
-import * as CertifiedLocation from "@hypercerts-org/lexicon/records/app/certified/location.defs";
-import * as HypercertsCollection from "@hypercerts-org/lexicon/records/org/hypercerts/collection.defs";
-import * as VocabTag from "@hypercerts-org/lexicon/records/org/hypercerts/vocab/tag.defs";
+import * as ActorOrganization from "@hypercerts-org/lexicon/app/certified/actor/organization.defs";
+import * as ActorProfile from "@hypercerts-org/lexicon/app/certified/actor/profile.defs";
+import * as CertifiedLocation from "@hypercerts-org/lexicon/app/certified/location.defs";
+import * as HypercertsCollection from "@hypercerts-org/lexicon/org/hypercerts/collection.defs";
+import * as VocabTag from "@hypercerts-org/lexicon/org/hypercerts/vocab/tag.defs";
 
 const $nsid = "org.hypercerts.collection.getCollection";
 

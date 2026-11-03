@@ -4,7 +4,7 @@
 
 import { l } from "@atproto/lex";
 import * as ApiDefs from "../api/defs.defs.js";
-import * as EntityFeature from "@hypercerts-org/lexicon/records/org/hypercerts/entity/feature.defs";
+import * as EntityFeature from "@hypercerts-org/lexicon/org/hypercerts/entity/feature.defs";
 
 const $nsid = "org.hypercerts.entity.defs";
 

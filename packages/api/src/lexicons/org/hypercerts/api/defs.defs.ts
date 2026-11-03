@@ -3,9 +3,9 @@
  */
 
 import { l } from "@atproto/lex";
-import * as ActorOrganization from "@hypercerts-org/lexicon/records/app/certified/actor/organization.defs";
-import * as ActorProfile from "@hypercerts-org/lexicon/records/app/certified/actor/profile.defs";
-import * as ContextAcknowledgement from "@hypercerts-org/lexicon/records/org/hypercerts/context/acknowledgement.defs";
+import * as ActorOrganization from "@hypercerts-org/lexicon/app/certified/actor/organization.defs";
+import * as ActorProfile from "@hypercerts-org/lexicon/app/certified/actor/profile.defs";
+import * as ContextAcknowledgement from "@hypercerts-org/lexicon/org/hypercerts/context/acknowledgement.defs";
 
 const $nsid = "org.hypercerts.api.defs";
 
