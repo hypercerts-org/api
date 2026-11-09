@@ -8,10 +8,7 @@
         "backfill": false,
         "target_collection": "app.certified.badge.definition"
       },
-      "dependsOn": [
-        "app.certified.badge.definition",
-        "org.hypercerts.api.defs"
-      ]
+      "dependsOn": ["app.certified.badge.definition", "org.hypercerts.api.defs"]
     },
     {
       "id": "app.certified.badge.getBadgeAward",
@@ -46,10 +43,7 @@
         "backfill": false,
         "target_collection": "app.certified.badge.response"
       },
-      "dependsOn": [
-        "app.certified.badge.response",
-        "org.hypercerts.api.defs"
-      ]
+      "dependsOn": ["app.certified.badge.response", "org.hypercerts.api.defs"]
     },
     {
       "id": "app.certified.badge.listBadgeResponses",

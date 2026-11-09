@@ -11,9 +11,5 @@
     "moduleResolution": "NodeNext",
     "types": ["node"]
   },
-  "include": [
-    "tooling/installer.js",
-    "tooling/run-http-tests.js",
-    "tooling/seed.js"
-  ]
+  "include": ["tooling/installer.js", "tooling/run-http-tests.js", "tooling/seed.js"]
 }

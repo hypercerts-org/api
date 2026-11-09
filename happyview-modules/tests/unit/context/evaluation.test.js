@@ -1,40 +1,46 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import test from "node:test";
+import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
-const root = fileURLToPath(new URL('../../../', import.meta.url));
-const EVALUATION = 'org.hypercerts.context.evaluation';
-const PROFILE = 'app.certified.actor.profile';
-const ORGANIZATION = 'app.certified.actor.organization';
-const authorDid = 'did:plc:aaaaaaaaaaaaaaaaaaaaaaaa';
-const evaluatorDid = 'did:plc:bbbbbbbbbbbbbbbbbbbbbbbbbbbb';
-const missingDid = 'did:plc:cccccccccccccccccccccccccccc';
-const omittedDid = 'did:plc:dddddddddddddddddddddddddddd';
-const lookaheadEvaluatorDid = 'did:plc:999999999999999999999999';
+const root = fileURLToPath(new URL("../../../", import.meta.url));
+const EVALUATION = "org.hypercerts.context.evaluation";
+const PROFILE = "app.certified.actor.profile";
+const ORGANIZATION = "app.certified.actor.organization";
+const authorDid = "did:plc:aaaaaaaaaaaaaaaaaaaaaaaa";
+const evaluatorDid = "did:plc:bbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+const missingDid = "did:plc:cccccccccccccccccccccccccccc";
+const omittedDid = "did:plc:dddddddddddddddddddddddddddd";
+const lookaheadEvaluatorDid = "did:plc:999999999999999999999999";
 const evaluationUri = `at://${authorDid}/${EVALUATION}/review-one`;
-const subjectUri = 'at://did:plc:eeeeeeeeeeeeeeeeeeeeeeee/org.hypercerts.claim.activity/activity-one';
-const createdAt = '2025-01-02T03:04:05Z';
+const subjectUri =
+  "at://did:plc:eeeeeeeeeeeeeeeeeeeeeeee/org.hypercerts.claim.activity/activity-one";
+const createdAt = "2025-01-02T03:04:05Z";
 const evaluationRecord = {
   $type: EVALUATION,
   evaluators: [
-    { did: evaluatorDid }, { did: evaluatorDid }, { did: missingDid },
-    ...Array.from({ length: 97 }, () => ({ did: evaluatorDid })), { did: omittedDid },
+    { did: evaluatorDid },
+    { did: evaluatorDid },
+    { did: missingDid },
+    ...Array.from({ length: 97 }, () => ({ did: evaluatorDid })),
+    { did: omittedDid },
   ],
-  summary: 'Original evaluation summary',
+  summary: "Original evaluation summary",
   createdAt,
-  subject: { uri: subjectUri, cid: 'bafyreiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' },
-  score: { min: '0', max: '5', value: '3.75' },
+  subject: { uri: subjectUri, cid: "bafyreiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" },
+  score: { min: "0", max: "5", value: "3.75" },
   extension: { preserve: true },
 };
 
 function lua(value) {
-  if (value === null) return 'nil';
-  if (typeof value === 'string') return JSON.stringify(value);
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-  if (Array.isArray(value)) return `{${value.map(lua).join(',')}}`;
-  if (value && typeof value === 'object') {
-    return `{${Object.entries(value).map(([key, item]) => `[${JSON.stringify(key)}]=${lua(item)}`).join(',')}}`;
+  if (value === null) return "nil";
+  if (typeof value === "string") return JSON.stringify(value);
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value)) return `{${value.map(lua).join(",")}}`;
+  if (value && typeof value === "object") {
+    return `{${Object.entries(value)
+      .map(([key, item]) => `[${JSON.stringify(key)}]=${lua(item)}`)
+      .join(",")}}`;
   }
   throw new TypeError(`Cannot encode ${typeof value} as a Lua fixture`);
 }
@@ -49,29 +55,49 @@ const evaluationRow = {
   uri: evaluationUri,
   did: authorDid,
   collection: EVALUATION,
-  cid: 'bafyreiffffffffffffffffffffffffffffffffffffffffffffffffffff',
+  cid: "bafyreiffffffffffffffffffffffffffffffffffffffffffffffffffff",
   indexed_at: createdAt,
-  record: 'evaluation-record',
+  record: "evaluation-record",
   record_json: evaluationRecord,
 };
 
 const authorProfile = {
-  uri: `at://${authorDid}/${PROFILE}/self`, did: authorDid, collection: PROFILE,
-  cid: 'bafyreigggggggggggggggggggggggggggggggggggggggggggggggggg', indexed_at: createdAt,
-  record: 'author-profile', record_json: { $type: PROFILE, displayName: 'Evaluation publisher', createdAt },
+  uri: `at://${authorDid}/${PROFILE}/self`,
+  did: authorDid,
+  collection: PROFILE,
+  cid: "bafyreigggggggggggggggggggggggggggggggggggggggggggggggggg",
+  indexed_at: createdAt,
+  record: "author-profile",
+  record_json: { $type: PROFILE, displayName: "Evaluation publisher", createdAt },
 };
 const evaluatorProfile = {
-  uri: `at://${evaluatorDid}/${PROFILE}/self`, did: evaluatorDid, collection: PROFILE,
-  cid: 'bafyreihhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh', indexed_at: createdAt,
-  record: 'evaluator-profile', record_json: { $type: PROFILE, displayName: 'Named evaluator', createdAt },
+  uri: `at://${evaluatorDid}/${PROFILE}/self`,
+  did: evaluatorDid,
+  collection: PROFILE,
+  cid: "bafyreihhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh",
+  indexed_at: createdAt,
+  record: "evaluator-profile",
+  record_json: { $type: PROFILE, displayName: "Named evaluator", createdAt },
 };
 const evaluatorOrganization = {
-  uri: `at://${evaluatorDid}/${ORGANIZATION}/self`, did: evaluatorDid, collection: ORGANIZATION,
-  cid: 'bafyreijjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj', indexed_at: createdAt,
-  record: 'evaluator-organization', record_json: { $type: ORGANIZATION, organizationType: ['nonprofit'], createdAt },
+  uri: `at://${evaluatorDid}/${ORGANIZATION}/self`,
+  did: evaluatorDid,
+  collection: ORGANIZATION,
+  cid: "bafyreijjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj",
+  indexed_at: createdAt,
+  record: "evaluator-organization",
+  record_json: { $type: ORGANIZATION, organizationType: ["nonprofit"], createdAt },
 };
 
-function runLua({ endpoint, params, queryResults, assertions = '', expectError, backend = 'postgres', queryFailureAt = 0 }) {
+function runLua({
+  endpoint,
+  params,
+  queryResults,
+  assertions = "",
+  expectError,
+  backend = "postgres",
+  queryFailureAt = 0,
+}) {
   const rows = queryResults.flat();
   const records = Object.fromEntries(rows.map(({ record, record_json }) => [record, record_json]));
   const databaseResults = queryResults.map((result) => result.map(databaseRow));
@@ -111,16 +137,18 @@ db = {
 }
 dofile('lua/endpoints/${endpoint}.lua')
 local ok, result = pcall(handle)
-${expectError
+${
+  expectError
     ? `assert(not ok, 'expected request to fail')\nassert(tostring(result):find('${expectError}', 1, true), tostring(result))`
-    : `assert(ok, tostring(result))\n${assertions}`}
+    : `assert(ok, tostring(result))\n${assertions}`
+}
 `;
-  return spawnSync('lua5.4', ['-e', source], { cwd: root, encoding: 'utf8' });
+  return spawnSync("lua5.4", ["-e", source], { cwd: root, encoding: "utf8" });
 }
 
-test('getEvaluation preserves the complete record and evaluator positions while hydrating only the first 100', () => {
+test("getEvaluation preserves the complete record and evaluator positions while hydrating only the first 100", () => {
   const result = runLua({
-    endpoint: 'getEvaluation',
+    endpoint: "getEvaluation",
     params: { uri: evaluationUri },
     queryResults: [[evaluationRow], [authorProfile, evaluatorProfile], [evaluatorOrganization]],
     assertions: `
@@ -151,17 +179,21 @@ assert(calls[1].values[1] == '${EVALUATION}' and calls[1].values[2] == '${evalua
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-test('getEvaluation preserves raw entries and densely hydrates valid evaluator objects only', () => {
-  const legacyDid = 'did:plc:ffffffffffffffffffffffff';
+test("getEvaluation preserves raw entries and densely hydrates valid evaluator objects only", () => {
+  const legacyDid = "did:plc:ffffffffffffffffffffffff";
   const mixedRecord = {
     ...evaluationRecord,
     evaluators: [
-      { did: evaluatorDid }, legacyDid, { did: 'reviewer.example' }, { did: missingDid }, { did: evaluatorDid },
+      { did: evaluatorDid },
+      legacyDid,
+      { did: "reviewer.example" },
+      { did: missingDid },
+      { did: evaluatorDid },
     ],
   };
-  const row = { ...evaluationRow, record: 'mixed-evaluation', record_json: mixedRecord };
+  const row = { ...evaluationRow, record: "mixed-evaluation", record_json: mixedRecord };
   const result = runLua({
-    endpoint: 'getEvaluation',
+    endpoint: "getEvaluation",
     params: { uri: evaluationUri },
     queryResults: [[row], [authorProfile, evaluatorProfile], [evaluatorOrganization]],
     assertions: `
@@ -186,18 +218,18 @@ assert(#calls == 3)
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-test('getEvaluation keeps the 100-entry hydration boundary tied to raw source positions', () => {
-  const legacyDid = 'did:plc:ffffffffffffffffffffffff';
+test("getEvaluation keeps the 100-entry hydration boundary tied to raw source positions", () => {
+  const legacyDid = "did:plc:ffffffffffffffffffffffff";
   const row = {
     ...evaluationRow,
-    record: 'invalid-prefix-evaluation',
+    record: "invalid-prefix-evaluation",
     record_json: {
       ...evaluationRecord,
       evaluators: [...Array(100).fill(legacyDid), { did: omittedDid }],
     },
   };
   const result = runLua({
-    endpoint: 'getEvaluation',
+    endpoint: "getEvaluation",
     params: { uri: evaluationUri },
     queryResults: [[row], [authorProfile], []],
     assertions: `
@@ -213,30 +245,32 @@ assert(#calls == 3)
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-test('getEvaluation returns empty evaluator projections for all-invalid, non-array, and absent containers', () => {
-  const legacyDid = 'did:plc:ffffffffffffffffffffffff';
+test("getEvaluation returns empty evaluator projections for all-invalid, non-array, and absent containers", () => {
+  const legacyDid = "did:plc:ffffffffffffffffffffffff";
   const cases = [
     {
-      name: 'all-invalid',
-      record_json: { ...evaluationRecord, evaluators: [legacyDid, { did: 'reviewer.example' }] },
+      name: "all-invalid",
+      record_json: { ...evaluationRecord, evaluators: [legacyDid, { did: "reviewer.example" }] },
       rawAssertion: `assert(view.record.evaluators[1] == '${legacyDid}' and view.record.evaluators[2].did == 'reviewer.example')`,
     },
     {
-      name: 'non-array',
+      name: "non-array",
       record_json: { ...evaluationRecord, evaluators: { legacy: { did: evaluatorDid } } },
       rawAssertion: `assert(view.record.evaluators.legacy.did == '${evaluatorDid}')`,
     },
     {
-      name: 'absent',
-      record_json: Object.fromEntries(Object.entries(evaluationRecord).filter(([key]) => key !== 'evaluators')),
-      rawAssertion: 'assert(view.record.evaluators == nil)',
+      name: "absent",
+      record_json: Object.fromEntries(
+        Object.entries(evaluationRecord).filter(([key]) => key !== "evaluators"),
+      ),
+      rawAssertion: "assert(view.record.evaluators == nil)",
     },
   ];
 
   for (const { name, record_json, rawAssertion } of cases) {
     const row = { ...evaluationRow, record: `${name}-evaluation`, record_json };
     const result = runLua({
-      endpoint: 'getEvaluation',
+      endpoint: "getEvaluation",
       params: { uri: evaluationUri },
       queryResults: [[row], [authorProfile], []],
       assertions: `
@@ -252,45 +286,61 @@ assert(#calls == 3, 'only the publisher is sent for sidecar hydration')
   }
 });
 
-test('getEvaluation rejects evaluator arrays over the retained 1000-entry resource limit', () => {
+test("getEvaluation rejects evaluator arrays over the retained 1000-entry resource limit", () => {
   const row = {
     ...evaluationRow,
-    record: 'over-limit-evaluation',
-    record_json: { ...evaluationRecord, evaluators: Array(1001).fill('did:plc:ffffffffffffffffffffffff') },
+    record: "over-limit-evaluation",
+    record_json: {
+      ...evaluationRecord,
+      evaluators: Array(1001).fill("did:plc:ffffffffffffffffffffffff"),
+    },
   };
   const result = runLua({
-    endpoint: 'getEvaluation',
+    endpoint: "getEvaluation",
     params: { uri: evaluationUri },
     queryResults: [[row]],
-    expectError: 'exceeds the evaluator limit',
+    expectError: "exceeds the evaluator limit",
   });
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-test('listEvaluations retains malformed evaluator records and paginates without dropping them', () => {
-  const legacyDid = 'did:plc:ffffffffffffffffffffffff';
+test("listEvaluations retains malformed evaluator records and paginates without dropping them", () => {
+  const legacyDid = "did:plc:ffffffffffffffffffffffff";
   const malformed = {
-    ...evaluationRow, uri: `at://${authorDid}/${EVALUATION}/malformed`, record: 'malformed-evaluation',
+    ...evaluationRow,
+    uri: `at://${authorDid}/${EVALUATION}/malformed`,
+    record: "malformed-evaluation",
     record_json: {
       ...evaluationRecord,
-      evaluators: [legacyDid, { did: 'reviewer.example' }, { did: evaluatorDid }],
+      evaluators: [legacyDid, { did: "reviewer.example" }, { did: evaluatorDid }],
     },
-    sort_timestamp: '2025-01-03T00:00:00.000000Z',
+    sort_timestamp: "2025-01-03T00:00:00.000000Z",
   };
   const good = {
-    ...evaluationRow, uri: `at://${authorDid}/${EVALUATION}/good`, record: 'good-evaluation',
-    sort_timestamp: '2025-01-02T00:00:00.000000Z',
+    ...evaluationRow,
+    uri: `at://${authorDid}/${EVALUATION}/good`,
+    record: "good-evaluation",
+    sort_timestamp: "2025-01-02T00:00:00.000000Z",
   };
   const last = {
-    ...evaluationRow, uri: `at://${authorDid}/${EVALUATION}/last`, record: 'last-evaluation',
-    sort_timestamp: '2025-01-01T00:00:00.000000Z',
+    ...evaluationRow,
+    uri: `at://${authorDid}/${EVALUATION}/last`,
+    record: "last-evaluation",
+    sort_timestamp: "2025-01-01T00:00:00.000000Z",
   };
   const result = runLua({
-    endpoint: 'listEvaluations', params: { limit: '1' },
+    endpoint: "listEvaluations",
+    params: { limit: "1" },
     queryResults: [
-      [malformed, good], [authorProfile, evaluatorProfile], [evaluatorOrganization],
-      [good, last], [authorProfile, evaluatorProfile], [evaluatorOrganization],
-      [last], [authorProfile, evaluatorProfile], [evaluatorOrganization],
+      [malformed, good],
+      [authorProfile, evaluatorProfile],
+      [evaluatorOrganization],
+      [good, last],
+      [authorProfile, evaluatorProfile],
+      [evaluatorOrganization],
+      [last],
+      [authorProfile, evaluatorProfile],
+      [evaluatorOrganization],
     ],
     assertions: `
 assert(#result.evaluations == 1 and result.evaluations[1].uri == '${malformed.uri}')
@@ -316,12 +366,12 @@ assert(calls[7].values[2] == '${good.sort_timestamp}' and calls[7].values[3] == 
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-test('listEvaluations returns all-invalid, non-array, and absent evaluator containers with empty projections', () => {
-  const legacyDid = 'did:plc:ffffffffffffffffffffffff';
+test("listEvaluations returns all-invalid, non-array, and absent evaluator containers with empty projections", () => {
+  const legacyDid = "did:plc:ffffffffffffffffffffffff";
   const cases = [
-    { name: 'all-invalid', evaluators: [legacyDid, { did: 'reviewer.example' }] },
-    { name: 'non-array', evaluators: { legacy: { did: evaluatorDid } } },
-    { name: 'absent' },
+    { name: "all-invalid", evaluators: [legacyDid, { did: "reviewer.example" }] },
+    { name: "non-array", evaluators: { legacy: { did: evaluatorDid } } },
+    { name: "absent" },
   ];
   const rows = cases.map(({ name, evaluators }) => {
     const record_json = { $type: EVALUATION, summary: name, createdAt };
@@ -331,11 +381,12 @@ test('listEvaluations returns all-invalid, non-array, and absent evaluator conta
       uri: `at://${authorDid}/${EVALUATION}/${name}`,
       record: `${name}-evaluation`,
       record_json,
-      sort_timestamp: '2025-01-02T00:00:00.000000Z',
+      sort_timestamp: "2025-01-02T00:00:00.000000Z",
     };
   });
   const result = runLua({
-    endpoint: 'listEvaluations', params: {},
+    endpoint: "listEvaluations",
+    params: {},
     queryResults: [[...rows], [authorProfile], []],
     assertions: `
 assert(#result.evaluations == 3)
@@ -352,18 +403,20 @@ assert(#calls == 3, 'authors still hydrate when evaluator projections are empty'
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-test('listEvaluations bounds scans of over-limit evaluator arrays and returns a continuation cursor', () => {
-  const tooManyEvaluators = Array(1001).fill('did:plc:ffffffffffffffffffffffff');
+test("listEvaluations bounds scans of over-limit evaluator arrays and returns a continuation cursor", () => {
+  const tooManyEvaluators = Array(1001).fill("did:plc:ffffffffffffffffffffffff");
   const rows = Array.from({ length: 11 }, (_, index) => ({
     ...evaluationRow,
     uri: `at://${authorDid}/${EVALUATION}/over-limit-${index}`,
-    record: 'over-limit-evaluation',
+    record: "over-limit-evaluation",
     record_json: { ...evaluationRecord, evaluators: tooManyEvaluators },
-    sort_timestamp: `2025-01-01T00:00:${String(59 - index).padStart(2, '0')}.000000Z`,
+    sort_timestamp: `2025-01-01T00:00:${String(59 - index).padStart(2, "0")}.000000Z`,
   }));
   const queryResults = Array.from({ length: 10 }, (_, index) => [rows[index], rows[index + 1]]);
   const result = runLua({
-    endpoint: 'listEvaluations', params: { limit: '1' }, queryResults,
+    endpoint: "listEvaluations",
+    params: { limit: "1" },
+    queryResults,
     assertions: `
 assert(#result.evaluations == 0 and result.cursor ~= nil)
 assert(#calls == 10, 'stop after ten query batches instead of scanning indefinitely')
@@ -374,14 +427,14 @@ assert(token.u == '${rows[9].uri}', 'continuation cursor must advance past the l
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-test('listEvaluations accepts 100 entries per filter and a 100-record page', () => {
+test("listEvaluations accepts 100 entries per filter and a 100-record page", () => {
   const result = runLua({
-    endpoint: 'listEvaluations',
+    endpoint: "listEvaluations",
     params: {
       authors: Array(100).fill(authorDid),
       evaluators: Array(100).fill(evaluatorDid),
       subjects: Array(100).fill(subjectUri),
-      limit: '100',
+      limit: "100",
     },
     queryResults: [[]],
     assertions: `
@@ -395,18 +448,19 @@ assert(calls[1].sql:find("evaluation.record::jsonb->'subject'->>'uri' IN ($4)", 
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-test('listEvaluations combines OR-within/AND-across filters and matches evaluators past position 100', () => {
-  const row = { ...evaluationRow, record: 'filtered-evaluation' };
-  const otherAuthor = 'did:plc:ffffffffffffffffffffffff';
-  const otherSubject = 'at://did:plc:eeeeeeeeeeeeeeeeeeeeeeee/org.hypercerts.claim.activity/activity-two';
+test("listEvaluations combines OR-within/AND-across filters and matches evaluators past position 100", () => {
+  const row = { ...evaluationRow, record: "filtered-evaluation" };
+  const otherAuthor = "did:plc:ffffffffffffffffffffffff";
+  const otherSubject =
+    "at://did:plc:eeeeeeeeeeeeeeeeeeeeeeee/org.hypercerts.claim.activity/activity-two";
   const result = runLua({
-    endpoint: 'listEvaluations',
+    endpoint: "listEvaluations",
     params: {
       authors: [authorDid, authorDid, otherAuthor],
       evaluators: [omittedDid, omittedDid, evaluatorDid],
       subjects: [subjectUri, otherSubject, subjectUri],
-      sortDirection: 'asc',
-      limit: '10',
+      sortDirection: "asc",
+      limit: "10",
     },
     queryResults: [[row], [authorProfile, evaluatorProfile], [evaluatorOrganization]],
     assertions: `
@@ -428,21 +482,26 @@ assert(not hydrated_dids:find('${omittedDid}', 1, true), 'entries beyond positio
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-test('listEvaluations orders by createdAt and URI and emits a direction-bound cursor from the last returned row', () => {
+test("listEvaluations orders by createdAt and URI and emits a direction-bound cursor from the last returned row", () => {
   const firstUri = `at://${authorDid}/${EVALUATION}/first`;
   const lookaheadUri = `at://${authorDid}/${EVALUATION}/lookahead`;
   const first = {
-    ...evaluationRow, uri: firstUri, record: 'first-evaluation',
-    sort_timestamp: '2025-01-01T00:00:00.000000Z',
+    ...evaluationRow,
+    uri: firstUri,
+    record: "first-evaluation",
+    sort_timestamp: "2025-01-01T00:00:00.000000Z",
   };
   const lookaheadRecord = { ...evaluationRecord, evaluators: [{ did: lookaheadEvaluatorDid }] };
   const lookahead = {
-    ...evaluationRow, uri: lookaheadUri, record: 'lookahead-evaluation', record_json: lookaheadRecord,
-    sort_timestamp: '2025-01-02T00:00:00.000000Z',
+    ...evaluationRow,
+    uri: lookaheadUri,
+    record: "lookahead-evaluation",
+    record_json: lookaheadRecord,
+    sort_timestamp: "2025-01-02T00:00:00.000000Z",
   };
   const result = runLua({
-    endpoint: 'listEvaluations',
-    params: { sortDirection: 'asc', limit: '1' },
+    endpoint: "listEvaluations",
+    params: { sortDirection: "asc", limit: "1" },
     queryResults: [[first, lookahead], [authorProfile, evaluatorProfile], [evaluatorOrganization]],
     assertions: `
 assert(#result.evaluations == 1 and result.evaluations[1].uri == '${firstUri}')
@@ -457,19 +516,26 @@ assert(not table.concat(calls[2].values, '|'):find('${lookaheadEvaluatorDid}', 1
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-test('listEvaluations applies an ascending tuple cursor and rejects cursors bound to another direction', () => {
+test("listEvaluations applies an ascending tuple cursor and rejects cursors bound to another direction", () => {
   const beforeUri = `at://${authorDid}/${EVALUATION}/before`;
   const afterUri = `at://${authorDid}/${EVALUATION}/after`;
-  const cursor = Buffer.from(JSON.stringify({
-    v: 1, d: 'asc', t: '2025-01-01T00:00:00.000000Z', u: beforeUri,
-  })).toString('hex');
+  const cursor = Buffer.from(
+    JSON.stringify({
+      v: 1,
+      d: "asc",
+      t: "2025-01-01T00:00:00.000000Z",
+      u: beforeUri,
+    }),
+  ).toString("hex");
   const after = {
-    ...evaluationRow, uri: afterUri, record: 'after-evaluation',
-    sort_timestamp: '2025-01-02T00:00:00.000000Z',
+    ...evaluationRow,
+    uri: afterUri,
+    record: "after-evaluation",
+    sort_timestamp: "2025-01-02T00:00:00.000000Z",
   };
   const page = runLua({
-    endpoint: 'listEvaluations',
-    params: { sortDirection: 'asc', cursor, limit: '1' },
+    endpoint: "listEvaluations",
+    params: { sortDirection: "asc", cursor, limit: "1" },
     queryResults: [[after], [authorProfile, evaluatorProfile], [evaluatorOrganization]],
     assertions: `
 assert(#result.evaluations == 1 and result.evaluations[1].uri == '${afterUri}' and result.cursor == nil)
@@ -481,51 +547,71 @@ assert(calls[1].values[4] == 2)
   assert.equal(page.status, 0, `${page.stderr}${page.stdout}`);
 
   const mismatched = runLua({
-    endpoint: 'listEvaluations',
-    params: { sortDirection: 'desc', cursor },
+    endpoint: "listEvaluations",
+    params: { sortDirection: "desc", cursor },
     queryResults: [],
-    expectError: 'InvalidRequest:',
+    expectError: "InvalidRequest:",
   });
   assert.equal(mismatched.status, 0, `${mismatched.stderr}${mismatched.stdout}`);
 });
 
-test('listEvaluations rejects invalid filters and separates database failures from empty results', () => {
+test("listEvaluations rejects invalid filters and separates database failures from empty results", () => {
   const malformed = [
-    { unknown: 'value' },
-    { authors: ['alice.example'] },
+    { unknown: "value" },
+    { authors: ["alice.example"] },
     { authors: Array(101).fill(authorDid) },
-    { evaluators: ['did:plc:invalid:'] },
-    { subjects: ['at://alice.example/org.hypercerts.claim.activity/x'] },
+    { evaluators: ["did:plc:invalid:"] },
+    { subjects: ["at://alice.example/org.hypercerts.claim.activity/x"] },
     { subjects: [`at://${authorDid}/notnsid/x`] },
-    { subjects: ['not-an-at-uri'] },
-    { limit: '0' },
-    { limit: '101' },
-    { limit: ['1', '2'] },
-    { sortDirection: 'sideways' },
-    { cursor: 'not-hex' },
+    { subjects: ["not-an-at-uri"] },
+    { limit: "0" },
+    { limit: "101" },
+    { limit: ["1", "2"] },
+    { sortDirection: "sideways" },
+    { cursor: "not-hex" },
   ];
   for (const params of malformed) {
-    const invalid = runLua({ endpoint: 'listEvaluations', params, queryResults: [], expectError: 'InvalidRequest:' });
-    assert.equal(invalid.status, 0, `${JSON.stringify(params)}\n${invalid.stderr}${invalid.stdout}`);
+    const invalid = runLua({
+      endpoint: "listEvaluations",
+      params,
+      queryResults: [],
+      expectError: "InvalidRequest:",
+    });
+    assert.equal(
+      invalid.status,
+      0,
+      `${JSON.stringify(params)}\n${invalid.stderr}${invalid.stdout}`,
+    );
   }
 
-  const empty = runLua({ endpoint: 'listEvaluations', params: {}, queryResults: [[]], assertions: `
+  const empty = runLua({
+    endpoint: "listEvaluations",
+    params: {},
+    queryResults: [[]],
+    assertions: `
 assert(type(result.evaluations) == 'table' and #result.evaluations == 0 and result.cursor == nil)
 assert(calls[1].values[1] == '${EVALUATION}' and calls[1].values[2] == 26)
 assert(calls[1].sql:find('ORDER BY sorted.sort_at DESC, evaluation.uri DESC', 1, true))
 assert(#calls == 1, 'an empty page does not hydrate actors')
-` });
+`,
+  });
   assert.equal(empty.status, 0, `${empty.stderr}${empty.stdout}`);
 
   const queryFailure = runLua({
-    endpoint: 'listEvaluations', params: {}, queryResults: [], queryFailureAt: 1,
-    expectError: 'EvaluationQueryFailed:',
+    endpoint: "listEvaluations",
+    params: {},
+    queryResults: [],
+    queryFailureAt: 1,
+    expectError: "EvaluationQueryFailed:",
   });
   assert.equal(queryFailure.status, 0, `${queryFailure.stderr}${queryFailure.stdout}`);
 
   const hydrationFailure = runLua({
-    endpoint: 'listEvaluations', params: {}, queryResults: [[evaluationRow]], queryFailureAt: 2,
-    expectError: 'EvaluationQueryFailed:',
+    endpoint: "listEvaluations",
+    params: {},
+    queryResults: [[evaluationRow]],
+    queryFailureAt: 2,
+    expectError: "EvaluationQueryFailed:",
   });
   assert.equal(hydrationFailure.status, 0, `${hydrationFailure.stderr}${hydrationFailure.stdout}`);
 });

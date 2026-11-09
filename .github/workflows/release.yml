@@ -96,7 +96,7 @@ jobs:
         with:
           github-token: ${{ steps.generate-token.outputs.token }}
           script: pnpm version:packages
-          commit-message: 'release: version packages'
+          commit-message: "release: version packages"
           pr-title: Release packages
           pr-base-branch: main
         env:

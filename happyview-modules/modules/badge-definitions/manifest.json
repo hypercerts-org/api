@@ -23,9 +23,7 @@
         "backfill": false,
         "target_collection": "app.certified.badge.definition"
       },
-      "dependsOn": [
-        "app.certified.badge.getBadgeDefinition"
-      ]
+      "dependsOn": ["app.certified.badge.getBadgeDefinition"]
     },
     {
       "id": "xrpc.query:app.certified.badge.getBadgeDefinition",
@@ -44,9 +42,7 @@
         "script_type": "lua",
         "description": "Badge definition API handler"
       },
-      "dependsOn": [
-        "app.certified.badge.getBadgeDefinition"
-      ]
+      "dependsOn": ["app.certified.badge.getBadgeDefinition"]
     },
     {
       "id": "xrpc.query:app.certified.badge.listBadgeDefinitions",
@@ -68,9 +64,7 @@
         "script_type": "lua",
         "description": "Badge definition API handler"
       },
-      "dependsOn": [
-        "app.certified.badge.listBadgeDefinitions"
-      ]
+      "dependsOn": ["app.certified.badge.listBadgeDefinitions"]
     }
   ]
 }

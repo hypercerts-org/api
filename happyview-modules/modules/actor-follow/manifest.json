@@ -8,10 +8,7 @@
         "backfill": false,
         "target_collection": "app.certified.graph.follow"
       },
-      "dependsOn": [
-        "app.certified.graph.follow",
-        "org.hypercerts.api.defs"
-      ]
+      "dependsOn": ["app.certified.graph.follow", "org.hypercerts.api.defs"]
     },
     {
       "kind": "lexicon",
@@ -21,9 +18,7 @@
         "backfill": false,
         "target_collection": "app.certified.graph.follow"
       },
-      "dependsOn": [
-        "app.certified.graph.getFollow"
-      ]
+      "dependsOn": ["app.certified.graph.getFollow"]
     },
     {
       "kind": "lexicon",
@@ -33,9 +28,7 @@
         "backfill": false,
         "target_collection": "app.certified.graph.follow"
       },
-      "dependsOn": [
-        "app.certified.graph.getFollow"
-      ]
+      "dependsOn": ["app.certified.graph.getFollow"]
     },
     {
       "kind": "lexicon",
@@ -45,9 +38,7 @@
         "backfill": false,
         "target_collection": "app.certified.graph.follow"
       },
-      "dependsOn": [
-        "app.certified.graph.getFollow"
-      ]
+      "dependsOn": ["app.certified.graph.getFollow"]
     },
     {
       "kind": "script",
@@ -65,9 +56,7 @@
         "script_type": "lua",
         "description": "Actor follow API handler"
       },
-      "dependsOn": [
-        "app.certified.graph.getFollow"
-      ]
+      "dependsOn": ["app.certified.graph.getFollow"]
     },
     {
       "kind": "script",
@@ -85,9 +74,7 @@
         "script_type": "lua",
         "description": "Actor follow API handler"
       },
-      "dependsOn": [
-        "app.certified.graph.getFollows"
-      ]
+      "dependsOn": ["app.certified.graph.getFollows"]
     },
     {
       "kind": "script",
@@ -110,9 +97,7 @@
         "script_type": "lua",
         "description": "Actor follow API handler"
       },
-      "dependsOn": [
-        "app.certified.graph.listActorFollowers"
-      ]
+      "dependsOn": ["app.certified.graph.listActorFollowers"]
     },
     {
       "kind": "script",
@@ -135,9 +120,7 @@
         "script_type": "lua",
         "description": "Actor follow API handler"
       },
-      "dependsOn": [
-        "app.certified.graph.listActorFollowing"
-      ]
+      "dependsOn": ["app.certified.graph.listActorFollowing"]
     }
   ]
 }

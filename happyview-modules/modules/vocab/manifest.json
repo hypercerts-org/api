@@ -8,10 +8,7 @@
         "backfill": false,
         "target_collection": "org.hypercerts.vocab.tag"
       },
-      "dependsOn": [
-        "org.hypercerts.vocab.tag",
-        "org.hypercerts.api.defs"
-      ]
+      "dependsOn": ["org.hypercerts.vocab.tag", "org.hypercerts.api.defs"]
     },
     {
       "id": "org.hypercerts.vocab.listVocabTags",
@@ -21,9 +18,7 @@
         "backfill": false,
         "target_collection": "org.hypercerts.vocab.tag"
       },
-      "dependsOn": [
-        "org.hypercerts.vocab.getVocabTag"
-      ]
+      "dependsOn": ["org.hypercerts.vocab.getVocabTag"]
     },
     {
       "id": "xrpc.query:org.hypercerts.vocab.getVocabTag",
@@ -42,9 +37,7 @@
         "script_type": "lua",
         "description": "Vocabulary tag lookup API handler"
       },
-      "dependsOn": [
-        "org.hypercerts.vocab.getVocabTag"
-      ]
+      "dependsOn": ["org.hypercerts.vocab.getVocabTag"]
     },
     {
       "id": "xrpc.query:org.hypercerts.vocab.listVocabTags",
@@ -66,9 +59,7 @@
         "script_type": "lua",
         "description": "Vocabulary tag listing API handler"
       },
-      "dependsOn": [
-        "org.hypercerts.vocab.listVocabTags"
-      ]
+      "dependsOn": ["org.hypercerts.vocab.listVocabTags"]
     }
   ]
 }

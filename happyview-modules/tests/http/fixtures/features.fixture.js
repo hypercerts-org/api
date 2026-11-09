@@ -1,22 +1,22 @@
-import { encode } from '@atcute/cbor';
-import * as CID from '@atcute/cid';
+import { encode } from "@atcute/cbor";
+import * as CID from "@atcute/cid";
 
-const featureCollection = 'org.hypercerts.entity.feature';
-const profileCollection = 'app.certified.actor.profile';
-const organizationCollection = 'app.certified.actor.organization';
-const featureAuthor = 'did:plc:777777777777777777777777';
-const profileOnlyAuthor = 'did:plc:yyyyyyyyyyyyyyyyyyyyyyyy';
-const unhydratedAuthor = 'did:plc:zzzzzzzzzzzzzzzzzzzzzzzz';
-const indexedAt = '2025-03-03T04:05:06.000Z';
+const featureCollection = "org.hypercerts.entity.feature";
+const profileCollection = "app.certified.actor.profile";
+const organizationCollection = "app.certified.actor.organization";
+const featureAuthor = "did:plc:777777777777777777777777";
+const profileOnlyAuthor = "did:plc:yyyyyyyyyyyyyyyyyyyyyyyy";
+const unhydratedAuthor = "did:plc:zzzzzzzzzzzzzzzzzzzzzzzz";
+const indexedAt = "2025-03-03T04:05:06.000Z";
 
 const features = [
   {
     did: profileOnlyAuthor,
-    rkey: 'feature-bog',
+    rkey: "feature-bog",
     record: {
-      type: 'bog',
-      title: 'Restored peatland',
-      createdAt: '2025-02-27T00:00:00.000Z',
+      type: "bog",
+      title: "Restored peatland",
+      createdAt: "2025-02-27T00:00:00.000Z",
       locations: [],
       tags: [],
       sameAs: [],
@@ -24,11 +24,11 @@ const features = [
   },
   {
     did: profileOnlyAuthor,
-    rkey: 'feature-older',
+    rkey: "feature-older",
     record: {
-      type: 'forest',
-      title: 'Older canopy',
-      createdAt: '2025-02-28T00:00:00.000Z',
+      type: "forest",
+      title: "Older canopy",
+      createdAt: "2025-02-28T00:00:00.000Z",
       locations: [],
       tags: [],
       sameAs: [],
@@ -36,11 +36,11 @@ const features = [
   },
   {
     did: featureAuthor,
-    rkey: 'feature-alpha',
+    rkey: "feature-alpha",
     record: {
-      type: 'wetland',
-      title: 'Wang Chhu floodplain',
-      createdAt: '2025-03-01T00:00:00.000Z',
+      type: "wetland",
+      title: "Wang Chhu floodplain",
+      createdAt: "2025-03-01T00:00:00.000Z",
       locations: [],
       tags: [],
       sameAs: [],
@@ -48,11 +48,11 @@ const features = [
   },
   {
     did: featureAuthor,
-    rkey: 'feature-beta',
+    rkey: "feature-beta",
     record: {
-      type: 'wetland',
-      title: 'Northern marsh',
-      createdAt: '2025-03-01T00:00:00.000Z',
+      type: "wetland",
+      title: "Northern marsh",
+      createdAt: "2025-03-01T00:00:00.000Z",
       locations: [],
       tags: [],
       sameAs: [],
@@ -60,11 +60,11 @@ const features = [
   },
   {
     did: profileOnlyAuthor,
-    rkey: 'feature-gamma',
+    rkey: "feature-gamma",
     record: {
-      type: 'wetland',
-      title: 'Community wetland',
-      createdAt: '2025-03-01T00:00:00.000Z',
+      type: "wetland",
+      title: "Community wetland",
+      createdAt: "2025-03-01T00:00:00.000Z",
       locations: [],
       tags: [],
       sameAs: [],
@@ -72,11 +72,11 @@ const features = [
   },
   {
     did: unhydratedAuthor,
-    rkey: 'feature-newer',
+    rkey: "feature-newer",
     record: {
-      type: 'wetland',
-      title: 'New growth',
-      createdAt: '2025-03-02T00:00:00.000Z',
+      type: "wetland",
+      title: "New growth",
+      createdAt: "2025-03-02T00:00:00.000Z",
       locations: [],
       tags: [],
       sameAs: [],
@@ -99,18 +99,18 @@ async function seedRow(collection, did, rkey, fields) {
 
 export const seedRows = await Promise.all([
   ...features.map(({ did, rkey, record }) => seedRow(featureCollection, did, rkey, record)),
-  seedRow(profileCollection, featureAuthor, 'self', {
-    displayName: 'River Stewardship Alliance',
-    description: 'Community wetland monitoring and restoration.',
+  seedRow(profileCollection, featureAuthor, "self", {
+    displayName: "River Stewardship Alliance",
+    description: "Community wetland monitoring and restoration.",
     createdAt: indexedAt,
   }),
-  seedRow(organizationCollection, featureAuthor, 'self', {
-    organizationType: ['community'],
-    visibility: 'public',
+  seedRow(organizationCollection, featureAuthor, "self", {
+    organizationType: ["community"],
+    visibility: "public",
     createdAt: indexedAt,
   }),
-  seedRow(profileCollection, profileOnlyAuthor, 'self', {
-    displayName: 'Forest Stewards',
+  seedRow(profileCollection, profileOnlyAuthor, "self", {
+    displayName: "Forest Stewards",
     createdAt: indexedAt,
   }),
 ]);

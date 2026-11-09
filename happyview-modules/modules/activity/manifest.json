@@ -16,9 +16,7 @@
         "script_type": "lua",
         "description": "Hypercerts activity lookup handler"
       },
-      "dependsOn": [
-        "org.hypercerts.claim.getActivity"
-      ]
+      "dependsOn": ["org.hypercerts.claim.getActivity"]
     },
     {
       "kind": "lexicon",
@@ -28,9 +26,7 @@
         "backfill": false,
         "target_collection": "org.hypercerts.claim.activity"
       },
-      "dependsOn": [
-        "org.hypercerts.claim.getActivity"
-      ]
+      "dependsOn": ["org.hypercerts.claim.getActivity"]
     },
     {
       "kind": "lexicon",
@@ -40,9 +36,7 @@
         "backfill": false,
         "target_collection": "org.hypercerts.claim.activity"
       },
-      "dependsOn": [
-        "org.hypercerts.claim.getActivity"
-      ]
+      "dependsOn": ["org.hypercerts.claim.getActivity"]
     },
     {
       "kind": "script",
@@ -64,9 +58,7 @@
         "script_type": "lua",
         "description": "Hypercerts activity listing handler"
       },
-      "dependsOn": [
-        "org.hypercerts.claim.listActivities"
-      ]
+      "dependsOn": ["org.hypercerts.claim.listActivities"]
     },
     {
       "kind": "script",
@@ -88,9 +80,7 @@
         "script_type": "lua",
         "description": "Hypercerts activity search handler"
       },
-      "dependsOn": [
-        "org.hypercerts.claim.searchActivities"
-      ]
+      "dependsOn": ["org.hypercerts.claim.searchActivities"]
     }
   ]
 }

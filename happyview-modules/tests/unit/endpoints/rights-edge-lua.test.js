@@ -1,32 +1,37 @@
-import test from 'node:test';
-import { readFile } from 'node:fs/promises';
-import { execFileSync } from 'node:child_process';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import test from "node:test";
+import { readFile } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = fileURLToPath(new URL('../../../', import.meta.url));
-const read = (relative) => readFile(path.resolve(root, relative), 'utf8');
+const root = fileURLToPath(new URL("../../../", import.meta.url));
+const read = (relative) => readFile(path.resolve(root, relative), "utf8");
 
 async function endpointSources(name) {
   const shared = [
-    'lua/shared/didValidation.lua',
-    'lua/shared/query.lua',
-    'lua/shared/recordIdentifier.lua',
-    'lua/shared/rightsIdentifier.lua',
-    'lua/shared/recordView.lua',
-    'lua/shared/actorView.lua',
-    'lua/shared/rightsView.lua',
+    "lua/shared/didValidation.lua",
+    "lua/shared/query.lua",
+    "lua/shared/recordIdentifier.lua",
+    "lua/shared/rightsIdentifier.lua",
+    "lua/shared/recordView.lua",
+    "lua/shared/actorView.lua",
+    "lua/shared/rightsView.lua",
   ];
-  if (name === 'listRights') shared.push('lua/shared/datetimeValidation.lua', 'lua/shared/listValidation.lua', 'lua/shared/listQuery.lua');
+  if (name === "listRights")
+    shared.push(
+      "lua/shared/datetimeValidation.lua",
+      "lua/shared/listValidation.lua",
+      "lua/shared/listQuery.lua",
+    );
   return Promise.all([...shared, `lua/src/${name}.lua`].map(read));
 }
 
 function runLua(program) {
-  execFileSync('lua', ['-'], { input: program, encoding: 'utf8' });
+  execFileSync("lua", ["-"], { input: program, encoding: "utf8" });
 }
 
-test('getRights accepts opaque DID percent sequences and retains invalid-DID boundaries', async () => {
-  const sources = await endpointSources('getRights');
+test("getRights accepts opaque DID percent sequences and retains invalid-DID boundaries", async () => {
+  const sources = await endpointSources("getRights");
   const program = [
     `local null_value = {}
     local rights_record = { rightsName = "Terms" }`,
@@ -69,13 +74,13 @@ test('getRights accepts opaque DID percent sequences and retains invalid-DID bou
     record_exists = false
     local missing_ok, missing_error = pcall(handle)
     assert(not missing_ok and tostring(missing_error):find("RecordNotFound", 1, true))`,
-  ].join('\n\n');
+  ].join("\n\n");
 
   runLua(program);
 });
 
-test('listRights orders invalid or absent createdAt by indexed_at then row creation without rewriting records', async () => {
-  const sources = await endpointSources('listRights');
+test("listRights orders invalid or absent createdAt by indexed_at then row creation without rewriting records", async () => {
+  const sources = await endpointSources("listRights");
   const program = [
     `local null_value = {}
     local records = {
@@ -113,13 +118,13 @@ test('listRights orders invalid or absent createdAt by indexed_at then row creat
     assert(response.rights[2].record.createdAt == nil, "the source record is not given a synthetic timestamp")
     assert(response.rights[3].record.createdAt == "not-a-datetime", "the malformed source value remains unchanged")
     assert(response.rights[3].indexedAt == null_value, "nullable indexedAt is retained as JSON null")`,
-  ].join('\n\n');
+  ].join("\n\n");
 
   runLua(program);
 });
 
-test('listRights accepts broad DIDs in filters and cursors but rejects invalid DID and timestamp boundaries', async () => {
-  const sources = await endpointSources('listRights');
+test("listRights accepts broad DIDs in filters and cursors but rejects invalid DID and timestamp boundaries", async () => {
+  const sources = await endpointSources("listRights");
   const program = [
     `local null_value = {}`,
     `json = {
@@ -166,13 +171,13 @@ test('listRights accepts broad DIDs in filters and cursors but rejects invalid D
     invalid_request()
     params = { cursor = cursor("0000-01-01T00:00:00Z", "at://did:plc:publisher/org.hypercerts.claim.rights/key") }
     invalid_request()`,
-  ].join('\n\n');
+  ].join("\n\n");
 
   runLua(program);
 });
 
-test('listRights rejects repeated scalar, unknown, and oversized author parameters before querying', async () => {
-  const sources = await endpointSources('listRights');
+test("listRights rejects repeated scalar, unknown, and oversized author parameters before querying", async () => {
+  const sources = await endpointSources("listRights");
   const program = [
     `local null_value = {}`,
     `json = { decode = function(value) assert(value == "null"); return null_value end }`,
@@ -196,7 +201,7 @@ test('listRights rejects repeated scalar, unknown, and oversized author paramete
     params = { authors = authors }
     invalid_request()
     assert(query_count == 0, "invalid parameters must fail before database access")`,
-  ].join('\n\n');
+  ].join("\n\n");
 
   runLua(program);
 });

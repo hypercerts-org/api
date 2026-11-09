@@ -26,10 +26,7 @@
         "backfill": false,
         "target_collection": "org.hypercerts.context.acknowledgement"
       },
-      "dependsOn": [
-        "org.hypercerts.context.acknowledgement",
-        "org.hypercerts.api.defs"
-      ]
+      "dependsOn": ["org.hypercerts.context.acknowledgement", "org.hypercerts.api.defs"]
     },
     {
       "kind": "script",
@@ -56,10 +53,7 @@
         "backfill": false,
         "target_collection": "org.hypercerts.context.acknowledgement"
       },
-      "dependsOn": [
-        "org.hypercerts.context.acknowledgement",
-        "org.hypercerts.api.defs"
-      ]
+      "dependsOn": ["org.hypercerts.context.acknowledgement", "org.hypercerts.api.defs"]
     },
     {
       "kind": "script",

@@ -157,7 +157,10 @@
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua"
       ],
-      "config": { "script_type": "lua", "description": "Batched feed reaction count query handler" },
+      "config": {
+        "script_type": "lua",
+        "description": "Batched feed reaction count query handler"
+      },
       "dependsOn": ["app.certified.feed.getReactionCounts"]
     }
   ]

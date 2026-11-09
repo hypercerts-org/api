@@ -1,25 +1,25 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
-import { spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
-import { loadAssets } from '../../../tooling/installer.js';
-import { validatePackageLexicons } from '../../../tooling/validate-lexicons.js';
+import test from "node:test";
+import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { loadAssets } from "../../../tooling/installer.js";
+import { validatePackageLexicons } from "../../../tooling/validate-lexicons.js";
 import {
   actorFollowOrganizationRecords,
   actorFollowProfileRecords,
   actorFollowRecords,
-} from '../../fixtures/actor-follows.js';
+} from "../../fixtures/actor-follows.js";
 
-const root = fileURLToPath(new URL('../../../', import.meta.url));
-const actor = 'did:plc:aaaaaaaaaaaaaaaaaaaaaaaa';
-const follower = 'did:plc:bbbbbbbbbbbbbbbbbbbbbbbb';
-const subject = 'did:plc:cccccccccccccccccccccccc';
-const followCollection = 'app.certified.graph.follow';
-const profileCollection = 'app.certified.actor.profile';
-const organizationCollection = 'app.certified.actor.organization';
-const indexedAt = '2025-01-02T03:04:05.000Z';
+const root = fileURLToPath(new URL("../../../", import.meta.url));
+const actor = "did:plc:aaaaaaaaaaaaaaaaaaaaaaaa";
+const follower = "did:plc:bbbbbbbbbbbbbbbbbbbbbbbb";
+const subject = "did:plc:cccccccccccccccccccccccc";
+const followCollection = "app.certified.graph.follow";
+const profileCollection = "app.certified.actor.profile";
+const organizationCollection = "app.certified.actor.organization";
+const indexedAt = "2025-01-02T03:04:05.000Z";
 
 function followRow(id, did, actorDid, createdAt, { subjectDid = actor, via = false } = {}) {
   return {
@@ -29,40 +29,67 @@ function followRow(id, did, actorDid, createdAt, { subjectDid = actor, via = fal
     indexed_at: indexedAt,
     record: `follow-${id}`,
     actor_did: actorDid,
-    sort_timestamp: createdAt.replace('Z', '.000000Z'),
+    sort_timestamp: createdAt.replace("Z", ".000000Z"),
     follow_record: {
       $type: followCollection,
       subject: subjectDid,
       createdAt,
-      ...(via ? { via: { uri: 'at://did:plc:list/app.certified.list/one', cid: 'bafylink' } } : {}),
+      ...(via ? { via: { uri: "at://did:plc:list/app.certified.list/one", cid: "bafylink" } } : {}),
     },
   };
 }
 
 function sidecarRow(collection, did, record) {
   return {
-    uri: `at://${did}/${collection}/self`, did, cid: `bafy-${collection.endsWith('profile') ? 'profile' : 'org'}-${did.slice(-4)}`,
-    indexed_at: indexedAt, record: `sidecar-${collection}-${did}`, sidecar_record: record,
+    uri: `at://${did}/${collection}/self`,
+    did,
+    cid: `bafy-${collection.endsWith("profile") ? "profile" : "org"}-${did.slice(-4)}`,
+    indexed_at: indexedAt,
+    record: `sidecar-${collection}-${did}`,
+    sidecar_record: record,
   };
 }
 
 function lua(value) {
-  if (typeof value === 'string') return JSON.stringify(value);
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-  if (Array.isArray(value)) return `{${value.map(lua).join(',')}}`;
-  if (value && typeof value === 'object') {
-    return `{${Object.entries(value).map(([key, item]) => `[${JSON.stringify(key)}]=${lua(item)}`).join(',')}}`;
+  if (typeof value === "string") return JSON.stringify(value);
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value)) return `{${value.map(lua).join(",")}}`;
+  if (value && typeof value === "object") {
+    return `{${Object.entries(value)
+      .map(([key, item]) => `[${JSON.stringify(key)}]=${lua(item)}`)
+      .join(",")}}`;
   }
   throw new TypeError(`Cannot encode ${typeof value} as a Lua fixture`);
 }
 
-function cursor({ direction = 'desc', timestamp = '2025-01-02T03:04:05.000000Z', uri = `at://${follower}/${followCollection}/cursor` } = {}) {
-  return Buffer.from(JSON.stringify({ v: 1, d: direction, t: timestamp, u: uri }), 'utf8').toString('hex');
+function cursor({
+  direction = "desc",
+  timestamp = "2025-01-02T03:04:05.000000Z",
+  uri = `at://${follower}/${followCollection}/cursor`,
+} = {}) {
+  return Buffer.from(JSON.stringify({ v: 1, d: direction, t: timestamp, u: uri }), "utf8").toString(
+    "hex",
+  );
 }
 
-function runLua({ endpoint, params, rows = [], profiles = [], organizations = [], totalCount = rows.length, backend = 'postgres', queryFailure = false, expectError, expectedCalls = 0, assertions }) {
+function runLua({
+  endpoint,
+  params,
+  rows = [],
+  profiles = [],
+  organizations = [],
+  totalCount = rows.length,
+  backend = "postgres",
+  queryFailure = false,
+  expectError,
+  expectedCalls = 0,
+  assertions,
+}) {
   const endpointPath = `lua/endpoints/${endpoint}.lua`;
-  assert.ok(existsSync(`${root}/${endpointPath}`), `${endpointPath} must be generated before exercising the handler`);
+  assert.ok(
+    existsSync(`${root}/${endpointPath}`),
+    `${endpointPath} must be generated before exercising the handler`,
+  );
   const records = Object.fromEntries([
     ...rows.map(({ record, follow_record }) => [record, follow_record]),
     ...profiles.map(({ record, sidecar_record }) => [record, sidecar_record]),
@@ -102,7 +129,7 @@ db = {
   backend = function() return '${backend}' end,
   raw = function(sql, values)
     calls[#calls + 1] = { sql = sql, values = values }
-    if ${queryFailure ? 'true' : 'false'} then error('fixture database failure') end
+    if ${queryFailure ? "true" : "false"} then error('fixture database failure') end
     if values[1] == '${followCollection}' then
       if not sql:find('total_count', 1, true) then return rows end
       if #rows == 0 then return { { total_count = totalCount } } end
@@ -122,120 +149,177 @@ db = {
 }
 dofile('${endpointPath}')
 local ok, result = pcall(handle)
-${expectError
+${
+  expectError
     ? `assert(not ok, 'expected handler to reject the request')\nassert(tostring(result):find('${expectError}', 1, true), tostring(result))\nassert(#calls == ${expectedCalls}, 'unexpected PostgreSQL query count')`
-    : `assert(ok, tostring(result))\n${assertions}`}
+    : `assert(ok, tostring(result))\n${assertions}`
+}
 `;
-  const result = spawnSync('lua5.4', ['-e', luaSource], { cwd: root, encoding: 'utf8' });
+  const result = spawnSync("lua5.4", ["-e", luaSource], { cwd: root, encoding: "utf8" });
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
   return result.stdout;
 }
 
-test('actor-follow module installs the follow record schema, three queries, and their handlers', async () => {
-  const manifest = JSON.parse(await readFile(`${root}/manifest.json`, 'utf8'));
-  assert.ok(manifest.modules.includes('modules/actor-follow/manifest.json'));
+test("actor-follow module installs the follow record schema, three queries, and their handlers", async () => {
+  const manifest = JSON.parse(await readFile(`${root}/manifest.json`, "utf8"));
+  assert.ok(manifest.modules.includes("modules/actor-follow/manifest.json"));
   assert.ok(manifest.validationLexicons.some(({ id }) => id === followCollection));
 
   const { assets } = await loadAssets(`${root}/manifest.json`);
   const expected = [
     followCollection,
-    'app.certified.graph.getFollow',
-    'app.certified.graph.getFollows',
-    'app.certified.graph.listActorFollowers',
-    'app.certified.graph.listActorFollowing',
-    'xrpc.query:app.certified.graph.getFollow',
-    'xrpc.query:app.certified.graph.getFollows',
-    'xrpc.query:app.certified.graph.listActorFollowers',
-    'xrpc.query:app.certified.graph.listActorFollowing',
+    "app.certified.graph.getFollow",
+    "app.certified.graph.getFollows",
+    "app.certified.graph.listActorFollowers",
+    "app.certified.graph.listActorFollowing",
+    "xrpc.query:app.certified.graph.getFollow",
+    "xrpc.query:app.certified.graph.getFollows",
+    "xrpc.query:app.certified.graph.listActorFollowers",
+    "xrpc.query:app.certified.graph.listActorFollowing",
   ];
-  for (const id of expected) assert.ok(assets.some((asset) => asset.id === id), `missing installed asset ${id}`);
+  for (const id of expected)
+    assert.ok(
+      assets.some((asset) => asset.id === id),
+      `missing installed asset ${id}`,
+    );
   assert.equal(assets.find((asset) => asset.id === followCollection).config.backfill, true);
   assert.deepEqual(
-    assets.filter(({ kind, id }) => kind === 'script' && id.startsWith('xrpc.query:app.certified.graph.')).map(({ id }) => id).sort(),
+    assets
+      .filter(
+        ({ kind, id }) => kind === "script" && id.startsWith("xrpc.query:app.certified.graph."),
+      )
+      .map(({ id }) => id)
+      .sort(),
     [
-      ...expected.filter((id) => id.startsWith('xrpc.query:app.certified.graph.')),
-      'xrpc.query:app.certified.graph.getEntityFollow',
-      'xrpc.query:app.certified.graph.getEntityFollows',
-      'xrpc.query:app.certified.graph.listEntityFollowers',
-      'xrpc.query:app.certified.graph.listEntityFollowing',
-      'xrpc.query:app.certified.graph.listRecentFollows',
+      ...expected.filter((id) => id.startsWith("xrpc.query:app.certified.graph.")),
+      "xrpc.query:app.certified.graph.getEntityFollow",
+      "xrpc.query:app.certified.graph.getEntityFollows",
+      "xrpc.query:app.certified.graph.listEntityFollowers",
+      "xrpc.query:app.certified.graph.listEntityFollowing",
+      "xrpc.query:app.certified.graph.listRecentFollows",
     ].sort(),
   );
 });
 
-test('actor-follow query Lexicons validate the endpoint inputs, nullable lookup, and shared actor views', async () => {
+test("actor-follow query Lexicons validate the endpoint inputs, nullable lookup, and shared actor views", async () => {
   const { lexicons, documents } = await validatePackageLexicons();
   const byId = new Map(documents.map((document) => [document.id, document]));
   const follow = byId.get(followCollection);
-  const getFollow = byId.get('app.certified.graph.getFollow');
-  const getFollows = byId.get('app.certified.graph.getFollows');
-  const followers = byId.get('app.certified.graph.listActorFollowers');
-  const following = byId.get('app.certified.graph.listActorFollowing');
-  assert.ok(follow && getFollow && getFollows && followers && following, 'the follow record and all query Lexicons belong to the validation closure');
-  assert.equal(lexicons.getDefOrThrow(followCollection).type, 'record');
-  assert.deepEqual(Object.keys(getFollow.defs.main.parameters.properties).sort(), ['actor', 'subject']);
-  assert.deepEqual(Object.keys(getFollows.defs.main.parameters.properties).sort(), ['actor', 'subjects']);
+  const getFollow = byId.get("app.certified.graph.getFollow");
+  const getFollows = byId.get("app.certified.graph.getFollows");
+  const followers = byId.get("app.certified.graph.listActorFollowers");
+  const following = byId.get("app.certified.graph.listActorFollowing");
+  assert.ok(
+    follow && getFollow && getFollows && followers && following,
+    "the follow record and all query Lexicons belong to the validation closure",
+  );
+  assert.equal(lexicons.getDefOrThrow(followCollection).type, "record");
+  assert.deepEqual(Object.keys(getFollow.defs.main.parameters.properties).sort(), [
+    "actor",
+    "subject",
+  ]);
+  assert.deepEqual(Object.keys(getFollows.defs.main.parameters.properties).sort(), [
+    "actor",
+    "subjects",
+  ]);
   assert.equal(getFollows.defs.main.parameters.properties.subjects.minLength, 1);
   assert.equal(getFollows.defs.main.parameters.properties.subjects.maxLength, 100);
-  assert.deepEqual(getFollows.defs.output.required, ['results']);
-  assert.equal(getFollows.defs.followResult.properties.follow.ref, 'lex:app.certified.graph.getFollow#followRecordView');
-  assert.deepEqual(getFollows.defs.followResult.nullable, ['follow']);
-  assert.deepEqual(getFollow.defs.output.required, ['follow']);
-  assert.deepEqual(getFollow.defs.output.nullable, ['follow']);
-  assert.deepEqual(Object.keys(followers.defs.main.parameters.properties).sort(), ['actor', 'cursor', 'limit', 'sortDirection']);
-  assert.deepEqual(Object.keys(following.defs.main.parameters.properties).sort(), ['actor', 'cursor', 'limit', 'sortDirection']);
-  for (const [query, outputKey] of [[followers, 'followers'], [following, 'following']]) {
+  assert.deepEqual(getFollows.defs.output.required, ["results"]);
+  assert.equal(
+    getFollows.defs.followResult.properties.follow.ref,
+    "lex:app.certified.graph.getFollow#followRecordView",
+  );
+  assert.deepEqual(getFollows.defs.followResult.nullable, ["follow"]);
+  assert.deepEqual(getFollow.defs.output.required, ["follow"]);
+  assert.deepEqual(getFollow.defs.output.nullable, ["follow"]);
+  assert.deepEqual(Object.keys(followers.defs.main.parameters.properties).sort(), [
+    "actor",
+    "cursor",
+    "limit",
+    "sortDirection",
+  ]);
+  assert.deepEqual(Object.keys(following.defs.main.parameters.properties).sort(), [
+    "actor",
+    "cursor",
+    "limit",
+    "sortDirection",
+  ]);
+  for (const [query, outputKey] of [
+    [followers, "followers"],
+    [following, "following"],
+  ]) {
     assert.equal(query.defs.main.parameters.properties.limit.minimum, 1);
     assert.equal(query.defs.main.parameters.properties.limit.maximum, 100);
-    assert.equal(query.defs.main.output.encoding, 'application/json');
-    assert.deepEqual(query.defs.output.required, [outputKey, 'totalCount']);
-    assert.equal(query.defs.output.properties.totalCount.type, 'integer');
+    assert.equal(query.defs.main.output.encoding, "application/json");
+    assert.deepEqual(query.defs.output.required, [outputKey, "totalCount"]);
+    assert.equal(query.defs.output.properties.totalCount.type, "integer");
     assert.equal(query.defs.output.properties.totalCount.minimum, 0);
   }
-  const sharedDefinitions = byId.get('org.hypercerts.api.defs');
-  const followView = lexicons.getDefOrThrow('app.certified.graph.getFollow#followRecordView');
-  const actorFollowView = lexicons.getDefOrThrow('app.certified.graph.getFollow#actorFollowView');
-  assert.deepEqual(followView.required, ['uri', 'cid', 'indexedAt', 'did', 'record']);
-  assert.deepEqual(followView.nullable, ['indexedAt']);
+  const sharedDefinitions = byId.get("org.hypercerts.api.defs");
+  const followView = lexicons.getDefOrThrow("app.certified.graph.getFollow#followRecordView");
+  const actorFollowView = lexicons.getDefOrThrow("app.certified.graph.getFollow#actorFollowView");
+  assert.deepEqual(followView.required, ["uri", "cid", "indexedAt", "did", "record"]);
+  assert.deepEqual(followView.nullable, ["indexedAt"]);
   assert.equal(followView.properties.record.ref, `lex:${followCollection}`);
-  assert.deepEqual(actorFollowView.required, ['did', 'profile', 'organization', 'follow']);
-  assert.deepEqual(actorFollowView.nullable, ['profile', 'organization']);
-  assert.equal(actorFollowView.properties.profile.ref, 'lex:org.hypercerts.api.defs#profileView');
-  assert.equal(actorFollowView.properties.organization.ref, 'lex:org.hypercerts.api.defs#organizationView');
-  assert.equal(actorFollowView.properties.follow.ref, 'lex:app.certified.graph.getFollow#followRecordView');
+  assert.deepEqual(actorFollowView.required, ["did", "profile", "organization", "follow"]);
+  assert.deepEqual(actorFollowView.nullable, ["profile", "organization"]);
+  assert.equal(actorFollowView.properties.profile.ref, "lex:org.hypercerts.api.defs#profileView");
+  assert.equal(
+    actorFollowView.properties.organization.ref,
+    "lex:org.hypercerts.api.defs#organizationView",
+  );
+  assert.equal(
+    actorFollowView.properties.follow.ref,
+    "lex:app.certified.graph.getFollow#followRecordView",
+  );
   assert.equal(sharedDefinitions.defs.actorFollowView, undefined);
-  assert.equal(followers.defs.output.properties.followers.items.ref, 'lex:app.certified.graph.getFollow#actorFollowView');
-  assert.equal(following.defs.output.properties.following.items.ref, 'lex:app.certified.graph.getFollow#actorFollowView');
-  const { jsonToLex, lexToJson } = await import('@atproto/lexicon');
-  const record = { $type: followCollection, subject, createdAt: '2025-01-01T00:00:00.000Z' };
+  assert.equal(
+    followers.defs.output.properties.followers.items.ref,
+    "lex:app.certified.graph.getFollow#actorFollowView",
+  );
+  assert.equal(
+    following.defs.output.properties.following.items.ref,
+    "lex:app.certified.graph.getFollow#actorFollowView",
+  );
+  const { jsonToLex, lexToJson } = await import("@atproto/lexicon");
+  const record = { $type: followCollection, subject, createdAt: "2025-01-01T00:00:00.000Z" };
   const decoded = jsonToLex(record);
   lexicons.assertValidRecord(followCollection, decoded);
   assert.deepEqual(lexToJson(decoded), record);
 });
 
-test('actor-follow fixture records validate against their pinned Lexicons', async () => {
+test("actor-follow fixture records validate against their pinned Lexicons", async () => {
   const { lexicons } = await validatePackageLexicons();
-  const { jsonToLex, lexToJson } = await import('@atproto/lexicon');
-  for (const record of [...actorFollowRecords, ...actorFollowProfileRecords, ...actorFollowOrganizationRecords]) {
+  const { jsonToLex, lexToJson } = await import("@atproto/lexicon");
+  for (const record of [
+    ...actorFollowRecords,
+    ...actorFollowProfileRecords,
+    ...actorFollowOrganizationRecords,
+  ]) {
     const decoded = jsonToLex(record.record);
     lexicons.assertValidRecord(record.collection, decoded);
     assert.deepEqual(lexToJson(decoded), record.record);
   }
 });
 
-test('actor-follow views do not mutate the already-installed shared actor definitions', async () => {
+test("actor-follow views do not mutate the already-installed shared actor definitions", async () => {
   const { documents } = await validatePackageLexicons();
-  const shared = documents.find(({ id }) => id === 'org.hypercerts.api.defs');
-  const getFollow = documents.find(({ id }) => id === 'app.certified.graph.getFollow');
+  const shared = documents.find(({ id }) => id === "org.hypercerts.api.defs");
+  const getFollow = documents.find(({ id }) => id === "app.certified.graph.getFollow");
   assert.equal(shared.defs.followRecordView, undefined);
   assert.equal(shared.defs.actorFollowView, undefined);
   assert.ok(getFollow.defs.followRecordView && getFollow.defs.actorFollowView);
 });
 
-test('getFollow selects one raw representative, preserves via, and returns null for no relationship', () => {
-  const earliest = followRow('early', actor, actor, '2025-01-01T00:00:00Z', { subjectDid: subject, via: true });
+test("getFollow selects one raw representative, preserves via, and returns null for no relationship", () => {
+  const earliest = followRow("early", actor, actor, "2025-01-01T00:00:00Z", {
+    subjectDid: subject,
+    via: true,
+  });
   const output = runLua({
-    endpoint: 'getFollow', params: { actor, subject }, rows: [earliest],
+    endpoint: "getFollow",
+    params: { actor, subject },
+    rows: [earliest],
     assertions: `
 assert(result.follow.uri == '${earliest.uri}')
 assert(result.follow.cid == '${earliest.cid}' and result.follow.indexedAt == '${indexedAt}')
@@ -247,29 +331,48 @@ assert(calls[1].sql:find('ORDER BY sorted.sort_at ASC, uri ASC LIMIT 1', 1, true
 assert(result.follow.via == nil, 'via stays inside the unchanged raw record')
 `,
   });
-  assert.equal(output, '');
+  assert.equal(output, "");
 
-  runLua({ endpoint: 'getFollow', params: { actor, subject }, rows: [], assertions: 'assert(result.follow == NULL_VALUE)\nassert(#calls == 1)' });
+  runLua({
+    endpoint: "getFollow",
+    params: { actor, subject },
+    rows: [],
+    assertions: "assert(result.follow == NULL_VALUE)\nassert(#calls == 1)",
+  });
 });
 
-test('getFollow emits explicit JSON null when indexed_at is SQL NULL', () => {
-  const row = followRow('unindexed-lookup', actor, actor, '2025-01-01T00:00:00Z', { subjectDid: subject });
+test("getFollow emits explicit JSON null when indexed_at is SQL NULL", () => {
+  const row = followRow("unindexed-lookup", actor, actor, "2025-01-01T00:00:00Z", {
+    subjectDid: subject,
+  });
   delete row.indexed_at;
   runLua({
-    endpoint: 'getFollow', params: { actor, subject }, rows: [row],
+    endpoint: "getFollow",
+    params: { actor, subject },
+    rows: [row],
     assertions: `assert(result.follow.indexedAt == NULL_VALUE, 'SQL NULL indexed_at must serialize as JSON null')`,
   });
 });
 
-test('actor-follow lists emit explicit JSON null for SQL NULL relationship and sidecar timestamps', () => {
-  const followerRow = followRow('unindexed-follower', follower, follower, '2025-01-01T00:00:00Z');
+test("actor-follow lists emit explicit JSON null for SQL NULL relationship and sidecar timestamps", () => {
+  const followerRow = followRow("unindexed-follower", follower, follower, "2025-01-01T00:00:00Z");
   delete followerRow.indexed_at;
-  const profile = sidecarRow(profileCollection, follower, { $type: profileCollection, displayName: 'Unindexed follower' });
-  const organization = sidecarRow(organizationCollection, follower, { $type: organizationCollection, visibility: 'public' });
+  const profile = sidecarRow(profileCollection, follower, {
+    $type: profileCollection,
+    displayName: "Unindexed follower",
+  });
+  const organization = sidecarRow(organizationCollection, follower, {
+    $type: organizationCollection,
+    visibility: "public",
+  });
   delete profile.indexed_at;
   delete organization.indexed_at;
   runLua({
-    endpoint: 'listActorFollowers', params: { actor }, rows: [followerRow], profiles: [profile], organizations: [organization],
+    endpoint: "listActorFollowers",
+    params: { actor },
+    rows: [followerRow],
+    profiles: [profile],
+    organizations: [organization],
     assertions: `
 assert(result.followers[1].follow.indexedAt == NULL_VALUE, 'SQL NULL follow indexed_at must serialize as JSON null')
 assert(result.followers[1].profile.indexedAt == NULL_VALUE, 'SQL NULL profile indexed_at must serialize as JSON null')
@@ -277,19 +380,23 @@ assert(result.followers[1].organization.indexedAt == NULL_VALUE, 'SQL NULL organ
 `,
   });
 
-  const followingRow = followRow('unindexed-following', actor, subject, '2025-01-01T00:00:00Z', { subjectDid: subject });
+  const followingRow = followRow("unindexed-following", actor, subject, "2025-01-01T00:00:00Z", {
+    subjectDid: subject,
+  });
   delete followingRow.indexed_at;
   runLua({
-    endpoint: 'listActorFollowing', params: { actor }, rows: [followingRow],
+    endpoint: "listActorFollowing",
+    params: { actor },
+    rows: [followingRow],
     assertions: `assert(result.following[1].follow.indexedAt == NULL_VALUE, 'SQL NULL follow indexed_at must serialize as JSON null')`,
   });
 });
 
-test('actor-follow lookup and listings guard malformed createdAt and fall back to indexed_at for sorting', () => {
-  for (const endpoint of ['getFollow', 'listActorFollowers', 'listActorFollowing']) {
+test("actor-follow lookup and listings guard malformed createdAt and fall back to indexed_at for sorting", () => {
+  for (const endpoint of ["getFollow", "listActorFollowers", "listActorFollowing"]) {
     runLua({
       endpoint,
-      params: endpoint === 'getFollow' ? { actor, subject } : { actor },
+      params: endpoint === "getFollow" ? { actor, subject } : { actor },
       assertions: `
 assert(calls[1].sql:find("jsonb_typeof(record::jsonb->'createdAt') = 'string'", 1, true))
 assert(calls[1].sql:find('pg_input_is_valid(', 1, true))
@@ -300,19 +407,36 @@ assert(calls[1].sql:find('ORDER BY sorted.sort_at ASC, uri ASC', 1, true))
   }
 });
 
-test('listActorFollowers deduplicates before cursor pagination, sorts newest first, and hydrates only the returned page', () => {
+test("listActorFollowers deduplicates before cursor pagination, sorts newest first, and hydrates only the returned page", () => {
   const rows = [
-    followRow('follower-a', follower, follower, '2025-01-05T00:00:00Z', { via: true }),
-    followRow('follower-b', subject, subject, '2025-01-04T00:00:00Z'),
-    followRow('next-page', 'did:plc:dddddddddddddddddddddddd', 'did:plc:dddddddddddddddddddddddd', '2025-01-03T00:00:00Z'),
+    followRow("follower-a", follower, follower, "2025-01-05T00:00:00Z", { via: true }),
+    followRow("follower-b", subject, subject, "2025-01-04T00:00:00Z"),
+    followRow(
+      "next-page",
+      "did:plc:dddddddddddddddddddddddd",
+      "did:plc:dddddddddddddddddddddddd",
+      "2025-01-03T00:00:00Z",
+    ),
   ];
-  const profile = sidecarRow(profileCollection, follower, { $type: profileCollection, displayName: 'Follower profile' });
-  const organization = sidecarRow(organizationCollection, follower, { $type: organizationCollection, visibility: 'public' });
+  const profile = sidecarRow(profileCollection, follower, {
+    $type: profileCollection,
+    displayName: "Follower profile",
+  });
+  const organization = sidecarRow(organizationCollection, follower, {
+    $type: organizationCollection,
+    visibility: "public",
+  });
   runLua({
-    endpoint: 'listActorFollowers', params: {
-      actor, limit: '2', sortDirection: 'desc',
-      cursor: cursor({ direction: 'desc', timestamp: '2025-01-06T00:00:00.000000Z' }),
-    }, rows, profiles: [profile], organizations: [organization],
+    endpoint: "listActorFollowers",
+    params: {
+      actor,
+      limit: "2",
+      sortDirection: "desc",
+      cursor: cursor({ direction: "desc", timestamp: "2025-01-06T00:00:00.000000Z" }),
+    },
+    rows,
+    profiles: [profile],
+    organizations: [organization],
     assertions: `
 assert(#result.followers == 2 and result.followers[1].did == '${follower}' and result.followers[2].did == '${subject}')
 assert(result.followers[1].follow.did == '${follower}' and result.followers[1].follow.record.via.uri ~= nil)
@@ -348,11 +472,19 @@ assert(token.u == 'at://${subject}/${followCollection}/follower-b')
   });
 });
 
-test('listActorFollowing exposes the followed DID while keeping the publisher DID in the raw record view', () => {
-  const row = followRow('outgoing', actor, subject, '2025-01-06T00:00:00Z', { subjectDid: subject });
-  const profile = sidecarRow(profileCollection, subject, { $type: profileCollection, displayName: 'Followed profile' });
+test("listActorFollowing exposes the followed DID while keeping the publisher DID in the raw record view", () => {
+  const row = followRow("outgoing", actor, subject, "2025-01-06T00:00:00Z", {
+    subjectDid: subject,
+  });
+  const profile = sidecarRow(profileCollection, subject, {
+    $type: profileCollection,
+    displayName: "Followed profile",
+  });
   runLua({
-    endpoint: 'listActorFollowing', params: { actor, sortDirection: 'asc', limit: '1' }, rows: [row], profiles: [profile],
+    endpoint: "listActorFollowing",
+    params: { actor, sortDirection: "asc", limit: "1" },
+    rows: [row],
+    profiles: [profile],
     assertions: `
 assert(#result.following == 1 and result.following[1].did == '${subject}')
 assert(result.following[1].follow.did == '${actor}' and result.following[1].follow.uri == '${row.uri}')
@@ -365,10 +497,20 @@ assert(calls[1].sql:find("ORDER BY sort_at ASC, uri ASC", 1, true))
   });
 });
 
-test('actor-follow totalCount covers all collapsed relationships before pagination, including empty pages', () => {
+test("actor-follow totalCount covers all collapsed relationships before pagination, including empty pages", () => {
   const cases = [
-    { endpoint: 'listActorFollowers', outputKey: 'followers', row: followRow('counted-follower', follower, follower, '2025-01-05T00:00:00Z') },
-    { endpoint: 'listActorFollowing', outputKey: 'following', row: followRow('counted-following', actor, subject, '2025-01-05T00:00:00Z', { subjectDid: subject }) },
+    {
+      endpoint: "listActorFollowers",
+      outputKey: "followers",
+      row: followRow("counted-follower", follower, follower, "2025-01-05T00:00:00Z"),
+    },
+    {
+      endpoint: "listActorFollowing",
+      outputKey: "following",
+      row: followRow("counted-following", actor, subject, "2025-01-05T00:00:00Z", {
+        subjectDid: subject,
+      }),
+    },
   ];
 
   for (const { endpoint, outputKey, row } of cases) {
@@ -384,23 +526,37 @@ assert(sql:find('LEFT JOIN page', 1, true), 'retain the count when the page has 
 `;
     runLua({
       endpoint,
-      params: { actor, limit: '1', sortDirection: 'desc', cursor: cursor({ direction: 'desc', timestamp: '2025-01-06T00:00:00.000000Z' }) },
-      rows: [row], totalCount: 4,
+      params: {
+        actor,
+        limit: "1",
+        sortDirection: "desc",
+        cursor: cursor({ direction: "desc", timestamp: "2025-01-06T00:00:00.000000Z" }),
+      },
+      rows: [row],
+      totalCount: 4,
       assertions,
     });
 
     runLua({
       endpoint,
-      params: { actor, limit: '1', sortDirection: 'desc', cursor: cursor({ direction: 'desc', timestamp: '2024-12-31T00:00:00.000000Z' }) },
-      rows: [], totalCount: 4,
+      params: {
+        actor,
+        limit: "1",
+        sortDirection: "desc",
+        cursor: cursor({ direction: "desc", timestamp: "2024-12-31T00:00:00.000000Z" }),
+      },
+      rows: [],
+      totalCount: 4,
       assertions: `assert(#result.${outputKey} == 0 and result.cursor == nil)\nassert(result.totalCount == 4 and type(result.totalCount) == 'number')\nassert(calls[1].sql:find('(sort_at, uri) <', 1, true), 'apply the beyond-end cursor to the page')\n`,
     });
   }
 });
 
-test('actor-follow listing defaults to 25, allows 100, and returns empty arrays without cursors', () => {
+test("actor-follow listing defaults to 25, allows 100, and returns empty arrays without cursors", () => {
   runLua({
-    endpoint: 'listActorFollowers', params: { actor }, rows: [],
+    endpoint: "listActorFollowers",
+    params: { actor },
+    rows: [],
     assertions: `
 assert(#result.followers == 0 and result.cursor == nil)
 assert(calls[1].values[3] == 26)
@@ -408,43 +564,52 @@ assert(calls[1].sql:find('ORDER BY sort_at DESC, uri DESC', 1, true))
 `,
   });
   runLua({
-    endpoint: 'listActorFollowing', params: { actor, limit: '100' }, rows: [],
-    assertions: 'assert(#result.following == 0 and calls[1].values[3] == 101)',
+    endpoint: "listActorFollowing",
+    params: { actor, limit: "100" },
+    rows: [],
+    assertions: "assert(#result.following == 0 and calls[1].values[3] == 101)",
   });
 });
 
-test('actor-follow queries reject invalid DIDs, limits, scalar repetition, unknown keys, and cursors before querying', () => {
+test("actor-follow queries reject invalid DIDs, limits, scalar repetition, unknown keys, and cursors before querying", () => {
   for (const params of [
-    { actor: 'alice.example' },
-    { actor, limit: '0' },
-    { actor, limit: '101' },
+    { actor: "alice.example" },
+    { actor, limit: "0" },
+    { actor, limit: "101" },
     { actor, limit: { repeated: true } },
-    { actor, sortDirection: 'sideways' },
-    { actor, extra: 'not-supported' },
-    { actor, cursor: 'not-hex' },
-    { actor, cursor: cursor({ timestamp: '2025-02-30T00:00:00Z' }) },
+    { actor, sortDirection: "sideways" },
+    { actor, extra: "not-supported" },
+    { actor, cursor: "not-hex" },
+    { actor, cursor: cursor({ timestamp: "2025-02-30T00:00:00Z" }) },
     { actor, cursor: cursor({ uri: `at://${follower}/app.certified.graph.other/key` }) },
     { actor, cursor: cursor({ uri: `at://${follower}/${followCollection}/.` }) },
-    { actor, cursor: cursor({ uri: `at://${follower}/${followCollection}/${'a'.repeat(513)}` }) },
-    { actor, cursor: cursor({ direction: 'asc' }), sortDirection: 'desc' },
+    { actor, cursor: cursor({ uri: `at://${follower}/${followCollection}/${"a".repeat(513)}` }) },
+    { actor, cursor: cursor({ direction: "asc" }), sortDirection: "desc" },
   ]) {
-    runLua({ endpoint: 'listActorFollowers', params, expectError: 'InvalidRequest:' });
+    runLua({ endpoint: "listActorFollowers", params, expectError: "InvalidRequest:" });
   }
-  runLua({ endpoint: 'getFollow', params: { actor, subject: 'alice.example' }, expectError: 'InvalidRequest:' });
+  runLua({
+    endpoint: "getFollow",
+    params: { actor, subject: "alice.example" },
+    expectError: "InvalidRequest:",
+  });
 });
 
-test('getFollows preserves requested positions and nulls while selecting one raw representative per subject in one query', () => {
+test("getFollows preserves requested positions and nulls while selecting one raw representative per subject in one query", () => {
   const tiedEarliest = {
-    ...followRow('3jzfcijpj2z2a', actor, actor, '2025-01-01T00:00:00Z', { subjectDid: subject }),
+    ...followRow("3jzfcijpj2z2a", actor, actor, "2025-01-01T00:00:00Z", { subjectDid: subject }),
     target: subject,
   };
-  const otherSubject = 'did:plc:dddddddddddddddddddddddd';
+  const otherSubject = "did:plc:dddddddddddddddddddddddd";
   const otherFollow = {
-    ...followRow('other-subject', actor, actor, '2025-01-02T00:00:00Z', { subjectDid: otherSubject }),
+    ...followRow("other-subject", actor, actor, "2025-01-02T00:00:00Z", {
+      subjectDid: otherSubject,
+    }),
     target: otherSubject,
   };
   const output = runLua({
-    endpoint: 'getFollows', params: { actor, subjects: [subject, otherSubject, follower, subject] },
+    endpoint: "getFollows",
+    params: { actor, subjects: [subject, otherSubject, follower, subject] },
     rows: [tiedEarliest, otherFollow],
     assertions: `
 assert(#result.results == 4)
@@ -462,26 +627,54 @@ assert(calls[1].sql:find('DISTINCT ON (requested.target)', 1, true))
 assert(calls[1].sql:find('ORDER BY requested.target, sorted.sort_at ASC, uri ASC', 1, true))
 `,
   });
-  assert.equal(output, '');
+  assert.equal(output, "");
 });
 
-test('getFollows rejects invalid or oversized target arrays before querying and surfaces database failures', () => {
-  const oversizedUrlTargets = Array.from({ length: 4 }, (_, index) => `did:plc:${'a'.repeat(2039)}${index}`);
+test("getFollows rejects invalid or oversized target arrays before querying and surfaces database failures", () => {
+  const oversizedUrlTargets = Array.from(
+    { length: 4 },
+    (_, index) => `did:plc:${"a".repeat(2039)}${index}`,
+  );
   for (const params of [
     { actor },
     { actor, subjects: [] },
-    { actor, subjects: [subject, 'alice.example'] },
+    { actor, subjects: [subject, "alice.example"] },
     { actor, subjects: Array(101).fill(subject) },
     { actor, subjects: oversizedUrlTargets },
-    { actor, subjects: [subject], unexpected: 'value' },
-    { actor: 'alice.example', subjects: [subject] },
-  ]) runLua({ endpoint: 'getFollows', params, expectError: 'InvalidRequest:', expectedCalls: 0 });
+    { actor, subjects: [subject], unexpected: "value" },
+    { actor: "alice.example", subjects: [subject] },
+  ])
+    runLua({ endpoint: "getFollows", params, expectError: "InvalidRequest:", expectedCalls: 0 });
 
-  runLua({ endpoint: 'getFollows', params: { actor, subjects: [subject] }, backend: 'sqlite', expectError: 'ActorFollowQueryFailed:', expectedCalls: 0 });
-  runLua({ endpoint: 'getFollows', params: { actor, subjects: [subject] }, queryFailure: true, expectError: 'ActorFollowQueryFailed:', expectedCalls: 1 });
+  runLua({
+    endpoint: "getFollows",
+    params: { actor, subjects: [subject] },
+    backend: "sqlite",
+    expectError: "ActorFollowQueryFailed:",
+    expectedCalls: 0,
+  });
+  runLua({
+    endpoint: "getFollows",
+    params: { actor, subjects: [subject] },
+    queryFailure: true,
+    expectError: "ActorFollowQueryFailed:",
+    expectedCalls: 1,
+  });
 });
 
-test('actor-follow queries surface the beta PostgreSQL-only and operational failure errors', () => {
-  runLua({ endpoint: 'listActorFollowers', params: { actor }, backend: 'sqlite', expectError: 'ActorFollowQueryFailed:', expectedCalls: 0 });
-  runLua({ endpoint: 'listActorFollowers', params: { actor }, queryFailure: true, expectError: 'ActorFollowQueryFailed:', expectedCalls: 1 });
+test("actor-follow queries surface the beta PostgreSQL-only and operational failure errors", () => {
+  runLua({
+    endpoint: "listActorFollowers",
+    params: { actor },
+    backend: "sqlite",
+    expectError: "ActorFollowQueryFailed:",
+    expectedCalls: 0,
+  });
+  runLua({
+    endpoint: "listActorFollowers",
+    params: { actor },
+    queryFailure: true,
+    expectError: "ActorFollowQueryFailed:",
+    expectedCalls: 1,
+  });
 });

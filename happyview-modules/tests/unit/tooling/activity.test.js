@@ -1,60 +1,91 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
-import { spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
-const root = fileURLToPath(new URL('../../../', import.meta.url));
-const ACTIVITY = 'org.hypercerts.claim.activity';
-const CONTRIBUTOR_INFORMATION = 'org.hypercerts.claim.contributorInformation';
-const PROFILE = 'app.certified.actor.profile';
-const ORGANIZATION = 'app.certified.actor.organization';
-const authorDid = 'did:plc:aaaaaaaaaaaaaaaaaaaaaaaa';
-const contributorDid = 'did:plc:bbbbbbbbbbbbbbbbbbbbbbbb';
+const root = fileURLToPath(new URL("../../../", import.meta.url));
+const ACTIVITY = "org.hypercerts.claim.activity";
+const CONTRIBUTOR_INFORMATION = "org.hypercerts.claim.contributorInformation";
+const PROFILE = "app.certified.actor.profile";
+const ORGANIZATION = "app.certified.actor.organization";
+const authorDid = "did:plc:aaaaaaaaaaaaaaaaaaaaaaaa";
+const contributorDid = "did:plc:bbbbbbbbbbbbbbbbbbbbbbbb";
 const activityUri = `at://${authorDid}/${ACTIVITY}/activity-one`;
 const contributorInformationUri = `at://${authorDid}/${CONTRIBUTOR_INFORMATION}/3jzfcijpj2z2a`;
-const oldCid = 'bafyreiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
-const latestCid = 'bafyreibbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
-const indexedAt = '2025-01-02T03:04:05.000Z';
+const oldCid = "bafyreiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+const latestCid = "bafyreibbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+const indexedAt = "2025-01-02T03:04:05.000Z";
 const activityRecord = {
   $type: ACTIVITY,
-  title: 'Version-pinned activity',
-  shortDescription: 'Contributor information must match the referenced CID.',
+  title: "Version-pinned activity",
+  shortDescription: "Contributor information must match the referenced CID.",
   createdAt: indexedAt,
   contributors: [
-    { contributorIdentity: { uri: contributorInformationUri, cid: oldCid }, contributionWeight: 'first' },
-    { contributorIdentity: { uri: contributorInformationUri, cid: oldCid }, contributionWeight: 'second' },
-    { contributorIdentity: { identity: contributorDid }, contributionWeight: 'third' },
+    {
+      contributorIdentity: { uri: contributorInformationUri, cid: oldCid },
+      contributionWeight: "first",
+    },
+    {
+      contributorIdentity: { uri: contributorInformationUri, cid: oldCid },
+      contributionWeight: "second",
+    },
+    { contributorIdentity: { identity: contributorDid }, contributionWeight: "third" },
   ],
 };
 const rows = [
   {
-    uri: activityUri, did: authorDid, collection: ACTIVITY, cid: 'bafyreicccccccccccccccccccccccccccccccccccccccccccccccccccc',
-    indexed_at: indexedAt, record: 'activity', record_json: activityRecord,
+    uri: activityUri,
+    did: authorDid,
+    collection: ACTIVITY,
+    cid: "bafyreicccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    indexed_at: indexedAt,
+    record: "activity",
+    record_json: activityRecord,
   },
   {
-    uri: `at://${authorDid}/${PROFILE}/self`, did: authorDid, collection: PROFILE, cid: 'bafyreidddddddddddddddddddddddddddddddddddddddddddddddddddd',
-    indexed_at: indexedAt, record: 'author-profile', record_json: { $type: PROFILE, displayName: 'Activity author', createdAt: indexedAt },
+    uri: `at://${authorDid}/${PROFILE}/self`,
+    did: authorDid,
+    collection: PROFILE,
+    cid: "bafyreidddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    indexed_at: indexedAt,
+    record: "author-profile",
+    record_json: { $type: PROFILE, displayName: "Activity author", createdAt: indexedAt },
   },
   {
-    uri: contributorInformationUri, did: authorDid, collection: CONTRIBUTOR_INFORMATION, cid: latestCid,
-    indexed_at: indexedAt, record: 'latest-contributor-information', record_json: {
-      $type: CONTRIBUTOR_INFORMATION, identifier: contributorDid, displayName: 'Newer version only', createdAt: indexedAt,
+    uri: contributorInformationUri,
+    did: authorDid,
+    collection: CONTRIBUTOR_INFORMATION,
+    cid: latestCid,
+    indexed_at: indexedAt,
+    record: "latest-contributor-information",
+    record_json: {
+      $type: CONTRIBUTOR_INFORMATION,
+      identifier: contributorDid,
+      displayName: "Newer version only",
+      createdAt: indexedAt,
     },
   },
   {
-    uri: `at://${contributorDid}/${PROFILE}/self`, did: contributorDid, collection: PROFILE, cid: 'bafyreieeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
-    indexed_at: indexedAt, record: 'contributor-profile', record_json: { $type: PROFILE, displayName: 'Inline contributor', createdAt: indexedAt },
+    uri: `at://${contributorDid}/${PROFILE}/self`,
+    did: contributorDid,
+    collection: PROFILE,
+    cid: "bafyreieeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    indexed_at: indexedAt,
+    record: "contributor-profile",
+    record_json: { $type: PROFILE, displayName: "Inline contributor", createdAt: indexedAt },
   },
 ];
 
 function lua(value) {
-  if (value === null) return 'nil';
-  if (typeof value === 'string') return JSON.stringify(value);
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-  if (Array.isArray(value)) return `{${value.map(lua).join(',')}}`;
-  if (value && typeof value === 'object') {
-    return `{${Object.entries(value).map(([key, item]) => `[${JSON.stringify(key)}]=${lua(item)}`).join(',')}}`;
+  if (value === null) return "nil";
+  if (typeof value === "string") return JSON.stringify(value);
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value)) return `{${value.map(lua).join(",")}}`;
+  if (value && typeof value === "object") {
+    return `{${Object.entries(value)
+      .map(([key, item]) => `[${JSON.stringify(key)}]=${lua(item)}`)
+      .join(",")}}`;
   }
   throw new TypeError(`Cannot encode ${typeof value} as a Lua fixture`);
 }
@@ -65,65 +96,124 @@ function withoutRecordJson(row) {
   return databaseRow;
 }
 
-test('activity API manifests and Lexicons declare the implemented endpoint contracts', async () => {
-  const manifest = JSON.parse(await readFile(new URL('../../../manifest.json', import.meta.url), 'utf8'));
-  const module = JSON.parse(await readFile(new URL('../../../modules/activity/manifest.json', import.meta.url), 'utf8'));
-  assert.ok(manifest.modules.includes('modules/activity/manifest.json'));
-  for (const nsid of ['org.hypercerts.claim.activity', 'org.hypercerts.claim.contributorInformation']) {
-    assert.ok(manifest.validationLexicons.some(({ id, packagePath }) => id === nsid && packagePath));
+test("activity API manifests and Lexicons declare the implemented endpoint contracts", async () => {
+  const manifest = JSON.parse(
+    await readFile(new URL("../../../manifest.json", import.meta.url), "utf8"),
+  );
+  const module = JSON.parse(
+    await readFile(new URL("../../../modules/activity/manifest.json", import.meta.url), "utf8"),
+  );
+  assert.ok(manifest.modules.includes("modules/activity/manifest.json"));
+  for (const nsid of [
+    "org.hypercerts.claim.activity",
+    "org.hypercerts.claim.contributorInformation",
+  ]) {
+    assert.ok(
+      manifest.validationLexicons.some(({ id, packagePath }) => id === nsid && packagePath),
+    );
   }
 
-  const endpointNames = ['getActivity', 'listActivities', 'searchActivities'];
+  const endpointNames = ["getActivity", "listActivities", "searchActivities"];
   for (const name of endpointNames) {
     const nsid = `org.hypercerts.claim.${name}`;
     const lexiconPath = `../../../lexicons/${nsid}.json`;
-    const schema = JSON.parse(await readFile(new URL(lexiconPath, import.meta.url), 'utf8'));
+    const schema = JSON.parse(await readFile(new URL(lexiconPath, import.meta.url), "utf8"));
     assert.equal(schema.id, nsid);
     assert.ok(manifest.validationLexicons.some(({ id, path }) => id === nsid && path));
-    const script = module.assets.find(({ kind, id }) => kind === 'script' && id === `xrpc.query:${nsid}`);
+    const script = module.assets.find(
+      ({ kind, id }) => kind === "script" && id === `xrpc.query:${nsid}`,
+    );
     assert.ok(script, `missing handler declaration for ${nsid}`);
     assert.equal(script.sourcePath, `../../lua/src/${name}.lua`);
   }
 
-  const getSchema = JSON.parse(await readFile(new URL('../../../lexicons/org.hypercerts.claim.getActivity.json', import.meta.url), 'utf8'));
-  assert.deepEqual(getSchema.defs.main.parameters.required, ['uri']);
-  assert.deepEqual(getSchema.defs.activityView.required, ['uri', 'cid', 'indexedAt', 'did', 'author', 'record']);
-  assert.deepEqual(getSchema.defs.activityView.nullable, ['indexedAt']);
-  assert.deepEqual(getSchema.defs.contributorInformationView.required, ['uri', 'cid', 'indexedAt', 'did', 'record']);
-  assert.deepEqual(getSchema.defs.contributorInformationView.nullable, ['indexedAt']);
-  assert.deepEqual(getSchema.defs.activityContributorView.required, ['contributorIdentity', 'contributorInformation', 'actor']);
-  assert.deepEqual(getSchema.defs.activityContributorView.nullable, ['contributorInformation', 'actor']);
-  assert.deepEqual(getSchema.defs.contributorActorView.required, ['did', 'profile']);
-  assert.deepEqual(getSchema.defs.contributorActorView.nullable, ['profile']);
+  const getSchema = JSON.parse(
+    await readFile(
+      new URL("../../../lexicons/org.hypercerts.claim.getActivity.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(getSchema.defs.main.parameters.required, ["uri"]);
+  assert.deepEqual(getSchema.defs.activityView.required, [
+    "uri",
+    "cid",
+    "indexedAt",
+    "did",
+    "author",
+    "record",
+  ]);
+  assert.deepEqual(getSchema.defs.activityView.nullable, ["indexedAt"]);
+  assert.deepEqual(getSchema.defs.contributorInformationView.required, [
+    "uri",
+    "cid",
+    "indexedAt",
+    "did",
+    "record",
+  ]);
+  assert.deepEqual(getSchema.defs.contributorInformationView.nullable, ["indexedAt"]);
+  assert.deepEqual(getSchema.defs.activityContributorView.required, [
+    "contributorIdentity",
+    "contributorInformation",
+    "actor",
+  ]);
+  assert.deepEqual(getSchema.defs.activityContributorView.nullable, [
+    "contributorInformation",
+    "actor",
+  ]);
+  assert.deepEqual(getSchema.defs.contributorActorView.required, ["did", "profile"]);
+  assert.deepEqual(getSchema.defs.contributorActorView.nullable, ["profile"]);
 
-  const listSchema = JSON.parse(await readFile(new URL('../../../lexicons/org.hypercerts.claim.listActivities.json', import.meta.url), 'utf8'));
-  const searchSchema = JSON.parse(await readFile(new URL('../../../lexicons/org.hypercerts.claim.searchActivities.json', import.meta.url), 'utf8'));
+  const listSchema = JSON.parse(
+    await readFile(
+      new URL("../../../lexicons/org.hypercerts.claim.listActivities.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  const searchSchema = JSON.parse(
+    await readFile(
+      new URL("../../../lexicons/org.hypercerts.claim.searchActivities.json", import.meta.url),
+      "utf8",
+    ),
+  );
   assert.equal(listSchema.defs.main.parameters.properties.uris.maxLength, 100);
   assert.equal(listSchema.defs.main.parameters.properties.limit.maximum, 100);
-  assert.deepEqual(searchSchema.defs.main.parameters.required, ['search']);
+  assert.deepEqual(searchSchema.defs.main.parameters.required, ["search"]);
   assert.equal(searchSchema.defs.main.parameters.properties.contributors.maxLength, 100);
   for (const schema of [listSchema, searchSchema]) {
     const properties = schema.defs.main.parameters.properties;
-    assert.equal(properties.hasOrganizationRecord.type, 'boolean');
+    assert.equal(properties.hasOrganizationRecord.type, "boolean");
     assert.match(properties.hasOrganizationRecord.description, /organization\/self/i);
     assert.match(properties.hasOrganizationRecord.description, /regardless of profile/i);
-    assert.equal(Object.hasOwn(properties, 'authorType'), false);
+    assert.equal(Object.hasOwn(properties, "authorType"), false);
   }
-  assert.equal(listSchema.defs.output.properties.activities.items.ref, `${getSchema.id}#activityView`);
-  assert.equal(searchSchema.defs.output.properties.activities.items.ref, `${getSchema.id}#activityView`);
+  assert.equal(
+    listSchema.defs.output.properties.activities.items.ref,
+    `${getSchema.id}#activityView`,
+  );
+  assert.equal(
+    searchSchema.defs.output.properties.activities.items.ref,
+    `${getSchema.id}#activityView`,
+  );
 });
 
 function runGetActivity({
   uri = activityUri,
   recordJson = activityRecord,
-  assertions = '',
+  assertions = "",
   activityIndexedAt = indexedAt,
   extraRows = [],
   serialize = false,
 } = {}) {
-  const activityDatabaseRow = { ...rows[0], uri, indexed_at: activityIndexedAt, record_json: recordJson };
+  const activityDatabaseRow = {
+    ...rows[0],
+    uri,
+    indexed_at: activityIndexedAt,
+    record_json: recordJson,
+  };
   const scenarioRows = [activityDatabaseRow, ...rows.slice(1), ...extraRows];
-  const records = Object.fromEntries(scenarioRows.map(({ record, record_json }) => [record, record_json]));
+  const records = Object.fromEntries(
+    scenarioRows.map(({ record, record_json }) => [record, record_json]),
+  );
   const databaseRows = scenarioRows.map(withoutRecordJson);
   const source = `
 local NULL = {}
@@ -217,57 +307,75 @@ local result = handle()
 local activity = result.activity
 assert(activity.uri == '${uri}')
 ${assertions}
-${serialize ? 'print(json.encode(result))' : ''}
+${serialize ? "print(json.encode(result))" : ""}
 `;
-  return spawnSync('lua5.4', ['-e', source], { cwd: root, encoding: 'utf8' });
+  return spawnSync("lua5.4", ["-e", source], { cwd: root, encoding: "utf8" });
 }
 
-test('getActivity serializes a null activity indexed_at as explicit JSON null', () => {
+test("getActivity serializes a null activity indexed_at as explicit JSON null", () => {
   const result = runGetActivity({ activityIndexedAt: null, serialize: true });
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 
   const body = JSON.parse(result.stdout);
-  assert.equal(Object.hasOwn(body.activity, 'indexedAt'), true);
+  assert.equal(Object.hasOwn(body.activity, "indexedAt"), true);
   assert.equal(body.activity.indexedAt, null);
 });
 
-test('getActivity skips legacy string contributors in a dense projection and preserves the source record', () => {
+test("getActivity skips legacy string contributors in a dense projection and preserves the source record", () => {
   const legacyUris = [
-    'at://did:web:legacy-one.invalid/org.hypercerts.claim.contributorInformation/old',
-    'at://did:web:legacy-two.invalid/org.hypercerts.claim.contributorInformation/older',
+    "at://did:web:legacy-one.invalid/org.hypercerts.claim.contributorInformation/old",
+    "at://did:web:legacy-two.invalid/org.hypercerts.claim.contributorInformation/older",
   ];
   const mixedRecord = {
     $type: ACTIVITY,
-    title: 'Legacy contributors',
+    title: "Legacy contributors",
     createdAt: indexedAt,
     contributors: [
       legacyUris[0],
-      { contributorIdentity: { identity: contributorDid }, contributionWeight: 'first object' },
+      { contributorIdentity: { identity: contributorDid }, contributionWeight: "first object" },
       legacyUris[1],
-      { contributorIdentity: { identity: contributorDid }, contributionWeight: 'second object' },
+      { contributorIdentity: { identity: contributorDid }, contributionWeight: "second object" },
     ],
   };
   const mixed = runGetActivity({ recordJson: mixedRecord, serialize: true });
   assert.equal(mixed.status, 0, `${mixed.stderr}${mixed.stdout}`);
   const mixedActivity = JSON.parse(mixed.stdout).activity;
   assert.deepEqual(mixedActivity.record, mixedRecord);
-  assert.deepEqual(mixedActivity.contributors.map(({ contributionWeight }) => contributionWeight), ['first object', 'second object']);
-  assert.deepEqual(mixedActivity.contributors.map(({ actor }) => actor.did), [contributorDid, contributorDid]);
-  assert.deepEqual(mixedActivity.contributors.map(({ actor }) => actor.profile.record.displayName), ['Inline contributor', 'Inline contributor']);
+  assert.deepEqual(
+    mixedActivity.contributors.map(({ contributionWeight }) => contributionWeight),
+    ["first object", "second object"],
+  );
+  assert.deepEqual(
+    mixedActivity.contributors.map(({ actor }) => actor.did),
+    [contributorDid, contributorDid],
+  );
+  assert.deepEqual(
+    mixedActivity.contributors.map(({ actor }) => actor.profile.record.displayName),
+    ["Inline contributor", "Inline contributor"],
+  );
 
   const allLegacyRecord = { ...mixedRecord, contributors: legacyUris };
   const allLegacy = runGetActivity({ recordJson: allLegacyRecord, serialize: true });
   assert.equal(allLegacy.status, 0, `${allLegacy.stderr}${allLegacy.stdout}`);
   const allLegacyActivity = JSON.parse(allLegacy.stdout).activity;
   assert.deepEqual(allLegacyActivity.record, allLegacyRecord);
-  assert.deepEqual(allLegacyActivity.contributors, [], 'a present source array with only legacy entries projects as an empty array');
+  assert.deepEqual(
+    allLegacyActivity.contributors,
+    [],
+    "a present source array with only legacy entries projects as an empty array",
+  );
 });
 
-test('getActivity serializes exact-version contributor indexed_at null and timestamp strings', () => {
+test("getActivity serializes exact-version contributor indexed_at null and timestamp strings", () => {
   const exactInformation = {
-    ...rows[2], cid: oldCid, record: 'exact-contributor-information',
+    ...rows[2],
+    cid: oldCid,
+    record: "exact-contributor-information",
     record_json: {
-      $type: CONTRIBUTOR_INFORMATION, identifier: contributorDid, displayName: 'Exact version', createdAt: indexedAt,
+      $type: CONTRIBUTOR_INFORMATION,
+      identifier: contributorDid,
+      displayName: "Exact version",
+      createdAt: indexedAt,
     },
   };
   const serializeActivity = (informationIndexedAt) => {
@@ -282,7 +390,7 @@ test('getActivity serializes exact-version contributor indexed_at null and times
   const nullable = serializeActivity(null);
   assert.equal(nullable.indexedAt, indexedAt);
   assert.equal(nullable.contributors[0].contributorInformation.cid, oldCid);
-  assert.equal(Object.hasOwn(nullable.contributors[0].contributorInformation, 'indexedAt'), true);
+  assert.equal(Object.hasOwn(nullable.contributors[0].contributorInformation, "indexedAt"), true);
   assert.equal(nullable.contributors[0].contributorInformation.indexedAt, null);
 
   const timestamped = serializeActivity(indexedAt);
@@ -290,22 +398,43 @@ test('getActivity serializes exact-version contributor indexed_at null and times
   assert.equal(timestamped.contributors[0].contributorInformation.indexedAt, indexedAt);
 });
 
-test('getActivity includes an indexed organization sidecar in the fully hydrated author', () => {
+test("getActivity includes an indexed organization sidecar in the fully hydrated author", () => {
   const uri = `at://${authorDid}/${ACTIVITY}/organization-author`;
   const activity = activityRow({
-    uri, cid: 'bafyreillllllllllllllllllllllllllllllllllllllllllllllllllll',
-    record: { title: 'Organization author', shortDescription: 'Author hydration', createdAt: indexedAt },
+    uri,
+    cid: "bafyreillllllllllllllllllllllllllllllllllllllllllllllllllll",
+    record: {
+      title: "Organization author",
+      shortDescription: "Author hydration",
+      createdAt: indexedAt,
+    },
   });
   const profile = {
-    uri: `at://${authorDid}/${PROFILE}/self`, did: authorDid, collection: PROFILE, cid: 'bafyreimmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm',
-    indexed_at: indexedAt, record: 'organization-author-profile', record_json: { $type: PROFILE, displayName: 'Organization author profile', createdAt: indexedAt },
+    uri: `at://${authorDid}/${PROFILE}/self`,
+    did: authorDid,
+    collection: PROFILE,
+    cid: "bafyreimmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
+    indexed_at: indexedAt,
+    record: "organization-author-profile",
+    record_json: {
+      $type: PROFILE,
+      displayName: "Organization author profile",
+      createdAt: indexedAt,
+    },
   };
   const organization = {
-    uri: `at://${authorDid}/${ORGANIZATION}/self`, did: authorDid, collection: ORGANIZATION, cid: 'bafyreinnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn',
-    indexed_at: indexedAt, record: 'organization-author-sidecar', record_json: { $type: ORGANIZATION, organizationType: ['nonprofit'], createdAt: indexedAt },
+    uri: `at://${authorDid}/${ORGANIZATION}/self`,
+    did: authorDid,
+    collection: ORGANIZATION,
+    cid: "bafyreinnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+    indexed_at: indexedAt,
+    record: "organization-author-sidecar",
+    record_json: { $type: ORGANIZATION, organizationType: ["nonprofit"], createdAt: indexedAt },
   };
   const result = runLuaEndpoint({
-    endpoint: 'getActivity', params: { uri }, queryResults: [[activity], [profile], [organization]],
+    endpoint: "getActivity",
+    params: { uri },
+    queryResults: [[activity], [profile], [organization]],
     assertions: `
 assert(result.activity.author.profile.record.displayName == 'Organization author profile')
 assert(result.activity.author.organization.uri == '${organization.uri}')
@@ -316,8 +445,9 @@ assert(result.activity.author.organization.record.organizationType[1] == 'nonpro
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-test('getActivity does not substitute a newer contributor-information record at the same URI', () => {
-  const result = runGetActivity({ assertions: `
+test("getActivity does not substitute a newer contributor-information record at the same URI", () => {
+  const result = runGetActivity({
+    assertions: `
 assert(activity.record.title == 'Version-pinned activity')
 assert(#activity.record.contributors == 3)
 assert(activity.record.contributors[1].contributorIdentity.uri == '${contributorInformationUri}')
@@ -344,12 +474,24 @@ for _, call in ipairs(calls) do
   end
 end
 assert(checkedExactCid, 'expected an exact contributor-information version lookup')
-` });
+`,
+  });
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-function runLuaEndpoint({ endpoint, params, queryResults, assertions = '', expectError, expectedCalls = 0, backend = 'postgres', queryFailureAt = 0 }) {
-  const recordMap = Object.fromEntries(queryResults.flat().map(({ record, record_json }) => [record, record_json]));
+function runLuaEndpoint({
+  endpoint,
+  params,
+  queryResults,
+  assertions = "",
+  expectError,
+  expectedCalls = 0,
+  backend = "postgres",
+  queryFailureAt = 0,
+}) {
+  const recordMap = Object.fromEntries(
+    queryResults.flat().map(({ record, record_json }) => [record, record_json]),
+  );
   const rowsByCall = queryResults.map((result) => result.map(withoutRecordJson));
   const source = `
 local RECORDS = ${lua(recordMap)}
@@ -387,63 +529,81 @@ db = {
 }
 dofile('lua/endpoints/${endpoint}.lua')
 local ok, result = pcall(handle)
-${expectError
+${
+  expectError
     ? `assert(not ok, 'expected request to fail')\nassert(tostring(result):find('${expectError}', 1, true), tostring(result))\nassert(#calls == ${expectedCalls}, 'unexpected query count')`
-    : `assert(ok, tostring(result))\n${assertions}`}
+    : `assert(ok, tostring(result))\n${assertions}`
+}
 `;
-  return spawnSync('lua5.4', ['-e', source], { cwd: root, encoding: 'utf8' });
+  return spawnSync("lua5.4", ["-e", source], { cwd: root, encoding: "utf8" });
 }
 
 function activityRow({ uri, did = authorDid, record, cid, sortTimestamp }) {
   return {
-    uri, did, collection: ACTIVITY, cid, indexed_at: indexedAt,
-    record: uri, record_json: { $type: ACTIVITY, ...record },
+    uri,
+    did,
+    collection: ACTIVITY,
+    cid,
+    indexed_at: indexedAt,
+    record: uri,
+    record_json: { $type: ACTIVITY, ...record },
     ...(sortTimestamp ? { sort_timestamp: sortTimestamp } : {}),
   };
 }
 
-test('listActivities continues cursor pages across mixed and all-legacy contributor records', () => {
+test("listActivities continues cursor pages across mixed and all-legacy contributor records", () => {
   const legacyUris = [
-    'at://did:web:legacy-one.invalid/org.hypercerts.claim.contributorInformation/old',
-    'at://did:web:legacy-two.invalid/org.hypercerts.claim.contributorInformation/older',
+    "at://did:web:legacy-one.invalid/org.hypercerts.claim.contributorInformation/old",
+    "at://did:web:legacy-two.invalid/org.hypercerts.claim.contributorInformation/older",
   ];
   const first = activityRow({
     uri: `at://${authorDid}/${ACTIVITY}/cursor-first`,
-    cid: 'bafyreiggggggggggggggggggggggggggggggggggggggggggggggggggg',
-    sortTimestamp: '2025-01-01T00:00:00.000000Z',
-    record: { title: 'Cursor first', createdAt: '2025-01-01T00:00:00Z' },
+    cid: "bafyreiggggggggggggggggggggggggggggggggggggggggggggggggggg",
+    sortTimestamp: "2025-01-01T00:00:00.000000Z",
+    record: { title: "Cursor first", createdAt: "2025-01-01T00:00:00Z" },
   });
   const mixed = activityRow({
     uri: `at://${authorDid}/${ACTIVITY}/cursor-mixed`,
-    cid: 'bafyreihhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh',
-    sortTimestamp: '2025-01-02T00:00:00.000000Z',
+    cid: "bafyreihhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh",
+    sortTimestamp: "2025-01-02T00:00:00.000000Z",
     record: {
-      title: 'Cursor mixed', createdAt: '2025-01-02T00:00:00Z',
+      title: "Cursor mixed",
+      createdAt: "2025-01-02T00:00:00Z",
       contributors: [
         legacyUris[0],
-        { contributorIdentity: { identity: contributorDid }, contributionWeight: 'kept object' },
+        { contributorIdentity: { identity: contributorDid }, contributionWeight: "kept object" },
         legacyUris[1],
       ],
     },
   });
   const allLegacy = activityRow({
     uri: `at://${authorDid}/${ACTIVITY}/cursor-legacy`,
-    cid: 'bafyreijjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj',
-    sortTimestamp: '2025-01-03T00:00:00.000000Z',
-    record: { title: 'Cursor legacy', createdAt: '2025-01-03T00:00:00Z', contributors: legacyUris },
+    cid: "bafyreijjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj",
+    sortTimestamp: "2025-01-03T00:00:00.000000Z",
+    record: { title: "Cursor legacy", createdAt: "2025-01-03T00:00:00Z", contributors: legacyUris },
   });
   const profile = (did, displayName) => ({
-    uri: `at://${did}/${PROFILE}/self`, did, collection: PROFILE,
-    cid: 'bafyreikkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk',
-    indexed_at: indexedAt, record: `profile-${did}`,
+    uri: `at://${did}/${PROFILE}/self`,
+    did,
+    collection: PROFILE,
+    cid: "bafyreikkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    indexed_at: indexedAt,
+    record: `profile-${did}`,
     record_json: { $type: PROFILE, displayName, createdAt: indexedAt },
   });
   const result = runLuaEndpoint({
-    endpoint: 'listActivities', params: { limit: '1' },
+    endpoint: "listActivities",
+    params: { limit: "1" },
     queryResults: [
-      [first, mixed], [profile(authorDid, 'Page author')], [],
-      [mixed, allLegacy], [profile(authorDid, 'Page author'), profile(contributorDid, 'Inline contributor')], [],
-      [allLegacy], [profile(authorDid, 'Page author')], [],
+      [first, mixed],
+      [profile(authorDid, "Page author")],
+      [],
+      [mixed, allLegacy],
+      [profile(authorDid, "Page author"), profile(contributorDid, "Inline contributor")],
+      [],
+      [allLegacy],
+      [profile(authorDid, "Page author")],
+      [],
     ],
     assertions: `
 assert(#result.activities == 1 and result.activities[1].uri == '${first.uri}')
@@ -469,28 +629,42 @@ assert(thirdPage.cursor == nil and #calls == 9)
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-test('listActivities hydrates actor profiles across multiple bounded lookup batches', () => {
-  const contributorDids = Array.from({ length: 501 }, (_, index) => `did:web:contributor-${index}.example`);
+test("listActivities hydrates actor profiles across multiple bounded lookup batches", () => {
+  const contributorDids = Array.from(
+    { length: 501 },
+    (_, index) => `did:web:contributor-${index}.example`,
+  );
   const uri = `at://${authorDid}/${ACTIVITY}/many-contributors`;
   const activity = activityRow({
-    uri, cid: 'bafyreiggggggggggggggggggggggggggggggggggggggggggggggggggg',
+    uri,
+    cid: "bafyreiggggggggggggggggggggggggggggggggggggggggggggggggggg",
     record: {
-      title: 'Activity with many contributors', createdAt: indexedAt,
+      title: "Activity with many contributors",
+      createdAt: indexedAt,
       contributors: contributorDids.map((identity) => ({ contributorIdentity: { identity } })),
     },
   });
   const profile = (did, displayName) => ({
-    uri: `at://${did}/${PROFILE}/self`, did, collection: PROFILE,
-    cid: 'bafyreikkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk',
-    indexed_at: indexedAt, record: `profile-${did}`,
+    uri: `at://${did}/${PROFILE}/self`,
+    did,
+    collection: PROFILE,
+    cid: "bafyreikkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    indexed_at: indexedAt,
+    record: `profile-${did}`,
     record_json: { $type: PROFILE, displayName, createdAt: indexedAt },
   });
-  const authorProfile = profile(authorDid, 'Batched author');
-  const firstContributorProfile = profile(contributorDids[0], 'First batch contributor');
-  const lastContributorProfile = profile(contributorDids.at(-1), 'Last batch contributor');
+  const authorProfile = profile(authorDid, "Batched author");
+  const firstContributorProfile = profile(contributorDids[0], "First batch contributor");
+  const lastContributorProfile = profile(contributorDids.at(-1), "Last batch contributor");
   const result = runLuaEndpoint({
-    endpoint: 'listActivities', params: {},
-    queryResults: [[activity], [authorProfile, firstContributorProfile], [lastContributorProfile], []],
+    endpoint: "listActivities",
+    params: {},
+    queryResults: [
+      [activity],
+      [authorProfile, firstContributorProfile],
+      [lastContributorProfile],
+      [],
+    ],
     assertions: `
 local activity = result.activities[1]
 assert(#result.activities == 1 and activity.uri == '${uri}')
@@ -506,47 +680,83 @@ assert(#calls[2].values <= 501 and #calls[3].values <= 501, 'each actor lookup m
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-test('listActivities combines actor, organization-record, URI, and contributor filters before paging and hydrates only the page', () => {
+test("listActivities combines actor, organization-record, URI, and contributor filters before paging and hydrates only the page", () => {
   const firstUri = `at://${authorDid}/${ACTIVITY}/first`;
   const lookaheadUri = `at://${authorDid}/${ACTIVITY}/lookahead`;
-  const exactInfoCid = 'bafyreiffffffffffffffffffffffffffffffffffffffffffffffffffff';
+  const exactInfoCid = "bafyreiffffffffffffffffffffffffffffffffffffffffffffffffffff";
   const lookaheadInfoUri = `at://${authorDid}/${CONTRIBUTOR_INFORMATION}/lookahead`;
   const exactInfoUri = `at://${authorDid}/${CONTRIBUTOR_INFORMATION}/exact`;
   const first = activityRow({
-    uri: firstUri, cid: 'bafyreiggggggggggggggggggggggggggggggggggggggggggggggggggg',
-    sortTimestamp: '2025-01-01T00:00:00.000000Z',
+    uri: firstUri,
+    cid: "bafyreiggggggggggggggggggggggggggggggggggggggggggggggggggg",
+    sortTimestamp: "2025-01-01T00:00:00.000000Z",
     record: {
-      title: 'First activity', shortDescription: 'Matching contributor', createdAt: '2025-01-01T00:00:00Z',
+      title: "First activity",
+      shortDescription: "Matching contributor",
+      createdAt: "2025-01-01T00:00:00Z",
       contributors: [{ contributorIdentity: { uri: exactInfoUri, cid: exactInfoCid } }],
     },
   });
   const lookahead = activityRow({
-    uri: lookaheadUri, cid: 'bafyreihhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh',
-    sortTimestamp: '2025-01-02T00:00:00.000000Z',
+    uri: lookaheadUri,
+    cid: "bafyreihhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh",
+    sortTimestamp: "2025-01-02T00:00:00.000000Z",
     record: {
-      title: 'Lookahead activity', shortDescription: 'Must not be hydrated', createdAt: '2025-01-02T00:00:00Z',
-      contributors: [{ contributorIdentity: { uri: lookaheadInfoUri, cid: 'bafyreijjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj' } }],
+      title: "Lookahead activity",
+      shortDescription: "Must not be hydrated",
+      createdAt: "2025-01-02T00:00:00Z",
+      contributors: [
+        {
+          contributorIdentity: {
+            uri: lookaheadInfoUri,
+            cid: "bafyreijjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj",
+          },
+        },
+      ],
     },
   });
   const info = {
-    uri: exactInfoUri, did: authorDid, collection: CONTRIBUTOR_INFORMATION, cid: exactInfoCid,
-    indexed_at: indexedAt, record: 'exact-info', record_json: {
-      $type: CONTRIBUTOR_INFORMATION, identifier: contributorDid, displayName: 'Exact contributor', createdAt: indexedAt,
+    uri: exactInfoUri,
+    did: authorDid,
+    collection: CONTRIBUTOR_INFORMATION,
+    cid: exactInfoCid,
+    indexed_at: indexedAt,
+    record: "exact-info",
+    record_json: {
+      $type: CONTRIBUTOR_INFORMATION,
+      identifier: contributorDid,
+      displayName: "Exact contributor",
+      createdAt: indexedAt,
     },
   };
   const authorProfile = {
-    uri: `at://${authorDid}/${PROFILE}/self`, did: authorDid, collection: PROFILE, cid: 'bafyreikkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk',
-    indexed_at: indexedAt, record: 'list-author-profile', record_json: { $type: PROFILE, displayName: 'List author', createdAt: indexedAt },
+    uri: `at://${authorDid}/${PROFILE}/self`,
+    did: authorDid,
+    collection: PROFILE,
+    cid: "bafyreikkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    indexed_at: indexedAt,
+    record: "list-author-profile",
+    record_json: { $type: PROFILE, displayName: "List author", createdAt: indexedAt },
   };
   const contributorProfile = {
-    uri: `at://${contributorDid}/${PROFILE}/self`, did: contributorDid, collection: PROFILE, cid: 'bafyreillllllllllllllllllllllllllllllllllllllllllllllllllll',
-    indexed_at: indexedAt, record: 'list-contributor-profile', record_json: { $type: PROFILE, displayName: 'List contributor', createdAt: indexedAt },
+    uri: `at://${contributorDid}/${PROFILE}/self`,
+    did: contributorDid,
+    collection: PROFILE,
+    cid: "bafyreillllllllllllllllllllllllllllllllllllllllllllllllllll",
+    indexed_at: indexedAt,
+    record: "list-contributor-profile",
+    record_json: { $type: PROFILE, displayName: "List contributor", createdAt: indexedAt },
   };
   const result = runLuaEndpoint({
-    endpoint: 'listActivities',
+    endpoint: "listActivities",
     params: {
-      authors: [authorDid, authorDid], hasOrganizationRecord: 'false', contributors: [contributorDid, contributorDid],
-      involvedActors: [contributorDid, contributorDid], uris: [firstUri, lookaheadUri, firstUri], sortDirection: 'asc', limit: '1',
+      authors: [authorDid, authorDid],
+      hasOrganizationRecord: "false",
+      contributors: [contributorDid, contributorDid],
+      involvedActors: [contributorDid, contributorDid],
+      uris: [firstUri, lookaheadUri, firstUri],
+      sortDirection: "asc",
+      limit: "1",
     },
     queryResults: [[first, lookahead], [info], [authorProfile, contributorProfile], []],
     assertions: `
@@ -579,26 +789,39 @@ assert(not hydrationValues:find('${lookaheadInfoUri}', 1, true), 'lookahead cont
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-test('searchActivities binds trimmed text literally and combines it with filters', () => {
+test("searchActivities binds trimmed text literally and combines it with filters", () => {
   const uri = `at://${authorDid}/${ACTIVITY}/searched`;
   const row = activityRow({
-    uri, cid: 'bafyreimmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm',
+    uri,
+    cid: "bafyreimmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
     record: {
-      title: 'Forest %_ Initiative', shortDescription: 'River monitoring', createdAt: indexedAt,
+      title: "Forest %_ Initiative",
+      shortDescription: "River monitoring",
+      createdAt: indexedAt,
       contributors: [{ contributorIdentity: { identity: contributorDid } }],
     },
   });
   const profile = {
-    uri: `at://${authorDid}/${PROFILE}/self`, did: authorDid, collection: PROFILE, cid: 'bafyreinnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn',
-    indexed_at: indexedAt, record: 'search-author-profile', record_json: { $type: PROFILE, displayName: 'Search author', createdAt: indexedAt },
+    uri: `at://${authorDid}/${PROFILE}/self`,
+    did: authorDid,
+    collection: PROFILE,
+    cid: "bafyreinnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+    indexed_at: indexedAt,
+    record: "search-author-profile",
+    record_json: { $type: PROFILE, displayName: "Search author", createdAt: indexedAt },
   };
   const contributorProfile = {
-    uri: `at://${contributorDid}/${PROFILE}/self`, did: contributorDid, collection: PROFILE, cid: 'bafyreieeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
-    indexed_at: indexedAt, record: 'search-contributor-profile', record_json: { $type: PROFILE, displayName: 'Search contributor', createdAt: indexedAt },
+    uri: `at://${contributorDid}/${PROFILE}/self`,
+    did: contributorDid,
+    collection: PROFILE,
+    cid: "bafyreieeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    indexed_at: indexedAt,
+    record: "search-contributor-profile",
+    record_json: { $type: PROFILE, displayName: "Search contributor", createdAt: indexedAt },
   };
   const result = runLuaEndpoint({
-    endpoint: 'searchActivities',
-    params: { search: '  FOREST %_ Initiative  ', authors: [authorDid], limit: '10' },
+    endpoint: "searchActivities",
+    params: { search: "  FOREST %_ Initiative  ", authors: [authorDid], limit: "10" },
     queryResults: [[row], [profile, contributorProfile], []],
     assertions: `
 assert(#result.activities == 1 and result.activities[1].uri == '${uri}')
@@ -617,26 +840,42 @@ assert(sql:find(' AND ', 1, true), 'search and authors must combine with AND')
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-test('searchActivities skips legacy contributor strings and keeps valid object projections', () => {
-  const legacyUri = 'at://did:web:legacy-search.invalid/org.hypercerts.claim.contributorInformation/old';
+test("searchActivities skips legacy contributor strings and keeps valid object projections", () => {
+  const legacyUri =
+    "at://did:web:legacy-search.invalid/org.hypercerts.claim.contributorInformation/old";
   const row = activityRow({
     uri: `at://${authorDid}/${ACTIVITY}/search-legacy`,
-    cid: 'bafyreimmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm',
+    cid: "bafyreimmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
     record: {
-      title: 'Legacy contributor search', createdAt: indexedAt,
-      contributors: [legacyUri, { contributorIdentity: { identity: contributorDid }, contributionWeight: 'retained' }],
+      title: "Legacy contributor search",
+      createdAt: indexedAt,
+      contributors: [
+        legacyUri,
+        { contributorIdentity: { identity: contributorDid }, contributionWeight: "retained" },
+      ],
     },
   });
   const authorProfile = {
-    uri: `at://${authorDid}/${PROFILE}/self`, did: authorDid, collection: PROFILE, cid: 'bafyreinnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn',
-    indexed_at: indexedAt, record: 'search-author-profile', record_json: { $type: PROFILE, displayName: 'Search author', createdAt: indexedAt },
+    uri: `at://${authorDid}/${PROFILE}/self`,
+    did: authorDid,
+    collection: PROFILE,
+    cid: "bafyreinnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+    indexed_at: indexedAt,
+    record: "search-author-profile",
+    record_json: { $type: PROFILE, displayName: "Search author", createdAt: indexedAt },
   };
   const contributorProfile = {
-    uri: `at://${contributorDid}/${PROFILE}/self`, did: contributorDid, collection: PROFILE, cid: 'bafyreieeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
-    indexed_at: indexedAt, record: 'search-contributor-profile', record_json: { $type: PROFILE, displayName: 'Search contributor', createdAt: indexedAt },
+    uri: `at://${contributorDid}/${PROFILE}/self`,
+    did: contributorDid,
+    collection: PROFILE,
+    cid: "bafyreieeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    indexed_at: indexedAt,
+    record: "search-contributor-profile",
+    record_json: { $type: PROFILE, displayName: "Search contributor", createdAt: indexedAt },
   };
   const result = runLuaEndpoint({
-    endpoint: 'searchActivities', params: { search: 'legacy contributor' },
+    endpoint: "searchActivities",
+    params: { search: "legacy contributor" },
     queryResults: [[row], [authorProfile, contributorProfile], []],
     assertions: `
 local activity = result.activities[1]
@@ -649,15 +888,25 @@ assert(activity.contributors[1].actor.profile.record.displayName == 'Search cont
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-test('listActivities and searchActivities filter by self organization-record presence', () => {
+test("listActivities and searchActivities filter by self organization-record presence", () => {
   for (const { endpoint, params, predicate } of [
-    { endpoint: 'listActivities', params: { hasOrganizationRecord: 'true' }, predicate: 'EXISTS' },
-    { endpoint: 'searchActivities', params: { search: 'forest', hasOrganizationRecord: 'false' }, predicate: 'NOT EXISTS' },
-    { endpoint: 'listActivities', params: { hasOrganizationRecord: true }, predicate: 'EXISTS' },
-    { endpoint: 'searchActivities', params: { search: 'forest', hasOrganizationRecord: false }, predicate: 'NOT EXISTS' },
+    { endpoint: "listActivities", params: { hasOrganizationRecord: "true" }, predicate: "EXISTS" },
+    {
+      endpoint: "searchActivities",
+      params: { search: "forest", hasOrganizationRecord: "false" },
+      predicate: "NOT EXISTS",
+    },
+    { endpoint: "listActivities", params: { hasOrganizationRecord: true }, predicate: "EXISTS" },
+    {
+      endpoint: "searchActivities",
+      params: { search: "forest", hasOrganizationRecord: false },
+      predicate: "NOT EXISTS",
+    },
   ]) {
     const result = runLuaEndpoint({
-      endpoint, params, queryResults: [[]],
+      endpoint,
+      params,
+      queryResults: [[]],
       assertions: `
 assert(#result.activities == 0 and result.cursor == nil)
 local sql = calls[1].sql
@@ -671,15 +920,22 @@ assert(not sql:find("app.certified.actor.profile", 1, true), 'the filter must no
   }
 });
 
-test('hasOrganizationRecord=false retains activity authors that have no profile', () => {
-  const profilelessDid = 'did:web:no-relations.example';
+test("hasOrganizationRecord=false retains activity authors that have no profile", () => {
+  const profilelessDid = "did:web:no-relations.example";
   const uri = `at://${profilelessDid}/${ACTIVITY}/profileless-author`;
   const row = activityRow({
-    uri, did: profilelessDid, cid: 'bafyreicccccccccccccccccccccccccccccccccccccccccccccccccccc',
-    record: { title: 'Profileless author', shortDescription: 'Organization absence is independent of profile presence', createdAt: indexedAt },
+    uri,
+    did: profilelessDid,
+    cid: "bafyreicccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    record: {
+      title: "Profileless author",
+      shortDescription: "Organization absence is independent of profile presence",
+      createdAt: indexedAt,
+    },
   });
   const result = runLuaEndpoint({
-    endpoint: 'listActivities', params: { authors: [profilelessDid], hasOrganizationRecord: false },
+    endpoint: "listActivities",
+    params: { authors: [profilelessDid], hasOrganizationRecord: false },
     queryResults: [[row], [], []],
     assertions: `
 assert(#result.activities == 1 and result.activities[1].uri == '${uri}')
@@ -691,21 +947,34 @@ assert(not calls[1].sql:find("app.certified.actor.profile", 1, true))
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-test('activity listings use direction-bound tuple cursors and preserve empty results', () => {
+test("activity listings use direction-bound tuple cursors and preserve empty results", () => {
   const beforeUri = `at://${authorDid}/${ACTIVITY}/before`;
-  const cursor = Buffer.from(JSON.stringify({ v: 1, d: 'asc', t: '2025-01-01T00:00:00.000000Z', u: beforeUri })).toString('hex');
+  const cursor = Buffer.from(
+    JSON.stringify({ v: 1, d: "asc", t: "2025-01-01T00:00:00.000000Z", u: beforeUri }),
+  ).toString("hex");
   const afterUri = `at://${authorDid}/${ACTIVITY}/after`;
   const after = activityRow({
-    uri: afterUri, cid: 'bafyreioooooooooooooooooooooooooooooooooooooooooooooooooo',
-    sortTimestamp: '2025-01-02T00:00:00.000000Z',
-    record: { title: 'After cursor', shortDescription: 'Next page', createdAt: '2025-01-02T00:00:00Z' },
+    uri: afterUri,
+    cid: "bafyreioooooooooooooooooooooooooooooooooooooooooooooooooo",
+    sortTimestamp: "2025-01-02T00:00:00.000000Z",
+    record: {
+      title: "After cursor",
+      shortDescription: "Next page",
+      createdAt: "2025-01-02T00:00:00Z",
+    },
   });
   const profile = {
-    uri: `at://${authorDid}/${PROFILE}/self`, did: authorDid, collection: PROFILE, cid: 'bafyreipppppppppppppppppppppppppppppppppppppppppppppppppp',
-    indexed_at: indexedAt, record: 'cursor-author-profile', record_json: { $type: PROFILE, displayName: 'Cursor author', createdAt: indexedAt },
+    uri: `at://${authorDid}/${PROFILE}/self`,
+    did: authorDid,
+    collection: PROFILE,
+    cid: "bafyreipppppppppppppppppppppppppppppppppppppppppppppppppp",
+    indexed_at: indexedAt,
+    record: "cursor-author-profile",
+    record_json: { $type: PROFILE, displayName: "Cursor author", createdAt: indexedAt },
   };
   const page = runLuaEndpoint({
-    endpoint: 'listActivities', params: { sortDirection: 'asc', cursor, limit: '1' },
+    endpoint: "listActivities",
+    params: { sortDirection: "asc", cursor, limit: "1" },
     queryResults: [[after], [profile], []],
     assertions: `
 assert(#result.activities == 1 and result.activities[1].uri == '${afterUri}')
@@ -719,7 +988,9 @@ assert(calls[1].values[3] == '${beforeUri}' and calls[1].values[4] == 2)
   assert.equal(page.status, 0, `${page.stderr}${page.stdout}`);
 
   const empty = runLuaEndpoint({
-    endpoint: 'listActivities', params: {}, queryResults: [[]],
+    endpoint: "listActivities",
+    params: {},
+    queryResults: [[]],
     assertions: `
 assert(type(result.activities) == 'table' and #result.activities == 0 and result.cursor == nil)
 assert(calls[1].values[1] == '${ACTIVITY}' and calls[1].values[2] == 26)
@@ -730,67 +1001,114 @@ assert(#calls == 1, 'an empty page must not trigger hydration')
   assert.equal(empty.status, 0, `${empty.stderr}${empty.stdout}`);
 });
 
-test('activity queries reject malformed filters and bounded-input violations before querying', () => {
-  const badCursor = Buffer.from(JSON.stringify({ v: 1, d: 'desc', t: '2025-01-01T00:00:00Z', u: activityUri })).toString('hex');
+test("activity queries reject malformed filters and bounded-input violations before querying", () => {
+  const badCursor = Buffer.from(
+    JSON.stringify({ v: 1, d: "desc", t: "2025-01-01T00:00:00Z", u: activityUri }),
+  ).toString("hex");
   const invalidLists = [
-    { search: 'forest' },
-    { unknown: 'value' },
-    { authors: ['alice.example'] },
+    { search: "forest" },
+    { unknown: "value" },
+    { authors: ["alice.example"] },
     { authors: Array(101).fill(authorDid) },
-    { contributors: ['did:plc:invalid:'] },
-    { involvedActors: ['did:1:bad'] },
-    { uris: ['at://alice.example/org.hypercerts.claim.activity/x'] },
-    { uris: ['at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/app.certified.location/x'] },
-    { authorType: 'person' },
-    { hasOrganizationRecord: 'sometimes' },
-    { limit: '0' },
-    { limit: '101' },
-    { limit: ['1', '2'] },
-    { sortDirection: 'sideways' },
-    { cursor: 'bad!' },
-    { cursor: badCursor, sortDirection: 'asc' },
+    { contributors: ["did:plc:invalid:"] },
+    { involvedActors: ["did:1:bad"] },
+    { uris: ["at://alice.example/org.hypercerts.claim.activity/x"] },
+    { uris: ["at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/app.certified.location/x"] },
+    { authorType: "person" },
+    { hasOrganizationRecord: "sometimes" },
+    { limit: "0" },
+    { limit: "101" },
+    { limit: ["1", "2"] },
+    { sortDirection: "sideways" },
+    { cursor: "bad!" },
+    { cursor: badCursor, sortDirection: "asc" },
   ];
   for (const params of invalidLists) {
-    const result = runLuaEndpoint({ endpoint: 'listActivities', params, queryResults: [], expectError: 'InvalidRequest:', expectedCalls: 0 });
+    const result = runLuaEndpoint({
+      endpoint: "listActivities",
+      params,
+      queryResults: [],
+      expectError: "InvalidRequest:",
+      expectedCalls: 0,
+    });
     assert.equal(result.status, 0, `${JSON.stringify(params)}\n${result.stderr}${result.stdout}`);
   }
   const repeatedOrganizationRecord = runLuaEndpoint({
-    endpoint: 'listActivities', params: { hasOrganizationRecord: ['true', 'false'] }, queryResults: [],
-    expectError: 'hasOrganizationRecord must occur once', expectedCalls: 0,
+    endpoint: "listActivities",
+    params: { hasOrganizationRecord: ["true", "false"] },
+    queryResults: [],
+    expectError: "hasOrganizationRecord must occur once",
+    expectedCalls: 0,
   });
-  assert.equal(repeatedOrganizationRecord.status, 0, `${repeatedOrganizationRecord.stderr}${repeatedOrganizationRecord.stdout}`);
+  assert.equal(
+    repeatedOrganizationRecord.status,
+    0,
+    `${repeatedOrganizationRecord.stderr}${repeatedOrganizationRecord.stdout}`,
+  );
 
-  const missingSearch = runLuaEndpoint({ endpoint: 'searchActivities', params: {}, queryResults: [], expectError: 'InvalidRequest:', expectedCalls: 0 });
+  const missingSearch = runLuaEndpoint({
+    endpoint: "searchActivities",
+    params: {},
+    queryResults: [],
+    expectError: "InvalidRequest:",
+    expectedCalls: 0,
+  });
   assert.equal(missingSearch.status, 0, `${missingSearch.stderr}${missingSearch.stdout}`);
-  const unacceptedListSearch = runLuaEndpoint({ endpoint: 'listActivities', params: { search: 'forest' }, queryResults: [], expectError: 'InvalidRequest:', expectedCalls: 0 });
-  assert.equal(unacceptedListSearch.status, 0, `${unacceptedListSearch.stderr}${unacceptedListSearch.stdout}`);
+  const unacceptedListSearch = runLuaEndpoint({
+    endpoint: "listActivities",
+    params: { search: "forest" },
+    queryResults: [],
+    expectError: "InvalidRequest:",
+    expectedCalls: 0,
+  });
+  assert.equal(
+    unacceptedListSearch.status,
+    0,
+    `${unacceptedListSearch.stderr}${unacceptedListSearch.stdout}`,
+  );
 });
 
-test('missing records, missing results, and operational activity-query failures stay distinct', () => {
+test("missing records, missing results, and operational activity-query failures stay distinct", () => {
   const missing = runLuaEndpoint({
-    endpoint: 'getActivity', params: { uri: activityUri }, queryResults: [[]],
-    expectError: 'RecordNotFound:', expectedCalls: 1,
+    endpoint: "getActivity",
+    params: { uri: activityUri },
+    queryResults: [[]],
+    expectError: "RecordNotFound:",
+    expectedCalls: 1,
   });
   assert.equal(missing.status, 0, `${missing.stderr}${missing.stdout}`);
 
   const listFailure = runLuaEndpoint({
-    endpoint: 'listActivities', params: {}, queryResults: [], backend: 'sqlite',
-    expectError: 'ActivityQueryFailed:', expectedCalls: 0,
+    endpoint: "listActivities",
+    params: {},
+    queryResults: [],
+    backend: "sqlite",
+    expectError: "ActivityQueryFailed:",
+    expectedCalls: 0,
   });
   assert.equal(listFailure.status, 0, `${listFailure.stderr}${listFailure.stdout}`);
 
   const row = activityRow({
-    uri: `at://${authorDid}/${ACTIVITY}/hydration-failure`, cid: 'bafyreijjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj',
-    record: { title: 'Hydration failure', shortDescription: 'Must not return partial data', createdAt: indexedAt },
+    uri: `at://${authorDid}/${ACTIVITY}/hydration-failure`,
+    cid: "bafyreijjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj",
+    record: {
+      title: "Hydration failure",
+      shortDescription: "Must not return partial data",
+      createdAt: indexedAt,
+    },
   });
   const hydrationFailure = runLuaEndpoint({
-    endpoint: 'listActivities', params: {}, queryResults: [[row]], queryFailureAt: 2,
-    expectError: 'ActivityQueryFailed:', expectedCalls: 2,
+    endpoint: "listActivities",
+    params: {},
+    queryResults: [[row]],
+    queryFailureAt: 2,
+    expectError: "ActivityQueryFailed:",
+    expectedCalls: 2,
   });
   assert.equal(hydrationFailure.status, 0, `${hydrationFailure.stderr}${hydrationFailure.stdout}`);
 });
 
-test('getActivity distinguishes absent contributors from an explicitly empty array', () => {
+test("getActivity distinguishes absent contributors from an explicitly empty array", () => {
   const absent = structuredClone(activityRecord);
   delete absent.contributors;
   const absentResult = runGetActivity({

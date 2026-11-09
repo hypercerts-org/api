@@ -1,14 +1,14 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { contractUrl, requireContractTarget } from './helpers.js';
-import { graphDids, seedRows } from './fixtures/graph-follows.fixture.js';
+import test from "node:test";
+import assert from "node:assert/strict";
+import { contractUrl, requireContractTarget } from "./helpers.js";
+import { graphDids, seedRows } from "./fixtures/graph-follows.fixture.js";
 
 const baseUrl = requireContractTarget();
-const followCollection = 'app.certified.graph.follow';
+const followCollection = "app.certified.graph.follow";
 
 async function request(nsid, params) {
   const response = await fetch(contractUrl(baseUrl, nsid, params), {
-    headers: { accept: 'application/json' },
+    headers: { accept: "application/json" },
     signal: AbortSignal.timeout(10_000),
   });
   const text = await response.text();
@@ -38,9 +38,10 @@ function recordView(row) {
 }
 
 function actorView(did, followUri) {
-  const sidecar = (collection) => seedRows.find((row) => row.did === did && row.collection === collection);
-  const profile = sidecar('app.certified.actor.profile');
-  const organization = sidecar('app.certified.actor.organization');
+  const sidecar = (collection) =>
+    seedRows.find((row) => row.did === did && row.collection === collection);
+  const profile = sidecar("app.certified.actor.profile");
+  const organization = sidecar("app.certified.actor.organization");
   return {
     did,
     profile: profile ? recordView(profile) : null,
@@ -56,7 +57,7 @@ async function collectPages(nsid, outputKey, actor, expected) {
     const { response, body } = await request(nsid, {
       actor,
       limit: 1,
-      sortDirection: 'asc',
+      sortDirection: "asc",
       cursor,
     });
     assert.equal(response.status, 200, `${nsid}: ${JSON.stringify(body)}`);
@@ -69,16 +70,16 @@ async function collectPages(nsid, outputKey, actor, expected) {
     assert.equal(item.follow.record.$type, followCollection);
     pages.push(item);
     cursor = body.cursor;
-    if (expectation.hasNext) assert.equal(typeof cursor, 'string');
-    else assert.equal(Object.hasOwn(body, 'cursor'), false);
+    if (expectation.hasNext) assert.equal(typeof cursor, "string");
+    else assert.equal(Object.hasOwn(body, "cursor"), false);
   }
   return pages;
 }
 
-test('listActorFollowers ranks the earliest duplicate before asc pagination and hydrates nullable sidecars', async () => {
+test("listActorFollowers ranks the earliest duplicate before asc pagination and hydrates nullable sidecars", async () => {
   const pages = await collectPages(
-    'app.certified.graph.listActorFollowers',
-    'followers',
+    "app.certified.graph.listActorFollowers",
+    "followers",
     graphDids.primarySubject,
     [
       {
@@ -103,22 +104,28 @@ test('listActorFollowers ranks the earliest duplicate before asc pagination and 
   );
 
   assert.deepEqual(pages, [
-    actorView(graphDids.secondPublisher, `at://${graphDids.secondPublisher}/${followCollection}/3jzfcijpj2z2f`),
-    actorView(graphDids.thirdFollower, `at://${graphDids.thirdFollower}/${followCollection}/3jzfcijpj2z2g`),
+    actorView(
+      graphDids.secondPublisher,
+      `at://${graphDids.secondPublisher}/${followCollection}/3jzfcijpj2z2f`,
+    ),
+    actorView(
+      graphDids.thirdFollower,
+      `at://${graphDids.thirdFollower}/${followCollection}/3jzfcijpj2z2g`,
+    ),
     actorView(graphDids.publisher, `at://${graphDids.publisher}/${followCollection}/3jzfcijpj2z2a`),
   ]);
   assert.equal(pages[0].profile, null);
   assert.equal(pages[0].organization, null);
   assert.equal(pages[1].profile, null);
   assert.equal(pages[1].organization, null);
-  assert.equal(pages[2].profile.record.displayName, 'Graph Fixture Publisher');
-  assert.deepEqual(pages[2].organization.record.organizationType, ['nonprofit']);
+  assert.equal(pages[2].profile.record.displayName, "Graph Fixture Publisher");
+  assert.deepEqual(pages[2].organization.record.organizationType, ["nonprofit"]);
 });
 
-test('listActorFollowing filters by publisher and keyset-pages tied relationships without losing subject identity', async () => {
+test("listActorFollowing filters by publisher and keyset-pages tied relationships without losing subject identity", async () => {
   const pages = await collectPages(
-    'app.certified.graph.listActorFollowing',
-    'following',
+    "app.certified.graph.listActorFollowing",
+    "following",
     graphDids.publisher,
     [
       {
@@ -143,24 +150,36 @@ test('listActorFollowing filters by publisher and keyset-pages tied relationship
   );
 
   assert.deepEqual(pages, [
-    actorView(graphDids.primarySubject, `at://${graphDids.publisher}/${followCollection}/3jzfcijpj2z2a`),
-    actorView(graphDids.secondSubject, `at://${graphDids.publisher}/${followCollection}/3jzfcijpj2z2c`),
-    actorView(graphDids.thirdSubject, `at://${graphDids.publisher}/${followCollection}/3jzfcijpj2z2d`),
+    actorView(
+      graphDids.primarySubject,
+      `at://${graphDids.publisher}/${followCollection}/3jzfcijpj2z2a`,
+    ),
+    actorView(
+      graphDids.secondSubject,
+      `at://${graphDids.publisher}/${followCollection}/3jzfcijpj2z2c`,
+    ),
+    actorView(
+      graphDids.thirdSubject,
+      `at://${graphDids.publisher}/${followCollection}/3jzfcijpj2z2d`,
+    ),
   ]);
-  assert.equal(pages[0].profile.record.displayName, 'Primary Graph Subject');
-  assert.deepEqual(pages[0].organization.record.organizationType, ['cooperative']);
-  assert.equal(pages[1].profile.record.displayName, 'Second Graph Subject');
+  assert.equal(pages[0].profile.record.displayName, "Primary Graph Subject");
+  assert.deepEqual(pages[0].organization.record.organizationType, ["cooperative"]);
+  assert.equal(pages[1].profile.record.displayName, "Second Graph Subject");
   assert.equal(pages[1].organization, null);
   assert.equal(pages[2].profile, null);
   assert.equal(pages[2].organization, null);
-  assert.equal(pages[0].follow.record.via.uri, `at://${graphDids.curator}/app.certified.graph.list/3jzfcijpj2z2a`);
+  assert.equal(
+    pages[0].follow.record.via.uri,
+    `at://${graphDids.curator}/app.certified.graph.list/3jzfcijpj2z2a`,
+  );
 });
 
-test('actor follower and following lists apply descending URI tie-breaks through cursors', async () => {
+test("actor follower and following lists apply descending URI tie-breaks through cursors", async () => {
   const cases = [
     {
-      nsid: 'app.certified.graph.listActorFollowers',
-      outputKey: 'followers',
+      nsid: "app.certified.graph.listActorFollowers",
+      outputKey: "followers",
       actor: graphDids.primarySubject,
       expectedUris: [
         `at://${graphDids.publisher}/${followCollection}/3jzfcijpj2z2a`,
@@ -170,8 +189,8 @@ test('actor follower and following lists apply descending URI tie-breaks through
       expectedDids: [graphDids.publisher, graphDids.thirdFollower, graphDids.secondPublisher],
     },
     {
-      nsid: 'app.certified.graph.listActorFollowing',
-      outputKey: 'following',
+      nsid: "app.certified.graph.listActorFollowing",
+      outputKey: "following",
       actor: graphDids.publisher,
       expectedUris: [
         `at://${graphDids.publisher}/${followCollection}/3jzfcijpj2z2d`,
@@ -190,7 +209,7 @@ test('actor follower and following lists apply descending URI tie-breaks through
       const { response, body } = await request(nsid, {
         actor,
         limit: 1,
-        sortDirection: 'desc',
+        sortDirection: "desc",
         cursor,
       });
       assert.equal(response.status, 200, `${nsid}: ${JSON.stringify(body)}`);
@@ -199,35 +218,35 @@ test('actor follower and following lists apply descending URI tie-breaks through
       actualUris.push(body[outputKey][0].follow.uri);
       actualDids.push(body[outputKey][0].did);
       cursor = body.cursor;
-      if (index < expectedUris.length - 1) assert.equal(typeof cursor, 'string');
-      else assert.equal(Object.hasOwn(body, 'cursor'), false);
+      if (index < expectedUris.length - 1) assert.equal(typeof cursor, "string");
+      else assert.equal(Object.hasOwn(body, "cursor"), false);
     }
     assert.deepEqual(actualUris, expectedUris);
     assert.deepEqual(actualDids, expectedDids);
   }
 });
 
-test('actor list input failures use the pinned HappyView runtime error response', async () => {
+test("actor list input failures use the pinned HappyView runtime error response", async () => {
   const cases = [
     {
-      nsid: 'app.certified.graph.listActorFollowers',
+      nsid: "app.certified.graph.listActorFollowers",
       params: { actor: graphDids.primarySubject, limit: 101 },
     },
     {
-      nsid: 'app.certified.graph.listActorFollowing',
-      params: { actor: graphDids.publisher, sortDirection: 'sideways' },
+      nsid: "app.certified.graph.listActorFollowing",
+      params: { actor: graphDids.publisher, sortDirection: "sideways" },
     },
     {
-      nsid: 'app.certified.graph.getFollows',
-      params: { actor: graphDids.publisher, subjects: [graphDids.primarySubject, 'not-a-did'] },
+      nsid: "app.certified.graph.getFollows",
+      params: { actor: graphDids.publisher, subjects: [graphDids.primarySubject, "not-a-did"] },
     },
   ];
 
   for (const { nsid, params } of cases) {
     const { response, body } = await request(nsid, params);
     assert.equal(response.status, 500, `${nsid}: ${JSON.stringify(body)}`);
-    assert.equal(body.error, 'script_error');
-    assert.equal(body.errorType, 'runtime');
+    assert.equal(body.error, "script_error");
+    assert.equal(body.errorType, "runtime");
     assert.equal(body.method, nsid);
     assert.match(body.message, /InvalidRequest/);
   }

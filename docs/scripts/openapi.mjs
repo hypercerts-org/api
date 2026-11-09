@@ -1,38 +1,38 @@
-export const DEFAULT_SERVER_URL = 'https://api.test.hypercerts.dev';
+export const DEFAULT_SERVER_URL = "https://api.test.hypercerts.dev";
 
 const SCHEMA_FIELDS = [
-  'type',
-  'description',
-  'format',
-  'enum',
-  'const',
-  'default',
-  'examples',
-  'minimum',
-  'maximum',
-  'exclusiveMinimum',
-  'exclusiveMaximum',
-  'minLength',
-  'maxLength',
-  'pattern',
-  'uniqueItems',
-  'minItems',
-  'maxItems',
-  'minProperties',
-  'maxProperties',
+  "type",
+  "description",
+  "format",
+  "enum",
+  "const",
+  "default",
+  "examples",
+  "minimum",
+  "maximum",
+  "exclusiveMinimum",
+  "exclusiveMaximum",
+  "minLength",
+  "maxLength",
+  "pattern",
+  "uniqueItems",
+  "minItems",
+  "maxItems",
+  "minProperties",
+  "maxProperties",
 ];
 
 function componentKey(lexiconId, definitionName) {
-  return `${lexiconId}.${definitionName}`.replaceAll('~', '~0').replaceAll('/', '~1');
+  return `${lexiconId}.${definitionName}`.replaceAll("~", "~0").replaceAll("/", "~1");
 }
 
 function referenceParts(reference, currentLexiconId) {
-  if (reference.startsWith('#')) {
-    return { lexiconId: currentLexiconId, definitionName: reference.slice(1) || 'main' };
+  if (reference.startsWith("#")) {
+    return { lexiconId: currentLexiconId, definitionName: reference.slice(1) || "main" };
   }
 
-  const [lexiconId, fragment] = reference.split('#', 2);
-  return { lexiconId, definitionName: fragment || 'main' };
+  const [lexiconId, fragment] = reference.split("#", 2);
+  return { lexiconId, definitionName: fragment || "main" };
 }
 
 function referenceSchema(reference, currentLexiconId, lexicons, schemas, active) {
@@ -42,7 +42,7 @@ function referenceSchema(reference, currentLexiconId, lexicons, schemas, active)
   if (!target && !schemas[key]) {
     schemas[key] = {
       description: `Schema reference ${reference} is outside the committed local Lexicon snapshot.`,
-      'x-lexicon-ref': reference,
+      "x-lexicon-ref": reference,
     };
   } else if (target && !schemas[key] && !active.has(key)) {
     active.add(key);
@@ -62,15 +62,16 @@ function unionSchema(source, currentLexiconId, lexicons, schemas, active) {
 }
 
 function arraySchema(source, result, currentLexiconId, lexicons, schemas, active) {
-  if (Object.hasOwn(source, 'minLength')) {
+  if (Object.hasOwn(source, "minLength")) {
     result.minItems = source.minLength;
     delete result.minLength;
   }
-  if (Object.hasOwn(source, 'maxLength')) {
+  if (Object.hasOwn(source, "maxLength")) {
     result.maxItems = source.maxLength;
     delete result.maxLength;
   }
-  if (source.items) result.items = toSchema(source.items, currentLexiconId, lexicons, schemas, active);
+  if (source.items)
+    result.items = toSchema(source.items, currentLexiconId, lexicons, schemas, active);
 }
 
 function objectSchema(source, result, currentLexiconId, lexicons, schemas, active) {
@@ -80,7 +81,7 @@ function objectSchema(source, result, currentLexiconId, lexicons, schemas, activ
     for (const [name, property] of Object.entries(source.properties)) {
       const converted = toSchema(property, currentLexiconId, lexicons, schemas, active);
       if (Array.isArray(source.nullable) && source.nullable.includes(name)) {
-        result.properties[name] = { anyOf: [converted, { type: 'null' }] };
+        result.properties[name] = { anyOf: [converted, { type: "null" }] };
       } else {
         result.properties[name] = converted;
       }
@@ -90,11 +91,11 @@ function objectSchema(source, result, currentLexiconId, lexicons, schemas, activ
 }
 
 function toSchema(source, currentLexiconId, lexicons, schemas, active = new Set()) {
-  if (!source || typeof source !== 'object') return {};
-  if (source.type === 'ref') {
+  if (!source || typeof source !== "object") return {};
+  if (source.type === "ref") {
     return referenceSchema(source.ref, currentLexiconId, lexicons, schemas, active);
   }
-  if (source.type === 'union' && Array.isArray(source.refs)) {
+  if (source.type === "union" && Array.isArray(source.refs)) {
     return unionSchema(source, currentLexiconId, lexicons, schemas, active);
   }
 
@@ -102,16 +103,16 @@ function toSchema(source, currentLexiconId, lexicons, schemas, active = new Set(
   for (const field of SCHEMA_FIELDS) {
     if (Object.hasOwn(source, field)) result[field] = source[field];
   }
-  if (Object.hasOwn(source, 'maxGraphemes')) {
-    result['x-lexicon-maxGraphemes'] = source.maxGraphemes;
+  if (Object.hasOwn(source, "maxGraphemes")) {
+    result["x-lexicon-maxGraphemes"] = source.maxGraphemes;
   }
-  if (source.type === 'array') {
+  if (source.type === "array") {
     arraySchema(source, result, currentLexiconId, lexicons, schemas, active);
   }
-  if (source.type === 'object') {
+  if (source.type === "object") {
     objectSchema(source, result, currentLexiconId, lexicons, schemas, active);
   }
-  if (source.type === 'union' && !Array.isArray(source.refs)) result.type = 'object';
+  if (source.type === "union" && !Array.isArray(source.refs)) result.type = "object";
   return result;
 }
 
@@ -122,8 +123,8 @@ function getParameterSchema(property, lexiconId, lexicons, schemas) {
 }
 
 function namespaceTag(lexiconId) {
-  const parts = lexiconId.split('.');
-  return parts.length > 3 ? parts.slice(0, 3).join('.') : parts.slice(0, -1).join('.');
+  const parts = lexiconId.split(".");
+  return parts.length > 3 ? parts.slice(0, 3).join(".") : parts.slice(0, -1).join(".");
 }
 
 function operationParameters(parametersDef, id, lexicons, schemas) {
@@ -133,17 +134,17 @@ function operationParameters(parametersDef, id, lexicons, schemas) {
   for (const [name, property] of Object.entries(parametersDef?.properties ?? {})) {
     const parameter = {
       name,
-      in: 'query',
+      in: "query",
       required: requiredNames.has(name),
       description: property.description,
       schema: getParameterSchema(property, id, lexicons, schemas),
     };
-    if (property.type === 'array') {
-      parameter.style = 'form';
+    if (property.type === "array") {
+      parameter.style = "form";
       parameter.explode = true;
     }
     let example;
-    if (Object.hasOwn(property, 'example')) {
+    if (Object.hasOwn(property, "example")) {
       example = property.example;
     } else if (Array.isArray(property.examples) && property.examples.length > 0) {
       example = property.examples[0];
@@ -158,37 +159,40 @@ function operationParameters(parametersDef, id, lexicons, schemas) {
 function operationFor(lexicon, lexicons, schemas, coverage, sources) {
   const { id } = lexicon;
   const main = lexicon.defs.main;
-  const isQuery = main.type === 'query';
+  const isQuery = main.type === "query";
   const parameters = operationParameters(main.parameters, id, lexicons, schemas);
 
-  const output = main.output?.schema
-    ? toSchema(main.output.schema, id, lexicons, schemas)
-    : {};
+  const output = main.output?.schema ? toSchema(main.output.schema, id, lexicons, schemas) : {};
   const operation = {
-    operationId: id.replaceAll('.', '_'),
+    operationId: id.replaceAll(".", "_"),
     tags: [namespaceTag(id)],
     description: main.description ?? `XRPC ${main.type} ${id}`,
     parameters,
     responses: {
-      '200': {
-        description: 'Successful response.',
+      200: {
+        description: "Successful response.",
         ...(main.output?.encoding
           ? { content: { [main.output.encoding]: { schema: output } } }
           : {}),
       },
     },
-    'x-lexicon-id': id,
-    'x-hypercerts-coverage': coverage[id] ?? 'unclassified',
-    ...(sources[id] ? { 'x-hypercerts-source': sources[id] } : {}),
+    "x-lexicon-id": id,
+    "x-hypercerts-coverage": coverage[id] ?? "unclassified",
+    ...(sources[id] ? { "x-hypercerts-source": sources[id] } : {}),
   };
-  if (Array.isArray(main.errors) && main.errors.length > 0) operation['x-lexicon-errors'] = main.errors;
-  if (main.type === 'procedure' && main.input?.schema) {
+  if (Array.isArray(main.errors) && main.errors.length > 0)
+    operation["x-lexicon-errors"] = main.errors;
+  if (main.type === "procedure" && main.input?.schema) {
     operation.requestBody = {
       required: true,
-      content: { [main.input.encoding ?? 'application/json']: { schema: toSchema(main.input.schema, id, lexicons, schemas) } },
+      content: {
+        [main.input.encoding ?? "application/json"]: {
+          schema: toSchema(main.input.schema, id, lexicons, schemas),
+        },
+      },
     };
   }
-  return { method: isQuery ? 'get' : 'post', operation };
+  return { method: isQuery ? "get" : "post", operation };
 }
 
 export function buildOpenApi(lexicons, metadata = {}) {
@@ -199,7 +203,7 @@ export function buildOpenApi(lexicons, metadata = {}) {
   const tags = new Set();
 
   for (const lexicon of sorted) {
-    if (!lexicon?.id || !['query', 'procedure'].includes(lexicon.defs?.main?.type)) continue;
+    if (!lexicon?.id || !["query", "procedure"].includes(lexicon.defs?.main?.type)) continue;
     const { method, operation } = operationFor(
       lexicon,
       lexiconMap,
@@ -214,20 +218,23 @@ export function buildOpenApi(lexicons, metadata = {}) {
   }
 
   return {
-    openapi: '3.1.0',
+    openapi: "3.1.0",
     info: {
-      title: 'Hypercerts API',
-      version: metadata.version ?? 'source-snapshot',
-      description: 'Public Hypercerts XRPC endpoints. Coverage labels describe local source manifests, not deployment or runtime verification.',
+      title: "Hypercerts API",
+      version: metadata.version ?? "source-snapshot",
+      description:
+        "Public Hypercerts XRPC endpoints. Coverage labels describe local source manifests, not deployment or runtime verification.",
     },
-    servers: [{ url: metadata.serverUrl ?? DEFAULT_SERVER_URL, description: 'API test server (default)' }],
+    servers: [
+      { url: metadata.serverUrl ?? DEFAULT_SERVER_URL, description: "API test server (default)" },
+    ],
     tags: [...tags].sort().map((name) => ({ name })),
     paths,
     components: { schemas },
-    'x-hypercerts-source': metadata.source ?? 'Committed Lexicon snapshots in sources/lexicons.',
-    'x-hypercerts-unresolved-references': Object.entries(schemas)
-      .filter(([, schema]) => Object.hasOwn(schema, 'x-lexicon-ref'))
-      .map(([name, schema]) => ({ component: name, reference: schema['x-lexicon-ref'] }))
+    "x-hypercerts-source": metadata.source ?? "Committed Lexicon snapshots in sources/lexicons.",
+    "x-hypercerts-unresolved-references": Object.entries(schemas)
+      .filter(([, schema]) => Object.hasOwn(schema, "x-lexicon-ref"))
+      .map(([name, schema]) => ({ component: name, reference: schema["x-lexicon-ref"] }))
       .sort((left, right) => left.reference.localeCompare(right.reference)),
   };
 }

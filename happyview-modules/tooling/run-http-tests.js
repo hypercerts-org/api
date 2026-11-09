@@ -1,19 +1,19 @@
-import { randomBytes, randomUUID, createHash } from 'node:crypto';
-import { accessSync, constants, statSync } from 'node:fs';
-import { appendFile, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
-import { spawnSync } from 'node:child_process';
-import os from 'node:os';
-import path from 'node:path';
-import { setTimeout as delay } from 'node:timers/promises';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import { buildSeedInput, psqlTargetArgs } from './seed.js';
+import { randomBytes, randomUUID, createHash } from "node:crypto";
+import { accessSync, constants, statSync } from "node:fs";
+import { appendFile, mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+import os from "node:os";
+import path from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { buildSeedInput, psqlTargetArgs } from "./seed.js";
 
-const apiRoot = fileURLToPath(new URL('../', import.meta.url));
-const composeFile = path.join(apiRoot, 'docker-compose.contracts.yml');
-const httpTestRoot = path.join(apiRoot, 'tests', 'http');
-const fixtureRoot = path.join(httpTestRoot, 'fixtures');
-const services = new Set(['postgres', 'happyview']);
-const proxyBlock = 'http://127.0.0.1:9';
+const apiRoot = fileURLToPath(new URL("../", import.meta.url));
+const composeFile = path.join(apiRoot, "docker-compose.contracts.yml");
+const httpTestRoot = path.join(apiRoot, "tests", "http");
+const fixtureRoot = path.join(httpTestRoot, "fixtures");
+const services = new Set(["postgres", "happyview"]);
+const proxyBlock = "http://127.0.0.1:9";
 
 /** @typedef {{ cwd?: string; env?: NodeJS.ProcessEnv; input?: string; maxBuffer?: number; timeoutMs?: number; label?: string }} SpawnOptions */
 /** @typedef {import('node:child_process').SpawnSyncReturns<string>} SpawnResult */
@@ -24,22 +24,37 @@ const proxyBlock = 'http://127.0.0.1:9';
 /** @typedef {{ psqlPath: string; suites: string[]; httpSeedRows: SeedRow[]; dockerEnv: NodeJS.ProcessEnv; dockerContext: string; projectName: string; postgresUser: string; postgresPassword: string; postgresDatabase: string; adminToken: string; composeEnv: NodeJS.ProcessEnv; tempRoot: string; envFile: string; compose: ComposeRunner; lifecycleState: LifecycleState }} RunContext */
 
 /** @param {string} command @param {string[]} args @param {SpawnOptions} [options] @returns {SpawnResult} */
-function spawn(command, args, {
-  cwd = apiRoot,
-  env = process.env,
-  input,
-  maxBuffer = 16 * 1024 * 1024,
-  timeoutMs = 30_000,
-  label = `${command} ${args[0] ?? ''}`,
-} = {}) {
-  const result = spawnSync(command, args, { cwd, env, input, encoding: 'utf8', maxBuffer, timeout: timeoutMs });
-  const errorCode = result.error && 'code' in result.error ? result.error.code : undefined;
-  if (errorCode === 'ETIMEDOUT') {
+function spawn(
+  command,
+  args,
+  {
+    cwd = apiRoot,
+    env = process.env,
+    input,
+    maxBuffer = 16 * 1024 * 1024,
+    timeoutMs = 30_000,
+    label = `${command} ${args[0] ?? ""}`,
+  } = {},
+) {
+  const result = spawnSync(command, args, {
+    cwd,
+    env,
+    input,
+    encoding: "utf8",
+    maxBuffer,
+    timeout: timeoutMs,
+  });
+  const errorCode = result.error && "code" in result.error ? result.error.code : undefined;
+  if (errorCode === "ETIMEDOUT") {
     if (result.stdout) process.stderr.write(result.stdout);
     if (result.stderr) process.stderr.write(result.stderr);
-    throw new Error(`${label} timed out after ${timeoutMs}ms; the subprocess was terminated. Check task-owned Docker logs and local service health before retrying.`, { cause: result.error });
+    throw new Error(
+      `${label} timed out after ${timeoutMs}ms; the subprocess was terminated. Check task-owned Docker logs and local service health before retrying.`,
+      { cause: result.error },
+    );
   }
-  if (result.error) throw new Error(`${label} could not start: ${result.error.message}`, { cause: result.error });
+  if (result.error)
+    throw new Error(`${label} could not start: ${result.error.message}`, { cause: result.error });
   return result;
 }
 
@@ -49,7 +64,9 @@ function run(command, args, options = {}) {
   if (result.stdout) process.stdout.write(result.stdout);
   if (result.stderr) process.stderr.write(result.stderr);
   if (result.status !== 0) {
-    throw new Error(`${command} ${args.join(' ')} failed with exit status ${result.status ?? 'unknown'}`);
+    throw new Error(
+      `${command} ${args.join(" ")} failed with exit status ${result.status ?? "unknown"}`,
+    );
   }
   return result.stdout;
 }
@@ -58,8 +75,8 @@ function run(command, args, options = {}) {
 function runQuiet(command, args, options = {}) {
   const result = spawn(command, args, options);
   if (result.status !== 0) {
-    const failure = result.stderr || `exit status ${result.status ?? 'unknown'}`;
-    throw new Error(`${command} ${args.join(' ')} failed: ${failure}`);
+    const failure = result.stderr || `exit status ${result.status ?? "unknown"}`;
+    throw new Error(`${command} ${args.join(" ")} failed: ${failure}`);
   }
   return result.stdout.trim();
 }
@@ -68,14 +85,19 @@ function runQuiet(command, args, options = {}) {
 function requirePsqlPath() {
   const executable = process.env.PSQL_PATH;
   if (!executable || !path.isAbsolute(executable)) {
-    throw new Error('Set PSQL_PATH to the absolute path of a trusted psql executable (for example, PSQL_PATH="$(command -v psql)").');
+    throw new Error(
+      'Set PSQL_PATH to the absolute path of a trusted psql executable (for example, PSQL_PATH="$(command -v psql)").',
+    );
   }
   try {
-    if (!statSync(executable).isFile()) throw new Error('not a regular file');
+    if (!statSync(executable).isFile()) throw new Error("not a regular file");
     accessSync(executable, constants.X_OK);
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
-    throw new Error(`PSQL_PATH must point to an existing executable file (${executable}): ${detail}`, { cause: error });
+    throw new Error(
+      `PSQL_PATH must point to an existing executable file (${executable}): ${detail}`,
+      { cause: error },
+    );
   }
   return executable;
 }
@@ -93,20 +115,22 @@ async function findFiles(directory, suffix) {
   try {
     entries = await readdir(directory, { withFileTypes: true });
   } catch (error) {
-    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') return [];
+    if (error instanceof Error && "code" in error && error.code === "ENOENT") return [];
     throw error;
   }
   entries.sort(compareEntryNames);
 
-  const fileGroups = await Promise.all(entries.map(async (entry) => {
-    const entryPath = path.join(directory, entry.name);
-    if (entry.isDirectory()) {
-      const nestedFiles = await findFiles(entryPath, suffix);
-      return nestedFiles;
-    }
-    if (entry.isFile() && entry.name.endsWith(suffix)) return [entryPath];
-    return [];
-  }));
+  const fileGroups = await Promise.all(
+    entries.map(async (entry) => {
+      const entryPath = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        const nestedFiles = await findFiles(entryPath, suffix);
+        return nestedFiles;
+      }
+      if (entry.isFile() && entry.name.endsWith(suffix)) return [entryPath];
+      return [];
+    }),
+  );
   return fileGroups.flat();
 }
 
@@ -114,15 +138,22 @@ async function findFiles(directory, suffix) {
 async function loadFixtureRows(fixtureModules) {
   /** @type {SeedRow[]} */
   const rows = [];
-  await fixtureModules.reduce((previous, file) => previous.then(async () => {
-    /** @type {{ seedRows?: SeedRow[] }} */
-    const fixture = await import(pathToFileURL(file).href);
-    if (!Array.isArray(fixture.seedRows) || fixture.seedRows.length === 0) {
-      throw new Error(`${path.relative(apiRoot, file)} must export a nonempty seedRows array.`);
-    }
-    rows.push(...fixture.seedRows);
-  }), Promise.resolve());
-  if (rows.length === 0) throw new Error('No HTTP fixture rows found; add a *.fixture.js module under tests/http/fixtures.');
+  await fixtureModules.reduce(
+    (previous, file) =>
+      previous.then(async () => {
+        /** @type {{ seedRows?: SeedRow[] }} */
+        const fixture = await import(pathToFileURL(file).href);
+        if (!Array.isArray(fixture.seedRows) || fixture.seedRows.length === 0) {
+          throw new Error(`${path.relative(apiRoot, file)} must export a nonempty seedRows array.`);
+        }
+        rows.push(...fixture.seedRows);
+      }),
+    Promise.resolve(),
+  );
+  if (rows.length === 0)
+    throw new Error(
+      "No HTTP fixture rows found; add a *.fixture.js module under tests/http/fixtures.",
+    );
   return rows;
 }
 
@@ -138,10 +169,16 @@ function dockerEnvironment() {
 
 /** @param {NodeJS.ProcessEnv} env @returns {string} */
 function assertLocalDocker(env) {
-  const context = runQuiet('docker', ['context', 'show'], { env });
-  const endpoint = runQuiet('docker', ['context', 'inspect', '--format', '{{.Endpoints.docker.Host}}', context], { env });
+  const context = runQuiet("docker", ["context", "show"], { env });
+  const endpoint = runQuiet(
+    "docker",
+    ["context", "inspect", "--format", "{{.Endpoints.docker.Host}}", context],
+    { env },
+  );
   if (!/^(unix|npipe):\/\//.test(endpoint)) {
-    throw new Error(`Refusing non-local Docker context ${context} (${endpoint}); HTTP tests may use only a local Docker daemon.`);
+    throw new Error(
+      `Refusing non-local Docker context ${context} (${endpoint}); HTTP tests may use only a local Docker daemon.`,
+    );
   }
   return `${context} (${endpoint})`;
 }
@@ -150,8 +187,10 @@ function assertLocalDocker(env) {
 function imagesFromComposeConfig(config) {
   return [...services].map((service) => {
     const image = config.services?.[service]?.image;
-    if (typeof image !== 'string' || !/@sha256:[a-f0-9]{64}$/i.test(image)) {
-      throw new Error(`Compose service ${service} must use an image pinned by sha256 digest; found ${JSON.stringify(image)}.`);
+    if (typeof image !== "string" || !/@sha256:[a-f0-9]{64}$/i.test(image)) {
+      throw new Error(
+        `Compose service ${service} must use an image pinned by sha256 digest; found ${JSON.stringify(image)}.`,
+      );
     }
     return image;
   });
@@ -160,14 +199,21 @@ function imagesFromComposeConfig(config) {
 /** @param {string[]} images @param {NodeJS.ProcessEnv} env @param {string} context */
 function assertImagesCached(images, env, context) {
   for (const image of images) {
-    const result = spawn('docker', ['image', 'inspect', image], { env, label: `Docker image cache check for ${image}` });
+    const result = spawn("docker", ["image", "inspect", image], {
+      env,
+      label: `Docker image cache check for ${image}`,
+    });
     if (result.status !== 0) {
       const details = [
-        `status=${result.status ?? 'unknown'}`,
+        `status=${result.status ?? "unknown"}`,
         result.signal ? `signal=${result.signal}` : null,
-        `stderr=${JSON.stringify(result.stderr?.trim() ?? '')}`,
-      ].filter(Boolean).join(', ');
-      throw new Error(`docker image inspect failed for Compose image ${image} on local context ${context} (${details}). No pull was attempted; verify this exact digest and the Docker daemon response before retrying.`);
+        `stderr=${JSON.stringify(result.stderr?.trim() ?? "")}`,
+      ]
+        .filter(Boolean)
+        .join(", ");
+      throw new Error(
+        `docker image inspect failed for Compose image ${image} on local context ${context} (${details}). No pull was attempted; verify this exact digest and the Docker daemon response before retrying.`,
+      );
     }
   }
 }
@@ -182,45 +228,66 @@ function localProxyEnvironment(env) {
     http_proxy: proxyBlock,
     https_proxy: proxyBlock,
     all_proxy: proxyBlock,
-    NO_PROXY: 'localhost,127.0.0.1,::1,postgres',
-    no_proxy: 'localhost,127.0.0.1,::1,postgres',
+    NO_PROXY: "localhost,127.0.0.1,::1,postgres",
+    no_proxy: "localhost,127.0.0.1,::1,postgres",
   };
 }
 
 /** @param {string} projectName @param {string} envFile @param {string[]} args @returns {string[]} */
 function composeArgs(projectName, envFile, args) {
   return [
-    'compose',
-    '--project-name', projectName,
-    '--env-file', envFile,
-    '--project-directory', apiRoot,
-    '-f', composeFile,
+    "compose",
+    "--project-name",
+    projectName,
+    "--env-file",
+    envFile,
+    "--project-directory",
+    apiRoot,
+    "-f",
+    composeFile,
     ...args,
   ];
 }
 
 /** @param {ComposeRunner} compose @param {string} service @param {number} targetPort @param {NodeJS.ProcessEnv} dockerEnv @returns {string} */
 function publishedPort(compose, service, targetPort, dockerEnv) {
-  const ids = compose(['ps', '--all', '--quiet', service]).split(/\r?\n/).filter(Boolean);
+  const ids = compose(["ps", "--all", "--quiet", service]).split(/\r?\n/).filter(Boolean);
   const [containerId] = ids;
-  if (ids.length !== 1 || !containerId) throw new Error(`Expected one task-owned ${service} container, found ${ids.length}.`);
+  if (ids.length !== 1 || !containerId)
+    throw new Error(`Expected one task-owned ${service} container, found ${ids.length}.`);
 
   const portKey = `${targetPort}/tcp`;
-  const rawBindings = runQuiet('docker', ['inspect', '--format', `{{json (index .NetworkSettings.Ports "${portKey}")}}`, containerId], { env: dockerEnv });
+  const rawBindings = runQuiet(
+    "docker",
+    ["inspect", "--format", `{{json (index .NetworkSettings.Ports "${portKey}")}}`, containerId],
+    { env: dockerEnv },
+  );
   let bindings;
   try {
     bindings = JSON.parse(rawBindings);
   } catch (cause) {
-    throw new Error(`Docker returned invalid published-port data for ${service}:${targetPort}: ${rawBindings}`, { cause });
+    throw new Error(
+      `Docker returned invalid published-port data for ${service}:${targetPort}: ${rawBindings}`,
+      { cause },
+    );
   }
   if (!Array.isArray(bindings) || bindings.length !== 1) {
-    throw new Error(`Docker did not report exactly one published binding for ${service}:${targetPort}: ${rawBindings}`);
+    throw new Error(
+      `Docker did not report exactly one published binding for ${service}:${targetPort}: ${rawBindings}`,
+    );
   }
 
   const [binding] = bindings;
   const port = Number(binding.HostPort);
-  if (!['127.0.0.1', 'localhost', '::1'].includes(binding.HostIp) || !Number.isInteger(port) || port < 1 || port > 65_535) {
-    throw new Error(`Refusing non-loopback ${service} binding ${binding.HostIp}:${binding.HostPort}; HTTP tests may use only localhost.`);
+  if (
+    !["127.0.0.1", "localhost", "::1"].includes(binding.HostIp) ||
+    !Number.isInteger(port) ||
+    port < 1 ||
+    port > 65_535
+  ) {
+    throw new Error(
+      `Refusing non-loopback ${service} binding ${binding.HostIp}:${binding.HostPort}; HTTP tests may use only localhost.`,
+    );
   }
   return String(port);
 }
@@ -230,13 +297,13 @@ function seedEnvironment({ database, user, password, port, psqlPath }) {
   /** @type {NodeJS.ProcessEnv} */
   const env = {
     ...process.env,
-    HAPPYVIEW_DISPOSABLE_TEST_TARGET: 'YES',
-    PGHOST: '127.0.0.1',
+    HAPPYVIEW_DISPOSABLE_TEST_TARGET: "YES",
+    PGHOST: "127.0.0.1",
     PGPORT: port,
     PGDATABASE: database,
     PGUSER: user,
     PGPASSWORD: password,
-    PGSSLMODE: 'disable',
+    PGSSLMODE: "disable",
     PSQL_PATH: psqlPath,
   };
   delete env.PGHOSTADDR;
@@ -247,7 +314,10 @@ function seedEnvironment({ database, user, password, port, psqlPath }) {
 
 /** @param {string} psqlPath @param {NodeJS.ProcessEnv} env @param {string} input */
 function psql(psqlPath, env, input) {
-  run(psqlPath, ['--no-psqlrc', '--quiet', '--set', 'ON_ERROR_STOP=1', ...psqlTargetArgs(env)], { env, input });
+  run(psqlPath, ["--no-psqlrc", "--quiet", "--set", "ON_ERROR_STOP=1", ...psqlTargetArgs(env)], {
+    env,
+    input,
+  });
 }
 
 /** @param {string} value @returns {string} */
@@ -260,15 +330,15 @@ function bootstrapAdmin(psqlPath, env, token) {
   const now = new Date().toISOString();
   const userId = randomUUID();
   const apiKeyId = randomUUID();
-  const did = `did:web:http-${randomBytes(6).toString('hex')}.invalid`;
-  const tokenHash = createHash('sha256').update(token).digest('hex');
+  const did = `did:web:http-${randomBytes(6).toString("hex")}.invalid`;
+  const tokenHash = createHash("sha256").update(token).digest("hex");
   const permissions = JSON.stringify([
-    'lexicons:create',
-    'lexicons:read',
-    'script-variables:create',
-    'script-variables:read',
-    'scripts:read',
-    'scripts:manage',
+    "lexicons:create",
+    "lexicons:read",
+    "script-variables:create",
+    "script-variables:read",
+    "scripts:read",
+    "scripts:manage",
   ]);
   const sql = `
 BEGIN;
@@ -300,69 +370,93 @@ async function waitForHealth(baseUrl, timeoutMs = 30_000) {
     }
     await delay(500);
   }
-  throw new Error(`Task-owned HappyView did not become healthy at ${baseUrl}/health within ${timeoutMs}ms.`);
+  throw new Error(
+    `Task-owned HappyView did not become healthy at ${baseUrl}/health within ${timeoutMs}ms.`,
+  );
 }
 
 /** @param {string[]} files @param {NodeJS.ProcessEnv} env */
 function runHttpCases(files, env) {
   const relativeFiles = files.map((file) => path.relative(apiRoot, file));
-  const result = spawn(process.execPath, ['--test', '--test-reporter=tap', ...relativeFiles], {
+  const result = spawn(process.execPath, ["--test", "--test-reporter=tap", ...relativeFiles], {
     cwd: apiRoot,
     env,
     timeoutMs: 90_000,
-    label: 'Node HTTP test runner',
+    label: "Node HTTP test runner",
   });
   if (result.stdout) process.stdout.write(result.stdout);
   if (result.stderr) process.stderr.write(result.stderr);
 
-  const tests = /^# tests (\d+)$/m.exec(result.stdout ?? '');
-  const passed = /^# pass (\d+)$/m.exec(result.stdout ?? '');
-  if (!tests) throw new Error('HTTP test runner produced no TAP test-count summary; refusing to treat file selection as executed HTTP coverage.');
-  if (Number(tests[1]) === 0) throw new Error('Zero HTTP test cases executed; add actual node:test cases under tests/http.');
-  if (result.status !== 0) throw new Error(`HTTP test cases failed with exit status ${result.status ?? 'unknown'}.`);
-  if (!passed || Number(passed[1]) === 0) throw new Error('No HTTP test cases passed; skipped-only HTTP files do not satisfy runtime coverage.');
-  process.stdout.write(`Verified ${tests[1]} executed HTTP cases (${passed[1]} passed) across ${files.length} suite files.\n`);
+  const tests = /^# tests (\d+)$/m.exec(result.stdout ?? "");
+  const passed = /^# pass (\d+)$/m.exec(result.stdout ?? "");
+  if (!tests)
+    throw new Error(
+      "HTTP test runner produced no TAP test-count summary; refusing to treat file selection as executed HTTP coverage.",
+    );
+  if (Number(tests[1]) === 0)
+    throw new Error("Zero HTTP test cases executed; add actual node:test cases under tests/http.");
+  if (result.status !== 0)
+    throw new Error(`HTTP test cases failed with exit status ${result.status ?? "unknown"}.`);
+  if (!passed || Number(passed[1]) === 0)
+    throw new Error(
+      "No HTTP test cases passed; skipped-only HTTP files do not satisfy runtime coverage.",
+    );
+  process.stdout.write(
+    `Verified ${tests[1]} executed HTTP cases (${passed[1]} passed) across ${files.length} suite files.\n`,
+  );
 }
 
 /** @param {ComposeRunner} compose @param {string} projectName @param {string} envFile @param {NodeJS.ProcessEnv} dockerEnv @param {NodeJS.ProcessEnv} composeEnv */
 function teardownOwnedProject(compose, projectName, envFile, dockerEnv, composeEnv) {
-  const ids = compose(['ps', '--all', '--quiet']).split(/\r?\n/).filter(Boolean);
+  const ids = compose(["ps", "--all", "--quiet"]).split(/\r?\n/).filter(Boolean);
   for (const id of ids) {
-    const rawLabels = runQuiet('docker', ['inspect', '--format', '{{json .Config.Labels}}', id], { env: dockerEnv });
+    const rawLabels = runQuiet("docker", ["inspect", "--format", "{{json .Config.Labels}}", id], {
+      env: dockerEnv,
+    });
     const labels = /** @type {Record<string, string | undefined>} */ (JSON.parse(rawLabels));
-    const configFiles = (labels['com.docker.compose.project.config_files'] ?? '').split(',').map((file) => path.resolve(file));
-    const service = labels['com.docker.compose.service'];
-    if (labels['com.docker.compose.project'] !== projectName
-      || typeof service !== 'string'
-      || !services.has(service)
-      || !configFiles.includes(path.resolve(composeFile))) {
-      throw new Error(`Refusing teardown: container ${id} is not owned by this task's Compose project and file.`);
+    const configFiles = (labels["com.docker.compose.project.config_files"] ?? "")
+      .split(",")
+      .map((file) => path.resolve(file));
+    const service = labels["com.docker.compose.service"];
+    if (
+      labels["com.docker.compose.project"] !== projectName ||
+      typeof service !== "string" ||
+      !services.has(service) ||
+      !configFiles.includes(path.resolve(composeFile))
+    ) {
+      throw new Error(
+        `Refusing teardown: container ${id} is not owned by this task's Compose project and file.`,
+      );
     }
   }
-  run('docker', composeArgs(projectName, envFile, ['down', '--volumes', '--timeout', '10']), { env: composeEnv });
+  run("docker", composeArgs(projectName, envFile, ["down", "--volumes", "--timeout", "10"]), {
+    env: composeEnv,
+  });
 }
 
 /** @returns {Promise<RunContext>} */
 async function prepareRun() {
   const psqlPath = requirePsqlPath();
-  const suites = await findFiles(httpTestRoot, '.http.test.js');
+  const suites = await findFiles(httpTestRoot, ".http.test.js");
   if (suites.length === 0) {
-    throw new Error('No HTTP suites found under tests/http; add at least one *.http.test.js suite.');
+    throw new Error(
+      "No HTTP suites found under tests/http; add at least one *.http.test.js suite.",
+    );
   }
-  const fixtureModules = await findFiles(fixtureRoot, '.fixture.js');
+  const fixtureModules = await findFiles(fixtureRoot, ".fixture.js");
   const httpSeedRows = await loadFixtureRows(fixtureModules);
 
   const dockerEnv = dockerEnvironment();
   const dockerContext = assertLocalDocker(dockerEnv);
 
-  const nonce = randomBytes(8).toString('hex');
+  const nonce = randomBytes(8).toString("hex");
   const projectName = `hypercerts-http-${process.pid}-${nonce}`;
   const postgresUser = `http_${process.pid}_${nonce}`;
-  const postgresPassword = randomBytes(32).toString('hex');
+  const postgresPassword = randomBytes(32).toString("hex");
   const postgresDatabase = `happyview_http_test_${process.pid}_${nonce}`;
-  const sessionSecret = randomBytes(48).toString('hex');
-  const tokenEncryptionKey = randomBytes(32).toString('base64');
-  const adminToken = `hv_${randomBytes(24).toString('hex')}`;
+  const sessionSecret = randomBytes(48).toString("hex");
+  const tokenEncryptionKey = randomBytes(32).toString("base64");
+  const adminToken = `hv_${randomBytes(24).toString("hex")}`;
   const composeEnv = {
     ...dockerEnv,
     POSTGRES_USER: postgresUser,
@@ -373,19 +467,24 @@ async function prepareRun() {
   };
 
   const tempBase = process.env.RUNNER_TEMP ? path.resolve(process.env.RUNNER_TEMP) : os.tmpdir();
-  const tempRoot = await mkdtemp(path.join(tempBase, 'hypercerts-http-'));
-  const envFile = path.join(tempRoot, 'compose.env');
-  await writeFile(envFile, [
-    `POSTGRES_USER=${postgresUser}`,
-    `POSTGRES_PASSWORD=${postgresPassword}`,
-    `POSTGRES_DB=${postgresDatabase}`,
-    `SESSION_SECRET=${sessionSecret}`,
-    `TOKEN_ENCRYPTION_KEY=${tokenEncryptionKey}`,
-    '',
-  ].join('\n'), { mode: 0o600 });
+  const tempRoot = await mkdtemp(path.join(tempBase, "hypercerts-http-"));
+  const envFile = path.join(tempRoot, "compose.env");
+  await writeFile(
+    envFile,
+    [
+      `POSTGRES_USER=${postgresUser}`,
+      `POSTGRES_PASSWORD=${postgresPassword}`,
+      `POSTGRES_DB=${postgresDatabase}`,
+      `SESSION_SECRET=${sessionSecret}`,
+      `TOKEN_ENCRYPTION_KEY=${tokenEncryptionKey}`,
+      "",
+    ].join("\n"),
+    { mode: 0o600 },
+  );
 
   /** @type {ComposeRunner} */
-  const compose = (args) => runQuiet('docker', composeArgs(projectName, envFile, args), { env: composeEnv });
+  const compose = (args) =>
+    runQuiet("docker", composeArgs(projectName, envFile, args), { env: composeEnv });
   return {
     psqlPath,
     suites,
@@ -411,18 +510,52 @@ async function validateTaskProject(context) {
   /** @type {ComposeConfig} */
   let composeConfig;
   try {
-    composeConfig = JSON.parse(context.compose(['config', '--format', 'json']));
+    composeConfig = JSON.parse(context.compose(["config", "--format", "json"]));
   } catch (cause) {
     const detail = cause instanceof Error ? cause.message : String(cause);
-    throw new Error(`Could not read the task Compose configuration before starting services: ${detail}`, { cause });
+    throw new Error(
+      `Could not read the task Compose configuration before starting services: ${detail}`,
+      { cause },
+    );
   }
-  assertImagesCached(imagesFromComposeConfig(composeConfig), context.dockerEnv, context.dockerContext);
-  if (context.compose(['ps', '--all', '--quiet'])) throw new Error(`Refusing to reuse non-empty Compose project ${context.projectName}.`);
-  const networks = runQuiet('docker', ['network', 'ls', '--quiet', '--filter', `label=com.docker.compose.project=${context.projectName}`], { env: context.dockerEnv });
-  const volumes = runQuiet('docker', ['volume', 'ls', '--quiet', '--filter', `label=com.docker.compose.project=${context.projectName}`], { env: context.dockerEnv });
-  if (networks || volumes) throw new Error(`Refusing to reuse existing Docker resources for Compose project ${context.projectName}.`);
+  assertImagesCached(
+    imagesFromComposeConfig(composeConfig),
+    context.dockerEnv,
+    context.dockerContext,
+  );
+  if (context.compose(["ps", "--all", "--quiet"]))
+    throw new Error(`Refusing to reuse non-empty Compose project ${context.projectName}.`);
+  const networks = runQuiet(
+    "docker",
+    [
+      "network",
+      "ls",
+      "--quiet",
+      "--filter",
+      `label=com.docker.compose.project=${context.projectName}`,
+    ],
+    { env: context.dockerEnv },
+  );
+  const volumes = runQuiet(
+    "docker",
+    [
+      "volume",
+      "ls",
+      "--quiet",
+      "--filter",
+      `label=com.docker.compose.project=${context.projectName}`,
+    ],
+    { env: context.dockerEnv },
+  );
+  if (networks || volumes)
+    throw new Error(
+      `Refusing to reuse existing Docker resources for Compose project ${context.projectName}.`,
+    );
   if (process.env.GITHUB_ENV) {
-    await appendFile(process.env.GITHUB_ENV, `HYPERCERTS_HTTP_TEST_COMPOSE_PROJECT=${context.projectName}\nHYPERCERTS_HTTP_TEST_COMPOSE_ENV_FILE=${context.envFile}\n`);
+    await appendFile(
+      process.env.GITHUB_ENV,
+      `HYPERCERTS_HTTP_TEST_COMPOSE_PROJECT=${context.projectName}\nHYPERCERTS_HTTP_TEST_COMPOSE_ENV_FILE=${context.envFile}\n`,
+    );
   }
 
   lifecycleState.ownsProject = true;
@@ -430,18 +563,32 @@ async function validateTaskProject(context) {
 
 /** @param {RunContext} context */
 function startTaskServices(context) {
-  process.stdout.write(`Starting disposable local HTTP test project ${context.projectName} (cached images only).\n`);
-  run('docker', composeArgs(context.projectName, context.envFile, ['up', '--pull', 'never', '--detach', '--wait', '--wait-timeout', '180']), {
-    env: context.composeEnv,
-    timeoutMs: 210_000,
-    label: 'Task-owned Docker Compose startup',
-  });
+  process.stdout.write(
+    `Starting disposable local HTTP test project ${context.projectName} (cached images only).\n`,
+  );
+  run(
+    "docker",
+    composeArgs(context.projectName, context.envFile, [
+      "up",
+      "--pull",
+      "never",
+      "--detach",
+      "--wait",
+      "--wait-timeout",
+      "180",
+    ]),
+    {
+      env: context.composeEnv,
+      timeoutMs: 210_000,
+      label: "Task-owned Docker Compose startup",
+    },
+  );
 }
 
 /** @param {RunContext} context @returns {Promise<string>} */
 async function installAndSeedApi(context) {
-  const postgresPort = publishedPort(context.compose, 'postgres', 5432, context.dockerEnv);
-  const happyviewPort = publishedPort(context.compose, 'happyview', 3000, context.dockerEnv);
+  const postgresPort = publishedPort(context.compose, "postgres", 5432, context.dockerEnv);
+  const happyviewPort = publishedPort(context.compose, "happyview", 3000, context.dockerEnv);
   const baseUrl = `http://127.0.0.1:${happyviewPort}`;
   await waitForHealth(baseUrl);
 
@@ -459,12 +606,12 @@ async function installAndSeedApi(context) {
     ...localEnv,
     HAPPYVIEW_BASE_URL: baseUrl,
     HAPPYVIEW_ADMIN_TOKEN: context.adminToken,
-    HYPERCERTS_HANDLE_RESOLVER_URL: 'https://resolver.invalid',
+    HYPERCERTS_HANDLE_RESOLVER_URL: "https://resolver.invalid",
   };
-  run('pnpm', ['--filter', '@hypercerts-org/happyview-modules', 'run', 'install:api'], {
+  run("pnpm", ["--filter", "@hypercerts-org/happyview-modules", "run", "install:api"], {
     env: installerEnv,
     timeoutMs: 180_000,
-    label: 'Checkout API manifest install into disposable HappyView',
+    label: "Checkout API manifest install into disposable HappyView",
   });
 
   psql(context.psqlPath, pgEnv, buildSeedInput(pgEnv));
@@ -495,11 +642,23 @@ function reportRunFailure(error, context) {
   process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
   if (!context.lifecycleState.ownsProject) return;
   try {
-    const logs = spawn('docker', composeArgs(context.projectName, context.envFile, ['logs', '--no-color', '--timestamps', '--tail', '100']), { env: context.composeEnv });
+    const logs = spawn(
+      "docker",
+      composeArgs(context.projectName, context.envFile, [
+        "logs",
+        "--no-color",
+        "--timestamps",
+        "--tail",
+        "100",
+      ]),
+      { env: context.composeEnv },
+    );
     if (logs.stdout) process.stderr.write(logs.stdout);
     if (logs.stderr) process.stderr.write(logs.stderr);
   } catch (logError) {
-    process.stderr.write(`Unable to collect task-owned Compose logs: ${logError instanceof Error ? logError.message : String(logError)}\n`);
+    process.stderr.write(
+      `Unable to collect task-owned Compose logs: ${logError instanceof Error ? logError.message : String(logError)}\n`,
+    );
   }
 }
 
@@ -508,21 +667,35 @@ async function cleanupRun(context) {
   const { lifecycleState } = context;
   if (lifecycleState.ownsProject) {
     try {
-      teardownOwnedProject(context.compose, context.projectName, context.envFile, context.dockerEnv, context.composeEnv);
+      teardownOwnedProject(
+        context.compose,
+        context.projectName,
+        context.envFile,
+        context.dockerEnv,
+        context.composeEnv,
+      );
     } catch (cleanupError) {
-      process.stderr.write(`Task-owned Compose teardown failed: ${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}\n`);
+      process.stderr.write(
+        `Task-owned Compose teardown failed: ${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}\n`,
+      );
       lifecycleState.failure ??= cleanupError;
       lifecycleState.retainCredentials = true;
     }
   }
   if (lifecycleState.retainCredentials) {
-    const recovery = process.env.GITHUB_ENV ? 'the workflow always-cleanup step will retry' : 'retain it for task-scoped manual cleanup';
-    process.stderr.write(`Retaining task-owned temporary credentials at ${context.envFile}; ${recovery}.\n`);
+    const recovery = process.env.GITHUB_ENV
+      ? "the workflow always-cleanup step will retry"
+      : "retain it for task-scoped manual cleanup";
+    process.stderr.write(
+      `Retaining task-owned temporary credentials at ${context.envFile}; ${recovery}.\n`,
+    );
   } else {
     try {
       await rm(context.tempRoot, { recursive: true, force: true });
     } catch (cleanupError) {
-      process.stderr.write(`Unable to remove task-owned temporary credentials: ${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}\n`);
+      process.stderr.write(
+        `Unable to remove task-owned temporary credentials: ${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}\n`,
+      );
       lifecycleState.failure ??= cleanupError;
     }
   }

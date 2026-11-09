@@ -1,25 +1,25 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
-import { spawnSync } from 'node:child_process';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = fileURLToPath(new URL('../../../', import.meta.url));
-const read = (relative) => readFile(path.resolve(root, relative), 'utf8');
+const root = fileURLToPath(new URL("../../../", import.meta.url));
+const read = (relative) => readFile(path.resolve(root, relative), "utf8");
 
-test('listContributorInformation filters repeated authors and resumes in the selected order', async () => {
+test("listContributorInformation filters repeated authors and resumes in the selected order", async () => {
   const sources = await Promise.all([
-    read('lua/shared/query.lua'),
-    read('lua/shared/didValidation.lua'),
-    read('lua/shared/recordIdentifier.lua'),
-    read('lua/shared/contributorInformationValidation.lua'),
-    read('lua/shared/recordView.lua'),
-    read('lua/shared/actorView.lua'),
-    read('lua/shared/datetimeValidation.lua'),
-    read('lua/shared/listValidation.lua'),
-    read('lua/shared/listQuery.lua'),
-    read('lua/src/listContributorInformation.lua'),
+    read("lua/shared/query.lua"),
+    read("lua/shared/didValidation.lua"),
+    read("lua/shared/recordIdentifier.lua"),
+    read("lua/shared/contributorInformationValidation.lua"),
+    read("lua/shared/recordView.lua"),
+    read("lua/shared/actorView.lua"),
+    read("lua/shared/datetimeValidation.lua"),
+    read("lua/shared/listValidation.lua"),
+    read("lua/shared/listQuery.lua"),
+    read("lua/src/listContributorInformation.lua"),
   ]);
   const program = `JSON_NULL = {}
 JSON_VALUES = {}
@@ -35,7 +35,7 @@ json = {
     return "cursor"
   end,
 }
-${sources.join('\n\n')}
+${sources.join("\n\n")}
 
 JSON_VALUES.record1 = { ["$type"] = "org.hypercerts.claim.contributorInformation", identifier = "manual:ada", displayName = "Ada", image = { ref = "blob" } }
 JSON_VALUES.record2 = { ["$type"] = "org.hypercerts.claim.contributorInformation", identifier = "manual:grace", displayName = "Grace" }
@@ -141,7 +141,7 @@ local oversized_cursor_ok, oversized_cursor_error = pcall(function() return hand
 assert(not oversized_cursor_ok and tostring(oversized_cursor_error) == "InvalidRequest: cursor is malformed")
 assert(page == completed_pages, "a cursor larger than 8192 hex characters must be rejected before decoding or querying")
 `;
-  const result = spawnSync('lua', ['-e', program], { encoding: 'utf8' });
+  const result = spawnSync("lua", ["-e", program], { encoding: "utf8" });
   assert.equal(result.error, undefined, result.error?.message);
   assert.equal(result.status, 0, result.stderr || result.stdout);
 });

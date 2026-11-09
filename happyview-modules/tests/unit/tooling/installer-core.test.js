@@ -1,204 +1,326 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { createServer } from 'node:http';
-import { applyAssets, compareAsset, createAdminClient, orderAssets, sortJsonKeys } from '../../../tooling/installer.js';
+import test from "node:test";
+import assert from "node:assert/strict";
+import { createServer } from "node:http";
+import {
+  applyAssets,
+  compareAsset,
+  createAdminClient,
+  orderAssets,
+  sortJsonKeys,
+} from "../../../tooling/installer.js";
 
-test('installer orders dependencies before consumers regardless of manifest order', () => {
+test("installer orders dependencies before consumers regardless of manifest order", () => {
   const assets = [
-    { id: 'script', kind: 'script', dependsOn: ['query'] },
-    { id: 'query', kind: 'lexicon', dependsOn: ['record'] },
-    { id: 'record', kind: 'lexicon' },
+    { id: "script", kind: "script", dependsOn: ["query"] },
+    { id: "query", kind: "lexicon", dependsOn: ["record"] },
+    { id: "record", kind: "lexicon" },
   ];
-  assert.deepEqual(orderAssets(assets).map(({ id }) => id), ['record', 'query', 'script']);
-  assert.throws(() => orderAssets([{ id: 'a', dependsOn: ['b'] }, { id: 'b', dependsOn: ['a'] }]), /cycle.*remove.*dependsOn/i);
-  assert.throws(() => orderAssets([{ id: 'a', dependsOn: ['missing'] }]), /Missing asset dependency.*add.*bundle/i);
+  assert.deepEqual(
+    orderAssets(assets).map(({ id }) => id),
+    ["record", "query", "script"],
+  );
+  assert.throws(
+    () =>
+      orderAssets([
+        { id: "a", dependsOn: ["b"] },
+        { id: "b", dependsOn: ["a"] },
+      ]),
+    /cycle.*remove.*dependsOn/i,
+  );
+  assert.throws(
+    () => orderAssets([{ id: "a", dependsOn: ["missing"] }]),
+    /Missing asset dependency.*add.*bundle/i,
+  );
 });
 
-test('installer preflights every asset before writing and refuses conflicts', async () => {
+test("installer preflights every asset before writing and refuses conflicts", async () => {
   const written = [];
-  await assert.rejects(() => applyAssets([
-    { id: 'first', kind: 'lexicon', config: { backfill: false } },
-    { id: 'second', kind: 'lexicon', config: { backfill: false } },
-  ], {
-    read: async ({ id }) => id === 'first' ? null : { config: { backfill: true } },
-    write: async ({ id }) => written.push(id),
-  }), /unexpected installed difference/);
+  await assert.rejects(
+    () =>
+      applyAssets(
+        [
+          { id: "first", kind: "lexicon", config: { backfill: false } },
+          { id: "second", kind: "lexicon", config: { backfill: false } },
+        ],
+        {
+          read: async ({ id }) => (id === "first" ? null : { config: { backfill: true } }),
+          write: async ({ id }) => written.push(id),
+        },
+      ),
+    /unexpected installed difference/,
+  );
   assert.deepEqual(written, []);
 });
 
-test('installer reports compact per-asset check and install progress', async () => {
+test("installer reports compact per-asset check and install progress", async () => {
   const events = [];
   const assets = [
-    { id: 'existing', kind: 'script', config: {}, body: 'same' },
-    { id: 'new', kind: 'script', config: {}, body: 'incoming' },
+    { id: "existing", kind: "script", config: {}, body: "same" },
+    { id: "new", kind: "script", config: {}, body: "incoming" },
   ];
 
-  const result = await applyAssets(assets, {
-    read: async ({ id }) => {
-      events.push(`read:${id}`);
-      return id === 'existing' ? { config: {}, body: 'same' } : null;
+  const result = await applyAssets(
+    assets,
+    {
+      read: async ({ id }) => {
+        events.push(`read:${id}`);
+        return id === "existing" ? { config: {}, body: "same" } : null;
+      },
+      write: async ({ id }) => {
+        events.push(`write:${id}`);
+      },
     },
-    write: async ({ id }) => { events.push(`write:${id}`); },
-  }, {
-    onProgress: (message) => events.push(`progress:${message}`),
-  });
+    {
+      onProgress: (message) => events.push(`progress:${message}`),
+    },
+  );
 
   assert.deepEqual(events, [
-    'progress:[check 1/2] existing',
-    'read:existing',
-    'progress:[check 2/2] new',
-    'read:new',
-    'progress:[install 1/1] new',
-    'write:new',
+    "progress:[check 1/2] existing",
+    "read:existing",
+    "progress:[check 2/2] new",
+    "read:new",
+    "progress:[install 1/1] new",
+    "write:new",
   ]);
-  assert.deepEqual(result, { changed: ['new'], unchanged: ['existing'] });
+  assert.deepEqual(result, { changed: ["new"], unchanged: ["existing"] });
 });
 
-test('override replaces differing declared assets only after preflighting the complete bundle', async () => {
+test("override replaces differing declared assets only after preflighting the complete bundle", async () => {
   const lexicon = {
-    id: 'org.example.query',
-    kind: 'lexicon',
+    id: "org.example.query",
+    kind: "lexicon",
     config: { backfill: false },
-    lexicon_json: { lexicon: 1, id: 'org.example.query', defs: { main: { type: 'query', description: 'incoming' } } },
+    lexicon_json: {
+      lexicon: 1,
+      id: "org.example.query",
+      defs: { main: { type: "query", description: "incoming" } },
+    },
   };
-  const conflictingScript = { id: 'conflicting-script', kind: 'script', config: { script_type: 'lua' }, body: 'incoming script' };
-  const unchangedScript = { id: 'unchanged-script', kind: 'script', config: { script_type: 'lua' }, body: 'same script' };
-  const missingScript = { id: 'missing-script', kind: 'script', config: { script_type: 'lua' }, body: 'new script' };
+  const conflictingScript = {
+    id: "conflicting-script",
+    kind: "script",
+    config: { script_type: "lua" },
+    body: "incoming script",
+  };
+  const unchangedScript = {
+    id: "unchanged-script",
+    kind: "script",
+    config: { script_type: "lua" },
+    body: "same script",
+  };
+  const missingScript = {
+    id: "missing-script",
+    kind: "script",
+    config: { script_type: "lua" },
+    body: "new script",
+  };
   const installed = new Map([
-    [lexicon.id, {
-      config: { backfill: true },
-      lexicon_json: { lexicon: 1, id: lexicon.id, defs: { main: { type: 'query', description: 'installed' } } },
-    }],
-    [conflictingScript.id, { config: conflictingScript.config, body: 'installed script' }],
+    [
+      lexicon.id,
+      {
+        config: { backfill: true },
+        lexicon_json: {
+          lexicon: 1,
+          id: lexicon.id,
+          defs: { main: { type: "query", description: "installed" } },
+        },
+      },
+    ],
+    [conflictingScript.id, { config: conflictingScript.config, body: "installed script" }],
     [unchangedScript.id, { config: unchangedScript.config, body: unchangedScript.body }],
   ]);
   const events = [];
   const writes = [];
 
-  const result = await applyAssets([lexicon, conflictingScript, unchangedScript, missingScript], {
-    read: async ({ id }) => { events.push(`read:${id}`); return installed.get(id) ?? null; },
-    write: async (asset) => { events.push(`write:${asset.id}`); writes.push(asset); },
-  }, { override: true });
+  const result = await applyAssets(
+    [lexicon, conflictingScript, unchangedScript, missingScript],
+    {
+      read: async ({ id }) => {
+        events.push(`read:${id}`);
+        return installed.get(id) ?? null;
+      },
+      write: async (asset) => {
+        events.push(`write:${asset.id}`);
+        writes.push(asset);
+      },
+    },
+    { override: true },
+  );
 
   assert.deepEqual(events, [
-    'read:org.example.query',
-    'read:conflicting-script',
-    'read:unchanged-script',
-    'read:missing-script',
-    'write:org.example.query',
-    'write:conflicting-script',
-    'write:missing-script',
+    "read:org.example.query",
+    "read:conflicting-script",
+    "read:unchanged-script",
+    "read:missing-script",
+    "write:org.example.query",
+    "write:conflicting-script",
+    "write:missing-script",
   ]);
-  assert.equal(writes[0].lexicon_json.defs.main.description, 'incoming');
-  assert.equal(writes[1].body, 'incoming script');
+  assert.equal(writes[0].lexicon_json.defs.main.description, "incoming");
+  assert.equal(writes[1].body, "incoming script");
   assert.deepEqual(result, {
-    changed: ['org.example.query', 'conflicting-script', 'missing-script'],
-    unchanged: ['unchanged-script'],
+    changed: ["org.example.query", "conflicting-script", "missing-script"],
+    unchanged: ["unchanged-script"],
   });
 });
 
-test('override does not bypass later asset preflight errors or write partial results', async () => {
+test("override does not bypass later asset preflight errors or write partial results", async () => {
   const events = [];
-  await assert.rejects(() => applyAssets([
-    { id: 'conflict', kind: 'script', config: {}, body: 'incoming' },
-    { id: 'unavailable', kind: 'script', config: {}, body: 'incoming' },
-  ], {
-    read: async ({ id }) => {
-      events.push(`read:${id}`);
-      if (id === 'conflict') return { config: {}, body: 'installed' };
-      throw new Error('HappyView GET /admin/scripts/unavailable returned HTTP 403');
-    },
-    write: async ({ id }) => { events.push(`write:${id}`); },
-  }, { override: true }), /HTTP 403/);
+  await assert.rejects(
+    () =>
+      applyAssets(
+        [
+          { id: "conflict", kind: "script", config: {}, body: "incoming" },
+          { id: "unavailable", kind: "script", config: {}, body: "incoming" },
+        ],
+        {
+          read: async ({ id }) => {
+            events.push(`read:${id}`);
+            if (id === "conflict") return { config: {}, body: "installed" };
+            throw new Error("HappyView GET /admin/scripts/unavailable returned HTTP 403");
+          },
+          write: async ({ id }) => {
+            events.push(`write:${id}`);
+          },
+        },
+        { override: true },
+      ),
+    /HTTP 403/,
+  );
 
-  assert.deepEqual(events, ['read:conflict', 'read:unavailable']);
+  assert.deepEqual(events, ["read:conflict", "read:unavailable"]);
 });
 
-test('debug conflict shows differing config and canonical Lexicon paths without writing', async () => {
+test("debug conflict shows differing config and canonical Lexicon paths without writing", async () => {
   const asset = {
-    id: 'org.example.query', kind: 'lexicon', config: { backfill: false },
-    lexicon_json: { lexicon: 1, id: 'org.example.query', defs: { main: { type: 'query', description: 'new' } } },
+    id: "org.example.query",
+    kind: "lexicon",
+    config: { backfill: false },
+    lexicon_json: {
+      lexicon: 1,
+      id: "org.example.query",
+      defs: { main: { type: "query", description: "new" } },
+    },
   };
   const installed = {
     config: { backfill: true },
-    lexicon_json: { lexicon: 1, id: 'org.example.query', defs: { main: { type: 'query', description: 'old' } } },
+    lexicon_json: {
+      lexicon: 1,
+      id: "org.example.query",
+      defs: { main: { type: "query", description: "old" } },
+    },
   };
   let writes = 0;
-  const client = { read: async () => installed, write: async () => { writes++; } };
-  await assert.rejects(() => applyAssets([asset], client, { debug: true }), (error) => {
-    assert.match(error.message, /config\.backfill.*false.*true/);
-    assert.match(error.message, /lexicon_json\.defs\.main\.description.*"new".*"old"/);
-    return true;
-  });
-  await assert.rejects(() => applyAssets([asset], client), (error) => {
-    assert.doesNotMatch(error.message, /"new"|"old"|config\.backfill/);
-    return true;
-  });
+  const client = {
+    read: async () => installed,
+    write: async () => {
+      writes++;
+    },
+  };
+  await assert.rejects(
+    () => applyAssets([asset], client, { debug: true }),
+    (error) => {
+      assert.match(error.message, /config\.backfill.*false.*true/);
+      assert.match(error.message, /lexicon_json\.defs\.main\.description.*"new".*"old"/);
+      return true;
+    },
+  );
+  await assert.rejects(
+    () => applyAssets([asset], client),
+    (error) => {
+      assert.doesNotMatch(error.message, /"new"|"old"|config\.backfill/);
+      return true;
+    },
+  );
   assert.equal(writes, 0);
 });
 
-test('debug conflict prints both script bodies only when requested', async () => {
-  const asset = { id: 'script', kind: 'script', config: {}, body: 'return "expected"\n' };
-  const client = { read: async () => ({ config: {}, body: 'return "installed"\n' }), write: async () => assert.fail('must not write') };
-  await assert.rejects(() => applyAssets([asset], client, { debug: true }), (error) => {
-    assert.match(error.message, /return \\"expected\\"/);
-    assert.match(error.message, /return \\"installed\\"/);
-    return true;
-  });
+test("debug conflict prints both script bodies only when requested", async () => {
+  const asset = { id: "script", kind: "script", config: {}, body: 'return "expected"\n' };
+  const client = {
+    read: async () => ({ config: {}, body: 'return "installed"\n' }),
+    write: async () => assert.fail("must not write"),
+  };
+  await assert.rejects(
+    () => applyAssets([asset], client, { debug: true }),
+    (error) => {
+      assert.match(error.message, /return \\"expected\\"/);
+      assert.match(error.message, /return \\"installed\\"/);
+      return true;
+    },
+  );
 });
 
-test('unchanged assets are skipped and partial failures report completed and remaining writes', async () => {
+test("unchanged assets are skipped and partial failures report completed and remaining writes", async () => {
   const assets = [
-    { id: 'existing', kind: 'script', config: {}, body: 'return true' },
-    { id: 'new', kind: 'script', config: {}, body: 'return true' },
-    { id: 'failed', kind: 'script', config: {}, body: 'return true' },
-    { id: 'later', kind: 'script', config: {}, body: 'return true' },
+    { id: "existing", kind: "script", config: {}, body: "return true" },
+    { id: "new", kind: "script", config: {}, body: "return true" },
+    { id: "failed", kind: "script", config: {}, body: "return true" },
+    { id: "later", kind: "script", config: {}, body: "return true" },
   ];
   const written = [];
-  await assert.rejects(() => applyAssets(assets, {
-    read: async ({ id }) => id === 'existing' ? { config: {}, body: 'return true' } : null,
-    write: async ({ id }) => { if (id === 'failed') throw new Error('disk full'); written.push(id); },
-  }), (error) => {
-    assert.deepEqual(error.completed, ['new']);
-    assert.deepEqual(error.remaining, ['failed', 'later']);
-    return /disk full/.test(error.message);
-  });
-  assert.deepEqual(written, ['new']);
+  await assert.rejects(
+    () =>
+      applyAssets(assets, {
+        read: async ({ id }) => (id === "existing" ? { config: {}, body: "return true" } : null),
+        write: async ({ id }) => {
+          if (id === "failed") throw new Error("disk full");
+          written.push(id);
+        },
+      }),
+    (error) => {
+      assert.deepEqual(error.completed, ["new"]);
+      assert.deepEqual(error.remaining, ["failed", "later"]);
+      return /disk full/.test(error.message);
+    },
+  );
+  assert.deepEqual(written, ["new"]);
 });
 
-test('installer confirms a write after its response is lost when read-back matches', async (t) => {
+test("installer confirms a write after its response is lost when read-back matches", async (t) => {
   const installed = new Map();
-  const id = 'org.example.recovered';
-  const asset = { id, kind: 'script', config: { script_type: 'lua' }, body: 'return true' };
+  const id = "org.example.recovered";
+  const asset = { id, kind: "script", config: { script_type: "lua" }, body: "return true" };
   const server = createServer((request, response) => {
-    if (request.method === 'POST' && request.url === '/admin/scripts') {
+    if (request.method === "POST" && request.url === "/admin/scripts") {
       const chunks = [];
-      request.on('data', (chunk) => chunks.push(chunk));
-      request.on('end', () => {
-        const payload = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+      request.on("data", (chunk) => chunks.push(chunk));
+      request.on("end", () => {
+        const payload = JSON.parse(Buffer.concat(chunks).toString("utf8"));
         installed.set(payload.id, payload);
         response.destroy();
       });
       return;
     }
 
-    if (request.method === 'GET' && request.url === `/admin/scripts/${id}`) {
+    if (request.method === "GET" && request.url === `/admin/scripts/${id}`) {
       const payload = installed.get(id);
       if (!payload) {
         response.writeHead(404).end();
         return;
       }
-      response.writeHead(200, { 'content-type': 'application/json' });
-      response.end(JSON.stringify({ script_type: payload.script_type, description: null, body: payload.body }));
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(
+        JSON.stringify({ script_type: payload.script_type, description: null, body: payload.body }),
+      );
       return;
     }
 
     response.writeHead(404).end();
   });
-  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-  t.after(() => new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve())));
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  t.after(
+    () =>
+      new Promise((resolve, reject) =>
+        server.close((error) => (error ? reject(error) : resolve())),
+      ),
+  );
   const { port } = server.address();
-  const admin = createAdminClient({ baseUrl: `http://127.0.0.1:${port}`, token: 'hv_local-test-token' });
+  const admin = createAdminClient({
+    baseUrl: `http://127.0.0.1:${port}`,
+    token: "hv_local-test-token",
+  });
 
   const result = await applyAssets([asset], admin);
 
@@ -206,127 +328,192 @@ test('installer confirms a write after its response is lost when read-back match
   assert.equal(installed.get(id).body, asset.body);
 });
 
-test('apply reports an all-unchanged result without writing', async () => {
-  const asset = { id: 'same', kind: 'script', config: {}, body: 'return true' };
+test("apply reports an all-unchanged result without writing", async () => {
+  const asset = { id: "same", kind: "script", config: {}, body: "return true" };
   let writes = 0;
   const result = await applyAssets([asset], {
-    read: async () => ({ config: {}, body: 'return true' }),
-    write: async () => { writes++; },
+    read: async () => ({ config: {}, body: "return true" }),
+    write: async () => {
+      writes++;
+    },
   });
   assert.equal(writes, 0);
-  assert.deepEqual(result, { changed: [], unchanged: ['same'] });
+  assert.deepEqual(result, { changed: [], unchanged: ["same"] });
 });
 
-test('admin client requires a nonblank bearer token and rejects cookie-only auth', () => {
+test("admin client requires a nonblank bearer token and rejects cookie-only auth", () => {
   let called = false;
-  const fetchImpl = async () => { called = true; };
-  for (const token of [undefined, '', ' \t']) {
-    assert.throws(() => createAdminClient({
-      baseUrl: 'http://localhost:8080', token, cookie: 'session=secret', fetchImpl,
-    }), /HAPPYVIEW_ADMIN_TOKEN.*README/);
+  const fetchImpl = async () => {
+    called = true;
+  };
+  for (const token of [undefined, "", " \t"]) {
+    assert.throws(
+      () =>
+        createAdminClient({
+          baseUrl: "http://localhost:8080",
+          token,
+          cookie: "session=secret",
+          fetchImpl,
+        }),
+      /HAPPYVIEW_ADMIN_TOKEN.*README/,
+    );
   }
-  assert.throws(() => createAdminClient({
-    baseUrl: 'http://localhost:8080', cookie: 'session=secret', fetchImpl,
-  }), /HAPPYVIEW_ADMIN_TOKEN.*README/);
+  assert.throws(
+    () =>
+      createAdminClient({
+        baseUrl: "http://localhost:8080",
+        cookie: "session=secret",
+        fetchImpl,
+      }),
+    /HAPPYVIEW_ADMIN_TOKEN.*README/,
+  );
   assert.equal(called, false);
 });
 
-test('admin client sanitizes request failures that contain the bearer token', async () => {
-  const token = 'hv_do-not-leak';
+test("admin client sanitizes request failures that contain the bearer token", async () => {
+  const token = "hv_do-not-leak";
   const admin = createAdminClient({
-    baseUrl: 'http://localhost:8080', token,
-    fetchImpl: async () => { throw new Error(`request failed for ${token}`); },
+    baseUrl: "http://localhost:8080",
+    token,
+    fetchImpl: async () => {
+      throw new Error(`request failed for ${token}`);
+    },
   });
-  await assert.rejects(() => admin.read({ id: 'x', kind: 'script' }), (error) => {
-    assert.match(error.message, /request failed before receiving a response/);
-    assert.doesNotMatch(error.message, new RegExp(token));
-    return true;
-  });
+  await assert.rejects(
+    () => admin.read({ id: "x", kind: "script" }),
+    (error) => {
+      assert.match(error.message, /request failed before receiving a response/);
+      assert.doesNotMatch(error.message, new RegExp(token));
+      return true;
+    },
+  );
 });
 
-test('admin client rejects redirects before forwarding the bearer token', async (t) => {
-  const token = 'hv_redirect-secret';
+test("admin client rejects redirects before forwarding the bearer token", async (t) => {
+  const token = "hv_redirect-secret";
   const paths = [];
   const server = createServer((request, response) => {
     paths.push(request.url);
-    if (request.url === '/admin/scripts/x') {
-      response.writeHead(302, { location: '/redirect-target' });
+    if (request.url === "/admin/scripts/x") {
+      response.writeHead(302, { location: "/redirect-target" });
       response.end();
     } else {
-      response.end('{}');
+      response.end("{}");
     }
   });
-  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-  t.after(() => new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve())));
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  t.after(
+    () =>
+      new Promise((resolve, reject) =>
+        server.close((error) => (error ? reject(error) : resolve())),
+      ),
+  );
   const { port } = server.address();
   const admin = createAdminClient({ baseUrl: `http://127.0.0.1:${port}`, token });
 
-  await assert.rejects(() => admin.read({ id: 'x', kind: 'script' }), /request failed before receiving a response/);
-  assert.deepEqual(paths, ['/admin/scripts/x']);
+  await assert.rejects(
+    () => admin.read({ id: "x", kind: "script" }),
+    /request failed before receiving a response/,
+  );
+  assert.deepEqual(paths, ["/admin/scripts/x"]);
 });
 
-test('admin client rejects unsafe URLs before sending a request or exposing URL details', () => {
+test("admin client rejects unsafe URLs before sending a request or exposing URL details", () => {
   let called = false;
-  const fetchImpl = async () => { called = true; };
+  const fetchImpl = async () => {
+    called = true;
+  };
   for (const baseUrl of [
-    'http://example.com', 'http://localhost.attacker.test', 'http://127.0.0.1.attacker.test',
-    'file:///tmp/test', 'ftp://example.com', 'https://user:password@example.com',
+    "http://example.com",
+    "http://localhost.attacker.test",
+    "http://127.0.0.1.attacker.test",
+    "file:///tmp/test",
+    "ftp://example.com",
+    "https://user:password@example.com",
   ]) {
-    assert.throws(() => createAdminClient({ baseUrl, token: 'hv_private-secret', fetchImpl }), (error) => {
-      assert.doesNotMatch(error.message, /private-secret|password|example\.com/);
-      return true;
-    }, baseUrl);
+    assert.throws(
+      () => createAdminClient({ baseUrl, token: "hv_private-secret", fetchImpl }),
+      (error) => {
+        assert.doesNotMatch(error.message, /private-secret|password|example\.com/);
+        return true;
+      },
+      baseUrl,
+    );
   }
   assert.equal(called, false);
 });
 
-test('admin client accepts loopback HTTP and HTTPS targets', async () => {
-  for (const baseUrl of ['http://localhost:8000', 'http://127.0.0.1:8000', 'http://[::1]:8000', 'https://admin.example.com']) {
+test("admin client accepts loopback HTTP and HTTPS targets", async () => {
+  for (const baseUrl of [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://[::1]:8000",
+    "https://admin.example.com",
+  ]) {
     let called = false;
     const admin = createAdminClient({
-      baseUrl, token: 'hv_loopback-test-token',
-      fetchImpl: async () => { called = true; return new Response(null, { status: 404 }); },
+      baseUrl,
+      token: "hv_loopback-test-token",
+      fetchImpl: async () => {
+        called = true;
+        return new Response(null, { status: 404 });
+      },
     });
-    assert.equal(await admin.read({ id: 'schema', kind: 'lexicon' }), null);
+    assert.equal(await admin.read({ id: "schema", kind: "lexicon" }), null);
     assert.equal(called, true, baseUrl);
   }
 });
 
-test('admin client treats only GET 404 as missing and sanitizes HTTP errors', async () => {
+test("admin client treats only GET 404 as missing and sanitizes HTTP errors", async () => {
   const responses = [
     new Response(null, { status: 404 }),
     new Response(null, { status: 404 }),
-    new Response('hv_http-test-secret internal detail', { status: 500 }),
+    new Response("hv_http-test-secret internal detail", { status: 500 }),
   ];
   const calls = [];
   const admin = createAdminClient({
-    baseUrl: 'http://127.0.0.1:8000', token: 'hv_http-test-secret',
-    fetchImpl: async (_url, init) => { calls.push(init); return responses.shift(); },
+    baseUrl: "http://127.0.0.1:8000",
+    token: "hv_http-test-secret",
+    fetchImpl: async (_url, init) => {
+      calls.push(init);
+      return responses.shift();
+    },
   });
-  assert.equal(await admin.read({ id: 'schema', kind: 'lexicon' }), null);
-  await assert.rejects(() => admin.write({ id: 'schema', kind: 'lexicon', config: {}, lexicon_json: {} }), /POST .*HTTP 404/);
-  await assert.rejects(() => admin.read({ id: 'schema', kind: 'lexicon' }), (error) => {
-    assert.match(error.message, /GET .*HTTP 500/);
-    assert.doesNotMatch(error.message, /hv_http-test-secret|internal detail/);
-    return true;
-  });
-  assert.deepEqual(calls.map(({ method }) => method), ['GET', 'POST', 'GET']);
+  assert.equal(await admin.read({ id: "schema", kind: "lexicon" }), null);
+  await assert.rejects(
+    () => admin.write({ id: "schema", kind: "lexicon", config: {}, lexicon_json: {} }),
+    /POST .*HTTP 404/,
+  );
+  await assert.rejects(
+    () => admin.read({ id: "schema", kind: "lexicon" }),
+    (error) => {
+      assert.match(error.message, /GET .*HTTP 500/);
+      assert.doesNotMatch(error.message, /hv_http-test-secret|internal detail/);
+      return true;
+    },
+  );
+  assert.deepEqual(
+    calls.map(({ method }) => method),
+    ["GET", "POST", "GET"],
+  );
 });
 
-test('semantic JSON comparison ignores nested key order and canonical Lexicon refs, but rejects changed values and script bodies', () => {
+test("semantic JSON comparison ignores nested key order and canonical Lexicon refs, but rejects changed values and script bodies", () => {
   const item = {
-    id: 'org.example.record', kind: 'lexicon', config: { backfill: false },
+    id: "org.example.record",
+    kind: "lexicon",
+    config: { backfill: false },
     lexicon_json: {
       lexicon: 1,
-      id: 'org.example.record',
+      id: "org.example.record",
       defs: {
         main: {
-          type: 'record',
+          type: "record",
           record: {
-            type: 'object',
+            type: "object",
             properties: {
-              view: { type: 'ref', ref: 'org.example.defs#view' },
-              choices: { type: 'union', refs: ['org.example.defs#one', 'org.example.defs#two'] },
+              view: { type: "ref", ref: "org.example.defs#view" },
+              choices: { type: "union", refs: ["org.example.defs#one", "org.example.defs#two"] },
             },
           },
         },
@@ -340,40 +527,64 @@ test('semantic JSON comparison ignores nested key order and canonical Lexicon re
         main: {
           record: {
             properties: {
-              choices: { refs: ['lex:org.example.defs#one', 'lex:org.example.defs#two'], type: 'union' },
-              view: { ref: 'lex:org.example.defs#view', type: 'ref' },
+              choices: {
+                refs: ["lex:org.example.defs#one", "lex:org.example.defs#two"],
+                type: "union",
+              },
+              view: { ref: "lex:org.example.defs#view", type: "ref" },
             },
-            type: 'object',
+            type: "object",
           },
-          type: 'record',
+          type: "record",
         },
       },
-      id: 'org.example.record',
+      id: "org.example.record",
       lexicon: 1,
     },
   };
-  assert.equal(compareAsset(item, installed), 'unchanged');
-  assert.equal(item.lexicon_json.defs.main.record.properties.view.ref, 'org.example.defs#view');
+  assert.equal(compareAsset(item, installed), "unchanged");
+  assert.equal(item.lexicon_json.defs.main.record.properties.view.ref, "org.example.defs#view");
 
   const changedLexicon = structuredClone(installed.lexicon_json);
-  changedLexicon.defs.main.record.properties.view.ref = 'lex:org.example.other#view';
-  assert.equal(compareAsset(item, { ...installed, lexicon_json: changedLexicon }), 'conflict');
-  assert.equal(compareAsset({ id: 'script', kind: 'script', config: {}, body: 'return true\n' }, { config: {}, body: 'return true' }), 'conflict');
+  changedLexicon.defs.main.record.properties.view.ref = "lex:org.example.other#view";
+  assert.equal(compareAsset(item, { ...installed, lexicon_json: changedLexicon }), "conflict");
+  assert.equal(
+    compareAsset(
+      { id: "script", kind: "script", config: {}, body: "return true\n" },
+      { config: {}, body: "return true" },
+    ),
+    "conflict",
+  );
 });
 
-test('asset comparison ignores server defaults for undeclared config keys', () => {
-  const asset = { id: 'script', kind: 'script', config: {}, body: 'return true' };
-  assert.equal(compareAsset(asset, { config: { script_type: 'lua' }, body: 'return true' }), 'unchanged');
+test("asset comparison ignores server defaults for undeclared config keys", () => {
+  const asset = { id: "script", kind: "script", config: {}, body: "return true" };
+  assert.equal(
+    compareAsset(asset, { config: { script_type: "lua" }, body: "return true" }),
+    "unchanged",
+  );
 
-  const configured = { ...asset, config: { description: 'custom' } };
-  assert.equal(compareAsset(configured, { config: { script_type: 'lua', description: 'custom' }, body: 'return true' }), 'unchanged');
-  assert.equal(compareAsset(configured, { config: { script_type: 'lua', description: 'different' }, body: 'return true' }), 'conflict');
+  const configured = { ...asset, config: { description: "custom" } };
+  assert.equal(
+    compareAsset(configured, {
+      config: { script_type: "lua", description: "custom" },
+      body: "return true",
+    }),
+    "unchanged",
+  );
+  assert.equal(
+    compareAsset(configured, {
+      config: { script_type: "lua", description: "different" },
+      body: "return true",
+    }),
+    "conflict",
+  );
 });
 
-test('semantic JSON sorts nested keys by UTF-16 code units rather than locale collation', () => {
+test("semantic JSON sorts nested keys by UTF-16 code units rather than locale collation", () => {
   const input = {
-    '\uE000': { a: 1, Z: 2 },
-    '\u{10000}': { '\uE000': 1, '\u{10000}': 2 },
+    "\uE000": { a: 1, Z: 2 },
+    "\u{10000}": { "\uE000": 1, "\u{10000}": 2 },
     é: 3,
     a: 4,
     Z: 5,
@@ -384,49 +595,65 @@ test('semantic JSON sorts nested keys by UTF-16 code units rather than locale co
   );
 });
 
-test('admin client preserves action and token_cost when writing lexicons', async () => {
+test("admin client preserves action and token_cost when writing lexicons", async () => {
   const calls = [];
   const admin = createAdminClient({
-    baseUrl: 'http://localhost:8080',
-    token: 'hv_write-secret',
+    baseUrl: "http://localhost:8080",
+    token: "hv_write-secret",
     fetchImpl: async (url, options) => {
       calls.push({ url: String(url), options });
       return { ok: true, status: 200, json: async () => ({}) };
     },
   });
   await admin.write({
-    id: 'org.example.record',
-    kind: 'lexicon',
-    config: { backfill: true, target_collection: 'org.example.record', action: 'create', token_cost: 7 },
-    lexicon_json: { lexicon: 1, id: 'org.example.record' },
+    id: "org.example.record",
+    kind: "lexicon",
+    config: {
+      backfill: true,
+      target_collection: "org.example.record",
+      action: "create",
+      token_cost: 7,
+    },
+    lexicon_json: { lexicon: 1, id: "org.example.record" },
   });
-  assert.equal(calls[0].url, 'http://localhost:8080/admin/lexicons');
-  assert.equal(calls[0].options.headers.Authorization, 'Bearer hv_write-secret');
-  assert.equal('cookie' in calls[0].options.headers, false);
+  assert.equal(calls[0].url, "http://localhost:8080/admin/lexicons");
+  assert.equal(calls[0].options.headers.Authorization, "Bearer hv_write-secret");
+  assert.equal("cookie" in calls[0].options.headers, false);
   assert.deepEqual(JSON.parse(calls[0].options.body), {
-    lexicon_json: { lexicon: 1, id: 'org.example.record' },
+    lexicon_json: { lexicon: 1, id: "org.example.record" },
     backfill: true,
-    target_collection: 'org.example.record',
-    action: 'create',
+    target_collection: "org.example.record",
+    action: "create",
     token_cost: 7,
   });
 });
 
-test('admin client accepts a successful write when its unused response body terminates', async () => {
+test("admin client accepts a successful write when its unused response body terminates", async () => {
   let calls = 0;
-  const response = new Response(new ReadableStream({
-    start(controller) {
-      controller.enqueue(new TextEncoder().encode('{"updated":'));
-      controller.error(new TypeError('terminated'));
-    },
-  }), { status: 200 });
+  const response = new Response(
+    new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('{"updated":'));
+        controller.error(new TypeError("terminated"));
+      },
+    }),
+    { status: 200 },
+  );
   const admin = createAdminClient({
-    baseUrl: 'http://localhost:8080',
-    token: 'hv_write-secret',
-    fetchImpl: async () => { calls++; return response; },
+    baseUrl: "http://localhost:8080",
+    token: "hv_write-secret",
+    fetchImpl: async () => {
+      calls++;
+      return response;
+    },
   });
 
-  await admin.write({ id: 'org.example.script', kind: 'script', config: { script_type: 'lua' }, body: 'return true' });
+  await admin.write({
+    id: "org.example.script",
+    kind: "script",
+    config: { script_type: "lua" },
+    body: "return true",
+  });
 
   assert.equal(calls, 1);
 });

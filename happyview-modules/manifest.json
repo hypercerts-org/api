@@ -510,9 +510,6 @@
     "modules/rights/manifest.json"
   ],
   "luaBuild": {
-    "endpointSources": [
-      "lua/src/getFeature.lua",
-      "lua/src/listFeatures.lua"
-    ]
+    "endpointSources": ["lua/src/getFeature.lua", "lua/src/listFeatures.lua"]
   }
 }

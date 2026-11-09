@@ -8,9 +8,7 @@
         "backfill": false,
         "target_collection": "app.certified.graph.entityFollow"
       },
-      "dependsOn": [
-        "app.certified.graph.entityFollow"
-      ]
+      "dependsOn": ["app.certified.graph.entityFollow"]
     },
     {
       "kind": "lexicon",
@@ -20,9 +18,7 @@
         "backfill": false,
         "target_collection": "app.certified.graph.entityFollow"
       },
-      "dependsOn": [
-        "app.certified.graph.getEntityFollow"
-      ]
+      "dependsOn": ["app.certified.graph.getEntityFollow"]
     },
     {
       "kind": "lexicon",
@@ -32,10 +28,7 @@
         "backfill": false,
         "target_collection": "app.certified.graph.entityFollow"
       },
-      "dependsOn": [
-        "app.certified.graph.getEntityFollow",
-        "org.hypercerts.api.defs"
-      ]
+      "dependsOn": ["app.certified.graph.getEntityFollow", "org.hypercerts.api.defs"]
     },
     {
       "kind": "lexicon",
@@ -68,9 +61,7 @@
         "script_type": "lua",
         "description": "Entity follow API handler"
       },
-      "dependsOn": [
-        "app.certified.graph.getEntityFollow"
-      ]
+      "dependsOn": ["app.certified.graph.getEntityFollow"]
     },
     {
       "kind": "script",
@@ -88,9 +79,7 @@
         "script_type": "lua",
         "description": "Entity follow API handler"
       },
-      "dependsOn": [
-        "app.certified.graph.getEntityFollows"
-      ]
+      "dependsOn": ["app.certified.graph.getEntityFollows"]
     },
     {
       "kind": "script",
@@ -112,9 +101,7 @@
         "script_type": "lua",
         "description": "Entity follow API handler"
       },
-      "dependsOn": [
-        "app.certified.graph.listEntityFollowers"
-      ]
+      "dependsOn": ["app.certified.graph.listEntityFollowers"]
     },
     {
       "kind": "script",
@@ -139,9 +126,7 @@
         "script_type": "lua",
         "description": "Entity follow API handler"
       },
-      "dependsOn": [
-        "app.certified.graph.listEntityFollowing"
-      ]
+      "dependsOn": ["app.certified.graph.listEntityFollowing"]
     }
   ]
 }

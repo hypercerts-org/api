@@ -1,28 +1,30 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
+import test from "node:test";
+import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 
-const root = fileURLToPath(new URL('../../../', import.meta.url));
-const COLLECTION = 'org.hypercerts.collection';
-const did = 'did:plc:aaaaaaaaaaaaaaaaaaaaaaaa';
+const root = fileURLToPath(new URL("../../../", import.meta.url));
+const COLLECTION = "org.hypercerts.collection";
+const did = "did:plc:aaaaaaaaaaaaaaaaaaaaaaaa";
 const collectionUri = `at://${did}/${COLLECTION}/collection-one`;
 const itemUris = [
-  'at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/org.hypercerts.claim.activity/activity-one',
-  'at://did:plc:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/org.hypercerts.entity.feature/feature-one',
+  "at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/org.hypercerts.claim.activity/activity-one",
+  "at://did:plc:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/org.hypercerts.entity.feature/feature-one",
 ];
 const tagUris = [
-  'at://did:plc:cccccccccccccccccccccccccccccccc/org.hypercerts.vocab.tag/ecology.mangrove',
-  'at://did:plc:dddddddddddddddddddddddddddddddd/org.hypercerts.vocab.tag/ecology.restoration',
+  "at://did:plc:cccccccccccccccccccccccccccccccc/org.hypercerts.vocab.tag/ecology.mangrove",
+  "at://did:plc:dddddddddddddddddddddddddddddddd/org.hypercerts.vocab.tag/ecology.restoration",
 ];
 
 function lua(value) {
-  if (typeof value === 'string') return JSON.stringify(value);
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-  if (Array.isArray(value)) return `{ ${value.map(lua).join(', ')} }`;
-  if (value && typeof value === 'object') {
-    return `{ ${Object.entries(value).map(([key, item]) => `[${JSON.stringify(key)}] = ${lua(item)}`).join(', ')} }`;
+  if (typeof value === "string") return JSON.stringify(value);
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value)) return `{ ${value.map(lua).join(", ")} }`;
+  if (value && typeof value === "object") {
+    return `{ ${Object.entries(value)
+      .map(([key, item]) => `[${JSON.stringify(key)}] = ${lua(item)}`)
+      .join(", ")} }`;
   }
   throw new TypeError(`Cannot encode ${typeof value} as a Lua fixture`);
 }
@@ -56,8 +58,8 @@ json = {
 }
 toarray = function(values) return values end
 params = {
-  itemUris = { ${itemUris.map((uri) => JSON.stringify(uri)).join(', ')} },
-  tagUris = { ${tagUris.map((uri) => JSON.stringify(uri)).join(', ')} },
+  itemUris = { ${itemUris.map((uri) => JSON.stringify(uri)).join(", ")} },
+  tagUris = { ${tagUris.map((uri) => JSON.stringify(uri)).join(", ")} },
 }
 db = {
   backend = function() return 'postgres' end,
@@ -67,7 +69,7 @@ db = {
     assert(sql:find("collection.record::jsonb->'createdAt'", 1, true))
     assert(sql:find('COALESCE(collection.indexed_at::timestamptz, collection.created_at::timestamptz)', 1, true))
 
-    for _, value in ipairs({ ${[...itemUris, ...tagUris].map((uri) => JSON.stringify(uri)).join(', ')} }) do
+    for _, value in ipairs({ ${[...itemUris, ...tagUris].map((uri) => JSON.stringify(uri)).join(", ")} }) do
       local bound, placeholder = false, false
       for index, candidate in ipairs(values) do
         if candidate == value then
@@ -90,33 +92,91 @@ assert(#result.collections[1].tags == 2, 'matching collection keeps both tag pro
 assert(result.collections[1].tags[1].uri == ${JSON.stringify(tagUris[0])})
 assert(result.collections[1].tags[2].uri == ${JSON.stringify(tagUris[1])})
 `;
-  return spawnSync('lua5.4', ['-e', source], { cwd: root, encoding: 'utf8' });
+  return spawnSync("lua5.4", ["-e", source], { cwd: root, encoding: "utf8" });
 }
 
-test('listCollections binds reverse-item and conjunctive-tag filter values and returns the matching collection', () => {
+test("listCollections binds reverse-item and conjunctive-tag filter values and returns the matching collection", () => {
   const result = runCollectionList();
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-test('listCollections hydrates distinct location versions when a page repeats an earlier reference', () => {
-  const locationCollection = 'app.certified.location';
+test("listCollections hydrates distinct location versions when a page repeats an earlier reference", () => {
+  const locationCollection = "app.certified.location";
   const collectionRows = [
-    { uri: `at://${did}/${COLLECTION}/first`, did, collection: COLLECTION, cid: 'collection-cid-1', indexed_at: '2025-01-02T00:00:00Z', record: 'first-record' },
-    { uri: `at://${did}/${COLLECTION}/second`, did, collection: COLLECTION, cid: 'collection-cid-2', indexed_at: '2025-01-02T00:00:00Z', record: 'second-record' },
-    { uri: `at://${did}/${COLLECTION}/third`, did, collection: COLLECTION, cid: 'collection-cid-3', indexed_at: '2025-01-02T00:00:00Z', record: 'third-record' },
+    {
+      uri: `at://${did}/${COLLECTION}/first`,
+      did,
+      collection: COLLECTION,
+      cid: "collection-cid-1",
+      indexed_at: "2025-01-02T00:00:00Z",
+      record: "first-record",
+    },
+    {
+      uri: `at://${did}/${COLLECTION}/second`,
+      did,
+      collection: COLLECTION,
+      cid: "collection-cid-2",
+      indexed_at: "2025-01-02T00:00:00Z",
+      record: "second-record",
+    },
+    {
+      uri: `at://${did}/${COLLECTION}/third`,
+      did,
+      collection: COLLECTION,
+      cid: "collection-cid-3",
+      indexed_at: "2025-01-02T00:00:00Z",
+      record: "third-record",
+    },
   ];
-  const locationA = { uri: `at://${did}/${locationCollection}/location-a`, cid: 'location-cid-a' };
-  const locationB = { uri: `at://${did}/${locationCollection}/location-b`, cid: 'location-cid-b' };
+  const locationA = { uri: `at://${did}/${locationCollection}/location-a`, cid: "location-cid-a" };
+  const locationB = { uri: `at://${did}/${locationCollection}/location-b`, cid: "location-cid-b" };
   const records = {
-    'first-record': { $type: COLLECTION, title: 'First', createdAt: '2025-01-01T00:00:00Z', location: locationA },
-    'second-record': { $type: COLLECTION, title: 'Second', createdAt: '2025-01-02T00:00:00Z', location: locationB },
-    'third-record': { $type: COLLECTION, title: 'Third', createdAt: '2025-01-03T00:00:00Z', location: locationA },
-    'location-a-record': { $type: locationCollection, name: 'Location A', createdAt: '2025-01-01T00:00:00Z' },
-    'location-b-record': { $type: locationCollection, name: 'Location B', createdAt: '2025-01-01T00:00:00Z' },
+    "first-record": {
+      $type: COLLECTION,
+      title: "First",
+      createdAt: "2025-01-01T00:00:00Z",
+      location: locationA,
+    },
+    "second-record": {
+      $type: COLLECTION,
+      title: "Second",
+      createdAt: "2025-01-02T00:00:00Z",
+      location: locationB,
+    },
+    "third-record": {
+      $type: COLLECTION,
+      title: "Third",
+      createdAt: "2025-01-03T00:00:00Z",
+      location: locationA,
+    },
+    "location-a-record": {
+      $type: locationCollection,
+      name: "Location A",
+      createdAt: "2025-01-01T00:00:00Z",
+    },
+    "location-b-record": {
+      $type: locationCollection,
+      name: "Location B",
+      createdAt: "2025-01-01T00:00:00Z",
+    },
   };
   const locations = [
-    { uri: locationA.uri, did, collection: locationCollection, cid: locationA.cid, indexed_at: '2025-01-02T00:00:00Z', record: 'location-a-record' },
-    { uri: locationB.uri, did, collection: locationCollection, cid: locationB.cid, indexed_at: '2025-01-02T00:00:00Z', record: 'location-b-record' },
+    {
+      uri: locationA.uri,
+      did,
+      collection: locationCollection,
+      cid: locationA.cid,
+      indexed_at: "2025-01-02T00:00:00Z",
+      record: "location-a-record",
+    },
+    {
+      uri: locationB.uri,
+      did,
+      collection: locationCollection,
+      cid: locationB.cid,
+      indexed_at: "2025-01-02T00:00:00Z",
+      record: "location-b-record",
+    },
   ];
   const source = `
 local NULL = {}
@@ -156,32 +216,68 @@ assert(result.collections[1].location.record.record.name == 'Location A')
 assert(result.collections[2].location.record.record.name == 'Location B')
 assert(result.collections[3].location.record.record.name == 'Location A')
 `;
-  const result = spawnSync('lua5.4', ['-e', source], { cwd: root, encoding: 'utf8' });
+  const result = spawnSync("lua5.4", ["-e", source], { cwd: root, encoding: "utf8" });
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-test('getCollection emits JSON null for missing indexedAt on the collection and exact projections', () => {
-  const locationCollection = 'app.certified.location';
+test("getCollection emits JSON null for missing indexedAt on the collection and exact projections", () => {
+  const locationCollection = "app.certified.location";
   const locationUri = `at://${did}/${locationCollection}/nullable-location`;
   const tagUri = `at://${did}/org.hypercerts.vocab.tag/nullable-tag`;
   const collectionRecord = {
     $type: COLLECTION,
-    title: 'Nullable index times',
-    createdAt: '2025-01-01T00:00:00Z',
-    location: { uri: locationUri, cid: 'location-cid' },
-    tags: [{ uri: tagUri, cid: 'tag-cid' }],
+    title: "Nullable index times",
+    createdAt: "2025-01-01T00:00:00Z",
+    location: { uri: locationUri, cid: "location-cid" },
+    tags: [{ uri: tagUri, cid: "tag-cid" }],
   };
   const rows = [
-    { uri: collectionUri, did, collection: COLLECTION, cid: 'collection-cid', record: 'collection-record' },
-    { uri: locationUri, did, collection: locationCollection, cid: 'location-cid', record: 'location-record' },
-    { uri: tagUri, did, collection: 'org.hypercerts.vocab.tag', cid: 'tag-cid', record: 'tag-record' },
-    { uri: `at://${did}/app.certified.actor.profile/self`, did, collection: 'app.certified.actor.profile', cid: 'profile-cid', record: 'profile-record' },
+    {
+      uri: collectionUri,
+      did,
+      collection: COLLECTION,
+      cid: "collection-cid",
+      record: "collection-record",
+    },
+    {
+      uri: locationUri,
+      did,
+      collection: locationCollection,
+      cid: "location-cid",
+      record: "location-record",
+    },
+    {
+      uri: tagUri,
+      did,
+      collection: "org.hypercerts.vocab.tag",
+      cid: "tag-cid",
+      record: "tag-record",
+    },
+    {
+      uri: `at://${did}/app.certified.actor.profile/self`,
+      did,
+      collection: "app.certified.actor.profile",
+      cid: "profile-cid",
+      record: "profile-record",
+    },
   ];
   const records = {
-    'collection-record': collectionRecord,
-    'location-record': { $type: locationCollection, name: 'Nullable location', createdAt: '2025-01-01T00:00:00Z' },
-    'tag-record': { $type: 'org.hypercerts.vocab.tag', name: 'Nullable tag', createdAt: '2025-01-01T00:00:00Z' },
-    'profile-record': { $type: 'app.certified.actor.profile', displayName: 'Collection author', createdAt: '2025-01-01T00:00:00Z' },
+    "collection-record": collectionRecord,
+    "location-record": {
+      $type: locationCollection,
+      name: "Nullable location",
+      createdAt: "2025-01-01T00:00:00Z",
+    },
+    "tag-record": {
+      $type: "org.hypercerts.vocab.tag",
+      name: "Nullable tag",
+      createdAt: "2025-01-01T00:00:00Z",
+    },
+    "profile-record": {
+      $type: "app.certified.actor.profile",
+      displayName: "Collection author",
+      createdAt: "2025-01-01T00:00:00Z",
+    },
   };
   const source = `
 local NULL = {}
@@ -211,21 +307,24 @@ assert(view.author.profile.indexedAt == NULL, 'collection author indexedAt must 
 assert(view.location.record.indexedAt == NULL, 'exact location indexedAt must serialize SQL NULL explicitly')
 assert(view.tags[1].record.indexedAt == NULL, 'exact tag indexedAt must serialize SQL NULL explicitly')
 `;
-  const result = spawnSync('lua5.4', ['-e', source], { cwd: root, encoding: 'utf8' });
+  const result = spawnSync("lua5.4", ["-e", source], { cwd: root, encoding: "utf8" });
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-test('getCollection looks up the exact URI and preserves ordered unresolved projections', () => {
+test("getCollection looks up the exact URI and preserves ordered unresolved projections", () => {
   const locationUri = `at://${did}/app.certified.location/location-one`;
   const tagUrisWithDuplicate = [tagUris[1], tagUris[0], tagUris[1]];
   const collectionRecord = {
     $type: COLLECTION,
-    title: 'Exact collection',
-    createdAt: '2025-01-01T00:00:00Z',
-    location: { uri: locationUri, cid: 'bafyreiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' },
+    title: "Exact collection",
+    createdAt: "2025-01-01T00:00:00Z",
+    location: {
+      uri: locationUri,
+      cid: "bafyreiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    },
     tags: tagUrisWithDuplicate.map((uri, index) => ({
       uri,
-      cid: `bafy${String.fromCharCode(98 + index)}${'b'.repeat(50)}`,
+      cid: `bafy${String.fromCharCode(98 + index)}${"b".repeat(50)}`,
     })),
   };
   const source = `
@@ -268,15 +367,21 @@ assert(view.tags[2].uri == ${JSON.stringify(tagUrisWithDuplicate[1])})
 assert(view.tags[3].uri == ${JSON.stringify(tagUrisWithDuplicate[2])})
 assert(view.record.tags[1].uri == view.tags[1].uri, 'hydration must not rewrite the source record')
 `;
-  const result = spawnSync('lua5.4', ['-e', source], { cwd: root, encoding: 'utf8' });
+  const result = spawnSync("lua5.4", ["-e", source], { cwd: root, encoding: "utf8" });
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-test('get/list/search preserve wrong-collection references as unresolved projections', () => {
-  const wrongLocation = { uri: tagUris[0], cid: 'wrong-location-cid' };
-  const wrongTag = { uri: `at://${did}/app.certified.location/not-a-tag`, cid: 'wrong-tag-cid' };
-  const record = { $type: COLLECTION, title: 'Wrong refs', createdAt: '2025-01-01T00:00:00Z', location: wrongLocation, tags: [wrongTag] };
-  for (const endpoint of ['getCollection', 'listCollections', 'searchCollections']) {
+test("get/list/search preserve wrong-collection references as unresolved projections", () => {
+  const wrongLocation = { uri: tagUris[0], cid: "wrong-location-cid" };
+  const wrongTag = { uri: `at://${did}/app.certified.location/not-a-tag`, cid: "wrong-tag-cid" };
+  const record = {
+    $type: COLLECTION,
+    title: "Wrong refs",
+    createdAt: "2025-01-01T00:00:00Z",
+    location: wrongLocation,
+    tags: [wrongTag],
+  };
+  for (const endpoint of ["getCollection", "listCollections", "searchCollections"]) {
     const source = `
 local NULL = {}
 local record = ${lua(record)}
@@ -286,7 +391,7 @@ json = { decode = function(value)
   if value == 'collection-record' then return record end
 end }
 toarray = function(values) return values end
-params = ${endpoint === 'getCollection' ? `{ uri = ${JSON.stringify(collectionUri)} }` : endpoint === 'searchCollections' ? "{ search = 'Wrong' }" : '{}'}
+params = ${endpoint === "getCollection" ? `{ uri = ${JSON.stringify(collectionUri)} }` : endpoint === "searchCollections" ? "{ search = 'Wrong' }" : "{}"}
 db = {
   backend = function() return 'postgres' end,
   raw = function(sql, values)
@@ -296,23 +401,26 @@ db = {
 }
 dofile('lua/endpoints/${endpoint}.lua')
 local result = handle()
-local view = ${endpoint === 'getCollection' ? 'result.collection' : 'result.collections[1]'}
+local view = ${endpoint === "getCollection" ? "result.collection" : "result.collections[1]"}
 assert(view.location.uri == ${JSON.stringify(wrongLocation.uri)} and view.location.cid == 'wrong-location-cid')
 assert(view.location.record == NULL, 'wrong-collection location must be unresolved')
 assert(view.tags[1].uri == ${JSON.stringify(wrongTag.uri)} and view.tags[1].cid == 'wrong-tag-cid')
 assert(view.tags[1].record == NULL, 'wrong-collection tag must be unresolved')
 assert(view.record.location.uri == view.location.uri and view.record.tags[1].uri == view.tags[1].uri)
 `;
-    const result = spawnSync('lua5.4', ['-e', source], { cwd: root, encoding: 'utf8' });
+    const result = spawnSync("lua5.4", ["-e", source], { cwd: root, encoding: "utf8" });
     assert.equal(result.status, 0, `${endpoint}: ${result.stderr}${result.stdout}`);
   }
 });
 
-test('collection hydration still rejects malformed and incomplete references', () => {
+test("collection hydration still rejects malformed and incomplete references", () => {
   const validUri = `at://${did}/app.certified.location/valid`;
   for (const reference of [
-    { cid: 'cid' }, { uri: 7, cid: 'cid' }, { uri: validUri },
-    { uri: validUri, cid: 7 }, { uri: 'not-an-at-uri', cid: 'cid' },
+    { cid: "cid" },
+    { uri: 7, cid: "cid" },
+    { uri: validUri },
+    { uri: validUri, cid: 7 },
+    { uri: "not-an-at-uri", cid: "cid" },
   ]) {
     const source = `
 local NULL = {}
@@ -336,15 +444,25 @@ dofile('lua/endpoints/getCollection.lua')
 local ok, message = pcall(handle)
 assert(not ok and tostring(message):find('CollectionQueryFailed: indexed collection has an invalid location reference', 1, true))
 `;
-    const result = spawnSync('lua5.4', ['-e', source], { cwd: root, encoding: 'utf8' });
-    assert.equal(result.status, 0, `${JSON.stringify(reference)}: ${result.stderr}${result.stdout}`);
+    const result = spawnSync("lua5.4", ["-e", source], { cwd: root, encoding: "utf8" });
+    assert.equal(
+      result.status,
+      0,
+      `${JSON.stringify(reference)}: ${result.stderr}${result.stdout}`,
+    );
   }
 });
 
-test('list/search omit malformed reference projections without losing rows or cursors', () => {
+test("list/search omit malformed reference projections without losing rows or cursors", () => {
   const validLocation = `at://${did}/app.certified.location/valid`;
-  const malformed = [7, { cid: 'cid' }, { uri: validLocation }, { uri: validLocation, cid: 7 }, { uri: 'invalid', cid: 'cid' }];
-  for (const endpoint of ['listCollections', 'searchCollections']) {
+  const malformed = [
+    7,
+    { cid: "cid" },
+    { uri: validLocation },
+    { uri: validLocation, cid: 7 },
+    { uri: "invalid", cid: "cid" },
+  ];
+  for (const endpoint of ["listCollections", "searchCollections"]) {
     for (const reference of malformed) {
       const source = `
 local NULL = {}
@@ -358,7 +476,7 @@ json = {
   end,
 }
 toarray = function(values) return values end
-params = { limit = '1', ${endpoint === 'searchCollections' ? "search = 'Collection'," : ''} }
+params = { limit = '1', ${endpoint === "searchCollections" ? "search = 'Collection'," : ""} }
 db = { backend = function() return 'postgres' end, raw = function(sql, values)
   if values[1] == '${COLLECTION}' then return { row, row } end
   return {}
@@ -373,19 +491,23 @@ assert(#view.tags == 1 and view.tags[1].uri == ${JSON.stringify(tagUris[0])}, 'v
 assert(view.tags[1].record == NULL)
 assert(view.record.location == record.location and #view.record.tags == 2, 'source references must remain unchanged')
 `;
-      const result = spawnSync('lua5.4', ['-e', source], { cwd: root, encoding: 'utf8' });
-      assert.equal(result.status, 0, `${endpoint}, ${JSON.stringify(reference)}: ${result.stderr}${result.stdout}`);
+      const result = spawnSync("lua5.4", ["-e", source], { cwd: root, encoding: "utf8" });
+      assert.equal(
+        result.status,
+        0,
+        `${endpoint}, ${JSON.stringify(reference)}: ${result.stderr}${result.stdout}`,
+      );
     }
   }
 });
 
-test('searchCollections binds complete trimmed search text literally', () => {
-  const searchInput = '  Forest %_ Initiative  ';
-  const search = 'Forest %_ Initiative';
+test("searchCollections binds complete trimmed search text literally", () => {
+  const searchInput = "  Forest %_ Initiative  ";
+  const search = "Forest %_ Initiative";
   const record = {
     $type: COLLECTION,
-    title: 'Forest %_ Initiative',
-    createdAt: '2025-01-01T00:00:00Z',
+    title: "Forest %_ Initiative",
+    createdAt: "2025-01-01T00:00:00Z",
   };
   const source = `
 local NULL = {}
@@ -426,28 +548,67 @@ dofile('lua/endpoints/searchCollections.lua')
 local result = handle()
 assert(#result.collections == 1 and result.collections[1].record.title == 'Forest %_ Initiative')
 `;
-  const result = spawnSync('lua5.4', ['-e', source], { cwd: root, encoding: 'utf8' });
+  const result = spawnSync("lua5.4", ["-e", source], { cwd: root, encoding: "utf8" });
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-test('collection listing filters solely by organization self-record presence', () => {
+test("collection listing filters solely by organization self-record presence", () => {
   const scenarios = [
-    { endpoint: 'listCollections', flag: 'true', predicate: 'EXISTS', did: 'did:web:organization-only.example', hasOrganization: true },
-    { endpoint: 'searchCollections', flag: 'false', predicate: 'NOT EXISTS', did: 'did:web:no-relations.example', hasOrganization: false, search: 'forest' },
-    { endpoint: 'listCollections', flag: true, predicate: 'EXISTS', did: 'did:web:coerced-organization.example', hasOrganization: true },
-    { endpoint: 'searchCollections', flag: false, predicate: 'NOT EXISTS', did: 'did:web:coerced-no-relations.example', hasOrganization: false, search: 'forest' },
+    {
+      endpoint: "listCollections",
+      flag: "true",
+      predicate: "EXISTS",
+      did: "did:web:organization-only.example",
+      hasOrganization: true,
+    },
+    {
+      endpoint: "searchCollections",
+      flag: "false",
+      predicate: "NOT EXISTS",
+      did: "did:web:no-relations.example",
+      hasOrganization: false,
+      search: "forest",
+    },
+    {
+      endpoint: "listCollections",
+      flag: true,
+      predicate: "EXISTS",
+      did: "did:web:coerced-organization.example",
+      hasOrganization: true,
+    },
+    {
+      endpoint: "searchCollections",
+      flag: false,
+      predicate: "NOT EXISTS",
+      did: "did:web:coerced-no-relations.example",
+      hasOrganization: false,
+      search: "forest",
+    },
   ];
   for (const scenario of scenarios) {
     const uri = `at://${scenario.did}/${COLLECTION}/organization-filter`;
-    const collectionRecord = { $type: COLLECTION, title: 'Organization filter', createdAt: '2025-01-01T00:00:00Z' };
-    const organizationRecord = {
-      $type: 'app.certified.actor.organization', organizationType: ['community'], createdAt: '2025-01-01T00:00:00Z',
+    const collectionRecord = {
+      $type: COLLECTION,
+      title: "Organization filter",
+      createdAt: "2025-01-01T00:00:00Z",
     };
-    const organizationRows = scenario.hasOrganization ? [{
-      uri: `at://${scenario.did}/app.certified.actor.organization/self`, did: scenario.did,
-      collection: 'app.certified.actor.organization', cid: 'organization-cid', indexed_at: '2025-01-02T03:04:05.000Z',
-      record: 'organization-record',
-    }] : [];
+    const organizationRecord = {
+      $type: "app.certified.actor.organization",
+      organizationType: ["community"],
+      createdAt: "2025-01-01T00:00:00Z",
+    };
+    const organizationRows = scenario.hasOrganization
+      ? [
+          {
+            uri: `at://${scenario.did}/app.certified.actor.organization/self`,
+            did: scenario.did,
+            collection: "app.certified.actor.organization",
+            cid: "organization-cid",
+            indexed_at: "2025-01-02T03:04:05.000Z",
+            record: "organization-record",
+          },
+        ]
+      : [];
     const source = `
 local NULL = {}
 local collectionRecord = ${lua(collectionRecord)}
@@ -465,7 +626,7 @@ json = { decode = function(value)
   error('unexpected JSON input: ' .. value)
 end }
 toarray = function(values) return values end
-params = { authors = { ${JSON.stringify(scenario.did)} }, hasOrganizationRecord = ${lua(scenario.flag)}${scenario.search ? `, search = '${scenario.search}'` : ''} }
+params = { authors = { ${JSON.stringify(scenario.did)} }, hasOrganizationRecord = ${lua(scenario.flag)}${scenario.search ? `, search = '${scenario.search}'` : ""} }
 db = {
   backend = function() return 'postgres' end,
   raw = function(sql, values)
@@ -487,116 +648,185 @@ local result = handle()
 assert(#result.collections == 1 and result.collections[1].uri == ${JSON.stringify(uri)})
 assert(result.collections[1].author.profile == NULL)
 ${scenario.hasOrganization ? `assert(result.collections[1].author.organization.did == ${JSON.stringify(scenario.did)})` : `assert(result.collections[1].author.organization == NULL)`}
-params = { authorType = 'person'${scenario.search ? `, search = '${scenario.search}'` : ''} }
+params = { authorType = 'person'${scenario.search ? `, search = '${scenario.search}'` : ""} }
 local ok, message = pcall(handle)
 assert(not ok and tostring(message):find('InvalidRequest: unknown query parameter:', 1, true))
 assert(#calls == 3, 'removed authorType must be rejected before querying')
-params = { hasOrganizationRecord = 'sometimes'${scenario.search ? `, search = '${scenario.search}'` : ''} }
+params = { hasOrganizationRecord = 'sometimes'${scenario.search ? `, search = '${scenario.search}'` : ""} }
 ok, message = pcall(handle)
 assert(not ok and tostring(message):find('InvalidRequest:', 1, true))
 assert(#calls == 3, 'invalid organization-record flags must be rejected before querying')
-params = { hasOrganizationRecord = { 'true', 'false' }${scenario.search ? `, search = '${scenario.search}'` : ''} }
+params = { hasOrganizationRecord = { 'true', 'false' }${scenario.search ? `, search = '${scenario.search}'` : ""} }
 ok, message = pcall(handle)
 assert(not ok and tostring(message):find('InvalidRequest: hasOrganizationRecord must occur once', 1, true))
 assert(#calls == 3, 'repeated organization-record flags must be rejected before querying')
 `;
-    const result = spawnSync('lua5.4', ['-e', source], { cwd: root, encoding: 'utf8' });
+    const result = spawnSync("lua5.4", ["-e", source], { cwd: root, encoding: "utf8" });
     assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
   }
 });
 
-test('collection Lexicons and module manifest close all four endpoint contracts', async () => {
-  const manifest = JSON.parse(await readFile(new URL('../../../manifest.json', import.meta.url), 'utf8'));
-  const collectionModulePath = 'modules/collection/manifest.json';
-  assert.ok(manifest.modules.includes(collectionModulePath), 'root bundle includes the collection module');
+test("collection Lexicons and module manifest close all four endpoint contracts", async () => {
+  const manifest = JSON.parse(
+    await readFile(new URL("../../../manifest.json", import.meta.url), "utf8"),
+  );
+  const collectionModulePath = "modules/collection/manifest.json";
+  assert.ok(
+    manifest.modules.includes(collectionModulePath),
+    "root bundle includes the collection module",
+  );
 
   const endpointIds = [
-    'org.hypercerts.collection.getCollection',
-    'org.hypercerts.collection.listCollections',
-    'org.hypercerts.collection.searchCollections',
-    'org.hypercerts.collection.listCollectionItems',
+    "org.hypercerts.collection.getCollection",
+    "org.hypercerts.collection.listCollections",
+    "org.hypercerts.collection.searchCollections",
+    "org.hypercerts.collection.listCollectionItems",
   ];
   const validationIds = new Set(manifest.validationLexicons.map(({ id }) => id));
   for (const id of [
-    'org.hypercerts.collection',
-    'org.hypercerts.entity.feature',
-    'org.hypercerts.vocab.tag',
+    "org.hypercerts.collection",
+    "org.hypercerts.entity.feature",
+    "org.hypercerts.vocab.tag",
     ...endpointIds,
-  ]) assert.ok(validationIds.has(id), `validation closure includes ${id}`);
+  ])
+    assert.ok(validationIds.has(id), `validation closure includes ${id}`);
 
   const [module, shared] = await Promise.all([
-    readFile(new URL(`../../../${collectionModulePath}`, import.meta.url), 'utf8').then(JSON.parse),
-    readFile(new URL('../../../modules/shared/manifest.json', import.meta.url), 'utf8').then(JSON.parse),
+    readFile(new URL(`../../../${collectionModulePath}`, import.meta.url), "utf8").then(JSON.parse),
+    readFile(new URL("../../../modules/shared/manifest.json", import.meta.url), "utf8").then(
+      JSON.parse,
+    ),
   ]);
   const assets = new Map(module.assets.map((asset) => [asset.id, asset]));
   const sharedAssets = new Map(shared.assets.map((asset) => [asset.id, asset]));
   for (const id of endpointIds) {
-    const query = JSON.parse(await readFile(new URL(`../../../lexicons/${id}.json`, import.meta.url), 'utf8'));
+    const query = JSON.parse(
+      await readFile(new URL(`../../../lexicons/${id}.json`, import.meta.url), "utf8"),
+    );
     assert.equal(query.id, id);
-    assert.equal(Number(assets.has(id)) + Number(sharedAssets.has(id)), 1, `${id} has exactly one Lexicon owner`);
+    assert.equal(
+      Number(assets.has(id)) + Number(sharedAssets.has(id)),
+      1,
+      `${id} has exactly one Lexicon owner`,
+    );
     assert.ok(assets.has(`xrpc.query:${id}`), `collection module installs handler ${id}`);
   }
-  for (const id of ['org.hypercerts.collection.getCollection', 'org.hypercerts.collection.listCollectionItems']) {
+  for (const id of [
+    "org.hypercerts.collection.getCollection",
+    "org.hypercerts.collection.listCollectionItems",
+  ]) {
     assert.ok(sharedAssets.has(id), `shared foundation owns the reusable ${id} view Lexicon`);
   }
 
-  const get = JSON.parse(await readFile(new URL('../../../lexicons/org.hypercerts.collection.getCollection.json', import.meta.url), 'utf8'));
-  const list = JSON.parse(await readFile(new URL('../../../lexicons/org.hypercerts.collection.listCollections.json', import.meta.url), 'utf8'));
-  const search = JSON.parse(await readFile(new URL('../../../lexicons/org.hypercerts.collection.searchCollections.json', import.meta.url), 'utf8'));
-  const items = JSON.parse(await readFile(new URL('../../../lexicons/org.hypercerts.collection.listCollectionItems.json', import.meta.url), 'utf8'));
+  const get = JSON.parse(
+    await readFile(
+      new URL("../../../lexicons/org.hypercerts.collection.getCollection.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  const list = JSON.parse(
+    await readFile(
+      new URL("../../../lexicons/org.hypercerts.collection.listCollections.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  const search = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../lexicons/org.hypercerts.collection.searchCollections.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  const items = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../lexicons/org.hypercerts.collection.listCollectionItems.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
   const collectionView = get.defs.collectionView;
-  assert.deepEqual(collectionView.required, ['uri', 'cid', 'indexedAt', 'did', 'author', 'record']);
-  assert.deepEqual(collectionView.nullable, ['indexedAt']);
-  assert.deepEqual(get.defs.locationRecordView.nullable, ['indexedAt']);
-  assert.deepEqual(get.defs.vocabTagRecordView.nullable, ['indexedAt']);
-  assert.deepEqual(get.defs.collectionProfileView.required, ['uri', 'cid', 'indexedAt', 'did', 'record']);
-  assert.deepEqual(get.defs.collectionProfileView.nullable, ['indexedAt']);
-  assert.deepEqual(get.defs.collectionOrganizationView.required, ['uri', 'cid', 'indexedAt', 'did', 'record']);
-  assert.deepEqual(get.defs.collectionOrganizationView.nullable, ['indexedAt']);
-  assert.deepEqual(get.defs.collectionActorView.nullable, ['profile', 'organization']);
-  assert.equal(collectionView.properties.author.ref, '#collectionActorView');
+  assert.deepEqual(collectionView.required, ["uri", "cid", "indexedAt", "did", "author", "record"]);
+  assert.deepEqual(collectionView.nullable, ["indexedAt"]);
+  assert.deepEqual(get.defs.locationRecordView.nullable, ["indexedAt"]);
+  assert.deepEqual(get.defs.vocabTagRecordView.nullable, ["indexedAt"]);
+  assert.deepEqual(get.defs.collectionProfileView.required, [
+    "uri",
+    "cid",
+    "indexedAt",
+    "did",
+    "record",
+  ]);
+  assert.deepEqual(get.defs.collectionProfileView.nullable, ["indexedAt"]);
+  assert.deepEqual(get.defs.collectionOrganizationView.required, [
+    "uri",
+    "cid",
+    "indexedAt",
+    "did",
+    "record",
+  ]);
+  assert.deepEqual(get.defs.collectionOrganizationView.nullable, ["indexedAt"]);
+  assert.deepEqual(get.defs.collectionActorView.nullable, ["profile", "organization"]);
+  assert.equal(collectionView.properties.author.ref, "#collectionActorView");
   assert.equal(collectionView.properties.record.ref, COLLECTION);
-  assert.equal(collectionView.required.includes('location'), false);
-  assert.equal(collectionView.required.includes('tags'), false);
-  assert.deepEqual(get.defs.collectionLocationView.nullable, ['record']);
-  assert.deepEqual(get.defs.collectionTagView.nullable, ['record']);
+  assert.equal(collectionView.required.includes("location"), false);
+  assert.equal(collectionView.required.includes("tags"), false);
+  assert.deepEqual(get.defs.collectionLocationView.nullable, ["record"]);
+  assert.deepEqual(get.defs.collectionTagView.nullable, ["record"]);
 
-  const expectedFilters = ['authors', 'hasOrganizationRecord', 'cursor', 'itemUris', 'limit', 'sortDirection', 'tagUris', 'types', 'uris'].sort();
+  const expectedFilters = [
+    "authors",
+    "hasOrganizationRecord",
+    "cursor",
+    "itemUris",
+    "limit",
+    "sortDirection",
+    "tagUris",
+    "types",
+    "uris",
+  ].sort();
   assert.deepEqual(Object.keys(list.defs.main.parameters.properties).sort(), expectedFilters);
-  assert.deepEqual(Object.keys(search.defs.main.parameters.properties).sort(), [...expectedFilters, 'search'].sort());
-  assert.deepEqual(search.defs.main.parameters.required, ['search']);
+  assert.deepEqual(
+    Object.keys(search.defs.main.parameters.properties).sort(),
+    [...expectedFilters, "search"].sort(),
+  );
+  assert.deepEqual(search.defs.main.parameters.required, ["search"]);
   for (const query of [list, search]) {
     const properties = query.defs.main.parameters.properties;
-    for (const name of ['authors', 'types', 'uris', 'itemUris', 'tagUris']) assert.equal(properties[name].maxLength, 100);
-    assert.equal(properties.hasOrganizationRecord.type, 'boolean');
+    for (const name of ["authors", "types", "uris", "itemUris", "tagUris"])
+      assert.equal(properties[name].maxLength, 100);
+    assert.equal(properties.hasOrganizationRecord.type, "boolean");
     assert.match(properties.hasOrganizationRecord.description, /organization\/self/i);
     assert.match(properties.hasOrganizationRecord.description, /regardless of profile/i);
-    assert.equal(Object.hasOwn(properties, 'authorType'), false);
+    assert.equal(Object.hasOwn(properties, "authorType"), false);
     assert.equal(properties.limit.maximum, 100);
     assert.equal(query.defs.output.properties.collections.items.ref, `${get.id}#collectionView`);
   }
 
   const itemParameters = items.defs.main.parameters.properties;
-  assert.deepEqual(Object.keys(itemParameters).sort(), ['collection', 'cursor', 'limit']);
-  assert.deepEqual(items.defs.main.parameters.required, ['collection']);
+  assert.deepEqual(Object.keys(itemParameters).sort(), ["collection", "cursor", "limit"]);
+  assert.deepEqual(items.defs.main.parameters.required, ["collection"]);
   assert.equal(itemParameters.limit.maximum, 100);
-  assert.deepEqual(items.defs.featureView.nullable, ['indexedAt']);
+  assert.deepEqual(items.defs.featureView.nullable, ["indexedAt"]);
   assert.equal(items.defs.featureView.properties.author.ref, `${get.id}#collectionActorView`);
-  assert.deepEqual(items.defs.collectionItemView.required, ['itemIdentifier', 'record']);
-  assert.deepEqual(items.defs.collectionItemView.nullable, ['record']);
+  assert.deepEqual(items.defs.collectionItemView.required, ["itemIdentifier", "record"]);
+  assert.deepEqual(items.defs.collectionItemView.nullable, ["record"]);
   assert.deepEqual(items.defs.collectionItemView.properties.record.refs, [
-    'org.hypercerts.claim.getActivity#activityView',
-    '#collectionSummaryView',
-    '#featureView',
+    "org.hypercerts.claim.getActivity#activityView",
+    "#collectionSummaryView",
+    "#featureView",
   ]);
 });
 
-test('listCollectionItems skips a URI-only source item and advances the cursor to the next valid item', () => {
-  const firstCid = 'bafyreiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
-  const lastCid = 'bafyreieeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
-  const first = { itemIdentifier: { uri: itemUris[0], cid: firstCid }, itemWeight: '1' };
+test("listCollectionItems skips a URI-only source item and advances the cursor to the next valid item", () => {
+  const firstCid = "bafyreiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+  const lastCid = "bafyreieeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+  const first = { itemIdentifier: { uri: itemUris[0], cid: firstCid }, itemWeight: "1" };
   const broken = { itemIdentifier: { uri: itemUris[1] } };
-  const last = { itemIdentifier: { uri: itemUris[1], cid: lastCid }, itemWeight: '3' };
+  const last = { itemIdentifier: { uri: itemUris[1], cid: lastCid }, itemWeight: "3" };
   const source = `
 local NULL = {}
 local record = { items = ${lua([first, broken, last])} }
@@ -629,72 +859,100 @@ assert(#second_page.items == 1 and second_page.items[1].itemWeight == '3')
 assert(second_page.items[1].itemIdentifier.cid == ${JSON.stringify(lastCid)})
 assert(second_page.items[1].record == NULL and second_page.cursor == nil)
 `;
-  const result = spawnSync('lua5.4', ['-e', source], { cwd: root, encoding: 'utf8' });
+  const result = spawnSync("lua5.4", ["-e", source], { cwd: root, encoding: "utf8" });
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-test('listCollectionItems preserves source order and weights and resolves only exact supported versions', () => {
+test("listCollectionItems preserves source order and weights and resolves only exact supported versions", () => {
   const itemCollectionUri = `at://${did}/${COLLECTION}/parent`;
-  const featureDid = 'did:plc:eeeeeeeeeeeeeeeeeeeeeeee';
+  const featureDid = "did:plc:eeeeeeeeeeeeeeeeeeeeeeee";
   const activityUri = `at://${featureDid}/org.hypercerts.claim.activity/activity-one`;
   const legacyContributorUri = `at://${did}/org.hypercerts.claim.contributorInformation/legacy`;
   const featureUri = `at://${featureDid}/org.hypercerts.entity.feature/feature-one`;
   const nestedUri = `at://${did}/${COLLECTION}/nested`;
-  const activityCid = 'bafyreiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
-  const featureCid = 'bafyreibbccccccccccccccccccccccccccccccccccccccccccccccccc';
-  const nestedCid = 'bafyreicddddddddddddddddddddddddddddddddddddddddddddddddd';
-  const unavailableCid = 'bafyreieeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
+  const activityCid = "bafyreiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+  const featureCid = "bafyreibbccccccccccccccccccccccccccccccccccccccccccccccccc";
+  const nestedCid = "bafyreicddddddddddddddddddddddddddddddddddddddddddddddddd";
+  const unavailableCid = "bafyreieeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
   const parentRecord = {
     $type: COLLECTION,
-    title: 'Parent collection',
-    createdAt: '2025-01-01T00:00:00Z',
+    title: "Parent collection",
+    createdAt: "2025-01-01T00:00:00Z",
     items: [
-      { itemIdentifier: { uri: activityUri, cid: activityCid }, itemWeight: '0.5' },
+      { itemIdentifier: { uri: activityUri, cid: activityCid }, itemWeight: "0.5" },
       { itemIdentifier: { uri: nestedUri, cid: nestedCid } },
-      { itemIdentifier: { uri: featureUri, cid: featureCid }, itemWeight: '1.25' },
-      { itemIdentifier: { uri: activityUri, cid: unavailableCid }, itemWeight: '2' },
+      { itemIdentifier: { uri: featureUri, cid: featureCid }, itemWeight: "1.25" },
+      { itemIdentifier: { uri: activityUri, cid: unavailableCid }, itemWeight: "2" },
     ],
   };
   const records = {
-    'parent-record': parentRecord,
-    'activity-record': {
-      $type: 'org.hypercerts.claim.activity', title: 'Resolved activity', createdAt: '2025-01-01T00:00:00Z',
+    "parent-record": parentRecord,
+    "activity-record": {
+      $type: "org.hypercerts.claim.activity",
+      title: "Resolved activity",
+      createdAt: "2025-01-01T00:00:00Z",
       contributors: [
         legacyContributorUri,
-        { contributorIdentity: { identity: featureDid }, contributionWeight: 'retained' },
+        { contributorIdentity: { identity: featureDid }, contributionWeight: "retained" },
       ],
     },
-    'feature-record': {
-      $type: 'org.hypercerts.entity.feature', type: 'zone', title: 'Resolved feature', createdAt: '2025-01-01T00:00:00Z',
+    "feature-record": {
+      $type: "org.hypercerts.entity.feature",
+      type: "zone",
+      title: "Resolved feature",
+      createdAt: "2025-01-01T00:00:00Z",
     },
-    'feature-author-profile': {
-      $type: 'app.certified.actor.profile', displayName: 'Feature author', createdAt: '2025-01-01T00:00:00Z',
+    "feature-author-profile": {
+      $type: "app.certified.actor.profile",
+      displayName: "Feature author",
+      createdAt: "2025-01-01T00:00:00Z",
     },
-    'nested-record': {
-      $type: COLLECTION, type: 'project', title: 'Nested summary', shortDescription: 'One level only', createdAt: '2025-01-01T00:00:00Z',
+    "nested-record": {
+      $type: COLLECTION,
+      type: "project",
+      title: "Nested summary",
+      shortDescription: "One level only",
+      createdAt: "2025-01-01T00:00:00Z",
     },
   };
   const rows = [
     {
-      uri: itemCollectionUri, did, collection: COLLECTION, cid: 'bafyreiffffffffffffffffffffffffffffffffffffffffffffffffffff',
-      indexed_at: '2025-01-02T03:04:05.000Z', record: 'parent-record',
+      uri: itemCollectionUri,
+      did,
+      collection: COLLECTION,
+      cid: "bafyreiffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      indexed_at: "2025-01-02T03:04:05.000Z",
+      record: "parent-record",
     },
     {
-      uri: activityUri, did: featureDid, collection: 'org.hypercerts.claim.activity', cid: activityCid,
-      indexed_at: '2025-01-02T03:04:05.000Z', record: 'activity-record',
+      uri: activityUri,
+      did: featureDid,
+      collection: "org.hypercerts.claim.activity",
+      cid: activityCid,
+      indexed_at: "2025-01-02T03:04:05.000Z",
+      record: "activity-record",
     },
     {
-      uri: featureUri, did: featureDid, collection: 'org.hypercerts.entity.feature', cid: featureCid,
-      record: 'feature-record',
+      uri: featureUri,
+      did: featureDid,
+      collection: "org.hypercerts.entity.feature",
+      cid: featureCid,
+      record: "feature-record",
     },
     {
-      uri: `at://${featureDid}/app.certified.actor.profile/self`, did: featureDid,
-      collection: 'app.certified.actor.profile', cid: 'bafyreiffffffffffffffffffffffffffffffffffffffffffffffffffff',
-      record: 'feature-author-profile',
+      uri: `at://${featureDid}/app.certified.actor.profile/self`,
+      did: featureDid,
+      collection: "app.certified.actor.profile",
+      cid: "bafyreiffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      record: "feature-author-profile",
     },
     {
-      uri: nestedUri, did, collection: COLLECTION, cid: nestedCid,
-      indexed_at: '2025-01-02T03:04:05.000Z', record: 'nested-record',
+      uri: nestedUri,
+      did,
+      collection: COLLECTION,
+      cid: nestedCid,
+      indexed_at: "2025-01-02T03:04:05.000Z",
+      record: "nested-record",
     },
   ];
   const source = `
@@ -759,11 +1017,11 @@ assert(result.items[3].record.indexedAt == NULL, 'exact feature indexedAt must s
 assert(result.items[3].record.author.profile.indexedAt == NULL, 'feature author indexedAt must serialize SQL NULL explicitly')
 assert(result.items[4].itemIdentifier.cid == '${unavailableCid}' and result.items[4].record == NULL)
 `;
-  const result = spawnSync('lua5.4', ['-e', source], { cwd: root, encoding: 'utf8' });
+  const result = spawnSync("lua5.4", ["-e", source], { cwd: root, encoding: "utf8" });
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-test('listCollectionItems names unknown query parameters in InvalidRequest diagnostics', () => {
+test("listCollectionItems names unknown query parameters in InvalidRequest diagnostics", () => {
   const source = `
 local NULL = {}
 json = { decode = function(value) if value == 'null' then return NULL end return {} end }
@@ -780,6 +1038,6 @@ assert(not ok)
 assert(tostring(result) == 'InvalidRequest: unknown query parameter: bogus', tostring(result))
 assert(calls == 0, 'unknown parameters must be rejected before database access')
 `;
-  const result = spawnSync('lua5.4', ['-e', source], { cwd: root, encoding: 'utf8' });
+  const result = spawnSync("lua5.4", ["-e", source], { cwd: root, encoding: "utf8" });
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });

@@ -8,10 +8,7 @@
         "backfill": false,
         "target_collection": "app.certified.actor.profile"
       },
-      "dependsOn": [
-        "app.certified.actor.profile",
-        "org.hypercerts.api.defs"
-      ]
+      "dependsOn": ["app.certified.actor.profile", "org.hypercerts.api.defs"]
     },
     {
       "kind": "lexicon",
@@ -21,10 +18,7 @@
         "backfill": false,
         "target_collection": "app.certified.actor.profile"
       },
-      "dependsOn": [
-        "app.certified.actor.profile",
-        "org.hypercerts.api.defs"
-      ]
+      "dependsOn": ["app.certified.actor.profile", "org.hypercerts.api.defs"]
     },
     {
       "kind": "lexicon",
@@ -34,10 +28,7 @@
         "backfill": false,
         "target_collection": "app.certified.actor.profile"
       },
-      "dependsOn": [
-        "app.certified.actor.profile",
-        "org.hypercerts.api.defs"
-      ]
+      "dependsOn": ["app.certified.actor.profile", "org.hypercerts.api.defs"]
     },
     {
       "kind": "lexicon",
@@ -47,10 +38,7 @@
         "backfill": false,
         "target_collection": "app.certified.actor.profile"
       },
-      "dependsOn": [
-        "app.certified.actor.profile",
-        "org.hypercerts.api.defs"
-      ]
+      "dependsOn": ["app.certified.actor.profile", "org.hypercerts.api.defs"]
     },
     {
       "kind": "script",
@@ -68,9 +56,7 @@
         "script_type": "lua",
         "description": "Certified profile lookup handler"
       },
-      "dependsOn": [
-        "app.certified.actor.getProfile"
-      ]
+      "dependsOn": ["app.certified.actor.getProfile"]
     },
     {
       "kind": "script",
@@ -87,9 +73,7 @@
         "script_type": "lua",
         "description": "Certified profile batch lookup handler"
       },
-      "dependsOn": [
-        "app.certified.actor.getProfiles"
-      ]
+      "dependsOn": ["app.certified.actor.getProfiles"]
     },
     {
       "kind": "script",
@@ -111,9 +95,7 @@
         "script_type": "lua",
         "description": "Certified profile search handler"
       },
-      "dependsOn": [
-        "app.certified.actor.searchProfiles"
-      ]
+      "dependsOn": ["app.certified.actor.searchProfiles"]
     },
     {
       "kind": "script",
@@ -135,9 +117,7 @@
         "script_type": "lua",
         "description": "Certified profile listing handler"
       },
-      "dependsOn": [
-        "app.certified.actor.listProfiles"
-      ]
+      "dependsOn": ["app.certified.actor.listProfiles"]
     }
   ]
 }
