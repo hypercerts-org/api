@@ -2,3 +2,12 @@ packages:
   - happyview-modules
   - packages/*
   - docs
+
+# Dependencies whose install scripts may run. pnpm 12 fails the install when a
+# dependency with a build script is not listed here. lefthook is installed by
+# the `prepare` script; core-js only prints a funding notice; vue-demi's script
+# only switches between Vue 2 and 3 builds and the default fits Vue 3.
+allowBuilds:
+  lefthook: false
+  core-js: false
+  vue-demi: false

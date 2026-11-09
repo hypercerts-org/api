@@ -1,7 +1,7 @@
 {
   "name": "hypercerts-api-workspace",
   "private": true,
-  "packageManager": "pnpm@10.15.1",
+  "packageManager": "pnpm@12.15.0",
   "scripts": {
     "check": "pnpm --filter @hypercerts-org/happyview-modules check && pnpm --filter hypercerts-api-endpoints test && pnpm --filter @hypercerts-org/api check",
     "test:unit": "pnpm --filter @hypercerts-org/happyview-modules run test:unit",
