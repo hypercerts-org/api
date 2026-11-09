@@ -13,10 +13,18 @@ import "./styles.css";
 
 const presentationSpec = createPresentationSpec(generatedSpec);
 const configuredServers = parseHappyviewServers(import.meta.env.VITE_HAPPYVIEW_SERVERS);
+const defaultServer = firstConfiguredServer();
+
+// parseHappyviewServers rejects an empty list; this gives the type checker the same guarantee.
+function firstConfiguredServer() {
+  const [first] = configuredServers;
+  if (!first) throw new Error("parseHappyviewServers returned no servers");
+  return first;
+}
 
 export function App() {
-  const [serverMode, setServerMode] = useState(configuredServers[0].url);
-  const [activeServer, setActiveServer] = useState(configuredServers[0].url);
+  const [serverMode, setServerMode] = useState(defaultServer.url);
+  const [activeServer, setActiveServer] = useState(defaultServer.url);
   const [customServer, setCustomServer] = useState("");
   const [customError, setCustomError] = useState("");
 
