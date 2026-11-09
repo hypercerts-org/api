@@ -1,7 +1,7 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
@@ -52,8 +52,8 @@ function runLua(
       queryResults.flat().map(({ record, record_json }) => [record, record_json]),
     ),
   };
-  const rows = queryResults.map((result) =>
-    result.map((row) =>
+  const rows = queryResults.map((resultSet) =>
+    resultSet.map((row) =>
       Object.fromEntries(Object.entries(row).filter(([key]) => key !== "record_json")),
     ),
   );

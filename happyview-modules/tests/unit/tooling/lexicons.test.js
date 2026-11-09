@@ -1,12 +1,12 @@
-import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { locationRecords, profileRecords, organizationRecords } from "../../fixtures/records.js";
-import { seedRows as activityHttpFixtureRows } from "../../http/fixtures/activity.fixture.js";
-import { validatePackageLexicons } from "../../../tooling/validate-lexicons.js";
-import { readLexiconSource } from "../../../tooling/lexicon-source.js";
-import { loadAssets } from "../../../tooling/installer.js";
+import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { loadAssets } from "../../../tooling/installer.js";
+import { readLexiconSource } from "../../../tooling/lexicon-source.js";
+import { validatePackageLexicons } from "../../../tooling/validate-lexicons.js";
+import { locationRecords, organizationRecords, profileRecords } from "../../fixtures/records.js";
+import { seedRows as activityHttpFixtureRows } from "../../http/fixtures/activity.fixture.js";
 
 const rootManifest = JSON.parse(
   await readFile(new URL("../../../manifest.json", import.meta.url), "utf8"),

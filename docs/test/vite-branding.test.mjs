@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
+import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import test from "node:test";
 import { createServer } from "vite";
 import viteConfig from "../vite.config.mjs";
 

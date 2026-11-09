@@ -1,9 +1,9 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { loadAssets, applyAssets } from "../../../tooling/installer.js";
+import test from "node:test";
+import { applyAssets, loadAssets } from "../../../tooling/installer.js";
 
 async function bundle(t, modules) {
   const root = await mkdtemp(path.join(os.tmpdir(), "hypercerts-bundle-"));

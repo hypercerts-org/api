@@ -752,7 +752,7 @@ function validateAssetEntry(entry, modulePath, assetIndex, owners) {
   return /** @type {ValidatedManifestAsset} */ (candidate);
 }
 
-/* eslint-disable no-param-reassign -- loadAssetSource passes a private copy to populate with its loaded source. */
+// biome-ignore-start lint/style/noParameterAssign: loadAssetSource passes a private copy to populate with its loaded source.
 /** @param {LexiconManifestAsset & { lexicon_json?: unknown }} asset @param {string} root */
 async function loadLexiconAssetSource(asset, root) {
   asset.lexicon_json = await readLexiconSource(asset, root);
@@ -773,7 +773,7 @@ async function loadScriptAssetSource(asset, root) {
   asset.body = await readFile(source, "utf8");
   if (!asset.body.trim()) throw new Error("script source is empty");
 }
-/* eslint-enable no-param-reassign */
+// biome-ignore-end lint/style/noParameterAssign: end of loadAssetSource helpers
 
 /** @param {ValidatedManifestAsset} asset @returns {string} */
 function assetSourcePath(asset) {

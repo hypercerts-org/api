@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
-import path from "node:path";
 import { createRequire } from "node:module";
+import path from "node:path";
 
 const require = createRequire(new URL("../package.json", import.meta.url));
 const lexiconPackageRoot = path.dirname(require.resolve("@hypercerts-org/lexicon/package.json"));

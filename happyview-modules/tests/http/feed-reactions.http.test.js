@@ -1,12 +1,12 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import { contractUrl, requireContractTarget } from "./helpers.js";
+import test from "node:test";
 import {
   reactionDids,
   reactionUris,
   seedRows,
   subjectCids,
 } from "./fixtures/feed-reactions.fixture.js";
+import { contractUrl, requireContractTarget } from "./helpers.js";
 
 const likesEndpoint = "app.certified.feed.getLikes";
 const repostsEndpoint = "app.certified.feed.getReposts";

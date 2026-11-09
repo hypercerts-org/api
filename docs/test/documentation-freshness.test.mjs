@@ -1,21 +1,15 @@
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { buildDocumentationArtifacts } from "../scripts/openapi-artifacts.mjs";
 import { assertDocumentationFresh } from "../scripts/check-sources.mjs";
+import { buildDocumentationArtifacts } from "../scripts/openapi-artifacts.mjs";
 import { collectDocumentationSources } from "../scripts/refresh-sources.mjs";
-
-const docsRoot = path.resolve(import.meta.dirname, "..");
 
 async function writeJson(file, value) {
   await mkdir(path.dirname(file), { recursive: true });
   await writeFile(file, `${JSON.stringify(value, null, 2)}\n`);
-}
-
-async function readJson(file) {
-  return JSON.parse(await readFile(file, "utf8"));
 }
 
 async function writeBaselineArtifacts(apiRoot, fixtureDocs, packageRoot) {

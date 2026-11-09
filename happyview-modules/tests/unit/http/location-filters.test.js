@@ -1,5 +1,5 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 import { contractUrl } from "../../http/helpers.js";
 
 test("listLocations filter names and values serialize as expected", () => {

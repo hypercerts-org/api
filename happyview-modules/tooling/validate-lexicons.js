@@ -1,9 +1,9 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { Lexicons, isValidLexiconDoc } from "@atproto/lexicon";
-import { readLexiconSource } from "./lexicon-source.js";
+import { isValidLexiconDoc, Lexicons } from "@atproto/lexicon";
 import { isValidDid, isValidTid } from "@atproto/syntax";
+import { readLexiconSource } from "./lexicon-source.js";
 
 export async function validatePackageLexicons(
   root = fileURLToPath(new URL("../", import.meta.url)),
@@ -25,7 +25,7 @@ export async function validatePackageLexicons(
       if (Array.isArray(value)) value.forEach(checkRefs);
       else if (value && typeof value === "object") {
         if (value.type === "ref") lexicons.getDefOrThrow(value.ref);
-        if (value.type === "union") value.refs.forEach((ref) => lexicons.getDefOrThrow(ref));
+        if (value.type === "union") for (const ref of value.refs) lexicons.getDefOrThrow(ref);
         Object.values(value).forEach(checkRefs);
       }
     };

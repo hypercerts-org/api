@@ -1,6 +1,6 @@
-import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { isValidLexiconDoc, Lexicons } from "@atproto/lexicon";
 import { orderAssets } from "../../../tooling/installer.js";
@@ -17,11 +17,11 @@ async function readJson(relativePath) {
 
 function checkRefs(value, lexicons) {
   if (Array.isArray(value)) {
-    value.forEach((item) => checkRefs(item, lexicons));
+    for (const item of value) checkRefs(item, lexicons);
   } else if (value && typeof value === "object") {
     if (value.type === "ref") lexicons.getDefOrThrow(value.ref);
-    if (value.type === "union") value.refs.forEach((ref) => lexicons.getDefOrThrow(ref));
-    Object.values(value).forEach((item) => checkRefs(item, lexicons));
+    if (value.type === "union") for (const ref of value.refs) lexicons.getDefOrThrow(ref);
+    for (const item of Object.values(value)) checkRefs(item, lexicons);
   }
 }
 

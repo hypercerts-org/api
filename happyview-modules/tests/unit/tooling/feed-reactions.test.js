@@ -1,14 +1,14 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
 import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { jsonToLex, lexToJson } from "@atproto/lexicon";
 import { validatePackageLexicons } from "../../../tooling/validate-lexicons.js";
 import {
   reactionDids,
-  reactionUris,
   seedRows as reactionFixtureRows,
+  reactionUris,
 } from "../../http/fixtures/feed-reactions.fixture.js";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));

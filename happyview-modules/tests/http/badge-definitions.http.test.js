@@ -1,7 +1,7 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import { contractUrl, requireContractTarget } from "./helpers.js";
+import test from "node:test";
 import { canonicalRecords } from "./fixtures/badge-queries.fixture.js";
+import { contractUrl, requireContractTarget } from "./helpers.js";
 
 const getEndpoint = "app.certified.badge.getBadgeDefinition";
 const listEndpoint = "app.certified.badge.listBadgeDefinitions";

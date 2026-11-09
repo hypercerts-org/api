@@ -1,11 +1,11 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
+import { locationRecords as baselineLocationRecords } from "../fixtures/records.js";
 import {
   locationRecords,
-  profileRecords,
   organizationRecords,
+  profileRecords,
 } from "./fixtures/location.fixture.js";
-import { locationRecords as baselineLocationRecords } from "../fixtures/records.js";
 import { contractUrl, requireContractTarget } from "./helpers.js";
 
 const baseUrl = requireContractTarget();

@@ -2,20 +2,20 @@ import { spawnSync } from "node:child_process";
 import { accessSync, constants, statSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import {
-  seedSql,
-  locationRecords,
-  profileRecords,
-  organizationRecords,
-} from "../tests/fixtures/records.js";
-import {
-  actorFollowRecords,
-  actorFollowProfileRecords,
-  actorFollowOrganizationRecords,
-} from "../tests/fixtures/actor-follows.js";
 import { activityFixtureRows } from "../tests/fixtures/activities.js";
+import {
+  actorFollowOrganizationRecords,
+  actorFollowProfileRecords,
+  actorFollowRecords,
+} from "../tests/fixtures/actor-follows.js";
 import { badDateSeedSql } from "../tests/fixtures/bad-dates.js";
 import { badDateLocations } from "../tests/fixtures/bad-location-dates.js";
+import {
+  locationRecords,
+  organizationRecords,
+  profileRecords,
+  seedSql,
+} from "../tests/fixtures/records.js";
 
 /** @typedef {{ uri: string; did: string; collection: string; rkey: string; cid: string; indexedAt: string; record: Record<string, unknown> }} SeedRow */
 /** @typedef {Omit<SeedRow, 'indexedAt'> & { indexedAt: string | null; storedAt: string }} DateFixtureRow */

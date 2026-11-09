@@ -1,7 +1,7 @@
-import test from "node:test";
-import { readFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
+import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));

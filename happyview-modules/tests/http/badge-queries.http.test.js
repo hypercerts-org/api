@@ -1,11 +1,11 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import { contractUrl, requireContractTarget } from "./helpers.js";
+import test from "node:test";
 import {
   badgeQueryDids,
   canonicalCids,
   canonicalRecords,
 } from "./fixtures/badge-queries.fixture.js";
+import { contractUrl, requireContractTarget } from "./helpers.js";
 
 const endpoints = {
   searchBadgeDefinitions: "app.certified.badge.searchBadgeDefinitions",

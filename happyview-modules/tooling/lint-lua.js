@@ -1,6 +1,6 @@
-import { access, readFile, readdir } from "node:fs/promises";
-import { X_OK } from "node:constants";
 import { spawnSync } from "node:child_process";
+import { X_OK } from "node:constants";
+import { access, readdir, readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";

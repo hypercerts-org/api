@@ -1,10 +1,10 @@
-import test from "node:test";
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
-import { createServer } from "node:http";
 import { copyFile, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { createServer } from "node:http";
 import os from "node:os";
 import path from "node:path";
+import test from "node:test";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { resolveInstallConfig } from "../../../tooling/installer.js";
 

@@ -1,7 +1,7 @@
-import { randomBytes, randomUUID, createHash } from "node:crypto";
+import { spawnSync } from "node:child_process";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { accessSync, constants, statSync } from "node:fs";
 import { appendFile, mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
-import { spawnSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";

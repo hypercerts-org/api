@@ -1,7 +1,7 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import { contractUrl, requireContractTarget } from "./helpers.js";
+import test from "node:test";
 import { seedRows } from "./fixtures/vocab-tags.fixture.js";
+import { contractUrl, requireContractTarget } from "./helpers.js";
 
 const getEndpoint = "org.hypercerts.vocab.getVocabTag";
 const listEndpoint = "org.hypercerts.vocab.listVocabTags";

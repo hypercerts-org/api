@@ -1,7 +1,7 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import { contractUrl, requireContractTarget } from "./helpers.js";
+import test from "node:test";
 import { graphDids, seedRows } from "./fixtures/graph-follows.fixture.js";
+import { contractUrl, requireContractTarget } from "./helpers.js";
 
 const baseUrl = requireContractTarget();
 const followCollection = "app.certified.graph.follow";

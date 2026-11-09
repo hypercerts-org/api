@@ -1,17 +1,17 @@
-import test from "node:test";
 import assert from "node:assert/strict";
 import { readdir } from "node:fs/promises";
 import path from "node:path";
+import test from "node:test";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { encode } from "@atcute/cbor";
 import * as CID from "@atcute/cid";
-import { fileURLToPath, pathToFileURL } from "node:url";
-import { locationRecords, profileRecords, organizationRecords } from "../../fixtures/records.js";
-import {
-  actorFollowRecords,
-  actorFollowProfileRecords,
-  actorFollowOrganizationRecords,
-} from "../../fixtures/actor-follows.js";
 import { activityFixtureRows } from "../../fixtures/activities.js";
+import {
+  actorFollowOrganizationRecords,
+  actorFollowProfileRecords,
+  actorFollowRecords,
+} from "../../fixtures/actor-follows.js";
+import { locationRecords, organizationRecords, profileRecords } from "../../fixtures/records.js";
 
 const httpFixtureRoot = fileURLToPath(new URL("../../http/fixtures/", import.meta.url));
 const sharedSeedRows = [

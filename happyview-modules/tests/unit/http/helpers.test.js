@@ -1,5 +1,5 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 import { contractUrl, requireContractTarget } from "../../http/helpers.js";
 
 test("repeated arrays use unbracketed keys, omit empty options, and preserve URL encoding", () => {

@@ -1,7 +1,7 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import { contractUrl, requireContractTarget } from "./helpers.js";
+import test from "node:test";
 import { seedRows } from "./fixtures/evm-links.fixture.js";
+import { contractUrl, requireContractTarget } from "./helpers.js";
 
 const getEndpoint = "app.certified.link.getEvmLink";
 const listEndpoint = "app.certified.link.listEvmLinks";

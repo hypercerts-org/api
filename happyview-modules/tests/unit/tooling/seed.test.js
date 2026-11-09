@@ -1,18 +1,18 @@
-import test from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { chmod, copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
+import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { locationRecords, profileRecords, organizationRecords } from "../../fixtures/records.js";
-import {
-  actorFollowRecords,
-  actorFollowProfileRecords,
-  actorFollowOrganizationRecords,
-} from "../../fixtures/actor-follows.js";
-import { activityFixtureRows } from "../../fixtures/activities.js";
-import { badDateLocations } from "../../fixtures/bad-location-dates.js";
 import { buildBadDateSeedInput, buildSeedInput, psqlTargetArgs } from "../../../tooling/seed.js";
+import { activityFixtureRows } from "../../fixtures/activities.js";
+import {
+  actorFollowOrganizationRecords,
+  actorFollowProfileRecords,
+  actorFollowRecords,
+} from "../../fixtures/actor-follows.js";
+import { badDateLocations } from "../../fixtures/bad-location-dates.js";
+import { locationRecords, organizationRecords, profileRecords } from "../../fixtures/records.js";
 
 const packageRoot = fileURLToPath(new URL("../../../", import.meta.url));
 

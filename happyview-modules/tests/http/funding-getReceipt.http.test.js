@@ -1,5 +1,5 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 import { contractUrl, requireContractTarget } from "./helpers.js";
 
 const publisherDid = "did:web:funding-http-publisher.invalid";

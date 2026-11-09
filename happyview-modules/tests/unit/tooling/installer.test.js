@@ -1,8 +1,8 @@
-import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
 import path from "node:path";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
 import { loadAssets, orderAssets } from "../../../tooling/installer.js";
 import { validatePackageLexicons } from "../../../tooling/validate-lexicons.js";
 

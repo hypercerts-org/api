@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import * as presentationModule from "../web/src/presentation.mjs";
 
 const { createPresentationSpec, normalizeBaseUrl } = presentationModule;

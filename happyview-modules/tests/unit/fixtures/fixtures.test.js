@@ -1,28 +1,28 @@
-import test from "node:test";
 import assert from "node:assert/strict";
 import { readdir } from "node:fs/promises";
 import path from "node:path";
+import test from "node:test";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { encode } from "@atcute/cbor";
 import * as CID from "@atcute/cid";
 import { isValidDid, isValidTid } from "@atproto/syntax";
 import {
-  locationRecords,
-  profileRecords,
-  organizationRecords,
-  seedSql,
-} from "../../fixtures/records.js";
-import {
   activityContributorInformationVersions,
   activityFixtureRows,
 } from "../../fixtures/activities.js";
-import { seedRows as activityHttpFixtureRows } from "../../http/fixtures/activity.fixture.js";
 import {
   actorFollowDids,
   actorFollowOrganizationRecords,
   actorFollowProfileRecords,
   actorFollowRecords,
 } from "../../fixtures/actor-follows.js";
+import {
+  locationRecords,
+  organizationRecords,
+  profileRecords,
+  seedSql,
+} from "../../fixtures/records.js";
+import { seedRows as activityHttpFixtureRows } from "../../http/fixtures/activity.fixture.js";
 
 const httpFixtureRoot = fileURLToPath(new URL("../../http/fixtures/", import.meta.url));
 

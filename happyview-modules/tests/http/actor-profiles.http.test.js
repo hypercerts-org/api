@@ -1,7 +1,7 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import { contractUrl, requireContractTarget } from "./helpers.js";
+import test from "node:test";
 import { actorFixtureDids } from "./fixtures/actors.fixture.js";
+import { contractUrl, requireContractTarget } from "./helpers.js";
 
 const endpoint = "app.certified.actor.getProfile";
 const profileCollection = "app.certified.actor.profile";

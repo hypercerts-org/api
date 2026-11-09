@@ -1,17 +1,17 @@
-import test from "node:test";
 import assert from "node:assert/strict";
 import { readdir } from "node:fs/promises";
 import path from "node:path";
+import test from "node:test";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { encode } from "@atcute/cbor";
 import * as CID from "@atcute/cid";
-import { locationRecords, profileRecords, organizationRecords } from "../../fixtures/records.js";
 import { activityFixtureRows } from "../../fixtures/activities.js";
 import {
   actorFollowOrganizationRecords,
   actorFollowProfileRecords,
   actorFollowRecords,
 } from "../../fixtures/actor-follows.js";
+import { locationRecords, organizationRecords, profileRecords } from "../../fixtures/records.js";
 import { graphDids } from "../../http/fixtures/graph-follows.fixture.js";
 
 const apiRoot = fileURLToPath(new URL("../../../", import.meta.url));

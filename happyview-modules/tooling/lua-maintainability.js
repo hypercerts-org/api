@@ -411,7 +411,7 @@ function keysOnlyCalls(tokens) {
 function inspectParameterSources(sources) {
   const calls = sources.flatMap((source) => {
     const tokens = tokenizeLua(source.source);
-    return keysOnlyCalls(tokens).map((call) => ({ ...call, tokens, source }));
+    return keysOnlyCalls(tokens).map((found) => ({ ...found, tokens, source }));
   });
   const qualifiedCall = calls.find(({ qualified }) => qualified);
   if (qualifiedCall) {

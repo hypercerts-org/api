@@ -1,6 +1,6 @@
-import { useMemo, useState, type FormEvent, type ChangeEvent } from "react";
 import { Button, Input, Select } from "@hypercerts-org/ui-react";
-import { ApiReferenceReact, type AnyApiReferenceConfiguration } from "@scalar/api-reference-react";
+import { type AnyApiReferenceConfiguration, ApiReferenceReact } from "@scalar/api-reference-react";
+import { type ChangeEvent, type FormEvent, useMemo, useState } from "react";
 import generatedSpec from "../../openapi.json";
 import { createClientConfiguration } from "./client-configuration.mjs";
 import {

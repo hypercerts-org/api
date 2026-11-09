@@ -1,10 +1,10 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import { access, mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { buildLuaBundles } from "../../../tooling/lua-bundles.js";
+import test from "node:test";
 import { lintLua } from "../../../tooling/lint-lua.js";
+import { buildLuaBundles } from "../../../tooling/lua-bundles.js";
 
 async function withTempRoot(run) {
   const root = await mkdtemp(path.join(os.tmpdir(), "hypercerts-api-lint-lua-"));

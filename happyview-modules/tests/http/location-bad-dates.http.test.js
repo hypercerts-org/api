@@ -1,6 +1,7 @@
 // These deliberately malformed record timestamps are seeded by location.fixture.js into the disposable HTTP target.
-import test from "node:test";
+
 import assert from "node:assert/strict";
+import test from "node:test";
 import { badDateLocations } from "./fixtures/location.fixture.js";
 import { contractUrl, requireContractTarget } from "./helpers.js";
 

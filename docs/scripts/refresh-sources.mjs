@@ -1,8 +1,8 @@
-import { createRequire } from "node:module";
-import { readFile, writeFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
+import { readFile, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const docsRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const repositoryRoot = path.resolve(docsRoot, "..");
