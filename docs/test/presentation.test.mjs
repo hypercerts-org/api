@@ -27,7 +27,7 @@ test("presentation preserves endpoint contracts and explains unresolved schema r
     /response schemas may be partial|CORS|browser/i,
   );
   assert.deepEqual(presentation.servers, [
-    { url: "https://api.test.hypercerts.dev", description: "API test (default)" },
+    { url: "https://test.api.hypercerts.dev", description: "API test (default)" },
     { url: "http://127.0.0.1:8080", description: "Local (127.0.0.1:8080)" },
   ]);
   assert.equal(Object.hasOwn(presentation, "x-hypercerts-source"), false);
@@ -68,7 +68,7 @@ test("presentation preserves endpoint contracts and explains unresolved schema r
 test("build-time HappyView server config keeps an ordered default and rejects invalid settings", () => {
   const parse = presentationModule.parseHappyviewServers;
   assert.deepEqual(parse(undefined), [
-    { label: "API test", url: "https://api.test.hypercerts.dev" },
+    { label: "API test", url: "https://test.api.hypercerts.dev" },
   ]);
   assert.deepEqual(
     parse(
