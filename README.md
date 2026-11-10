@@ -49,7 +49,7 @@ The admin token needs `script-variables:read`; if the resolver setting is absent
 
 Licensed under either [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option.
 
-The licenses cover the code. They don't cover the logos (`docs/public/brand/` and `docs/public/favicon.ico`) or the fonts (`docs/public/fonts/`): logos belong to their owners, and each font keeps its own license.
+The licenses don't cover the logos (`docs/public/brand/` and `docs/public/favicon.ico`) or the fonts (`docs/public/fonts/`): logos belong to their owners, and each font keeps its own license.
 
 The Lexicon schemas in `docs/sources/lexicons/` that were copied from other projects keep their upstream licenses:
 
