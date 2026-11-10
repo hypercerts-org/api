@@ -44,3 +44,11 @@ pnpm install:api
 ```
 
 The admin token needs `script-variables:read`; if the resolver setting is absent and the installer must create it, it also needs `script-variables:create`. Conflicting assets stop installation by default; `--override` opts into replacing declared conflicts. The installer sends admin requests and uploads assets, and writes are not rolled back if a later asset fails. Run it only against an explicitly approved target with approved credentials. For tagged-release installation and resolver-setting behavior, see [happyview-modules/README.md](happyview-modules/README.md#install-a-released-api-bundle).
+
+## License
+
+Licensed under either [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option.
+
+The licenses cover the code. They don't cover the logos or fonts in this repository: logos belong to their owners, and each font keeps its own license.
+
+Lexicon schemas copied from other publishers (`app.bsky` and `com.atproto`, from Bluesky, and `pub.leaflet`) keep their publishers' licenses.
