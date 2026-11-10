@@ -49,6 +49,9 @@ The admin token needs `script-variables:read`; if the resolver setting is absent
 
 Licensed under either [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option.
 
-The licenses cover the code. They don't cover the logos or fonts in this repository: logos belong to their owners, and each font keeps its own license.
+The licenses cover the code. They don't cover the logos (`docs/public/brand/` and `docs/public/favicon.ico`) or the fonts (`docs/public/fonts/`): logos belong to their owners, and each font keeps its own license.
 
-Lexicon schemas copied from other publishers (`app.bsky` and `com.atproto`, from Bluesky, and `pub.leaflet`) keep their publishers' licenses.
+The Lexicon schemas in `docs/sources/lexicons/` that were copied from other projects keep their upstream licenses:
+
+- `app.bsky` and `com.atproto` come from Bluesky's [atproto](https://github.com/bluesky-social/atproto): MIT OR Apache-2.0, Copyright (c) 2022-2026 Bluesky Social PBC, and Contributors.
+- `pub.leaflet` comes from [Leaflet](https://github.com/hyperlink-academy/leaflet): MIT, Copyright (c) 2025 Learning Futures Inc.
