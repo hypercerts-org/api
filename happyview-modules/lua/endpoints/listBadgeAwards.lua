@@ -123,22 +123,8 @@ local function hydrate_actor_views(actors, run_query)
   end
 end
 
-local AWARD = "app.certified.badge.award"
-local DEFINITION = "app.certified.badge.definition"
-local RESPONSE = "app.certified.badge.response"
-local RESPONSE_STATUSES = { accepted = true, rejected = true, unanswered = true }
-
-local function valid_badge_award_uri(value)
-  local valid, collection = valid_record_uri(value)
-  return valid and collection == AWARD
-end
-
-local function valid_badge_definition_uri(value)
-  local valid, collection = valid_record_uri(value)
-  return valid and collection == DEFINITION
-end
-
-local function valid_badge_subject_nsid(value)
+-- An atproto NSID: at least three dot-separated segments, at most 317 characters.
+local function valid_nsid(value)
   if type(value) ~= "string" or #value > 317 then return false end
   local segments = {}
   for segment in value:gmatch("[^%.]+") do segments[#segments + 1] = segment end
@@ -152,6 +138,21 @@ local function valid_badge_subject_nsid(value)
   end
   local name = segments[#segments]
   return #name <= 63 and name:match("^[A-Za-z][A-Za-z0-9]*$") ~= nil
+end
+
+local AWARD = "app.certified.badge.award"
+local DEFINITION = "app.certified.badge.definition"
+local RESPONSE = "app.certified.badge.response"
+local RESPONSE_STATUSES = { accepted = true, rejected = true, unanswered = true }
+
+local function valid_badge_award_uri(value)
+  local valid, collection = valid_record_uri(value)
+  return valid and collection == AWARD
+end
+
+local function valid_badge_definition_uri(value)
+  local valid, collection = valid_record_uri(value)
+  return valid and collection == DEFINITION
 end
 
 local function query(sql, values)
@@ -205,7 +206,7 @@ local function subject_values()
     local is_did = valid_did(item)
     local valid_uri, collection
     if not is_did then valid_uri, collection = valid_record_uri(item) end
-    if not is_did and (not valid_uri or not valid_badge_subject_nsid(collection)) then
+    if not is_did and (not valid_uri or not valid_nsid(collection)) then
       invalid("subjects[" .. index .. "] must be a valid DID or full record AT-URI with a valid collection NSID")
     end
     if not seen[item] then

@@ -130,22 +130,7 @@ local function hydrate_acknowledgement_authors(views)
   end
 end
 
-local generic_valid_datetime = valid_datetime
-
-local function acknowledgement_valid_datetime(value)
-  if type(value) ~= "string" then return false end
-  if value:match("^(%d%d%d%d)") == "0000" then return false end
-  return generic_valid_datetime(value)
-end
-
-local function valid_cursor_timestamp(value)
-  if type(value) ~= "string" or #value ~= 27
-    or not value:match("^%d%d%d%d%-%d%d%-%d%dT%d%d:%d%d:%d%d%.%d%d%d%d%d%dZ$") then
-    return false
-  end
-  return acknowledgement_valid_datetime(value)
-end
-
+-- An atproto NSID: at least three dot-separated segments, at most 317 characters.
 local function valid_nsid(value)
   if type(value) ~= "string" or #value > 317 then return false end
   local segments = {}
@@ -160,6 +145,22 @@ local function valid_nsid(value)
   end
   local name = segments[#segments]
   return #name <= 63 and name:match("^[A-Za-z][A-Za-z0-9]*$") ~= nil
+end
+
+local generic_valid_datetime = valid_datetime
+
+local function acknowledgement_valid_datetime(value)
+  if type(value) ~= "string" then return false end
+  if value:match("^(%d%d%d%d)") == "0000" then return false end
+  return generic_valid_datetime(value)
+end
+
+local function valid_cursor_timestamp(value)
+  if type(value) ~= "string" or #value ~= 27
+    or not value:match("^%d%d%d%d%-%d%d%-%d%dT%d%d:%d%d:%d%d%.%d%d%d%d%d%dZ$") then
+    return false
+  end
+  return acknowledgement_valid_datetime(value)
 end
 
 local function acknowledgement_array(key, format)

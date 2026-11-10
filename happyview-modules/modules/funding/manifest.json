@@ -53,6 +53,7 @@
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",
         "../../lua/shared/fundingReceipt.lua",
+        "../../lua/shared/nsidValidation.lua",
         "../../lua/shared/fundingReceiptList.lua"
       ],
       "config": {
