@@ -72,7 +72,7 @@ async function declaredLuaOutputs(root) {
     });
   }
   if (!Array.isArray(bundle.modules)) {
-    throw new Error(
+    throw new TypeError(
       `API root manifest ${bundlePath} must declare a modules array before Lua handlers can be linted`,
     );
   }

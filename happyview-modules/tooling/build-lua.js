@@ -13,8 +13,9 @@ async function main() {
   if (option === "--check") {
     const stale = await checkLuaBundles(root);
     if (stale.length > 0) {
+      const staleList = stale.map((file) => `  - ${file}`).join("\n");
       throw new Error(
-        `Generated Lua bundles are stale:\n${stale.map((file) => `  - ${file}`).join("\n")}\nRun \`pnpm build:lua\` to regenerate and commit them.`,
+        `Generated Lua bundles are stale:\n${staleList}\nRun \`pnpm build:lua\` to regenerate and commit them.`,
       );
     }
     process.stdout.write("Generated Lua bundles are up to date.\n");

@@ -21,6 +21,45 @@ async function readJson(file, description) {
   }
 }
 
+function handlerSourcePaths(packageRoot, moduleDirectory, declaration, id) {
+  const shared =
+    declaration.sharedSourcePaths ??
+    (declaration.sharedSourcePath ? [declaration.sharedSourcePath] : []);
+  if (!Array.isArray(shared)) {
+    throw new TypeError(`${id} must declare sharedSourcePaths as an array`);
+  }
+  return [
+    ...shared.map((source) =>
+      resolveInside(packageRoot, moduleDirectory, source, `${id} shared source`),
+    ),
+    resolveInside(packageRoot, moduleDirectory, declaration.sourcePath, `${id} endpoint source`),
+  ];
+}
+
+async function renderHandler(packageRoot, moduleDirectory, declaration) {
+  const id = declaration.id ?? "unnamed Lua handler";
+  const sourcePaths = handlerSourcePaths(packageRoot, moduleDirectory, declaration, id);
+  const outputFile = resolveInside(
+    packageRoot,
+    moduleDirectory,
+    declaration.path,
+    `${id} output path`,
+  );
+  let contents;
+  try {
+    contents = await Promise.all(sourcePaths.map((source) => readFile(source, "utf8")));
+  } catch (error) {
+    throw new Error(`Cannot read declared Lua source for ${id}: ${error.message}`, {
+      cause: error,
+    });
+  }
+  return {
+    path: path.relative(packageRoot, outputFile),
+    file: outputFile,
+    content: `${contents.map((source) => source.trimEnd()).join("\n\n")}\n`,
+  };
+}
+
 async function renderBundles(root) {
   const packageRoot = path.resolve(root);
   const manifestFile = path.join(packageRoot, "manifest.json");
@@ -41,49 +80,12 @@ async function renderBundles(root) {
     const moduleDirectory = path.dirname(moduleFile);
     for (const declaration of module.assets) {
       if (declaration.kind !== "script" || declaration.config?.script_type !== "lua") continue;
-      const id = declaration.id ?? "unnamed Lua handler";
-      const shared =
-        declaration.sharedSourcePaths ??
-        (declaration.sharedSourcePath ? [declaration.sharedSourcePath] : []);
-      if (!Array.isArray(shared)) {
-        throw new Error(`${id} must declare sharedSourcePaths as an array`);
+      const output = await renderHandler(packageRoot, moduleDirectory, declaration);
+      if (outputPaths.has(output.path)) {
+        throw new Error(`Multiple Lua handlers generate ${output.path}`);
       }
-      const sourcePaths = [
-        ...shared.map((source) =>
-          resolveInside(packageRoot, moduleDirectory, source, `${id} shared source`),
-        ),
-        resolveInside(
-          packageRoot,
-          moduleDirectory,
-          declaration.sourcePath,
-          `${id} endpoint source`,
-        ),
-      ];
-      const outputFile = resolveInside(
-        packageRoot,
-        moduleDirectory,
-        declaration.path,
-        `${id} output path`,
-      );
-      const relativeOutput = path.relative(packageRoot, outputFile);
-      if (outputPaths.has(relativeOutput)) {
-        throw new Error(`Multiple Lua handlers generate ${relativeOutput}`);
-      }
-      outputPaths.add(relativeOutput);
-
-      let contents;
-      try {
-        contents = await Promise.all(sourcePaths.map((source) => readFile(source, "utf8")));
-      } catch (error) {
-        throw new Error(`Cannot read declared Lua source for ${id}: ${error.message}`, {
-          cause: error,
-        });
-      }
-      outputs.push({
-        path: relativeOutput,
-        file: outputFile,
-        content: `${contents.map((source) => source.trimEnd()).join("\n\n")}\n`,
-      });
+      outputPaths.add(output.path);
+      outputs.push(output);
     }
   }
   return outputs;

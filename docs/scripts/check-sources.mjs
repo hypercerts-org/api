@@ -41,7 +41,7 @@ export async function assertDocumentationFresh(options = {}) {
 
   if (staleFiles.length > 0) {
     const paths = [...new Set(staleFiles)]
-      .sort()
+      .sort((left, right) => left.localeCompare(right))
       .map((file) => `  - ${file}`)
       .join("\n");
     throw new Error(

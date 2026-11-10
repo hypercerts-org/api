@@ -51,8 +51,11 @@ function disposableTarget(env) {
 /** @param {unknown} value @returns {string} */
 function quote(value) {
   if (value === null) return "NULL";
+  if (typeof value !== "string") {
+    throw new TypeError(`Seed SQL parameters must be strings or null, got ${typeof value}`);
+  }
   const escapedBackslash = String.raw`\\`;
-  return `E'${String(value).replaceAll("\\", escapedBackslash).replaceAll("'", "''")}'`;
+  return `E'${value.replaceAll("\\", escapedBackslash).replaceAll("'", "''")}'`;
 }
 
 /** @param {{ sql: string; params: unknown[] }[]} statements @param {string} [types] @returns {string} */

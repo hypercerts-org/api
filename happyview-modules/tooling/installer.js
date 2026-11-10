@@ -102,7 +102,7 @@ function describeDifference(fieldPath, expected, installed, differences) {
     const installedFields = /** @type {Record<string, unknown>} */ (installed);
     for (const key of [
       ...new Set([...Object.keys(expectedFields), ...Object.keys(installedFields)]),
-    ].sort()) {
+    ].sort((left, right) => left.localeCompare(right))) {
       describeDifference(
         `${fieldPath}.${key}`,
         expectedFields[key],
