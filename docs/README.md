@@ -13,7 +13,7 @@ pnpm install --frozen-lockfile
 pnpm docs:dev
 ```
 
-Open <http://127.0.0.1:5173>. The explorer defaults to `https://api.test.hypercerts.dev`; Local (`http://127.0.0.1:8080`) and Custom server choices are also available. Requests go directly from your browser to the selected server.
+Open <http://127.0.0.1:5173>. The explorer defaults to `https://test.api.hypercerts.dev`; Local (`http://127.0.0.1:8080`) and Custom server choices are also available. Requests go directly from your browser to the selected server.
 
 To offer named servers, set `VITE_HAPPYVIEW_SERVERS` when starting the dev server or building the site:
 

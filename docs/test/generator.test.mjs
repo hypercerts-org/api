@@ -67,7 +67,7 @@ test("OpenAPI generation preserves query contract and marks unresolved refs", ()
 
   assert.equal(document.openapi, "3.1.0");
   assert.deepEqual(document.servers, [
-    { url: "https://api.test.hypercerts.dev", description: "API test server (default)" },
+    { url: "https://test.api.hypercerts.dev", description: "API test server (default)" },
   ]);
   assert.equal(operation.description, "Search demo records.");
   assert.equal(operation["x-hypercerts-coverage"], "manifest-registered");
