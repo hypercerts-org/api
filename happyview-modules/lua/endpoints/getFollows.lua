@@ -102,7 +102,12 @@ local function follow_batch_targets(actor, key, value, validate, description, en
     invalid(key .. " must contain 1 through " .. FOLLOW_BATCH_MAX_TARGETS .. " values")
   end
 
-  local request_target_length = #("/xrpc/" .. endpoint .. "?actor=") + encoded_query_value_length(actor)
+  -- actor is nil for batch queries that take only the target list; the first
+  -- target's "&" then stands in for the "?".
+  local request_target_length = #("/xrpc/" .. endpoint)
+  if actor then
+    request_target_length = request_target_length + #("?actor=") + encoded_query_value_length(actor)
+  end
   local unique, seen = {}, {}
   for _, target in ipairs(targets) do
     if type(target) ~= "string" or not validate(target) then

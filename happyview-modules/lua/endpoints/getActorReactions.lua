@@ -68,6 +68,13 @@ local function valid_nsid(value)
   return #name <= 63 and name:match("^[A-Za-z][A-Za-z0-9]*$") ~= nil
 end
 
+-- A record subject: a full DID-authority AT-URI with a valid collection NSID.
+local function valid_subject_record_uri(value)
+  if #value > 8192 then return false end
+  local valid, collection = valid_record_uri(value)
+  return valid and valid_nsid(collection)
+end
+
 local ACTOR_REACTION_NULL = json.decode("null")
 local ACTOR_REACTION_LIMIT = 100
 local ACTOR_REACTION_COLLECTIONS = {
@@ -82,11 +89,6 @@ local function actor_reaction_sort_key()
   return "CASE WHEN jsonb_typeof(record::jsonb->'createdAt') = 'string' AND " .. created ..
     " ~ '" .. zoned .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created ..
     ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE COALESCE(indexed_at::timestamptz, created_at::timestamptz) END"
-end
-
-local function valid_actor_reaction_subject_uri(value)
-  local valid, collection = valid_record_uri(value)
-  return valid and valid_nsid(collection)
 end
 
 local function feed_actor_reaction_subjects(value)
@@ -116,7 +118,7 @@ local function feed_actor_reaction_subjects(value)
     invalid("subjects must contain 1 through 100 AT-URIs")
   end
   for _, subject in ipairs(subjects) do
-    if #subject > 8192 or not valid_actor_reaction_subject_uri(subject) then
+    if not valid_subject_record_uri(subject) then
       invalid("each subjects value must be a full DID-authority AT-URI with a valid collection NSID")
     end
   end

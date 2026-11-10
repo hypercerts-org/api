@@ -74,7 +74,8 @@
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/entityFollow.lua",
         "../../lua/shared/followBatch.lua",
-        "../../lua/shared/nsidValidation.lua"
+        "../../lua/shared/nsidValidation.lua",
+        "../../lua/shared/subjectRecordUri.lua"
       ],
       "config": {
         "script_type": "lua",

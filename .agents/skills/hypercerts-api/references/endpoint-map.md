@@ -10,6 +10,7 @@ This task index lists the public query NSIDs in the bundled [OpenAPI contract](o
 - **Text discovery:** use `search...` only where listed below. A search query is not interchangeable with a list filter, and search semantics vary by endpoint.
 - **Relationship checks:** use `get...Follow` for a single pair, or `getFollows` / `getEntityFollows` to check repeated target values for one actor. List queries answer who follows whom or which entities an actor follows.
 - **Feed reactions:** use `getLikes` or `getReposts` for distinct actors reacting to one subject URI, `getActorLikes` / `getActorReposts` for one actor's raw representative reactions, `getActorReactions` to check one actor across a bounded set of known subject URIs, or `getReactionCounts` for indexed like and repost counts across known subjects.
+- **Comment counts:** use `org.hypercerts.context.getCommentCounts` for comment counts across known subjects. Comments are attachments, not feed reactions; list them with `listAttachments` filtered by `subjects` and `contentTypes=comment`.
 
 Inspect the exact operation in the bundled OpenAPI contract before constructing a request: names such as `authors`, `actors`, `uri`, and `collection` have endpoint-specific meanings. Do not infer that a filter, search operation, output array name, or error exists just because a related endpoint has one.
 
@@ -98,7 +99,7 @@ Do not confuse actor follows with entity follows; their identifiers and list out
 
 Paginated reaction-list queries use the earliest record per author/subject URI, with reaction URI ascending on ties, and sort pages by the representative's `createdAt` and URI. `getActorReactions` uses the same representative selection but preserves request order and has no pagination. Check each operation for exact cursor and response details.
 
-## Context and supporting records (8)
+## Context and supporting records (9)
 
 | User task | Query NSID | Practical choice |
 |---|---|---|
@@ -106,6 +107,7 @@ Paginated reaction-list queries use the earliest record per author/subject URI, 
 | List acknowledgements | `org.hypercerts.context.listAcknowledgements` | Filter by publisher or subject as documented. |
 | Load one attachment | `org.hypercerts.context.getAttachment` | Exact record AT-URI in `uri`. |
 | List attachments | `org.hypercerts.context.listAttachments` | Filter by publisher, record URI, subject, or content type. |
+| Count comments for subjects | `org.hypercerts.context.getCommentCounts` | Pass 1–100 full subject record AT-URIs as repeated, unbracketed `subjects`. Counts attachments with `contentType` `comment` whose `subjects` include the URI, ignoring CID. Each comment record counts, so several by one author each count. Results preserve input order and duplicates. |
 | Load one evaluation | `org.hypercerts.context.getEvaluation` | Exact record AT-URI in `uri`; includes publisher/evaluator projections and preserves raw records when malformed evaluator entries are omitted. |
 | List evaluations | `org.hypercerts.context.listEvaluations` | Filter by publisher, evaluator, or subject; malformed evaluator entries do not hide otherwise valid records. |
 | Load one measurement | `org.hypercerts.context.getMeasurement` | Exact record AT-URI in `uri`. |
