@@ -45,4 +45,4 @@ pnpm --filter hypercerts-api-endpoints test
 
 The filtered `build` command writes the deployable static site to `docs/dist/`; `preview` serves that build locally, and `test` runs the explorer suite. The workspace-root `pnpm build` also builds the API Lua bundles.
 
-**Font license:** The body font is Hanken Grotesk, under the SIL Open Font License 1.1. Its license is in `docs/public/fonts/OFL.txt`.
+**Font licenses:** The body font, Hanken Grotesk, and the display font, Instrument Serif, are both under the SIL Open Font License 1.1. Their licenses are in `docs/public/fonts/OFL-HankenGrotesk.txt` and `docs/public/fonts/OFL-InstrumentSerif.txt`.
