@@ -107,7 +107,8 @@
         "../../lua/shared/listValidation.lua",
         "../../lua/shared/listQuery.lua",
         "../../lua/shared/recordView.lua",
-        "../../lua/shared/actorView.lua"
+        "../../lua/shared/actorView.lua",
+        "../../lua/shared/nsidValidation.lua"
       ],
       "config": {
         "script_type": "lua",
