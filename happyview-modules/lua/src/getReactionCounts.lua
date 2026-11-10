@@ -1,19 +1,6 @@
 local LIKE = "app.certified.feed.like"
 local REPOST = "app.certified.feed.repost"
 
-local function reaction_count_valid_did_percent_escapes(authority)
-  local index = 1
-  while index <= #authority do
-    if authority:sub(index, index) == "%" then
-      if not authority:sub(index + 1, index + 2):match("^%x%x$") then return false end
-      index = index + 3
-    else
-      index = index + 1
-    end
-  end
-  return true
-end
-
 local function reaction_count_subjects()
   local value = params.subjects
   if value == nil then invalid("subjects is required") end
@@ -45,9 +32,7 @@ local function reaction_count_subjects()
 
   local unique, seen = {}, {}
   for _, subject in ipairs(supplied) do
-    local valid, collection, authority = valid_record_uri(subject)
-    if not valid or not reaction_count_valid_did_percent_escapes(authority)
-      or not valid_nsid(collection) then
+    if not valid_subject_record_uri(subject) then
       invalid("each subjects value must be a full AT-URI with a valid DID authority and collection NSID")
     end
     if not seen[subject] then

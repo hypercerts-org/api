@@ -90,6 +90,7 @@ test("getCommentCounts rejects subjects that are not full record AT-URIs before 
     ["at://alice.example/org.hypercerts.context.attachment/post"],
     ["at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/invalid/key"],
     [`${post}?query`],
+    ["at://did:web:example%GG/org.hypercerts.context.attachment/post"],
     Array(15).fill(longPost),
   ]) {
     runLua({ params: { subjects }, expectError: "InvalidRequest:", expectedCalls: 0 });
