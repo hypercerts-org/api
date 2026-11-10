@@ -8,10 +8,7 @@
         "backfill": false,
         "target_collection": "org.hypercerts.funding.receipt"
       },
-      "dependsOn": [
-        "org.hypercerts.funding.receipt",
-        "org.hypercerts.api.defs"
-      ]
+      "dependsOn": ["org.hypercerts.funding.receipt", "org.hypercerts.api.defs"]
     },
     {
       "kind": "script",
@@ -30,9 +27,7 @@
         "script_type": "lua",
         "description": "Funding receipt lookup handler"
       },
-      "dependsOn": [
-        "org.hypercerts.funding.getReceipt"
-      ]
+      "dependsOn": ["org.hypercerts.funding.getReceipt"]
     },
     {
       "kind": "lexicon",
@@ -42,9 +37,7 @@
         "backfill": false,
         "target_collection": "org.hypercerts.funding.receipt"
       },
-      "dependsOn": [
-        "org.hypercerts.funding.getReceipt"
-      ]
+      "dependsOn": ["org.hypercerts.funding.getReceipt"]
     },
     {
       "kind": "script",
@@ -66,9 +59,7 @@
         "script_type": "lua",
         "description": "Funding receipt listing handler"
       },
-      "dependsOn": [
-        "org.hypercerts.funding.listReceipts"
-      ]
+      "dependsOn": ["org.hypercerts.funding.listReceipts"]
     }
   ]
 }

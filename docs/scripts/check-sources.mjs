@@ -1,10 +1,10 @@
-import { readFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
-import path from 'node:path';
-import { buildDocumentationArtifacts } from './openapi-artifacts.mjs';
-import { collectDocumentationSources } from './refresh-sources.mjs';
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { buildDocumentationArtifacts } from "./openapi-artifacts.mjs";
+import { collectDocumentationSources } from "./refresh-sources.mjs";
 
-const docsRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const docsRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 function jsonText(value) {
   return `${JSON.stringify(value, null, 2)}\n`;
@@ -24,24 +24,29 @@ export async function assertDocumentationFresh(options = {}) {
 
   async function compare(relativePath, expected) {
     try {
-      const actual = await readFile(path.join(currentDocsRoot, relativePath), 'utf8');
+      const actual = await readFile(path.join(currentDocsRoot, relativePath), "utf8");
       if (actual !== expected) staleFiles.push(relativePath);
     } catch (error) {
-      if (error?.code === 'ENOENT') staleFiles.push(relativePath);
+      if (error?.code === "ENOENT") staleFiles.push(relativePath);
       else throw error;
     }
   }
 
-  await compare('sources/index.json', jsonText(index));
+  await compare("sources/index.json", jsonText(index));
   for (const [indexInList, snapshot] of snapshots.entries()) {
     await compare(index.lexicons[indexInList].file, snapshot.content);
   }
-  await compare('openapi.json', jsonText(artifacts.openapi));
-  await compare('coverage.json', jsonText(artifacts.coverage));
+  await compare("openapi.json", jsonText(artifacts.openapi));
+  await compare("coverage.json", jsonText(artifacts.coverage));
 
   if (staleFiles.length > 0) {
-    const paths = [...new Set(staleFiles)].sort().map((file) => `  - ${file}`).join('\n');
-    throw new Error(`Documentation artifacts are stale:\n${paths}\nRun pnpm docs:sync to refresh them.`);
+    const paths = [...new Set(staleFiles)]
+      .sort((left, right) => left.localeCompare(right))
+      .map((file) => `  - ${file}`)
+      .join("\n");
+    throw new Error(
+      `Documentation artifacts are stale:\n${paths}\nRun pnpm docs:sync to refresh them.`,
+    );
   }
 
   return { endpoints: index.endpoints.length, snapshots: index.lexicons.length };
@@ -49,7 +54,9 @@ export async function assertDocumentationFresh(options = {}) {
 
 async function main() {
   const result = await assertDocumentationFresh();
-  console.log(`Documentation is fresh: ${result.endpoints} endpoints, ${result.snapshots} Lexicon snapshots.`);
+  console.log(
+    `Documentation is fresh: ${result.endpoints} endpoints, ${result.snapshots} Lexicon snapshots.`,
+  );
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

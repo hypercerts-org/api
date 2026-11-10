@@ -1,20 +1,20 @@
-import { createRequire } from 'node:module';
-import { readFile, writeFile } from 'node:fs/promises';
-import { execFileSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
-import path from 'node:path';
+import { execFileSync } from "node:child_process";
+import { readFile, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const docsRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const repositoryRoot = path.resolve(docsRoot, '..');
-const apiRoot = path.join(repositoryRoot, 'happyview-modules');
-const usage = 'Usage: pnpm docs:sync';
+const docsRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const repositoryRoot = path.resolve(docsRoot, "..");
+const apiRoot = path.join(repositoryRoot, "happyview-modules");
+const usage = "Usage: pnpm docs:sync";
 
 function isInside(parent, candidate) {
   return candidate === parent || candidate.startsWith(`${parent}${path.sep}`);
 }
 
 function resolveInside(parent, relativePath, description) {
-  if (typeof relativePath !== 'string' || relativePath.length === 0) {
+  if (typeof relativePath !== "string" || relativePath.length === 0) {
     throw new Error(`${description} must be a non-empty relative path.`);
   }
   const resolved = path.resolve(parent, relativePath);
@@ -25,7 +25,7 @@ function resolveInside(parent, relativePath, description) {
 }
 
 function resolveFromInside(boundary, baseDirectory, relativePath, description) {
-  if (typeof relativePath !== 'string' || relativePath.length === 0) {
+  if (typeof relativePath !== "string" || relativePath.length === 0) {
     throw new Error(`${description} must be a non-empty relative path.`);
   }
   const resolved = path.resolve(baseDirectory, relativePath);
@@ -36,32 +36,34 @@ function resolveFromInside(boundary, baseDirectory, relativePath, description) {
 }
 
 async function readJson(file) {
-  return JSON.parse(await readFile(file, 'utf8'));
+  return JSON.parse(await readFile(file, "utf8"));
 }
 
 function pinnedLexiconPackageRoot(apiRoot, packageName) {
   try {
-    const requireFromApi = createRequire(path.join(apiRoot, 'package.json'));
+    const requireFromApi = createRequire(path.join(apiRoot, "package.json"));
     return path.dirname(requireFromApi.resolve(`${packageName}/package.json`));
   } catch (error) {
     throw new Error(
       `Cannot resolve ${packageName} from happyview-modules/package.json. Install the repository-pinned dependencies with ` +
-        '`pnpm install --frozen-lockfile`, then rerun `pnpm check` or `pnpm docs:sync`.',
+        "`pnpm install --frozen-lockfile`, then rerun `pnpm check` or `pnpm docs:sync`.",
       { cause: error },
     );
   }
 }
 
 function referenceParts(reference, currentLexiconId) {
-  if (typeof reference !== 'string' || reference.length === 0) {
-    throw new Error(`Invalid Lexicon reference in ${currentLexiconId}: expected a non-empty string.`);
+  if (typeof reference !== "string" || reference.length === 0) {
+    throw new Error(
+      `Invalid Lexicon reference in ${currentLexiconId}: expected a non-empty string.`,
+    );
   }
-  if (reference.startsWith('#')) {
-    return { lexiconId: currentLexiconId, definitionName: reference.slice(1) || 'main' };
+  if (reference.startsWith("#")) {
+    return { lexiconId: currentLexiconId, definitionName: reference.slice(1) || "main" };
   }
 
-  const [lexiconId, fragment] = reference.split('#', 2);
-  return { lexiconId, definitionName: fragment || 'main' };
+  const [lexiconId, fragment] = reference.split("#", 2);
+  return { lexiconId, definitionName: fragment || "main" };
 }
 
 function snapshotFile(id) {
@@ -75,10 +77,14 @@ function indexValidationSources(sources) {
   const validationSources = new Map();
   for (const source of sources ?? []) {
     if (!source.id || validationSources.has(source.id)) {
-      throw new Error(`happyview-modules/manifest.json has a missing or duplicate validation Lexicon ID: ${source.id ?? '(missing)'}`);
+      throw new Error(
+        `happyview-modules/manifest.json has a missing or duplicate validation Lexicon ID: ${source.id ?? "(missing)"}`,
+      );
     }
     if (!source.path && !source.packagePath) {
-      throw new Error(`happyview-modules/manifest.json has no source path for validation Lexicon ${source.id}`);
+      throw new Error(
+        `happyview-modules/manifest.json has no source path for validation Lexicon ${source.id}`,
+      );
     }
     validationSources.set(source.id, source);
   }
@@ -86,13 +92,19 @@ function indexValidationSources(sources) {
 }
 
 async function readActiveEndpoint(asset, moduleRef, moduleFile, readSource) {
-  if (asset.kind !== 'lexicon') return undefined;
-  const lexicon = await readSource(asset, path.dirname(moduleFile), `Lexicon asset ${asset.id ?? '(missing ID)'}`);
+  if (asset.kind !== "lexicon") return undefined;
+  const lexicon = await readSource(
+    asset,
+    path.dirname(moduleFile),
+    `Lexicon asset ${asset.id ?? "(missing ID)"}`,
+  );
   if (!asset.id || lexicon.id !== asset.id) {
-    throw new Error(`Lexicon asset ID mismatch in ${moduleRef}: expected ${asset.id ?? '(missing ID)'}, got ${lexicon.id ?? '(missing ID)'}`);
+    throw new Error(
+      `Lexicon asset ID mismatch in ${moduleRef}: expected ${asset.id ?? "(missing ID)"}, got ${lexicon.id ?? "(missing ID)"}`,
+    );
   }
   const type = lexicon.defs?.main?.type;
-  if (!['query', 'procedure'].includes(type)) return undefined;
+  if (!["query", "procedure"].includes(type)) return undefined;
   return {
     id: lexicon.id,
     type,
@@ -105,7 +117,7 @@ async function readActiveEndpoint(asset, moduleRef, moduleFile, readSource) {
 async function discoverActiveEndpoints(manifest, currentApiRoot, readSource) {
   const activeEndpoints = new Map();
   for (const moduleRef of manifest.modules ?? []) {
-    const moduleFile = resolveInside(currentApiRoot, moduleRef, 'Module manifest path');
+    const moduleFile = resolveInside(currentApiRoot, moduleRef, "Module manifest path");
     const moduleManifest = await readJson(moduleFile);
     for (const asset of moduleManifest.assets ?? []) {
       const endpoint = await readActiveEndpoint(asset, moduleRef, moduleFile, readSource);
@@ -127,10 +139,10 @@ async function discoverActiveEndpoints(manifest, currentApiRoot, readSource) {
 export async function collectDocumentationSources(options = {}) {
   const currentApiRoot = path.resolve(options.apiRoot ?? apiRoot);
   const currentDocsRoot = path.resolve(options.docsRoot ?? docsRoot);
-  const rootManifestFile = path.join(currentApiRoot, 'manifest.json');
+  const rootManifestFile = path.join(currentApiRoot, "manifest.json");
   const manifest = await readJson(rootManifestFile);
-  const apiPackage = await readJson(path.join(currentApiRoot, 'package.json'));
-  const packageName = '@hypercerts-org/lexicon';
+  const apiPackage = await readJson(path.join(currentApiRoot, "package.json"));
+  const packageName = "@hypercerts-org/lexicon";
   const packageVersion = apiPackage.dependencies?.[packageName];
   const validationSources = indexValidationSources(manifest.validationLexicons);
 
@@ -140,9 +152,11 @@ export async function collectDocumentationSources(options = {}) {
     packageRoot = options.lexiconPackageRoot
       ? path.resolve(options.lexiconPackageRoot)
       : pinnedLexiconPackageRoot(currentApiRoot, packageName);
-    const resolvedPackage = await readJson(path.join(packageRoot, 'package.json'));
+    const resolvedPackage = await readJson(path.join(packageRoot, "package.json"));
     if (resolvedPackage.name !== packageName || resolvedPackage.version !== packageVersion) {
-      throw new Error(`Expected ${packageName}@${packageVersion}, resolved ${resolvedPackage.name ?? '(unnamed)'}@${resolvedPackage.version ?? '(unknown)'}.`);
+      throw new Error(
+        `Expected ${packageName}@${packageVersion}, resolved ${resolvedPackage.name ?? "(unnamed)"}@${resolvedPackage.version ?? "(unknown)"}.`,
+      );
     }
     return packageRoot;
   }
@@ -154,10 +168,17 @@ export async function collectDocumentationSources(options = {}) {
     }
     if (source.packagePath) {
       if (!packageVersion) {
-        throw new Error(`happyview-modules/package.json does not pin ${packageName}, required by ${label}.`);
+        throw new Error(
+          `happyview-modules/package.json does not pin ${packageName}, required by ${label}.`,
+        );
       }
       const resolvedPackageRoot = await getPackageRoot();
-      const file = resolveFromInside(resolvedPackageRoot, resolvedPackageRoot, source.packagePath, `${label} packagePath`);
+      const file = resolveFromInside(
+        resolvedPackageRoot,
+        resolvedPackageRoot,
+        source.packagePath,
+        `${label} packagePath`,
+      );
       return readJson(file);
     }
     throw new Error(`${label} has neither path nor packagePath.`);
@@ -167,7 +188,10 @@ export async function collectDocumentationSources(options = {}) {
 
   const sourceDocuments = new Map();
   for (const [id, endpoint] of activeEndpoints) {
-    sourceDocuments.set(id, { lexicon: endpoint.lexicon, source: { module: endpoint.module, path: endpoint.sourcePath } });
+    sourceDocuments.set(id, {
+      lexicon: endpoint.lexicon,
+      source: { module: endpoint.module, path: endpoint.sourcePath },
+    });
   }
   const visitedDefinitions = new Set();
 
@@ -176,11 +200,15 @@ export async function collectDocumentationSources(options = {}) {
     if (existing) return existing.lexicon;
     const source = validationSources.get(id);
     if (!source) {
-      throw new Error(`Cannot resolve Lexicon reference ${JSON.stringify(reference)}: ${id} is not declared in happyview-modules/manifest.json validationLexicons.`);
+      throw new Error(
+        `Cannot resolve Lexicon reference ${JSON.stringify(reference)}: ${id} is not declared in happyview-modules/manifest.json validationLexicons.`,
+      );
     }
     const lexicon = await readSource(source, currentApiRoot, `Validation Lexicon ${id}`);
     if (lexicon.id !== id) {
-      throw new Error(`Validation Lexicon ID mismatch: manifest declares ${id}, source contains ${lexicon.id ?? '(missing ID)'}`);
+      throw new Error(
+        `Validation Lexicon ID mismatch: manifest declares ${id}, source contains ${lexicon.id ?? "(missing ID)"}`,
+      );
     }
     const record = {
       lexicon,
@@ -198,7 +226,9 @@ export async function collectDocumentationSources(options = {}) {
     const targetLexicon = await loadLexicon(lexiconId, reference);
     const targetDefinition = targetLexicon.defs?.[definitionName];
     if (!targetDefinition) {
-      throw new Error(`Cannot resolve Lexicon reference ${JSON.stringify(reference)}: ${lexiconId} has no definition ${definitionName}.`);
+      throw new Error(
+        `Cannot resolve Lexicon reference ${JSON.stringify(reference)}: ${lexiconId} has no definition ${definitionName}.`,
+      );
     }
     await visitReferences(targetDefinition, lexiconId);
   }
@@ -208,12 +238,12 @@ export async function collectDocumentationSources(options = {}) {
       for (const item of value) await visitReferences(item, currentLexiconId);
       return;
     }
-    if (!value || typeof value !== 'object') return;
-    if (value.type === 'ref') {
+    if (!value || typeof value !== "object") return;
+    if (value.type === "ref") {
       await visitReference(value.ref, currentLexiconId);
       return;
     }
-    if (value.type === 'union' && Array.isArray(value.refs)) {
+    if (value.type === "union" && Array.isArray(value.refs)) {
       for (const reference of value.refs) await visitReference(reference, currentLexiconId);
       return;
     }
@@ -229,7 +259,7 @@ export async function collectDocumentationSources(options = {}) {
     .map(([id, entry]) => ({
       id,
       file: snapshotFile(id),
-      kind: activeEndpoints.has(id) ? 'endpoint' : 'schema',
+      kind: activeEndpoints.has(id) ? "endpoint" : "schema",
       source: entry.source,
     }));
   const endpoints = [...activeEndpoints.values()]
@@ -242,11 +272,12 @@ export async function collectDocumentationSources(options = {}) {
       source: { path: sourcePath },
     }));
   const index = {
-    apiManifest: 'happyview-modules/manifest.json',
+    apiManifest: "happyview-modules/manifest.json",
     pinnedLexiconPackage: packageVersion ?? null,
-    sourcePolicy: 'Explorer operations are the query/procedure Lexicons declared by modules in happyview-modules/manifest.json. Referenced schemas are resolved from that manifest and its pinned Lexicon package; no remote refs are fetched.',
-    runtimeValidation: 'not-assessed',
-    deploymentValidation: 'not-assessed',
+    sourcePolicy:
+      "Explorer operations are the query/procedure Lexicons declared by modules in happyview-modules/manifest.json. Referenced schemas are resolved from that manifest and its pinned Lexicon package; no remote refs are fetched.",
+    runtimeValidation: "not-assessed",
+    deploymentValidation: "not-assessed",
     endpoints,
     lexicons,
   };
@@ -259,8 +290,10 @@ export async function collectDocumentationSources(options = {}) {
 }
 
 async function main() {
-  if (process.argv.includes('--help') || process.argv.includes('-h')) {
-    console.log(`${usage}\nRefreshes docs/sources/index.json, committed Lexicon snapshots, OpenAPI, and coverage from happyview-modules/manifest.json.`);
+  if (process.argv.includes("--help") || process.argv.includes("-h")) {
+    console.log(
+      `${usage}\nRefreshes docs/sources/index.json, committed Lexicon snapshots, OpenAPI, and coverage from happyview-modules/manifest.json.`,
+    );
     return;
   }
   if (process.argv.length > 2) {
@@ -271,12 +304,14 @@ async function main() {
 
   const { index, snapshots } = await collectDocumentationSources();
   for (const snapshot of snapshots) await writeFile(snapshot.file, snapshot.content);
-  await writeFile(path.join(docsRoot, 'sources/index.json'), `${JSON.stringify(index, null, 2)}\n`);
-  execFileSync(process.execPath, [path.join(docsRoot, 'scripts/generate-openapi.mjs')], {
+  await writeFile(path.join(docsRoot, "sources/index.json"), `${JSON.stringify(index, null, 2)}\n`);
+  execFileSync(process.execPath, [path.join(docsRoot, "scripts/generate-openapi.mjs")], {
     cwd: docsRoot,
-    stdio: 'inherit',
+    stdio: "inherit",
   });
-  console.log(`Refreshed ${index.endpoints.length} manifest-registered endpoints and ${index.lexicons.length - index.endpoints.length} referenced schema snapshots.`);
+  console.log(
+    `Refreshed ${index.endpoints.length} manifest-registered endpoints and ${index.lexicons.length - index.endpoints.length} referenced schema snapshots.`,
+  );
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

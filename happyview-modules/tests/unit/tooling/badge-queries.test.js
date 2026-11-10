@@ -1,26 +1,31 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
-import { spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
 
-const root = fileURLToPath(new URL('../../../', import.meta.url));
-const badgeQueriesModuleRoot = new URL('../../../modules/badge-queries/', import.meta.url);
-const badgeQueriesManifest = readFile(new URL('manifest.json', badgeQueriesModuleRoot), 'utf8').then(JSON.parse);
-const definitionCollection = 'app.certified.badge.definition';
-const awardCollection = 'app.certified.badge.award';
-const responseCollection = 'app.certified.badge.response';
-const profileCollection = 'app.certified.actor.profile';
-const organizationCollection = 'app.certified.actor.organization';
-const issuer = 'did:plc:aaaaaaaaaaaaaaaaaaaaaaaa';
-const indexedAt = '2025-02-01T00:00:01.000Z';
+const root = fileURLToPath(new URL("../../../", import.meta.url));
+const badgeQueriesModuleRoot = new URL("../../../modules/badge-queries/", import.meta.url);
+const badgeQueriesManifest = readFile(
+  new URL("manifest.json", badgeQueriesModuleRoot),
+  "utf8",
+).then(JSON.parse);
+const definitionCollection = "app.certified.badge.definition";
+const awardCollection = "app.certified.badge.award";
+const responseCollection = "app.certified.badge.response";
+const profileCollection = "app.certified.actor.profile";
+const organizationCollection = "app.certified.actor.organization";
+const issuer = "did:plc:aaaaaaaaaaaaaaaaaaaaaaaa";
+const indexedAt = "2025-02-01T00:00:01.000Z";
 
 function lua(value) {
-  if (typeof value === 'string') return JSON.stringify(value);
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-  if (Array.isArray(value)) return `{${value.map(lua).join(',')}}`;
-  if (value && typeof value === 'object') {
-    return `{${Object.entries(value).map(([key, item]) => `[${JSON.stringify(key)}]=${lua(item)}`).join(',')}}`;
+  if (typeof value === "string") return JSON.stringify(value);
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value)) return `{${value.map(lua).join(",")}}`;
+  if (value && typeof value === "object") {
+    return `{${Object.entries(value)
+      .map(([key, item]) => `[${JSON.stringify(key)}]=${lua(item)}`)
+      .join(",")}}`;
   }
   throw new TypeError(`Cannot encode ${typeof value} as a Lua fixture`);
 }
@@ -31,19 +36,27 @@ async function handlerSource(endpoint) {
   const asset = manifest.assets.find((entry) => entry.id === id);
   assert.ok(asset, `${id} must be declared in the badge-queries module`);
   const sourcePaths = [...asset.sharedSourcePaths, asset.sourcePath];
-  const sources = await Promise.all(sourcePaths.map((sourcePath) =>
-    readFile(new URL(sourcePath, badgeQueriesModuleRoot), 'utf8')));
-  return `${sources.map((source) => source.trimEnd()).join('\n\n')}\n`;
+  const sources = await Promise.all(
+    sourcePaths.map((sourcePath) => readFile(new URL(sourcePath, badgeQueriesModuleRoot), "utf8")),
+  );
+  return `${sources.map((source) => source.trimEnd()).join("\n\n")}\n`;
 }
 
-function runLua(source, { params, queryResults = [], recordValues = {}, assertions = '', expectedError = '' }) {
+function runLua(
+  source,
+  { params, queryResults = [], recordValues = {}, assertions = "", expectedError = "" },
+) {
   const records = {
     ...recordValues,
-    ...Object.fromEntries(queryResults.flat().map(({ record, record_json }) => [record, record_json])),
+    ...Object.fromEntries(
+      queryResults.flat().map(({ record, record_json }) => [record, record_json]),
+    ),
   };
-  const rows = queryResults.map((result) => result.map((row) => Object.fromEntries(
-    Object.entries(row).filter(([key]) => key !== 'record_json'),
-  )));
+  const rows = queryResults.map((resultSet) =>
+    resultSet.map((row) =>
+      Object.fromEntries(Object.entries(row).filter(([key]) => key !== "record_json")),
+    ),
+  );
   const luaSource = `
 local RECORDS = ${lua(records)}
 local RESULTS = ${lua(rows)}
@@ -89,13 +102,17 @@ else
 end
 ${assertions}
 `;
-  const result = spawnSync('lua5.4', ['-e', luaSource], { cwd: root, encoding: 'utf8' });
+  const result = spawnSync("lua5.4", ["-e", luaSource], { cwd: root, encoding: "utf8" });
   const line = result.stderr.match(/\(command line\):(\d+):/);
-  const failingLine = line ? luaSource.split('\n')[Number(line[1]) - 1] : '';
-  assert.equal(result.status, 0, `${result.stderr}${failingLine ? `Lua: ${failingLine}\n` : ''}${result.stdout}`);
+  const failingLine = line ? luaSource.split("\n")[Number(line[1]) - 1] : "";
+  assert.equal(
+    result.status,
+    0,
+    `${result.stderr}${failingLine ? `Lua: ${failingLine}\n` : ""}${result.stdout}`,
+  );
 }
 
-function definitionRow(rkey, record, sortTimestamp = '2025-02-01T00:00:00.000000Z') {
+function definitionRow(rkey, record, sortTimestamp = "2025-02-01T00:00:00.000000Z") {
   return {
     uri: `at://${issuer}/${definitionCollection}/${rkey}`,
     did: issuer,
@@ -125,46 +142,59 @@ function sqlNullColumns(row, ...columns) {
   return result;
 }
 
-test('badge record-view indexedAt fields remain required and allow null in their Lexicons', async () => {
+test("badge record-view indexedAt fields remain required and allow null in their Lexicons", async () => {
   const views = [
-    ['searchBadgeDefinitions', 'badgeDefinitionView'],
-    ['getBadgeAward', 'badgeAwardView'],
-    ['getBadgeAward', 'badgeDefinitionRecordView'],
-    ['getBadgeAward', 'badgeResponseRecordView'],
-    ['getBadgeResponse', 'badgeResponseView'],
+    ["searchBadgeDefinitions", "badgeDefinitionView"],
+    ["getBadgeAward", "badgeAwardView"],
+    ["getBadgeAward", "badgeDefinitionRecordView"],
+    ["getBadgeAward", "badgeResponseRecordView"],
+    ["getBadgeResponse", "badgeResponseView"],
   ];
   const documents = new Map();
   for (const [endpoint, name] of views) {
     let document = documents.get(endpoint);
     if (!document) {
-      document = JSON.parse(await readFile(`${root}/lexicons/app.certified.badge.${endpoint}.json`, 'utf8'));
+      document = JSON.parse(
+        await readFile(`${root}/lexicons/app.certified.badge.${endpoint}.json`, "utf8"),
+      );
       documents.set(endpoint, document);
     }
     const view = document.defs[name];
-    assert.ok(view.required.includes('indexedAt'), `${name} keeps indexedAt required`);
-    assert.ok(view.nullable?.includes('indexedAt'), `${name} declares indexedAt nullable`);
+    assert.ok(view.required.includes("indexedAt"), `${name} keeps indexedAt required`);
+    assert.ok(view.nullable?.includes("indexedAt"), `${name} declares indexedAt nullable`);
   }
 });
 
-test('searchBadgeDefinitions searches literally and case-insensitively, filters, paginates, and hydrates authors', async () => {
-  const definition = definitionRow('forest', {
-    title: '100% Golden certification',
-    description: 'A verified watershed',
-    badgeType: 'certification',
-    createdAt: '2025-02-01T00:00:00Z',
+test("searchBadgeDefinitions searches literally and case-insensitively, filters, paginates, and hydrates authors", async () => {
+  const definition = definitionRow("forest", {
+    title: "100% Golden certification",
+    description: "A verified watershed",
+    badgeType: "certification",
+    createdAt: "2025-02-01T00:00:00Z",
   });
-  const lookahead = definitionRow('lookahead', {
-    title: 'Another badge',
-    badgeType: 'certification',
-    createdAt: '2025-02-02T00:00:00Z',
-  }, '2025-02-02T00:00:00.000000Z');
-  const profile = sidecarRow(profileCollection, issuer, 'profile', { displayName: 'Forest Alliance' });
-  const organization = sidecarRow(organizationCollection, issuer, 'organization', { visibility: 'public' });
+  const lookahead = definitionRow(
+    "lookahead",
+    {
+      title: "Another badge",
+      badgeType: "certification",
+      createdAt: "2025-02-02T00:00:00Z",
+    },
+    "2025-02-02T00:00:00.000000Z",
+  );
+  const profile = sidecarRow(profileCollection, issuer, "profile", {
+    displayName: "Forest Alliance",
+  });
+  const organization = sidecarRow(organizationCollection, issuer, "organization", {
+    visibility: "public",
+  });
 
-  runLua(await handlerSource('searchBadgeDefinitions'), {
+  runLua(await handlerSource("searchBadgeDefinitions"), {
     params: {
-      search: '  100% GOLD  ', authors: [issuer], badgeTypes: ['certification'],
-      sortDirection: 'asc', limit: '1',
+      search: "  100% GOLD  ",
+      authors: [issuer],
+      badgeTypes: ["certification"],
+      sortDirection: "asc",
+      limit: "1",
     },
     queryResults: [[definition, lookahead], [profile], [organization]],
     assertions: `
@@ -196,40 +226,58 @@ assert(calls[2].values[1] == '${profileCollection}' and calls[3].values[1] == '$
   });
 });
 
-test('getBadgeAward resolves a record subject recipient and projects only the exact award-version response', async () => {
-  const recipient = 'did:plc:bbbbbbbbbbbbbbbbbbbbbbbb';
+test("getBadgeAward resolves a record subject recipient and projects only the exact award-version response", async () => {
+  const recipient = "did:plc:bbbbbbbbbbbbbbbbbbbbbbbb";
   const badgeUri = `at://${issuer}/${definitionCollection}/forest`;
   const awardUri = `at://${issuer}/${awardCollection}/award-1`;
   const responseUri = `at://${recipient}/${responseCollection}/response-1`;
-  const awardCid = 'bafy-award-v1';
+  const awardCid = "bafy-award-v1";
   const awardRow = {
-    uri: awardUri, did: issuer, cid: awardCid, indexed_at: indexedAt, record: 'award-record',
+    uri: awardUri,
+    did: issuer,
+    cid: awardCid,
+    indexed_at: indexedAt,
+    record: "award-record",
     record_json: {
       $type: awardCollection,
-      badge: { uri: badgeUri, cid: 'bafy-definition-v1' },
-      subject: { uri: `at://${recipient}/org.hypercerts.claim.activity/activity-1`, cid: 'bafy-subject' },
-      createdAt: '2025-01-01T00:00:00Z',
+      badge: { uri: badgeUri, cid: "bafy-definition-v1" },
+      subject: {
+        uri: `at://${recipient}/org.hypercerts.claim.activity/activity-1`,
+        cid: "bafy-subject",
+      },
+      createdAt: "2025-01-01T00:00:00Z",
     },
-    badge_uri: badgeUri, badge_cid: 'bafy-definition-v1', badge_indexed_at: indexedAt,
-    badge_did: issuer, badge_record: 'pinned-definition-record',
-    recipient_response_uri: responseUri, recipient_response_cid: 'bafy-response-v1',
-    recipient_response_indexed_at: '2025-02-02T00:00:00.000Z', recipient_response_did: recipient,
-    recipient_response_record: 'recipient-response-record',
+    badge_uri: badgeUri,
+    badge_cid: "bafy-definition-v1",
+    badge_indexed_at: indexedAt,
+    badge_did: issuer,
+    badge_record: "pinned-definition-record",
+    recipient_response_uri: responseUri,
+    recipient_response_cid: "bafy-response-v1",
+    recipient_response_indexed_at: "2025-02-02T00:00:00.000Z",
+    recipient_response_did: recipient,
+    recipient_response_record: "recipient-response-record",
   };
-  const profile = sidecarRow(profileCollection, issuer, 'issuer-profile', { displayName: 'Issuer' });
+  const profile = sidecarRow(profileCollection, issuer, "issuer-profile", {
+    displayName: "Issuer",
+  });
   const response = {
     $type: responseCollection,
     badgeAward: { uri: awardUri, cid: awardCid },
-    response: 'accepted',
-    createdAt: '2020-01-01T00:00:00Z',
+    response: "accepted",
+    createdAt: "2020-01-01T00:00:00Z",
   };
 
-  runLua(await handlerSource('getBadgeAward'), {
+  runLua(await handlerSource("getBadgeAward"), {
     params: { uri: awardUri },
     queryResults: [[awardRow], [profile], []],
     recordValues: {
-      'pinned-definition-record': { $type: definitionCollection, title: 'Forest Badge', badgeType: 'certification' },
-      'recipient-response-record': response,
+      "pinned-definition-record": {
+        $type: definitionCollection,
+        title: "Forest Badge",
+        badgeType: "certification",
+      },
+      "recipient-response-record": response,
     },
     assertions: `
 assert(result.badgeAward.uri == '${awardUri}' and result.badgeAward.cid == '${awardCid}')
@@ -258,40 +306,46 @@ assert(not sql:find("response.record::jsonb->>'createdAt'", 1, true), 'publisher
 `,
   });
 
-  runLua(await handlerSource('getBadgeAward'), {
+  runLua(await handlerSource("getBadgeAward"), {
     params: { uri: awardUri },
     queryResults: [[]],
-    expectedError: 'RecordNotFound: badge award is not indexed',
-    assertions: 'assert(#calls == 1)',
+    expectedError: "RecordNotFound: badge award is not indexed",
+    assertions: "assert(#calls == 1)",
   });
 });
 
-test('getBadgeAward resolves a DID-object recipient and constrains response author and exact award version', async () => {
-  const recipient = 'did:plc:bbbbbbbbbbbbbbbbbbbbbbbb';
+test("getBadgeAward resolves a DID-object recipient and constrains response author and exact award version", async () => {
+  const recipient = "did:plc:bbbbbbbbbbbbbbbbbbbbbbbb";
   const awardUri = `at://${issuer}/${awardCollection}/did-object`;
   const responseUri = `at://${recipient}/${responseCollection}/did-object`;
-  const awardCid = 'bafy-did-object-award-v1';
+  const awardCid = "bafy-did-object-award-v1";
   const row = {
-    uri: awardUri, did: issuer, cid: awardCid, indexed_at: indexedAt, record: 'did-object-award',
+    uri: awardUri,
+    did: issuer,
+    cid: awardCid,
+    indexed_at: indexedAt,
+    record: "did-object-award",
     record_json: {
       $type: awardCollection,
-      badge: { uri: `at://${issuer}/${definitionCollection}/forest`, cid: 'bafy-definition-v1' },
-      subject: { $type: 'app.certified.defs#did', did: recipient },
-      createdAt: '2025-01-01T00:00:00Z',
+      badge: { uri: `at://${issuer}/${definitionCollection}/forest`, cid: "bafy-definition-v1" },
+      subject: { $type: "app.certified.defs#did", did: recipient },
+      createdAt: "2025-01-01T00:00:00Z",
     },
-    recipient_response_uri: responseUri, recipient_response_cid: 'bafy-did-object-response-v1',
-    recipient_response_indexed_at: indexedAt, recipient_response_did: recipient,
-    recipient_response_record: 'did-object-response',
+    recipient_response_uri: responseUri,
+    recipient_response_cid: "bafy-did-object-response-v1",
+    recipient_response_indexed_at: indexedAt,
+    recipient_response_did: recipient,
+    recipient_response_record: "did-object-response",
   };
 
-  runLua(await handlerSource('getBadgeAward'), {
+  runLua(await handlerSource("getBadgeAward"), {
     params: { uri: awardUri },
     queryResults: [[row], [], []],
     recordValues: {
-      'did-object-response': {
+      "did-object-response": {
         $type: responseCollection,
         badgeAward: { uri: awardUri, cid: awardCid },
-        response: 'accepted',
+        response: "accepted",
       },
     },
     assertions: `
@@ -307,62 +361,113 @@ assert(sql:find("response.record::jsonb->'badgeAward'->>'cid' = award.cid", 1, t
   });
 });
 
-test('listBadgeAwards combines filters, keeps repeated awards, and returns recipient status with keyset pagination', async () => {
-  const secondIssuer = 'did:plc:cccccccccccccccccccccccc';
-  const recipient = 'did:plc:bbbbbbbbbbbbbbbbbbbbbbbb';
-  const recordOwner = 'did:plc:dddddddddddddddddddddddd';
+test("listBadgeAwards combines filters, keeps repeated awards, and returns recipient status with keyset pagination", async () => {
+  const secondIssuer = "did:plc:cccccccccccccccccccccccc";
+  const recipient = "did:plc:bbbbbbbbbbbbbbbbbbbbbbbb";
+  const recordOwner = "did:plc:dddddddddddddddddddddddd";
   const badgeUri = `at://${issuer}/${definitionCollection}/forest`;
   const subjectRecord = `at://${recordOwner}/org.hypercerts.claim.activity/claim-1`;
   const awardUri = (rkey) => `at://${issuer}/${awardCollection}/${rkey}`;
   const awardRow = (uri, did, name, subject, createdAt, response = null) => ({
-    uri, did, cid: `bafy-${name}`, indexed_at: indexedAt, record: name,
-    record_json: { $type: awardCollection, badge: { uri: badgeUri, cid: 'bafy-definition-v1' }, subject, createdAt },
-    badge_uri: badgeUri, badge_cid: 'bafy-definition-v1', badge_indexed_at: indexedAt,
-    badge_did: issuer, badge_record: 'badge-record',
-    ...(response ? {
-      recipient_response_uri: response.uri,
-      recipient_response_cid: response.cid,
-      recipient_response_indexed_at: indexedAt,
-      recipient_response_did: response.did,
-      recipient_response_record: response.record,
-    } : {}),
-    sort_timestamp: createdAt.replace('Z', '.000000Z'),
+    uri,
+    did,
+    cid: `bafy-${name}`,
+    indexed_at: indexedAt,
+    record: name,
+    record_json: {
+      $type: awardCollection,
+      badge: { uri: badgeUri, cid: "bafy-definition-v1" },
+      subject,
+      createdAt,
+    },
+    badge_uri: badgeUri,
+    badge_cid: "bafy-definition-v1",
+    badge_indexed_at: indexedAt,
+    badge_did: issuer,
+    badge_record: "badge-record",
+    ...(response
+      ? {
+          recipient_response_uri: response.uri,
+          recipient_response_cid: response.cid,
+          recipient_response_indexed_at: indexedAt,
+          recipient_response_did: response.did,
+          recipient_response_record: response.record,
+        }
+      : {}),
+    sort_timestamp: createdAt.replace("Z", ".000000Z"),
   });
   const rows = [
-    awardRow(awardUri('actor-1'), issuer, 'actor-one', { $type: 'app.certified.defs#did', did: recipient }, '2025-01-01T00:00:00Z', {
-      uri: `at://${recipient}/${responseCollection}/actor-1`, cid: 'bafy-response-1', did: recipient, record: 'response-1',
-    }),
-    awardRow(`at://${secondIssuer}/${awardCollection}/actor-2`, secondIssuer, 'actor-two', recipient, '2025-01-02T00:00:00Z'),
-    awardRow(awardUri('record-1'), issuer, 'record-one', { uri: subjectRecord, cid: 'bafy-subject' }, '2025-01-03T00:00:00Z', {
-      uri: `at://${recordOwner}/${responseCollection}/record-1`, cid: 'bafy-response-record', did: recordOwner, record: 'response-record',
-    }),
-    awardRow(awardUri('lookahead'), issuer, 'lookahead', recipient, '2025-01-04T00:00:00Z'),
+    awardRow(
+      awardUri("actor-1"),
+      issuer,
+      "actor-one",
+      { $type: "app.certified.defs#did", did: recipient },
+      "2025-01-01T00:00:00Z",
+      {
+        uri: `at://${recipient}/${responseCollection}/actor-1`,
+        cid: "bafy-response-1",
+        did: recipient,
+        record: "response-1",
+      },
+    ),
+    awardRow(
+      `at://${secondIssuer}/${awardCollection}/actor-2`,
+      secondIssuer,
+      "actor-two",
+      recipient,
+      "2025-01-02T00:00:00Z",
+    ),
+    awardRow(
+      awardUri("record-1"),
+      issuer,
+      "record-one",
+      { uri: subjectRecord, cid: "bafy-subject" },
+      "2025-01-03T00:00:00Z",
+      {
+        uri: `at://${recordOwner}/${responseCollection}/record-1`,
+        cid: "bafy-response-record",
+        did: recordOwner,
+        record: "response-record",
+      },
+    ),
+    awardRow(awardUri("lookahead"), issuer, "lookahead", recipient, "2025-01-04T00:00:00Z"),
   ];
   const profiles = [
-    sidecarRow(profileCollection, issuer, 'issuer-profile', { displayName: 'Issuer One' }),
-    sidecarRow(profileCollection, secondIssuer, 'second-issuer-profile', { displayName: 'Issuer Two' }),
+    sidecarRow(profileCollection, issuer, "issuer-profile", { displayName: "Issuer One" }),
+    sidecarRow(profileCollection, secondIssuer, "second-issuer-profile", {
+      displayName: "Issuer Two",
+    }),
   ];
   const responseRecord = (uri, cid, response) => ({
     $type: responseCollection,
     badgeAward: { uri, cid },
     response,
-    createdAt: '2020-01-01T00:00:00Z',
+    createdAt: "2020-01-01T00:00:00Z",
   });
 
-  runLua(await handlerSource('listBadgeAwards'), {
+  runLua(await handlerSource("listBadgeAwards"), {
     params: {
-      authors: [issuer, secondIssuer], badgeUris: [badgeUri], badgeTypes: ['certification'],
-      subjects: [recipient, subjectRecord], responses: ['accepted', 'rejected', 'unanswered'], sortDirection: 'asc', limit: '3',
+      authors: [issuer, secondIssuer],
+      badgeUris: [badgeUri],
+      badgeTypes: ["certification"],
+      subjects: [recipient, subjectRecord],
+      responses: ["accepted", "rejected", "unanswered"],
+      sortDirection: "asc",
+      limit: "3",
     },
     queryResults: [rows, profiles, []],
     recordValues: {
-      'badge-record': { $type: definitionCollection, title: 'Forest Badge', badgeType: 'certification' },
-      'response-1': responseRecord(awardUri('actor-1'), 'bafy-actor-one', 'accepted'),
-      'response-record': responseRecord(awardUri('record-1'), 'bafy-record-one', 'rejected'),
+      "badge-record": {
+        $type: definitionCollection,
+        title: "Forest Badge",
+        badgeType: "certification",
+      },
+      "response-1": responseRecord(awardUri("actor-1"), "bafy-actor-one", "accepted"),
+      "response-record": responseRecord(awardUri("record-1"), "bafy-record-one", "rejected"),
     },
     assertions: `
 assert(#result.badgeAwards == 3 and result.cursor ~= nil)
-assert(result.badgeAwards[1].uri == '${awardUri('actor-1')}')
+assert(result.badgeAwards[1].uri == '${awardUri("actor-1")}')
 assert(result.badgeAwards[2].uri == 'at://${secondIssuer}/${awardCollection}/actor-2')
 assert(result.badgeAwards[1].uri ~= result.badgeAwards[2].uri, 'awards sharing a badge and subject stay distinct')
 assert(result.badgeAwards[1].indexedAt == '${indexedAt}')
@@ -414,18 +519,21 @@ end
   });
 
   const unavailableVersion = {
-    uri: awardUri('older-definition'), did: issuer, cid: 'bafy-award-old', indexed_at: indexedAt,
-    record: 'award-with-unavailable-definition',
+    uri: awardUri("older-definition"),
+    did: issuer,
+    cid: "bafy-award-old",
+    indexed_at: indexedAt,
+    record: "award-with-unavailable-definition",
     record_json: {
       $type: awardCollection,
-      badge: { uri: badgeUri, cid: 'bafy-definition-old' },
+      badge: { uri: badgeUri, cid: "bafy-definition-old" },
       subject: recipient,
-      createdAt: '2024-12-01T00:00:00Z',
+      createdAt: "2024-12-01T00:00:00Z",
     },
-    sort_timestamp: '2024-12-01T00:00:00.000000Z',
+    sort_timestamp: "2024-12-01T00:00:00.000000Z",
   };
-  runLua(await handlerSource('listBadgeAwards'), {
-    params: { responses: ['unanswered'] },
+  runLua(await handlerSource("listBadgeAwards"), {
+    params: { responses: ["unanswered"] },
     queryResults: [[unavailableVersion]],
     assertions: `
 assert(#result.badgeAwards == 1)
@@ -438,19 +546,19 @@ assert(calls[1].sql:find("COALESCE(recipient_response.record::jsonb->>'response'
   });
 });
 
-test('listBadgeAwards rejects invalid subject identifiers before querying', async () => {
-  runLua(await handlerSource('listBadgeAwards'), {
-    params: { subjects: ['did:plc:bbbbbbbbbbbbbbbbbbbbbbbb', 'recipient.example'] },
-    expectedError: 'InvalidRequest: subjects[2]',
-    assertions: 'assert(#calls == 0)',
+test("listBadgeAwards rejects invalid subject identifiers before querying", async () => {
+  runLua(await handlerSource("listBadgeAwards"), {
+    params: { subjects: ["did:plc:bbbbbbbbbbbbbbbbbbbbbbbb", "recipient.example"] },
+    expectedError: "InvalidRequest: subjects[2]",
+    assertions: "assert(#calls == 0)",
   });
 });
 
-test('listBadgeAwards requires valid record subject collection NSIDs without changing DID and AT-URI matching', async () => {
-  const recipient = 'did:plc:bbbbbbbbbbbbbbbbbbbbbbbb';
+test("listBadgeAwards requires valid record subject collection NSIDs without changing DID and AT-URI matching", async () => {
+  const recipient = "did:plc:bbbbbbbbbbbbbbbbbbbbbbbb";
   const subjectUri = `at://${recipient}/org.hypercerts.claim.activity/activity-1`;
 
-  runLua(await handlerSource('listBadgeAwards'), {
+  runLua(await handlerSource("listBadgeAwards"), {
     params: { subjects: [recipient, subjectUri] },
     queryResults: [[]],
     assertions: `
@@ -466,30 +574,37 @@ assert(has(calls[1].values, '${recipient}') and has(calls[1].values, '${subjectU
 `,
   });
 
-  runLua(await handlerSource('listBadgeAwards'), {
+  runLua(await handlerSource("listBadgeAwards"), {
     params: { subjects: [recipient, `at://${recipient}/not an nsid/activity-1`] },
     queryResults: [[]],
-    expectedError: 'InvalidRequest: subjects[2]',
-    assertions: 'assert(#calls == 0)',
+    expectedError: "InvalidRequest: subjects[2]",
+    assertions: "assert(#calls == 0)",
   });
 });
 
-test('getBadgeResponse hydrates its publisher but leaves the referenced award raw', async () => {
-  const publisher = 'did:plc:eeeeeeeeeeeeeeeeeeeeeeee';
+test("getBadgeResponse hydrates its publisher but leaves the referenced award raw", async () => {
+  const publisher = "did:plc:eeeeeeeeeeeeeeeeeeeeeeee";
   const awardUri = `at://${issuer}/${awardCollection}/award-1`;
   const responseUri = `at://${publisher}/${responseCollection}/response-1`;
   const row = {
-    uri: responseUri, did: publisher, cid: 'bafy-response-v1', indexed_at: indexedAt,
-    record: 'response-record',
+    uri: responseUri,
+    did: publisher,
+    cid: "bafy-response-v1",
+    indexed_at: indexedAt,
+    record: "response-record",
     record_json: {
       $type: responseCollection,
-      badgeAward: { uri: awardUri, cid: 'bafy-award-v1' },
-      response: 'deferred', weight: 'low', createdAt: '2025-02-01T00:00:00Z',
+      badgeAward: { uri: awardUri, cid: "bafy-award-v1" },
+      response: "deferred",
+      weight: "low",
+      createdAt: "2025-02-01T00:00:00Z",
     },
   };
-  const profile = sidecarRow(profileCollection, publisher, 'response-publisher-profile', { displayName: 'Independent Reviewer' });
+  const profile = sidecarRow(profileCollection, publisher, "response-publisher-profile", {
+    displayName: "Independent Reviewer",
+  });
 
-  runLua(await handlerSource('getBadgeResponse'), {
+  runLua(await handlerSource("getBadgeResponse"), {
     params: { uri: responseUri },
     queryResults: [[row], [profile], []],
     assertions: `
@@ -507,8 +622,8 @@ assert(calls[1].values[1] == '${responseCollection}' and calls[1].values[2] == '
   });
 });
 
-test('listBadgeResponses preserves non-recipient response history and filters by award URI only', async () => {
-  const nonRecipient = 'did:plc:eeeeeeeeeeeeeeeeeeeeeeee';
+test("listBadgeResponses preserves non-recipient response history and filters by award URI only", async () => {
+  const nonRecipient = "did:plc:eeeeeeeeeeeeeeeeeeeeeeee";
   const awardUri = `at://${issuer}/${awardCollection}/award-1`;
   const row = (rkey, cid, createdAt, sortTimestamp) => ({
     uri: `at://${nonRecipient}/${responseCollection}/${rkey}`,
@@ -519,18 +634,35 @@ test('listBadgeResponses preserves non-recipient response history and filters by
     record_json: {
       $type: responseCollection,
       badgeAward: { uri: awardUri, cid },
-      response: 'accepted',
+      response: "accepted",
       createdAt,
     },
     sort_timestamp: sortTimestamp,
   });
-  const newest = row('response-z', 'bafy-award-v1', '2025-02-03T00:00:00Z', '2025-02-03T00:00:00.000000Z');
-  const olderVersion = row('response-a', 'bafy-award-old', '2025-02-03T00:00:00Z', '2025-02-03T00:00:00.000000Z');
-  const lookahead = row('older', 'bafy-award-v1', '2025-02-02T00:00:00Z', '2025-02-02T00:00:00.000000Z');
-  const profile = sidecarRow(profileCollection, nonRecipient, 'reviewer-profile', { displayName: 'Reviewer' });
+  const newest = row(
+    "response-z",
+    "bafy-award-v1",
+    "2025-02-03T00:00:00Z",
+    "2025-02-03T00:00:00.000000Z",
+  );
+  const olderVersion = row(
+    "response-a",
+    "bafy-award-old",
+    "2025-02-03T00:00:00Z",
+    "2025-02-03T00:00:00.000000Z",
+  );
+  const lookahead = row(
+    "older",
+    "bafy-award-v1",
+    "2025-02-02T00:00:00Z",
+    "2025-02-02T00:00:00.000000Z",
+  );
+  const profile = sidecarRow(profileCollection, nonRecipient, "reviewer-profile", {
+    displayName: "Reviewer",
+  });
 
-  runLua(await handlerSource('listBadgeResponses'), {
-    params: { badgeAward: awardUri, limit: '2' },
+  runLua(await handlerSource("listBadgeResponses"), {
+    params: { badgeAward: awardUri, limit: "2" },
     queryResults: [[newest, olderVersion, lookahead], [profile], []],
     assertions: `
 assert(#result.badgeResponses == 2 and result.cursor ~= nil)
@@ -552,15 +684,28 @@ assert(calls[1].values[2] == '${awardUri}' and calls[1].values[#calls[1].values]
   });
 });
 
-test('badge handlers preserve SQL NULL indexedAt as explicit JSON null', async (t) => {
-  await t.test('searchBadgeDefinitions main definition view', async () => {
-    const row = sqlNullColumns(definitionRow('null-indexed', {
-      title: 'Null indexed badge', badgeType: 'certification', createdAt: '2025-01-01T00:00:00Z',
-    }), 'indexed_at');
-    const profile = sqlNullColumns(sidecarRow(profileCollection, issuer, 'profile-null-indexed', { displayName: 'Author' }), 'indexed_at');
-    const organization = sqlNullColumns(sidecarRow(organizationCollection, issuer, 'organization-null-indexed', { visibility: 'public' }), 'indexed_at');
-    runLua(await handlerSource('searchBadgeDefinitions'), {
-      params: { search: 'Null indexed badge' },
+test("badge handlers preserve SQL NULL indexedAt as explicit JSON null", async (t) => {
+  await t.test("searchBadgeDefinitions main definition view", async () => {
+    const row = sqlNullColumns(
+      definitionRow("null-indexed", {
+        title: "Null indexed badge",
+        badgeType: "certification",
+        createdAt: "2025-01-01T00:00:00Z",
+      }),
+      "indexed_at",
+    );
+    const profile = sqlNullColumns(
+      sidecarRow(profileCollection, issuer, "profile-null-indexed", { displayName: "Author" }),
+      "indexed_at",
+    );
+    const organization = sqlNullColumns(
+      sidecarRow(organizationCollection, issuer, "organization-null-indexed", {
+        visibility: "public",
+      }),
+      "indexed_at",
+    );
+    runLua(await handlerSource("searchBadgeDefinitions"), {
+      params: { search: "Null indexed badge" },
       queryResults: [[row], [profile], [organization]],
       assertions: `
 assert(result.badgeDefinitions[1].indexedAt == NULL_VALUE, 'indexedAt must be JSON null, not omitted')
@@ -570,29 +715,49 @@ assert(result.badgeDefinitions[1].author.organization.indexedAt == NULL_VALUE, '
     });
   });
 
-  await t.test('getBadgeAward main and nested views', async () => {
-    const recipient = 'did:plc:bbbbbbbbbbbbbbbbbbbbbbbb';
+  await t.test("getBadgeAward main and nested views", async () => {
+    const recipient = "did:plc:bbbbbbbbbbbbbbbbbbbbbbbb";
     const badgeUri = `at://${issuer}/${definitionCollection}/null-indexed`;
     const awardUri = `at://${issuer}/${awardCollection}/null-indexed`;
     const responseUri = `at://${recipient}/${responseCollection}/null-indexed`;
-    const profile = sqlNullColumns(sidecarRow(profileCollection, issuer, 'award-profile-null-indexed', { displayName: 'Issuer' }), 'indexed_at');
-    const organization = sqlNullColumns(sidecarRow(organizationCollection, issuer, 'award-organization-null-indexed', { visibility: 'public' }), 'indexed_at');
+    const profile = sqlNullColumns(
+      sidecarRow(profileCollection, issuer, "award-profile-null-indexed", {
+        displayName: "Issuer",
+      }),
+      "indexed_at",
+    );
+    const organization = sqlNullColumns(
+      sidecarRow(organizationCollection, issuer, "award-organization-null-indexed", {
+        visibility: "public",
+      }),
+      "indexed_at",
+    );
     const row = {
-      uri: awardUri, did: issuer, cid: 'bafy-null-award', record: 'null-index-award',
+      uri: awardUri,
+      did: issuer,
+      cid: "bafy-null-award",
+      record: "null-index-award",
       record_json: {
-        $type: awardCollection, badge: { uri: badgeUri, cid: 'bafy-null-badge' },
-        subject: recipient, createdAt: '2025-01-01T00:00:00Z',
+        $type: awardCollection,
+        badge: { uri: badgeUri, cid: "bafy-null-badge" },
+        subject: recipient,
+        createdAt: "2025-01-01T00:00:00Z",
       },
-      badge_uri: badgeUri, badge_cid: 'bafy-null-badge', badge_did: issuer, badge_record: 'null-index-badge',
-      recipient_response_uri: responseUri, recipient_response_cid: 'bafy-null-response',
-      recipient_response_did: recipient, recipient_response_record: 'null-index-response',
+      badge_uri: badgeUri,
+      badge_cid: "bafy-null-badge",
+      badge_did: issuer,
+      badge_record: "null-index-badge",
+      recipient_response_uri: responseUri,
+      recipient_response_cid: "bafy-null-response",
+      recipient_response_did: recipient,
+      recipient_response_record: "null-index-response",
     };
-    runLua(await handlerSource('getBadgeAward'), {
+    runLua(await handlerSource("getBadgeAward"), {
       params: { uri: awardUri },
       queryResults: [[row], [profile], [organization]],
       recordValues: {
-        'null-index-badge': { $type: definitionCollection, title: 'Badge' },
-        'null-index-response': { $type: responseCollection, response: 'accepted' },
+        "null-index-badge": { $type: definitionCollection, title: "Badge" },
+        "null-index-response": { $type: responseCollection, response: "accepted" },
       },
       assertions: `
 assert(result.badgeAward.indexedAt == NULL_VALUE, 'award indexedAt must be JSON null, not omitted')
@@ -605,30 +770,50 @@ assert(result.badgeAward.author.organization.indexedAt == NULL_VALUE, 'organizat
     });
   });
 
-  await t.test('listBadgeAwards main and nested views', async () => {
-    const recipient = 'did:plc:bbbbbbbbbbbbbbbbbbbbbbbb';
+  await t.test("listBadgeAwards main and nested views", async () => {
+    const recipient = "did:plc:bbbbbbbbbbbbbbbbbbbbbbbb";
     const badgeUri = `at://${issuer}/${definitionCollection}/null-indexed`;
     const awardUri = `at://${issuer}/${awardCollection}/null-indexed-list`;
     const responseUri = `at://${recipient}/${responseCollection}/null-indexed-list`;
-    const profile = sqlNullColumns(sidecarRow(profileCollection, issuer, 'list-award-profile-null-indexed', { displayName: 'Issuer' }), 'indexed_at');
-    const organization = sqlNullColumns(sidecarRow(organizationCollection, issuer, 'list-award-organization-null-indexed', { visibility: 'public' }), 'indexed_at');
+    const profile = sqlNullColumns(
+      sidecarRow(profileCollection, issuer, "list-award-profile-null-indexed", {
+        displayName: "Issuer",
+      }),
+      "indexed_at",
+    );
+    const organization = sqlNullColumns(
+      sidecarRow(organizationCollection, issuer, "list-award-organization-null-indexed", {
+        visibility: "public",
+      }),
+      "indexed_at",
+    );
     const row = {
-      uri: awardUri, did: issuer, cid: 'bafy-null-award-list', record: 'null-index-award-list',
+      uri: awardUri,
+      did: issuer,
+      cid: "bafy-null-award-list",
+      record: "null-index-award-list",
       record_json: {
-        $type: awardCollection, badge: { uri: badgeUri, cid: 'bafy-null-badge' },
-        subject: recipient, createdAt: '2025-01-01T00:00:00Z',
+        $type: awardCollection,
+        badge: { uri: badgeUri, cid: "bafy-null-badge" },
+        subject: recipient,
+        createdAt: "2025-01-01T00:00:00Z",
       },
-      badge_uri: badgeUri, badge_cid: 'bafy-null-badge', badge_did: issuer, badge_record: 'null-index-badge-list',
-      recipient_response_uri: responseUri, recipient_response_cid: 'bafy-null-response',
-      recipient_response_did: recipient, recipient_response_record: 'null-index-response-list',
-      sort_timestamp: '2025-01-01T00:00:00.000000Z',
+      badge_uri: badgeUri,
+      badge_cid: "bafy-null-badge",
+      badge_did: issuer,
+      badge_record: "null-index-badge-list",
+      recipient_response_uri: responseUri,
+      recipient_response_cid: "bafy-null-response",
+      recipient_response_did: recipient,
+      recipient_response_record: "null-index-response-list",
+      sort_timestamp: "2025-01-01T00:00:00.000000Z",
     };
-    runLua(await handlerSource('listBadgeAwards'), {
-      params: { limit: '1' },
+    runLua(await handlerSource("listBadgeAwards"), {
+      params: { limit: "1" },
       queryResults: [[row], [profile], [organization]],
       recordValues: {
-        'null-index-badge-list': { $type: definitionCollection, title: 'Badge' },
-        'null-index-response-list': { $type: responseCollection, response: 'accepted' },
+        "null-index-badge-list": { $type: definitionCollection, title: "Badge" },
+        "null-index-response-list": { $type: responseCollection, response: "accepted" },
       },
       assertions: `
 assert(result.badgeAwards[1].indexedAt == NULL_VALUE, 'award indexedAt must be JSON null, not omitted')
@@ -641,15 +826,28 @@ assert(result.badgeAwards[1].author.organization.indexedAt == NULL_VALUE, 'organ
     });
   });
 
-  await t.test('getBadgeResponse main view', async () => {
+  await t.test("getBadgeResponse main view", async () => {
     const responseUri = `at://${issuer}/${responseCollection}/null-indexed`;
-    const profile = sqlNullColumns(sidecarRow(profileCollection, issuer, 'response-profile-null-indexed', { displayName: 'Publisher' }), 'indexed_at');
-    const organization = sqlNullColumns(sidecarRow(organizationCollection, issuer, 'response-organization-null-indexed', { visibility: 'public' }), 'indexed_at');
+    const profile = sqlNullColumns(
+      sidecarRow(profileCollection, issuer, "response-profile-null-indexed", {
+        displayName: "Publisher",
+      }),
+      "indexed_at",
+    );
+    const organization = sqlNullColumns(
+      sidecarRow(organizationCollection, issuer, "response-organization-null-indexed", {
+        visibility: "public",
+      }),
+      "indexed_at",
+    );
     const row = {
-      uri: responseUri, did: issuer, cid: 'bafy-null-response', record: 'null-indexed-response',
-      record_json: { $type: responseCollection, response: 'deferred' },
+      uri: responseUri,
+      did: issuer,
+      cid: "bafy-null-response",
+      record: "null-indexed-response",
+      record_json: { $type: responseCollection, response: "deferred" },
     };
-    runLua(await handlerSource('getBadgeResponse'), {
+    runLua(await handlerSource("getBadgeResponse"), {
       params: { uri: responseUri },
       queryResults: [[row], [profile], [organization]],
       assertions: `
@@ -660,17 +858,34 @@ assert(result.badgeResponse.author.organization.indexedAt == NULL_VALUE, 'organi
     });
   });
 
-  await t.test('listBadgeResponses main view', async () => {
+  await t.test("listBadgeResponses main view", async () => {
     const responseUri = `at://${issuer}/${responseCollection}/null-indexed-list`;
-    const profile = sqlNullColumns(sidecarRow(profileCollection, issuer, 'list-response-profile-null-indexed', { displayName: 'Publisher' }), 'indexed_at');
-    const organization = sqlNullColumns(sidecarRow(organizationCollection, issuer, 'list-response-organization-null-indexed', { visibility: 'public' }), 'indexed_at');
+    const profile = sqlNullColumns(
+      sidecarRow(profileCollection, issuer, "list-response-profile-null-indexed", {
+        displayName: "Publisher",
+      }),
+      "indexed_at",
+    );
+    const organization = sqlNullColumns(
+      sidecarRow(organizationCollection, issuer, "list-response-organization-null-indexed", {
+        visibility: "public",
+      }),
+      "indexed_at",
+    );
     const row = {
-      uri: responseUri, did: issuer, cid: 'bafy-null-response-list', record: 'null-indexed-response-list',
-      record_json: { $type: responseCollection, response: 'accepted', createdAt: '2025-01-01T00:00:00Z' },
-      sort_timestamp: '2025-01-01T00:00:00.000000Z',
+      uri: responseUri,
+      did: issuer,
+      cid: "bafy-null-response-list",
+      record: "null-indexed-response-list",
+      record_json: {
+        $type: responseCollection,
+        response: "accepted",
+        createdAt: "2025-01-01T00:00:00Z",
+      },
+      sort_timestamp: "2025-01-01T00:00:00.000000Z",
     };
-    runLua(await handlerSource('listBadgeResponses'), {
-      params: { limit: '1' },
+    runLua(await handlerSource("listBadgeResponses"), {
+      params: { limit: "1" },
       queryResults: [[row], [profile], [organization]],
       assertions: `
 assert(result.badgeResponses[1].indexedAt == NULL_VALUE, 'indexedAt must be JSON null, not omitted')
@@ -681,20 +896,37 @@ assert(result.badgeResponses[1].author.organization.indexedAt == NULL_VALUE, 'or
   });
 });
 
-test('badge list timestamp fallback SQL preserves the emitted search cursor', async () => {
-  const fallbackTimestamp = '2025-01-02T03:04:05.123456Z';
-  const lookaheadTimestamp = '2025-01-01T03:04:05.123456Z';
-  const first = sqlNullColumns(definitionRow('missing-created-at', {
-    title: 'Missing createdAt badge', badgeType: 'certification',
-  }, fallbackTimestamp), 'indexed_at');
+test("badge list timestamp fallback SQL preserves the emitted search cursor", async () => {
+  const fallbackTimestamp = "2025-01-02T03:04:05.123456Z";
+  const lookaheadTimestamp = "2025-01-01T03:04:05.123456Z";
+  const first = sqlNullColumns(
+    definitionRow(
+      "missing-created-at",
+      {
+        title: "Missing createdAt badge",
+        badgeType: "certification",
+      },
+      fallbackTimestamp,
+    ),
+    "indexed_at",
+  );
   first.created_at = fallbackTimestamp;
-  const lookahead = sqlNullColumns(definitionRow('malformed-created-at', {
-    title: 'Malformed createdAt badge', badgeType: 'certification', createdAt: 'not-a-datetime',
-  }, lookaheadTimestamp), 'indexed_at');
+  const lookahead = sqlNullColumns(
+    definitionRow(
+      "malformed-created-at",
+      {
+        title: "Malformed createdAt badge",
+        badgeType: "certification",
+        createdAt: "not-a-datetime",
+      },
+      lookaheadTimestamp,
+    ),
+    "indexed_at",
+  );
   lookahead.created_at = lookaheadTimestamp;
 
-  runLua(await handlerSource('searchBadgeDefinitions'), {
-    params: { search: 'badge', limit: '1' },
+  runLua(await handlerSource("searchBadgeDefinitions"), {
+    params: { search: "badge", limit: "1" },
     queryResults: [[first, lookahead], [], []],
     assertions: `
 assert(#result.badgeDefinitions == 1 and result.cursor ~= nil)
@@ -715,23 +947,32 @@ assert(calls[4].values[3] == '${fallbackTimestamp}' and calls[4].values[4] == '$
   });
 });
 
-test('badge list timestamp fallback SQL preserves the emitted award cursor', async () => {
-  const fallbackTimestamp = '2025-01-02T03:04:05.123456Z';
-  const lookaheadTimestamp = '2025-01-01T03:04:05.123456Z';
+test("badge list timestamp fallback SQL preserves the emitted award cursor", async () => {
+  const fallbackTimestamp = "2025-01-02T03:04:05.123456Z";
+  const lookaheadTimestamp = "2025-01-01T03:04:05.123456Z";
   const makeAward = (rkey, createdAt, sortTimestamp) => {
-    const record = { $type: awardCollection, badge: { uri: `at://${issuer}/${definitionCollection}/badge`, cid: 'bafy-badge' }, subject: issuer };
+    const record = {
+      $type: awardCollection,
+      badge: { uri: `at://${issuer}/${definitionCollection}/badge`, cid: "bafy-badge" },
+      subject: issuer,
+    };
     if (createdAt !== undefined) record.createdAt = createdAt;
     const row = {
-      uri: `at://${issuer}/${awardCollection}/${rkey}`, did: issuer, cid: `bafy-${rkey}`,
-      record: `record-${rkey}`, record_json: record, created_at: sortTimestamp, sort_timestamp: sortTimestamp,
+      uri: `at://${issuer}/${awardCollection}/${rkey}`,
+      did: issuer,
+      cid: `bafy-${rkey}`,
+      record: `record-${rkey}`,
+      record_json: record,
+      created_at: sortTimestamp,
+      sort_timestamp: sortTimestamp,
     };
-    return sqlNullColumns(row, 'indexed_at');
+    return sqlNullColumns(row, "indexed_at");
   };
-  const first = makeAward('malformed-created-at', '2025-02-30T00:00:00Z', fallbackTimestamp);
-  const lookahead = makeAward('missing-created-at', undefined, lookaheadTimestamp);
+  const first = makeAward("malformed-created-at", "2025-02-30T00:00:00Z", fallbackTimestamp);
+  const lookahead = makeAward("missing-created-at", undefined, lookaheadTimestamp);
 
-  runLua(await handlerSource('listBadgeAwards'), {
-    params: { limit: '1' },
+  runLua(await handlerSource("listBadgeAwards"), {
+    params: { limit: "1" },
     queryResults: [[first, lookahead], [], []],
     assertions: `
 assert(#result.badgeAwards == 1 and result.cursor ~= nil)
@@ -752,23 +993,32 @@ assert(calls[4].values[2] == '${fallbackTimestamp}' and calls[4].values[3] == '$
   });
 });
 
-test('badge list timestamp fallback SQL preserves the emitted response cursor', async () => {
-  const fallbackTimestamp = '2025-01-02T03:04:05.123456Z';
-  const lookaheadTimestamp = '2025-01-01T03:04:05.123456Z';
+test("badge list timestamp fallback SQL preserves the emitted response cursor", async () => {
+  const fallbackTimestamp = "2025-01-02T03:04:05.123456Z";
+  const lookaheadTimestamp = "2025-01-01T03:04:05.123456Z";
   const makeResponse = (rkey, createdAt, sortTimestamp) => {
-    const record = { $type: responseCollection, badgeAward: { uri: `at://${issuer}/${awardCollection}/award`, cid: 'bafy-award' }, response: 'accepted' };
+    const record = {
+      $type: responseCollection,
+      badgeAward: { uri: `at://${issuer}/${awardCollection}/award`, cid: "bafy-award" },
+      response: "accepted",
+    };
     if (createdAt !== undefined) record.createdAt = createdAt;
     const row = {
-      uri: `at://${issuer}/${responseCollection}/${rkey}`, did: issuer, cid: `bafy-${rkey}`,
-      record: `record-${rkey}`, record_json: record, created_at: sortTimestamp, sort_timestamp: sortTimestamp,
+      uri: `at://${issuer}/${responseCollection}/${rkey}`,
+      did: issuer,
+      cid: `bafy-${rkey}`,
+      record: `record-${rkey}`,
+      record_json: record,
+      created_at: sortTimestamp,
+      sort_timestamp: sortTimestamp,
     };
-    return sqlNullColumns(row, 'indexed_at');
+    return sqlNullColumns(row, "indexed_at");
   };
-  const first = makeResponse('missing-created-at', undefined, fallbackTimestamp);
-  const lookahead = makeResponse('malformed-created-at', 'not-a-datetime', lookaheadTimestamp);
+  const first = makeResponse("missing-created-at", undefined, fallbackTimestamp);
+  const lookahead = makeResponse("malformed-created-at", "not-a-datetime", lookaheadTimestamp);
 
-  runLua(await handlerSource('listBadgeResponses'), {
-    params: { limit: '1' },
+  runLua(await handlerSource("listBadgeResponses"), {
+    params: { limit: "1" },
     queryResults: [[first, lookahead], [], []],
     assertions: `
 assert(#result.badgeResponses == 1 and result.cursor ~= nil)

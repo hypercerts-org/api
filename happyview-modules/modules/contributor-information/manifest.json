@@ -4,15 +4,25 @@
       "kind": "lexicon",
       "id": "org.hypercerts.claim.getContributorInformation",
       "path": "../../lexicons/org.hypercerts.claim.getContributorInformation.json",
-      "config": { "backfill": false, "target_collection": "org.hypercerts.claim.contributorInformation" },
+      "config": {
+        "backfill": false,
+        "target_collection": "org.hypercerts.claim.contributorInformation"
+      },
       "dependsOn": ["org.hypercerts.claim.contributorInformation", "org.hypercerts.api.defs"]
     },
     {
       "kind": "lexicon",
       "id": "org.hypercerts.claim.listContributorInformation",
       "path": "../../lexicons/org.hypercerts.claim.listContributorInformation.json",
-      "config": { "backfill": false, "target_collection": "org.hypercerts.claim.contributorInformation" },
-      "dependsOn": ["org.hypercerts.claim.contributorInformation", "org.hypercerts.claim.getContributorInformation", "org.hypercerts.api.defs"]
+      "config": {
+        "backfill": false,
+        "target_collection": "org.hypercerts.claim.contributorInformation"
+      },
+      "dependsOn": [
+        "org.hypercerts.claim.contributorInformation",
+        "org.hypercerts.claim.getContributorInformation",
+        "org.hypercerts.api.defs"
+      ]
     },
     {
       "kind": "script",

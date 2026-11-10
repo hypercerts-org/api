@@ -1,0 +1,116 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "includes": [
+      "**",
+      "!**/dist",
+      "!pnpm-lock.yaml",
+      "!.changeset/*.md",
+      "!.agents/skills/**/*.md",
+      "!happyview-modules/lexicons",
+      "!docs/public",
+      "!docs/sources",
+      "!docs/openapi.json",
+      "!docs/coverage.json",
+      "!packages/api/src/lexicons",
+      "!packages/api/src/index.ts"
+    ]
+  },
+  "plugins": ["./tooling/biome/no-shell-spawn.grit"],
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "nursery": {
+        "noFloatingPromises": "error",
+        "noMisusedPromises": "error",
+        "useAwaitThenable": "error"
+      }
+    }
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["happyview-modules/**/*.js"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noParameterAssign": {
+              "level": "error",
+              "options": {
+                "propertyAssignment": "deny"
+              }
+            },
+            "useConst": "error",
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "node:child_process": {
+                    "importNames": ["exec", "execSync", "*"],
+                    "message": "Import spawn or spawnSync by name and pass an argument array; exec, execSync and namespace imports are not allowed."
+                  },
+                  "child_process": {
+                    "importNames": ["exec", "execSync", "*"],
+                    "message": "Import spawn or spawnSync by name and pass an argument array; exec, execSync and namespace imports are not allowed."
+                  }
+                }
+              }
+            }
+          },
+          "suspicious": {
+            "noConsole": "error",
+            "noDoubleEquals": {
+              "level": "error",
+              "options": {
+                "ignoreNull": true
+              }
+            },
+            "noVar": "error",
+            "noShadow": "error"
+          },
+          "security": {
+            "noGlobalEval": "error"
+          },
+          "nursery": {
+            "noProcessExit": "error"
+          },
+          "complexity": {
+            "noImplicitCoercions": "error"
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "happyview-modules/tooling/installer.js",
+        "happyview-modules/tooling/seed.js",
+        "happyview-modules/tooling/lint-lua.js"
+      ],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,74 +1,92 @@
-import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import test from 'node:test';
-import * as presentationModule from '../web/src/presentation.mjs';
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
+import * as presentationModule from "../web/src/presentation.mjs";
 
 const { createPresentationSpec, normalizeBaseUrl } = presentationModule;
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const source = JSON.parse(await readFile(path.join(root, 'openapi.json'), 'utf8'));
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const source = JSON.parse(await readFile(path.join(root, "openapi.json"), "utf8"));
 
-test('presentation preserves endpoint contracts and explains unresolved schema references', () => {
+test("presentation preserves endpoint contracts and explains unresolved schema references", () => {
   const original = structuredClone(source);
   const presentation = createPresentationSpec(source);
-  const endpointPath = '/xrpc/org.hypercerts.claim.listActivities';
+  const endpointPath = "/xrpc/org.hypercerts.claim.listActivities";
 
-  assert.deepEqual(source, original, 'the authoritative generated artifact is not mutated');
+  assert.deepEqual(source, original, "the authoritative generated artifact is not mutated");
   assert.deepEqual(
     presentation.paths[endpointPath].get.parameters,
     source.paths[endpointPath].get.parameters,
-    'descriptions, requirements, array serialization, and constraints remain available',
+    "descriptions, requirements, array serialization, and constraints remain available",
   );
   assert.match(presentation.info.description, /Explore public Hypercerts XRPC queries/i);
-  assert.doesNotMatch(presentation.info.description, /response schemas may be partial|CORS|browser/i);
+  assert.doesNotMatch(
+    presentation.info.description,
+    /response schemas may be partial|CORS|browser/i,
+  );
   assert.deepEqual(presentation.servers, [
-    { url: 'https://api.test.hypercerts.dev', description: 'API test (default)' },
-    { url: 'http://127.0.0.1:8080', description: 'Local (127.0.0.1:8080)' },
+    { url: "https://api.test.hypercerts.dev", description: "API test (default)" },
+    { url: "http://127.0.0.1:8080", description: "Local (127.0.0.1:8080)" },
   ]);
-  assert.equal(Object.hasOwn(presentation, 'x-hypercerts-source'), false);
-  assert.equal(Object.hasOwn(presentation, 'x-hypercerts-unresolved-references'), false);
-  assert.equal(Object.hasOwn(presentation.paths[endpointPath].get, 'x-hypercerts-coverage'), false);
-  assert.equal(Object.hasOwn(presentation.paths[endpointPath].get, 'x-hypercerts-source'), false);
-  assert.doesNotMatch(JSON.stringify(presentation), /x-hypercerts-|x-lexicon-ref|branch-only|unmanifested-unsupported/);
+  assert.equal(Object.hasOwn(presentation, "x-hypercerts-source"), false);
+  assert.equal(Object.hasOwn(presentation, "x-hypercerts-unresolved-references"), false);
+  assert.equal(Object.hasOwn(presentation.paths[endpointPath].get, "x-hypercerts-coverage"), false);
+  assert.equal(Object.hasOwn(presentation.paths[endpointPath].get, "x-hypercerts-source"), false);
+  assert.doesNotMatch(
+    JSON.stringify(presentation),
+    /x-hypercerts-|x-lexicon-ref|branch-only|unmanifested-unsupported/,
+  );
   assert.equal(
-    presentation.components.schemas['org.hypercerts.collection.listCollectionItems.collectionSummaryView']
-      .properties.title['x-lexicon-maxGraphemes'],
+    presentation.components.schemas[
+      "org.hypercerts.collection.listCollectionItems.collectionSummaryView"
+    ].properties.title["x-lexicon-maxGraphemes"],
     80,
-    'the Lexicon grapheme constraint remains in the presentation schema',
+    "the Lexicon grapheme constraint remains in the presentation schema",
   );
 
-  assert.deepEqual(source['x-hypercerts-unresolved-references'], [], 'committed snapshots resolve every schema reference');
+  assert.deepEqual(
+    source["x-hypercerts-unresolved-references"],
+    [],
+    "committed snapshots resolve every schema reference",
+  );
 
   const incomplete = structuredClone(source);
-  incomplete.components.schemas['demo.external.record'] = {
-    description: 'Schema reference demo.external.record is outside the committed local Lexicon snapshot.',
-    'x-lexicon-ref': 'demo.external.record',
+  incomplete.components.schemas["demo.external.record"] = {
+    description:
+      "Schema reference demo.external.record is outside the committed local Lexicon snapshot.",
+    "x-lexicon-ref": "demo.external.record",
   };
   const incompletePresentation = createPresentationSpec(incomplete);
-  assert.deepEqual(incompletePresentation.components.schemas['demo.external.record'], {
-    description: 'Schema reference demo.external.record is outside the committed local Lexicon snapshot.',
+  assert.deepEqual(incompletePresentation.components.schemas["demo.external.record"], {
+    description:
+      "Schema reference demo.external.record is outside the committed local Lexicon snapshot.",
   });
 });
 
-test('build-time HappyView server config keeps an ordered default and rejects invalid settings', () => {
+test("build-time HappyView server config keeps an ordered default and rejects invalid settings", () => {
   const parse = presentationModule.parseHappyviewServers;
   assert.deepEqual(parse(undefined), [
-    { label: 'API test', url: 'https://api.test.hypercerts.dev' },
+    { label: "API test", url: "https://api.test.hypercerts.dev" },
   ]);
-  assert.deepEqual(parse(JSON.stringify([
-    { label: 'Staging', url: 'https://staging.example.test/api/' },
-    { label: 'Production', url: 'https://api.example.test' },
-  ])), [
-    { label: 'Staging', url: 'https://staging.example.test/api' },
-    { label: 'Production', url: 'https://api.example.test' },
-  ]);
+  assert.deepEqual(
+    parse(
+      JSON.stringify([
+        { label: "Staging", url: "https://staging.example.test/api/" },
+        { label: "Production", url: "https://api.example.test" },
+      ]),
+    ),
+    [
+      { label: "Staging", url: "https://staging.example.test/api" },
+      { label: "Production", url: "https://api.example.test" },
+    ],
+  );
 
   for (const invalid of [
-    '',
-    'not json',
-    '[]',
+    "",
+    "not json",
+    "[]",
     '[{"url":"https://api.example.test"}]',
     '[{"label":"Test","url":"https://user:secret@api.example.test"}]',
     '[{"label":"Test","url":"https://api.example.test?token=secret"}]',
@@ -78,17 +96,17 @@ test('build-time HappyView server config keeps an ordered default and rejects in
   }
 });
 
-test('base URL validation accepts the default and local servers but rejects unsafe custom URLs', () => {
-  assert.equal(normalizeBaseUrl('https://api.example.test/v1/'), 'https://api.example.test/v1');
-  assert.equal(normalizeBaseUrl('https://api.example.test/v1////'), 'https://api.example.test/v1');
-  assert.equal(normalizeBaseUrl('http://127.0.0.1:8080/'), 'http://127.0.0.1:8080');
+test("base URL validation accepts the default and local servers but rejects unsafe custom URLs", () => {
+  assert.equal(normalizeBaseUrl("https://api.example.test/v1/"), "https://api.example.test/v1");
+  assert.equal(normalizeBaseUrl("https://api.example.test/v1////"), "https://api.example.test/v1");
+  assert.equal(normalizeBaseUrl("http://127.0.0.1:8080/"), "http://127.0.0.1:8080");
 
   for (const invalid of [
-    'ftp://api.example.test',
-    'https://user:secret@api.example.test',
-    'https://api.example.test?token=value',
-    'https://api.example.test/#fragment',
-    'not a URL',
+    "ftp://api.example.test",
+    "https://user:secret@api.example.test",
+    "https://api.example.test?token=value",
+    "https://api.example.test/#fragment",
+    "not a URL",
   ]) {
     assert.throws(() => normalizeBaseUrl(invalid), TypeError, invalid);
   }

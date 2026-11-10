@@ -8,10 +8,7 @@
         "backfill": false,
         "target_collection": "org.hypercerts.context.attachment"
       },
-      "dependsOn": [
-        "org.hypercerts.context.attachment",
-        "org.hypercerts.api.defs"
-      ]
+      "dependsOn": ["org.hypercerts.context.attachment", "org.hypercerts.api.defs"]
     },
     {
       "kind": "script",
@@ -30,9 +27,7 @@
         "script_type": "lua",
         "description": "Hypercerts attachment lookup handler"
       },
-      "dependsOn": [
-        "org.hypercerts.context.getAttachment"
-      ]
+      "dependsOn": ["org.hypercerts.context.getAttachment"]
     },
     {
       "kind": "lexicon",
@@ -42,9 +37,7 @@
         "backfill": false,
         "target_collection": "org.hypercerts.context.attachment"
       },
-      "dependsOn": [
-        "org.hypercerts.context.getAttachment"
-      ]
+      "dependsOn": ["org.hypercerts.context.getAttachment"]
     },
     {
       "kind": "script",
@@ -67,9 +60,7 @@
         "script_type": "lua",
         "description": "Hypercerts attachment listing handler"
       },
-      "dependsOn": [
-        "org.hypercerts.context.listAttachments"
-      ]
+      "dependsOn": ["org.hypercerts.context.listAttachments"]
     }
   ]
 }

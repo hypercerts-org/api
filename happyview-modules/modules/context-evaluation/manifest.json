@@ -8,10 +8,7 @@
         "backfill": false,
         "target_collection": "org.hypercerts.context.evaluation"
       },
-      "dependsOn": [
-        "org.hypercerts.context.evaluation",
-        "org.hypercerts.api.defs"
-      ]
+      "dependsOn": ["org.hypercerts.context.evaluation", "org.hypercerts.api.defs"]
     },
     {
       "kind": "script",
@@ -30,9 +27,7 @@
         "script_type": "lua",
         "description": "Hypercerts evaluation lookup handler"
       },
-      "dependsOn": [
-        "org.hypercerts.context.getEvaluation"
-      ]
+      "dependsOn": ["org.hypercerts.context.getEvaluation"]
     },
     {
       "kind": "lexicon",
@@ -42,9 +37,7 @@
         "backfill": false,
         "target_collection": "org.hypercerts.context.evaluation"
       },
-      "dependsOn": [
-        "org.hypercerts.context.getEvaluation"
-      ]
+      "dependsOn": ["org.hypercerts.context.getEvaluation"]
     },
     {
       "kind": "script",
@@ -67,9 +60,7 @@
         "script_type": "lua",
         "description": "Hypercerts evaluation listing handler"
       },
-      "dependsOn": [
-        "org.hypercerts.context.listEvaluations"
-      ]
+      "dependsOn": ["org.hypercerts.context.listEvaluations"]
     }
   ]
 }

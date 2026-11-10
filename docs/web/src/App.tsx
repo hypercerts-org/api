@@ -1,27 +1,35 @@
-import { useMemo, useState, type FormEvent, type ChangeEvent } from 'react';
-import { Button, Input, Select } from '@hypercerts-org/ui-react';
-import { ApiReferenceReact, type AnyApiReferenceConfiguration } from '@scalar/api-reference-react';
-import generatedSpec from '../../openapi.json';
-import { createClientConfiguration } from './client-configuration.mjs';
+import { Button, Input, Select } from "@hypercerts-org/ui-react";
+import { type AnyApiReferenceConfiguration, ApiReferenceReact } from "@scalar/api-reference-react";
+import { type ChangeEvent, type FormEvent, useMemo, useState } from "react";
+import generatedSpec from "../../openapi.json";
+import { createClientConfiguration } from "./client-configuration.mjs";
 import {
   createPresentationSpec,
   LOCAL_SERVER_URL,
   normalizeBaseUrl,
   parseHappyviewServers,
-} from './presentation.mjs';
-import './styles.css';
+} from "./presentation.mjs";
+import "./styles.css";
 
 const presentationSpec = createPresentationSpec(generatedSpec);
 const configuredServers = parseHappyviewServers(import.meta.env.VITE_HAPPYVIEW_SERVERS);
+const defaultServer = firstConfiguredServer();
+
+// parseHappyviewServers rejects an empty list; this gives the type checker the same guarantee.
+function firstConfiguredServer() {
+  const [first] = configuredServers;
+  if (!first) throw new Error("parseHappyviewServers returned no servers");
+  return first;
+}
 
 export function App() {
-  const [serverMode, setServerMode] = useState(configuredServers[0].url);
-  const [activeServer, setActiveServer] = useState(configuredServers[0].url);
-  const [customServer, setCustomServer] = useState('');
-  const [customError, setCustomError] = useState('');
+  const [serverMode, setServerMode] = useState(defaultServer.url);
+  const [activeServer, setActiveServer] = useState(defaultServer.url);
+  const [customServer, setCustomServer] = useState("");
+  const [customError, setCustomError] = useState("");
 
   const selectedServers = useMemo(
-    () => [{ url: activeServer, description: 'Selected server' }],
+    () => [{ url: activeServer, description: "Selected server" }],
     [activeServer],
   );
   const activeSpec = useMemo(
@@ -37,17 +45,17 @@ export function App() {
       hideClientButton: true,
       servers: selectedServers,
       baseServerURL: activeServer,
-      theme: 'default',
-      layout: 'modern',
+      theme: "default",
+      layout: "modern",
       darkMode: false,
-      forceDarkModeState: 'light',
+      forceDarkModeState: "light",
       hideDarkModeToggle: true,
       hideSearch: false,
       hideModels: false,
       hideTestRequestButton: false,
       showOperationId: false,
       showSidebar: true,
-      showDeveloperTools: 'never',
+      showDeveloperTools: "never",
       customCss: String.raw`.introduction-section .section-content > .flex.gap-1\.5 { display: none; }`,
       defaultOpenFirstTag: true,
       defaultOpenAllTags: false,
@@ -55,7 +63,7 @@ export function App() {
       expandAllResponses: false,
       expandAllSchemaProperties: false,
       orderRequiredPropertiesFirst: true,
-      documentDownloadType: 'none',
+      documentDownloadType: "none",
       telemetry: false,
       withDefaultFonts: false,
     }),
@@ -65,10 +73,10 @@ export function App() {
   function handleServerModeChange(event: ChangeEvent<HTMLSelectElement>) {
     const nextMode = event.target.value;
     setServerMode(nextMode);
-    setCustomError('');
+    setCustomError("");
 
-    if (nextMode === 'local') setActiveServer(LOCAL_SERVER_URL);
-    else if (nextMode !== 'custom') {
+    if (nextMode === "local") setActiveServer(LOCAL_SERVER_URL);
+    else if (nextMode !== "custom") {
       const selected = configuredServers.find((server) => server.url === nextMode);
       if (selected) setActiveServer(selected.url);
     }
@@ -78,9 +86,9 @@ export function App() {
     event.preventDefault();
     try {
       setActiveServer(normalizeBaseUrl(customServer));
-      setCustomError('');
+      setCustomError("");
     } catch (error) {
-      setCustomError(error instanceof Error ? error.message : 'Enter a valid http(s) base URL.');
+      setCustomError(error instanceof Error ? error.message : "Enter a valid http(s) base URL.");
     }
   }
 
@@ -89,7 +97,12 @@ export function App() {
       <header className="site-header">
         <a className="brand" href="/" aria-label="Hypercerts API reference home">
           <img className="brand-logo" src="/brand/logo-horizontal.svg" alt="" />
-          <span className="brand-api"><span className="brand-divider" aria-hidden="true">/</span> API</span>
+          <span className="brand-api">
+            <span className="brand-divider" aria-hidden="true">
+              /
+            </span>{" "}
+            API
+          </span>
         </a>
         <div className="header-actions">
           <div className="server-control">
@@ -97,16 +110,19 @@ export function App() {
             <Select id="server-mode" value={serverMode} onChange={handleServerModeChange}>
               {configuredServers.map((server, index) => (
                 <option key={server.url} value={server.url}>
-                  {server.label}{index === 0 ? ' · default' : ''}
+                  {server.label}
+                  {index === 0 ? " · default" : ""}
                 </option>
               ))}
               <option value="local">Local · 127.0.0.1:8080</option>
               <option value="custom">Custom base URL…</option>
             </Select>
           </div>
-          {serverMode === 'custom' && (
+          {serverMode === "custom" && (
             <form className="custom-server-form" onSubmit={applyCustomServer} noValidate>
-              <label className="sr-only" htmlFor="custom-server">Custom base URL</label>
+              <label className="sr-only" htmlFor="custom-server">
+                Custom base URL
+              </label>
               <Input
                 id="custom-server"
                 type="url"
@@ -114,11 +130,15 @@ export function App() {
                 onChange={(event) => setCustomServer(event.target.value)}
                 placeholder="https://api.example.test"
                 aria-invalid={Boolean(customError)}
-                aria-describedby={customError ? 'server-error' : undefined}
+                aria-describedby={customError ? "server-error" : undefined}
                 autoComplete="url"
               />
               <Button type="submit">Use URL</Button>
-              {customError && <span id="server-error" className="server-error" role="alert">{customError}</span>}
+              {customError && (
+                <span id="server-error" className="server-error" role="alert">
+                  {customError}
+                </span>
+              )}
             </form>
           )}
           <a className="download-link" href="/openapi.json" download="hypercerts-api-openapi.json">

@@ -1,9 +1,9 @@
-import { readFile, stat } from 'node:fs/promises';
-import { createRequire } from 'node:module';
-import path from 'node:path';
-import readline from 'node:readline';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import { readLexiconSource } from './lexicon-source.js';
+import { readFile, stat } from "node:fs/promises";
+import { createRequire } from "node:module";
+import path from "node:path";
+import readline from "node:readline";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { readLexiconSource } from "./lexicon-source.js";
 
 /** @typedef {Record<string, unknown> & { backfill?: boolean; target_collection?: string; action?: string; token_cost?: number }} LexiconAssetConfig */
 /** @typedef {Record<string, unknown> & { script_type?: string; description?: string }} ScriptAssetConfig */
@@ -30,18 +30,22 @@ import { readLexiconSource } from './lexicon-source.js';
 /** @typedef {InstallResult & { resolverSetting?: ResolverSetting }} ApplyAssetsResult */
 /** @typedef {Error & { completed: string[]; remaining: string[]; resolverSetting?: ResolverSetting }} PartialInstallError */
 
-const require = createRequire(new URL('../package.json', import.meta.url));
+const require = createRequire(new URL("../package.json", import.meta.url));
 
 /** @param {unknown} value @returns {unknown} */
 export function sortJsonKeys(value) {
   if (Array.isArray(value)) return value.map(sortJsonKeys);
-  if (value && typeof value === 'object') {
+  if (value && typeof value === "object") {
     const record = /** @type {Record<string, unknown>} */ (value);
-    return Object.fromEntries(Object.keys(value).sort((a, b) => {
-      if (a < b) return -1;
-      if (a > b) return 1;
-      return 0;
-    }).map((key) => [key, sortJsonKeys(record[key])]));
+    return Object.fromEntries(
+      Object.keys(value)
+        .sort((a, b) => {
+          if (a < b) return -1;
+          if (a > b) return 1;
+          return 0;
+        })
+        .map((key) => [key, sortJsonKeys(record[key])]),
+    );
   }
   return value;
 }
@@ -49,42 +53,68 @@ export function sortJsonKeys(value) {
 /** @param {unknown} document @returns {unknown} */
 function canonicalizeLexiconRefs(document) {
   // HappyView stores canonical `lex:` refs; package schemas may use unprefixed refs.
-  const { Lexicons } = require('@atproto/lexicon');
+  const { Lexicons } = require("@atproto/lexicon");
   // Lexicons performs the existing runtime document validation at this boundary.
-  const canonical = /** @type {import('@atproto/lexicon').LexiconDoc} */ (structuredClone(document));
+  const canonical = /** @type {import('@atproto/lexicon').LexiconDoc} */ (
+    structuredClone(document)
+  );
   const lexicons = new Lexicons([canonical]);
   return lexicons.get(canonical.id);
 }
 
 /** @param {LoadedAsset} asset @param {InstalledAsset | null} installed @returns {'missing' | 'conflict' | 'unchanged'} */
 export function compareAsset(asset, installed) {
-  if (installed == null) return 'missing';
+  if (installed == null) return "missing";
   const declaredConfig = asset.config ?? {};
-  const installedConfig = Object.fromEntries(Object.keys(declaredConfig).map((key) => [key, installed.config?.[key]]));
-  if (JSON.stringify(sortJsonKeys(installedConfig)) !== JSON.stringify(sortJsonKeys(declaredConfig))) return 'conflict';
-  if (asset.kind === 'lexicon') {
-    if (installed.lexicon_json == null) return 'conflict';
+  const installedConfig = Object.fromEntries(
+    Object.keys(declaredConfig).map((key) => [key, installed.config?.[key]]),
+  );
+  if (
+    JSON.stringify(sortJsonKeys(installedConfig)) !== JSON.stringify(sortJsonKeys(declaredConfig))
+  )
+    return "conflict";
+  if (asset.kind === "lexicon") {
+    if (installed.lexicon_json == null) return "conflict";
     const installedLexicon = canonicalizeLexiconRefs(installed.lexicon_json);
     const declaredLexicon = canonicalizeLexiconRefs(asset.lexicon_json);
-    if (JSON.stringify(sortJsonKeys(installedLexicon)) !== JSON.stringify(sortJsonKeys(declaredLexicon))) return 'conflict';
+    if (
+      JSON.stringify(sortJsonKeys(installedLexicon)) !==
+      JSON.stringify(sortJsonKeys(declaredLexicon))
+    )
+      return "conflict";
   }
-  if (asset.kind === 'script' && installed.body !== asset.body) return 'conflict';
-  return 'unchanged';
+  if (asset.kind === "script" && installed.body !== asset.body) return "conflict";
+  return "unchanged";
 }
 
 /** @param {string} fieldPath @param {unknown} expected @param {unknown} installed @param {string[]} differences */
 function describeDifference(fieldPath, expected, installed, differences) {
   if (JSON.stringify(sortJsonKeys(expected)) === JSON.stringify(sortJsonKeys(installed))) return;
-  if (expected && installed && typeof expected === 'object' && typeof installed === 'object'
-    && !Array.isArray(expected) && !Array.isArray(installed)) {
+  if (
+    expected &&
+    installed &&
+    typeof expected === "object" &&
+    typeof installed === "object" &&
+    !Array.isArray(expected) &&
+    !Array.isArray(installed)
+  ) {
     const expectedFields = /** @type {Record<string, unknown>} */ (expected);
     const installedFields = /** @type {Record<string, unknown>} */ (installed);
-    for (const key of [...new Set([...Object.keys(expectedFields), ...Object.keys(installedFields)])].sort()) {
-      describeDifference(`${fieldPath}.${key}`, expectedFields[key], installedFields[key], differences);
+    for (const key of [
+      ...new Set([...Object.keys(expectedFields), ...Object.keys(installedFields)]),
+    ].sort((left, right) => left.localeCompare(right))) {
+      describeDifference(
+        `${fieldPath}.${key}`,
+        expectedFields[key],
+        installedFields[key],
+        differences,
+      );
     }
     return;
   }
-  differences.push(`${fieldPath}: expected ${JSON.stringify(expected) ?? 'undefined'}; installed ${JSON.stringify(installed) ?? 'undefined'}`);
+  differences.push(
+    `${fieldPath}: expected ${JSON.stringify(expected) ?? "undefined"}; installed ${JSON.stringify(installed) ?? "undefined"}`,
+  );
 }
 
 /** @param {LoadedAsset} asset @param {InstalledAsset} installed @returns {string} */
@@ -92,19 +122,28 @@ function describeAssetConflict(asset, installed) {
   /** @type {string[]} */
   const differences = [];
   const declaredConfig = asset.config ?? {};
-  const installedConfig = Object.fromEntries(Object.keys(declaredConfig).map((key) => [key, installed.config?.[key]]));
-  describeDifference('config', declaredConfig, installedConfig, differences);
-  if (asset.kind === 'lexicon') {
+  const installedConfig = Object.fromEntries(
+    Object.keys(declaredConfig).map((key) => [key, installed.config?.[key]]),
+  );
+  describeDifference("config", declaredConfig, installedConfig, differences);
+  if (asset.kind === "lexicon") {
     if (installed.lexicon_json == null) {
-      differences.push('lexicon_json: missing from installed asset');
+      differences.push("lexicon_json: missing from installed asset");
     } else {
-      describeDifference('lexicon_json', canonicalizeLexiconRefs(asset.lexicon_json), canonicalizeLexiconRefs(installed.lexicon_json), differences);
+      describeDifference(
+        "lexicon_json",
+        canonicalizeLexiconRefs(asset.lexicon_json),
+        canonicalizeLexiconRefs(installed.lexicon_json),
+        differences,
+      );
     }
   }
-  if (asset.kind === 'script' && installed.body !== asset.body) {
-    differences.push(`body: expected ${JSON.stringify(asset.body)}; installed ${JSON.stringify(installed.body) ?? 'undefined'}`);
+  if (asset.kind === "script" && installed.body !== asset.body) {
+    differences.push(
+      `body: expected ${JSON.stringify(asset.body)}; installed ${JSON.stringify(installed.body) ?? "undefined"}`,
+    );
   }
-  return differences.join('\n');
+  return differences.join("\n");
 }
 
 /** @param {string | URL} baseUrl @returns {URL} */
@@ -113,33 +152,49 @@ function validateAdminUrl(baseUrl) {
   try {
     target = new URL(baseUrl);
   } catch {
-    throw new Error('HappyView admin URL must be a valid HTTP(S) URL');
+    throw new Error("HappyView admin URL must be a valid HTTP(S) URL");
   }
   const IPV6_ADDRESS_BRACKETS = /^\[|\]$/g;
-  const hostname = target.hostname.toLowerCase().replace(IPV6_ADDRESS_BRACKETS, '');
-  const loopback = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
-  if (!['http:', 'https:'].includes(target.protocol) || target.username || target.password || (target.protocol === 'http:' && !loopback)) {
-    throw new Error('HappyView admin URL must use HTTPS, or HTTP on localhost/127.0.0.1/::1, with no URL credentials');
+  const hostname = target.hostname.toLowerCase().replace(IPV6_ADDRESS_BRACKETS, "");
+  const loopback = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+  if (
+    !["http:", "https:"].includes(target.protocol) ||
+    target.username ||
+    target.password ||
+    (target.protocol === "http:" && !loopback)
+  ) {
+    throw new Error(
+      "HappyView admin URL must use HTTPS, or HTTP on localhost/127.0.0.1/::1, with no URL credentials",
+    );
   }
   return target;
 }
 
 /** @param {URL} target @param {string} token @param {typeof globalThis.fetch} fetchImpl */
 function createAdminRequest(target, token, fetchImpl) {
-  return /** @param {'GET' | 'POST'} method @param {string} route @param {unknown} [body] @param {{ readJson?: boolean }} [options] */ async function request(method, route, body, { readJson = true } = {}) {
+  return /** @param {'GET' | 'POST'} method @param {string} route @param {unknown} [body] @param {{ readJson?: boolean }} [options] */ async function request(
+    method,
+    route,
+    body,
+    { readJson = true } = {},
+  ) {
     let response;
     try {
       response = await fetchImpl(new URL(route, target), {
         method,
-        headers: { Authorization: `Bearer ${token}`, ...(body === undefined ? {} : { 'content-type': 'application/json' }) },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          ...(body === undefined ? {} : { "content-type": "application/json" }),
+        },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-        redirect: 'error',
+        redirect: "error",
       });
     } catch {
       throw new Error(`HappyView ${method} ${route} request failed before receiving a response`);
     }
-    if (method === 'GET' && response.status === 404) return null;
-    if (!response.ok) throw new Error(`HappyView ${method} ${route} returned HTTP ${response.status}`);
+    if (method === "GET" && response.status === 404) return null;
+    if (!response.ok)
+      throw new Error(`HappyView ${method} ${route} returned HTTP ${response.status}`);
     if (response.status === 204) return null;
     if (!readJson) {
       try {
@@ -155,8 +210,10 @@ function createAdminRequest(target, token, fetchImpl) {
 
 /** @param {{ baseUrl: string | URL; token: string; fetchImpl?: typeof globalThis.fetch }} options */
 export function createAdminClient({ baseUrl, token, fetchImpl = globalThis.fetch }) {
-  if (typeof token !== 'string' || !token.trim()) {
-    throw new Error('HAPPYVIEW_ADMIN_TOKEN is required and must not be blank; set it before running the installer (see README.md)');
+  if (typeof token !== "string" || !token.trim()) {
+    throw new Error(
+      "HAPPYVIEW_ADMIN_TOKEN is required and must not be blank; set it before running the installer (see README.md)",
+    );
   }
   const target = validateAdminUrl(baseUrl);
   const request = createAdminRequest(target, token.trim(), fetchImpl);
@@ -164,35 +221,67 @@ export function createAdminClient({ baseUrl, token, fetchImpl = globalThis.fetch
     /** @param {LoadedAsset} asset */
     async read(asset) {
       const encoded = encodeURIComponent(asset.id);
-      const row = await request('GET', asset.kind === 'lexicon' ? `/admin/lexicons/${encoded}` : `/admin/scripts/${encoded}`);
+      const row = await request(
+        "GET",
+        asset.kind === "lexicon" ? `/admin/lexicons/${encoded}` : `/admin/scripts/${encoded}`,
+      );
       if (!row) return null;
-      if (asset.kind === 'lexicon') {
+      if (asset.kind === "lexicon") {
         const lexiconRow = /** @type {LexiconAdminRow} */ (row);
-        return { config: { backfill: lexiconRow.backfill, target_collection: lexiconRow.target_collection ?? undefined, action: lexiconRow.action ?? undefined, token_cost: lexiconRow.token_cost ?? undefined }, lexicon_json: lexiconRow.lexicon_json };
+        return {
+          config: {
+            backfill: lexiconRow.backfill,
+            target_collection: lexiconRow.target_collection ?? undefined,
+            action: lexiconRow.action ?? undefined,
+            token_cost: lexiconRow.token_cost ?? undefined,
+          },
+          lexicon_json: lexiconRow.lexicon_json,
+        };
       }
       const scriptRow = /** @type {ScriptAdminRow} */ (row);
-      return { config: { script_type: scriptRow.script_type, description: scriptRow.description ?? undefined }, body: scriptRow.body };
+      return {
+        config: {
+          script_type: scriptRow.script_type,
+          description: scriptRow.description ?? undefined,
+        },
+        body: scriptRow.body,
+      };
     },
     /** @param {LoadedAsset} asset */
     async write(asset) {
-      if (asset.kind === 'lexicon') {
-        await request('POST', '/admin/lexicons', {
-          lexicon_json: asset.lexicon_json,
-          backfill: asset.config.backfill,
-          target_collection: asset.config.target_collection,
-          action: asset.config.action,
-          token_cost: asset.config.token_cost,
-        }, { readJson: false });
+      if (asset.kind === "lexicon") {
+        await request(
+          "POST",
+          "/admin/lexicons",
+          {
+            lexicon_json: asset.lexicon_json,
+            backfill: asset.config.backfill,
+            target_collection: asset.config.target_collection,
+            action: asset.config.action,
+            token_cost: asset.config.token_cost,
+          },
+          { readJson: false },
+        );
       } else {
-        await request('POST', '/admin/scripts', { id: asset.id, script_type: asset.config.script_type, description: asset.config.description, body: asset.body }, { readJson: false });
+        await request(
+          "POST",
+          "/admin/scripts",
+          {
+            id: asset.id,
+            script_type: asset.config.script_type,
+            description: asset.config.description,
+            body: asset.body,
+          },
+          { readJson: false },
+        );
       }
     },
     async listScriptVariables() {
-      return request('GET', '/admin/script-variables');
+      return request("GET", "/admin/script-variables");
     },
     /** @param {string} key @param {string} value */
     async createScriptVariable(key, value) {
-      await request('POST', '/admin/script-variables', { key, value }, { readJson: false });
+      await request("POST", "/admin/script-variables", { key, value }, { readJson: false });
     },
   };
 }
@@ -206,7 +295,8 @@ export function orderAssets(assets) {
   /** @type {Map<string, T>} */
   const byId = new Map();
   for (const asset of assets) {
-    if (byId.has(asset.id)) throw new Error(`Duplicate asset ${asset.id}; declare each asset in one module only`);
+    if (byId.has(asset.id))
+      throw new Error(`Duplicate asset ${asset.id}; declare each asset in one module only`);
     byId.set(asset.id, asset);
   }
   /** @type {T[]} */
@@ -216,31 +306,48 @@ export function orderAssets(assets) {
   /** @param {T} asset */
   function visit(asset) {
     if (visited.has(asset.id)) return;
-    if (visiting.has(asset.id)) throw new Error(`Asset dependency cycle at ${asset.id}; remove the circular dependsOn reference before installing`);
+    if (visiting.has(asset.id))
+      throw new Error(
+        `Asset dependency cycle at ${asset.id}; remove the circular dependsOn reference before installing`,
+      );
     visiting.add(asset.id);
     for (const dependency of asset.dependsOn ?? []) {
       const parent = byId.get(dependency);
-      if (!parent) throw new Error(`Missing asset dependency ${dependency} required by ${asset.id}; add its owner module to the bundle before installing`);
+      if (!parent)
+        throw new Error(
+          `Missing asset dependency ${dependency} required by ${asset.id}; add its owner module to the bundle before installing`,
+        );
       visit(parent);
     }
     visiting.delete(asset.id);
     visited.add(asset.id);
     ordered.push(asset);
   }
-  for (const asset of [...assets].sort((a, b) => (a.kind === 'lexicon' ? 0 : 1) - (b.kind === 'lexicon' ? 0 : 1))) visit(asset);
+  for (const asset of [...assets].sort(
+    (a, b) => (a.kind === "lexicon" ? 0 : 1) - (b.kind === "lexicon" ? 0 : 1),
+  ))
+    visit(asset);
   return ordered;
 }
 
 /** @param {LoadedAsset[]} ordered @param {AdminClient} client @param {ApplyAssetsOptions} [options] @returns {Promise<AssetInstallState[]>} */
-async function preflightAssets(ordered, client, { debug = false, override = false, onProgress } = {}) {
+async function preflightAssets(
+  ordered,
+  client,
+  { debug = false, override = false, onProgress } = {},
+) {
   const states = [];
   for (const [index, asset] of ordered.entries()) {
     onProgress?.(`[check ${index + 1}/${ordered.length}] ${asset.id}`);
     const installed = await client.read(asset);
     const state = compareAsset(asset, installed);
-    if (state === 'conflict' && !override) {
-      const detail = debug ? `\n${describeAssetConflict(asset, /** @type {InstalledAsset} */ (installed))}` : ' (use --override to replace it, or rerun with --debug to see the difference)';
-      throw new Error(`Refusing ${asset.id}: unexpected installed difference; inspect and resolve manually before retrying${detail}`);
+    if (state === "conflict" && !override) {
+      const detail = debug
+        ? `\n${describeAssetConflict(asset, /** @type {InstalledAsset} */ (installed))}`
+        : " (use --override to replace it, or rerun with --debug to see the difference)";
+      throw new Error(
+        `Refusing ${asset.id}: unexpected installed difference; inspect and resolve manually before retrying${detail}`,
+      );
     }
     states.push({ asset, state });
   }
@@ -251,10 +358,10 @@ async function preflightAssets(ordered, client, { debug = false, override = fals
 async function verifyFailedWrite(asset, client) {
   try {
     const installed = await client.read(asset);
-    if (compareAsset(asset, installed) === 'unchanged') return null;
-    return 'read-back did not confirm the requested asset';
+    if (compareAsset(asset, installed) === "unchanged") return null;
+    return "read-back did not confirm the requested asset";
   } catch (error_) {
-    const detail = error_ instanceof Error ? error_.message : 'unknown read-back failure';
+    const detail = error_ instanceof Error ? error_.message : "unknown read-back failure";
     return `read-back failed: ${detail}`;
   }
 }
@@ -262,10 +369,10 @@ async function verifyFailedWrite(asset, client) {
 /** @param {AssetInstallState[]} states @param {AdminClient} client @param {(message: string) => void} [onProgress] @returns {Promise<InstallResult>} */
 async function writeAssets(states, client, onProgress) {
   const changed = [];
-  const total = states.filter(({ state }) => state !== 'unchanged').length;
+  const total = states.filter(({ state }) => state !== "unchanged").length;
   let progress = 0;
   for (const [i, { asset, state }] of states.entries()) {
-    if (state === 'unchanged') continue;
+    if (state === "unchanged") continue;
     progress++;
     onProgress?.(`[install ${progress}/${total}] ${asset.id}`);
     try {
@@ -278,98 +385,154 @@ async function writeAssets(states, client, onProgress) {
         changed.push(asset.id);
         continue;
       }
-      const reason = cause instanceof Error ? cause.message : 'unknown write failure';
-      const error = /** @type {PartialInstallError} */ (new Error(`Install partially failed at ${asset.id}: ${reason}; ${verification}; completed: ${changed.join(', ') || '(none)'}; remaining: ${states.slice(i).filter((entry) => entry.state !== 'unchanged').map((entry) => entry.asset.id).join(', ')}`, { cause }));
+      const reason = cause instanceof Error ? cause.message : "unknown write failure";
+      const error = /** @type {PartialInstallError} */ (
+        new Error(
+          `Install partially failed at ${asset.id}: ${reason}; ${verification}; completed: ${changed.join(", ") || "(none)"}; remaining: ${states
+            .slice(i)
+            .filter((entry) => entry.state !== "unchanged")
+            .map((entry) => entry.asset.id)
+            .join(", ")}`,
+          { cause },
+        )
+      );
       error.completed = changed;
-      error.remaining = states.slice(i).filter((entry) => entry.state !== 'unchanged').map((entry) => entry.asset.id);
+      error.remaining = states
+        .slice(i)
+        .filter((entry) => entry.state !== "unchanged")
+        .map((entry) => entry.asset.id);
       throw error;
     }
   }
-  return { changed, unchanged: states.filter((entry) => entry.state === 'unchanged').map(({ asset }) => asset.id) };
+  return {
+    changed,
+    unchanged: states.filter((entry) => entry.state === "unchanged").map(({ asset }) => asset.id),
+  };
 }
 
 const PROFILE_LOOKUP_ASSET_IDS = new Set([
-  'app.certified.actor.getProfile',
-  'xrpc.query:app.certified.actor.getProfile',
+  "app.certified.actor.getProfile",
+  "xrpc.query:app.certified.actor.getProfile",
 ]);
-const RESOLVER_VARIABLE = 'HYPERCERTS_HANDLE_RESOLVER_URL';
+const RESOLVER_VARIABLE = "HYPERCERTS_HANDLE_RESOLVER_URL";
 
 /** @param {string} value @returns {boolean} */
 function hasUnsafeResolverCharacter(value) {
   for (const character of value) {
     const code = character.codePointAt(0) ?? 0;
-    if (character === '\\' || code <= 0x20 || code === 0x7f || character.trim() === '') return true;
+    if (character === "\\" || code <= 0x20 || code === 0x7f || character.trim() === "") return true;
   }
   return false;
 }
 
 /** @param {string} value @returns {string} */
 function validateResolverUrl(value) {
-  const input = typeof value === 'string' ? value.trim() : '';
+  const input = typeof value === "string" ? value.trim() : "";
   let target;
   try {
     const authority = /^https:\/\/([^/?#]+)\/?$/i.exec(input)?.[1];
-    if (!input || input.length > 2048 || hasUnsafeResolverCharacter(input) || input.includes('%')
-      || !authority || authority.endsWith(':')) throw new Error('invalid resolver URL syntax');
+    if (
+      !input ||
+      input.length > 2048 ||
+      hasUnsafeResolverCharacter(input) ||
+      input.includes("%") ||
+      !authority ||
+      authority.endsWith(":")
+    )
+      throw new Error("invalid resolver URL syntax");
     target = new URL(input);
   } catch {
-    throw new Error(`${RESOLVER_VARIABLE} must be a valid HTTPS resolver base URL with no credentials, path, query, fragment, whitespace, or unsafe syntax; set a resolver origin such as https://resolver.example`);
+    throw new Error(
+      `${RESOLVER_VARIABLE} must be a valid HTTPS resolver base URL with no credentials, path, query, fragment, whitespace, or unsafe syntax; set a resolver origin such as https://resolver.example`,
+    );
   }
-  const host = target.hostname.replace(/^\[|\]$/g, '');
-  const labels = host.split('.');
-  const validHost = target.hostname.startsWith('[')
-    ? /^[\da-f:.]+$/i.test(host) && host.includes(':')
-    : host.length <= 253 && labels.every((label) => label.length > 0 && label.length <= 63
-      && /^[a-z\d-]+$/i.test(label) && !label.startsWith('-') && !label.endsWith('-'));
+  const host = target.hostname.replace(/^\[|\]$/g, "");
+  const labels = host.split(".");
+  const validHost = target.hostname.startsWith("[")
+    ? /^[\da-f:.]+$/i.test(host) && host.includes(":")
+    : host.length <= 253 &&
+      labels.every(
+        (label) =>
+          label.length > 0 &&
+          label.length <= 63 &&
+          /^[a-z\d-]+$/i.test(label) &&
+          !label.startsWith("-") &&
+          !label.endsWith("-"),
+      );
   const port = Number(target.port);
-  const validPort = target.port === '' || (port >= 1 && port <= 65535);
-  if (target.protocol !== 'https:' || target.username || target.password || target.search || target.hash
-    || target.pathname !== '/' || !target.hostname || !validHost || !validPort) {
-    throw new Error(`${RESOLVER_VARIABLE} must be a valid HTTPS resolver base URL with no credentials, path, query, fragment, whitespace, or unsafe syntax; set a resolver origin such as https://resolver.example`);
+  const validPort = target.port === "" || (port >= 1 && port <= 65535);
+  if (
+    target.protocol !== "https:" ||
+    target.username ||
+    target.password ||
+    target.search ||
+    target.hash ||
+    target.pathname !== "/" ||
+    !target.hostname ||
+    !validHost ||
+    !validPort
+  ) {
+    throw new Error(
+      `${RESOLVER_VARIABLE} must be a valid HTTPS resolver base URL with no credentials, path, query, fragment, whitespace, or unsafe syntax; set a resolver origin such as https://resolver.example`,
+    );
   }
   return target.origin;
 }
 
 /** @param {string} operation @param {string} permission @param {unknown} cause @returns {Error} */
 function resolverAdminFailure(operation, permission, cause) {
-  const reason = cause instanceof Error ? cause.message : 'unknown admin request failure';
-  return new Error(`Unable to ${operation} ${RESOLVER_VARIABLE}: ${reason}. Ensure the HappyView admin token has ${permission} permission and retry.`, { cause });
+  const reason = cause instanceof Error ? cause.message : "unknown admin request failure";
+  return new Error(
+    `Unable to ${operation} ${RESOLVER_VARIABLE}: ${reason}. Ensure the HappyView admin token has ${permission} permission and retry.`,
+    { cause },
+  );
 }
 
 /** @param {AdminClient} client @param {{ env: Record<string, string | undefined>; isTTY: boolean; ask: (prompt: string) => Promise<string>; onNotice: (message: string) => void }} options @returns {Promise<ResolverSetting>} */
 async function installResolverSetting(client, { env, isTTY, ask, onNotice }) {
   let variables;
   try {
-    if (typeof client.listScriptVariables !== 'function') throw new Error('admin client does not support script-variable listing');
+    if (typeof client.listScriptVariables !== "function")
+      throw new Error("admin client does not support script-variable listing");
     variables = await client.listScriptVariables();
   } catch (cause) {
-    throw resolverAdminFailure('inspect', 'script-variables:read', cause);
+    throw resolverAdminFailure("inspect", "script-variables:read", cause);
   }
-  if (!Array.isArray(variables) || variables.some((item) => !item || typeof item.key !== 'string')) {
-    throw resolverAdminFailure('inspect', 'script-variables:read', new Error('HappyView returned an invalid script-variable list'));
+  if (
+    !Array.isArray(variables) ||
+    variables.some((item) => !item || typeof item.key !== "string")
+  ) {
+    throw resolverAdminFailure(
+      "inspect",
+      "script-variables:read",
+      new Error("HappyView returned an invalid script-variable list"),
+    );
   }
   if (variables.some(({ key }) => key === RESOLVER_VARIABLE)) {
     const message = `${RESOLVER_VARIABLE} already exists in HappyView; its script-variable list exposes only a masked preview, so its actual value cannot be verified.`;
     onNotice(message);
-    return { key: RESOLVER_VARIABLE, status: 'exists-unverified' };
+    return { key: RESOLVER_VARIABLE, status: "exists-unverified" };
   }
 
-  let value = typeof env[RESOLVER_VARIABLE] === 'string' ? env[RESOLVER_VARIABLE].trim() : '';
+  let value = typeof env[RESOLVER_VARIABLE] === "string" ? env[RESOLVER_VARIABLE].trim() : "";
   if (!value) {
     if (!isTTY) {
-      throw new Error(`${RESOLVER_VARIABLE} is required for getProfile handle lookups; set an HTTPS resolver base URL in the environment or rerun pnpm install:api in an interactive terminal to enter it (see README.md)`);
+      throw new Error(
+        `${RESOLVER_VARIABLE} is required for getProfile handle lookups; set an HTTPS resolver base URL in the environment or rerun pnpm install:api in an interactive terminal to enter it (see README.md)`,
+      );
     }
-    value = await ask('Handle resolver HTTPS base URL');
+    value = await ask("Handle resolver HTTPS base URL");
   }
   const resolverUrl = validateResolverUrl(value);
 
   try {
-    if (typeof client.createScriptVariable !== 'function') throw new Error('admin client does not support script-variable creation');
+    if (typeof client.createScriptVariable !== "function")
+      throw new Error("admin client does not support script-variable creation");
     await client.createScriptVariable(RESOLVER_VARIABLE, resolverUrl);
   } catch (cause) {
-    throw resolverAdminFailure('create', 'script-variables:create', cause);
+    throw resolverAdminFailure("create", "script-variables:create", cause);
   }
-  return { key: RESOLVER_VARIABLE, status: 'created' };
+  return { key: RESOLVER_VARIABLE, status: "created" };
 }
 
 /** @param {LoadedAsset[]} assets @param {AdminClient} client @param {ApplyAssetsOptions} [options] @returns {Promise<ApplyAssetsResult>} */
@@ -390,10 +553,16 @@ export async function applyAssets(assets, client, options = {}) {
     const result = await writeAssets(states, client, options.onProgress);
     return { ...result, resolverSetting };
   } catch (cause) {
-    if (resolverSetting.status !== 'created') throw cause;
-    const partialFailure = cause instanceof Error ? /** @type {PartialInstallError} */ (cause) : undefined;
+    if (resolverSetting.status !== "created") throw cause;
+    const partialFailure =
+      cause instanceof Error ? /** @type {PartialInstallError} */ (cause) : undefined;
     const reason = cause instanceof Error ? cause.message : String(cause);
-    const error = /** @type {PartialInstallError} */ (new Error(`Install partially failed after creating ${RESOLVER_VARIABLE}; the setting remains on HappyView and was not deleted. ${reason}`, { cause }));
+    const error = /** @type {PartialInstallError} */ (
+      new Error(
+        `Install partially failed after creating ${RESOLVER_VARIABLE}; the setting remains on HappyView and was not deleted. ${reason}`,
+        { cause },
+      )
+    );
     error.completed = partialFailure?.completed ?? [];
     error.remaining = partialFailure?.remaining ?? [];
     error.resolverSetting = resolverSetting;
@@ -407,24 +576,33 @@ export async function applyAssets(assets, client, options = {}) {
 async function readBundleManifest(manifestPath) {
   let parsed;
   try {
-    parsed = JSON.parse(await readFile(manifestPath, 'utf8'));
+    parsed = JSON.parse(await readFile(manifestPath, "utf8"));
   } catch (cause) {
     // readFile and JSON.parse throw Error instances; preserve their original message interpolation.
     const detail = /** @type {Error} */ (cause).message;
-    throw new Error(`Bundle ${manifestPath} is missing or invalid (${detail}); create or fix the root manifest before installing`, { cause });
+    throw new Error(
+      `Bundle ${manifestPath} is missing or invalid (${detail}); create or fix the root manifest before installing`,
+      { cause },
+    );
   }
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error(`Bundle ${manifestPath} must list at least one module manifest in modules; add a module before installing`);
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error(
+      `Bundle ${manifestPath} must list at least one module manifest in modules; add a module before installing`,
+    );
   }
   const candidate = /** @type {Record<string, unknown>} */ (parsed);
   if (!Array.isArray(candidate.modules) || candidate.modules.length === 0) {
-    throw new Error(`Bundle ${manifestPath} must list at least one module manifest in modules; add a module before installing`);
+    throw new Error(
+      `Bundle ${manifestPath} must list at least one module manifest in modules; add a module before installing`,
+    );
   }
   /** @type {string[]} */
   const modules = [];
   for (const [moduleIndex, modulePath] of candidate.modules.entries()) {
-    if (typeof modulePath !== 'string' || !modulePath.trim()) {
-      throw new Error(`Bundle ${manifestPath} modules[${moduleIndex}] must be a nonempty module path; fix the modules list before installing`);
+    if (typeof modulePath !== "string" || !modulePath.trim()) {
+      throw new Error(
+        `Bundle ${manifestPath} modules[${moduleIndex}] must be a nonempty module path; fix the modules list before installing`,
+      );
     }
     modules.push(modulePath);
   }
@@ -442,18 +620,25 @@ async function readBundleManifest(manifestPath) {
 async function readModuleManifest(modulePath, file, owners) {
   let parsed;
   try {
-    parsed = JSON.parse(await readFile(file, 'utf8'));
+    parsed = JSON.parse(await readFile(file, "utf8"));
   } catch (cause) {
     // readFile and JSON.parse throw Error instances; preserve their original message interpolation.
     const detail = /** @type {Error} */ (cause).message;
-    throw new Error(`Module ${modulePath} is missing or invalid (${detail}); check the bundle's modules list and module manifest`, { cause });
+    throw new Error(
+      `Module ${modulePath} is missing or invalid (${detail}); check the bundle's modules list and module manifest`,
+      { cause },
+    );
   }
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error(`Module ${modulePath} must declare an assets array; fix its manifest before installing`);
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error(
+      `Module ${modulePath} must declare an assets array; fix its manifest before installing`,
+    );
   }
   const candidate = /** @type {Record<string, unknown>} */ (parsed);
   if (!Array.isArray(candidate.assets)) {
-    throw new TypeError(`Module ${modulePath} must declare an assets array; fix its manifest before installing`);
+    throw new TypeError(
+      `Module ${modulePath} must declare an assets array; fix its manifest before installing`,
+    );
   }
   /** @type {ValidatedManifestAsset[]} */
   const assets = [];
@@ -465,64 +650,94 @@ async function readModuleManifest(modulePath, file, owners) {
 
 /** @param {unknown} entry @param {string} modulePath @param {number} assetIndex @returns {AssetCandidate} */
 function validateAssetShape(entry, modulePath, assetIndex) {
-  if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
-    throw new Error(`Module ${modulePath} assets[${assetIndex}] needs a nonempty string id and kind lexicon or script; fix this asset before installing`);
+  if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+    throw new Error(
+      `Module ${modulePath} assets[${assetIndex}] needs a nonempty string id and kind lexicon or script; fix this asset before installing`,
+    );
   }
   const candidate = /** @type {Record<string, unknown>} */ (entry);
-  if (typeof candidate.id !== 'string' || !candidate.id.trim() || (candidate.kind !== 'lexicon' && candidate.kind !== 'script')) {
-    throw new Error(`Module ${modulePath} assets[${assetIndex}] needs a nonempty string id and kind lexicon or script; fix this asset before installing`);
+  if (
+    typeof candidate.id !== "string" ||
+    !candidate.id.trim() ||
+    (candidate.kind !== "lexicon" && candidate.kind !== "script")
+  ) {
+    throw new Error(
+      `Module ${modulePath} assets[${assetIndex}] needs a nonempty string id and kind lexicon or script; fix this asset before installing`,
+    );
   }
   return /** @type {AssetCandidate} */ (candidate);
 }
 
 /** @param {AssetCandidate} candidate @param {string} modulePath @param {number} assetIndex */
 function validateAssetDependencies(candidate, modulePath, assetIndex) {
-  if (candidate.dependsOn !== undefined && (!Array.isArray(candidate.dependsOn) || candidate.dependsOn.some((id) => typeof id !== 'string' || !id.trim()))) {
-    throw new Error(`Module ${modulePath} assets[${assetIndex}] (${candidate.id}) dependsOn must be an array of nonempty string asset IDs; fix its dependencies before installing`);
+  if (
+    candidate.dependsOn !== undefined &&
+    (!Array.isArray(candidate.dependsOn) ||
+      candidate.dependsOn.some((id) => typeof id !== "string" || !id.trim()))
+  ) {
+    throw new Error(
+      `Module ${modulePath} assets[${assetIndex}] (${candidate.id}) dependsOn must be an array of nonempty string asset IDs; fix its dependencies before installing`,
+    );
   }
 }
 
 /** @param {string} id @param {string} modulePath @param {Map<string, string>} owners */
 function claimAssetOwnership(id, modulePath, owners) {
   if (owners.has(id)) {
-    throw new Error(`Duplicate asset ${id} in modules ${owners.get(id)} and ${modulePath}; declare it in one owner only`);
+    throw new Error(
+      `Duplicate asset ${id} in modules ${owners.get(id)} and ${modulePath}; declare it in one owner only`,
+    );
   }
   owners.set(id, modulePath);
 }
 
 /** @param {string} field @param {unknown} value @param {string} expectedType @returns {boolean} */
 function isValidConfigValue(field, value, expectedType) {
-  return field === 'token_cost'
-    ? typeof value === 'number' && Number.isInteger(value) && value >= -2147483648 && value <= 2147483647
+  return field === "token_cost"
+    ? typeof value === "number" &&
+        Number.isInteger(value) &&
+        value >= -2147483648 &&
+        value <= 2147483647
     : typeof value === expectedType;
 }
 
 /** @param {AssetCandidate} candidate @param {string} modulePath @param {number} assetIndex */
 function validateAssetConfig(candidate, modulePath, assetIndex) {
-  if (!candidate.config || typeof candidate.config !== 'object' || Array.isArray(candidate.config)) {
-    throw new Error(`Module ${modulePath} assets[${assetIndex}] (${candidate.id}) config must be a non-array object; fix its configuration before installing`);
+  if (
+    !candidate.config ||
+    typeof candidate.config !== "object" ||
+    Array.isArray(candidate.config)
+  ) {
+    throw new Error(
+      `Module ${modulePath} assets[${assetIndex}] (${candidate.id}) config must be a non-array object; fix its configuration before installing`,
+    );
   }
   const config = /** @type {Record<string, unknown>} */ (candidate.config);
-  const configFieldTypes = candidate.kind === 'lexicon'
-    ? { backfill: 'boolean', target_collection: 'string', action: 'string', token_cost: 'number' }
-    : { script_type: 'string', description: 'string' };
+  const configFieldTypes =
+    candidate.kind === "lexicon"
+      ? { backfill: "boolean", target_collection: "string", action: "string", token_cost: "number" }
+      : { script_type: "string", description: "string" };
   for (const [field, expectedType] of Object.entries(configFieldTypes)) {
     const value = config[field];
     const valid = isValidConfigValue(field, value, expectedType);
     if (value !== undefined && !valid) {
-      const expected = field === 'token_cost' ? 'a signed 32-bit integer' : `a ${expectedType}`;
-      throw new Error(`Module ${modulePath} assets[${assetIndex}] (${candidate.id}) config.${field} must be ${expected} when provided; fix its configuration before installing`);
+      const expected = field === "token_cost" ? "a signed 32-bit integer" : `a ${expectedType}`;
+      throw new Error(
+        `Module ${modulePath} assets[${assetIndex}] (${candidate.id}) config.${field} must be ${expected} when provided; fix its configuration before installing`,
+      );
     }
   }
 }
 
 /** @param {AssetCandidate} candidate @param {string} modulePath @param {number} assetIndex */
 function validateAssetSourcePaths(candidate, modulePath, assetIndex) {
-  const sourceFields = candidate.kind === 'lexicon' ? ['path', 'packagePath'] : ['path'];
+  const sourceFields = candidate.kind === "lexicon" ? ["path", "packagePath"] : ["path"];
   for (const field of sourceFields) {
     const sourcePath = candidate[field];
-    if (sourcePath !== undefined && (typeof sourcePath !== 'string' || !sourcePath.trim())) {
-      throw new Error(`Module ${modulePath} assets[${assetIndex}] (${candidate.id}) ${field} must be a nonempty string path when provided; fix its source declaration before installing`);
+    if (sourcePath !== undefined && (typeof sourcePath !== "string" || !sourcePath.trim())) {
+      throw new Error(
+        `Module ${modulePath} assets[${assetIndex}] (${candidate.id}) ${field} must be a nonempty string path when provided; fix its source declaration before installing`,
+      );
     }
   }
 }
@@ -537,40 +752,41 @@ function validateAssetEntry(entry, modulePath, assetIndex, owners) {
   return /** @type {ValidatedManifestAsset} */ (candidate);
 }
 
-/* eslint-disable no-param-reassign -- loadAssetSource passes a private copy to populate with its loaded source. */
+// biome-ignore-start lint/style/noParameterAssign: loadAssetSource passes a private copy to populate with its loaded source.
 /** @param {LexiconManifestAsset & { lexicon_json?: unknown }} asset @param {string} root */
 async function loadLexiconAssetSource(asset, root) {
   asset.lexicon_json = await readLexiconSource(asset, root);
   const lexiconId = /** @type {{ id?: unknown } | null} */ (asset.lexicon_json)?.id;
   if (lexiconId !== asset.id) {
-    const displayedId = typeof lexiconId === 'string' ? lexiconId : JSON.stringify(lexiconId) ?? String(lexiconId);
+    const displayedId =
+      typeof lexiconId === "string" ? lexiconId : (JSON.stringify(lexiconId) ?? String(lexiconId));
     throw new Error(`lexicon ID ${displayedId} does not match declared asset ID ${asset.id}`);
   }
 }
 
 /** @param {ScriptManifestAsset & { body?: string }} asset @param {string} root */
 async function loadScriptAssetSource(asset, root) {
-  if (!asset.path) throw new Error('script source path is missing');
+  if (!asset.path) throw new Error("script source path is missing");
   const source = path.resolve(root, asset.path);
   const info = await stat(source);
-  if (!info.isFile()) throw new Error('script source is not a file');
-  asset.body = await readFile(source, 'utf8');
-  if (!asset.body.trim()) throw new Error('script source is empty');
+  if (!info.isFile()) throw new Error("script source is not a file");
+  asset.body = await readFile(source, "utf8");
+  if (!asset.body.trim()) throw new Error("script source is empty");
 }
-/* eslint-enable no-param-reassign */
+// biome-ignore-end lint/style/noParameterAssign: end of loadAssetSource helpers
 
 /** @param {ValidatedManifestAsset} asset @returns {string} */
 function assetSourcePath(asset) {
-  if (typeof asset.path === 'string') return asset.path;
-  if (asset.kind === 'lexicon' && typeof asset.packagePath === 'string') return asset.packagePath;
-  return '(unset)';
+  if (typeof asset.path === "string") return asset.path;
+  if (asset.kind === "lexicon" && typeof asset.packagePath === "string") return asset.packagePath;
+  return "(unset)";
 }
 
 /** @param {ValidatedManifestAsset & { lexicon_json?: unknown; body?: string }} asset @param {string} modulePath @param {string} root @returns {Promise<LoadedAsset>} */
 async function loadAssetSource(asset, modulePath, root) {
   const loadedAsset = { ...asset };
   try {
-    if (loadedAsset.kind === 'lexicon') {
+    if (loadedAsset.kind === "lexicon") {
       await loadLexiconAssetSource(loadedAsset, root);
     } else {
       await loadScriptAssetSource(loadedAsset, root);
@@ -579,7 +795,10 @@ async function loadAssetSource(asset, modulePath, root) {
   } catch (cause) {
     // Node filesystem and package-source operations throw Error instances; preserve their original message interpolation.
     const detail = /** @type {Error} */ (cause).message;
-    throw new Error(`Asset ${loadedAsset.id} in module ${modulePath}: source ${assetSourcePath(loadedAsset)} is missing, invalid or empty (${detail}); fix the declaration or source before installing`, { cause });
+    throw new Error(
+      `Asset ${loadedAsset.id} in module ${modulePath}: source ${assetSourcePath(loadedAsset)} is missing, invalid or empty (${detail}); fix the declaration or source before installing`,
+      { cause },
+    );
   }
 }
 
@@ -608,7 +827,7 @@ export async function loadAssets(manifestPath) {
   const owners = new Map();
   for (const modulePath of manifest.modules) {
     const file = path.resolve(path.dirname(manifestPath), modulePath);
-    assets.push(...await loadModuleAssets(modulePath, file, owners));
+    assets.push(...(await loadModuleAssets(modulePath, file, owners)));
   }
   orderAssets(assets);
   return { assets };
@@ -625,26 +844,32 @@ function askOnTerminal(label, { hidden = false } = {}) {
 
     if (hidden) {
       // Readline echoes keypresses through this hook; keep the token off stdout.
-      const terminal = /** @type {{ _writeToOutput: (text: string) => void }} */ (/** @type {unknown} */ (rl));
+      const terminal = /** @type {{ _writeToOutput: (text: string) => void }} */ (
+        /** @type {unknown} */ (rl)
+      );
       const writeToOutput = terminal._writeToOutput.bind(rl);
       let promptWritten = false;
       terminal._writeToOutput = (text) => {
         if (!promptWritten) {
           promptWritten = true;
           writeToOutput(text);
-        } else if (text.includes('\n') || text.includes('\r')) {
+        } else if (text.includes("\n") || text.includes("\r")) {
           writeToOutput(text);
         }
       };
     }
 
     let settled = false;
-    rl.once('close', () => {
+    rl.once("close", () => {
       if (settled) return;
       settled = true;
-      reject(new Error(`${label} prompt ended unexpectedly; rerun in a terminal or set its environment variable`));
+      reject(
+        new Error(
+          `${label} prompt ended unexpectedly; rerun in a terminal or set its environment variable`,
+        ),
+      );
     });
-    rl.once('SIGINT', () => {
+    rl.once("SIGINT", () => {
       if (settled) return;
       settled = true;
       rl.close();
@@ -670,23 +895,27 @@ export async function resolveInstallConfig({
 } = {}) {
   /** @param {string} name @param {string} label @param {{ hidden?: boolean }} [options] @returns {Promise<string>} */
   async function resolveValue(name, label, { hidden = false } = {}) {
-    const configured = typeof env[name] === 'string' ? env[name].trim() : '';
+    const configured = typeof env[name] === "string" ? env[name].trim() : "";
     if (configured) return configured;
 
     if (!isTTY) {
-      throw new Error(`${name} is required and must not be blank; set it in the environment or run the installer in an interactive terminal (see README.md)`);
+      throw new Error(
+        `${name} is required and must not be blank; set it in the environment or run the installer in an interactive terminal (see README.md)`,
+      );
     }
 
     const value = await ask(label, { hidden });
-    if (typeof value !== 'string' || !value.trim()) {
-      throw new Error(`${name} is required and must not be blank; enter a value at the prompt or set it in the environment (see README.md)`);
+    if (typeof value !== "string" || !value.trim()) {
+      throw new Error(
+        `${name} is required and must not be blank; enter a value at the prompt or set it in the environment (see README.md)`,
+      );
     }
     return value.trim();
   }
 
   return {
-    baseUrl: await resolveValue('HAPPYVIEW_BASE_URL', 'HappyView URL'),
-    token: await resolveValue('HAPPYVIEW_ADMIN_TOKEN', 'HappyView admin token', { hidden: true }),
+    baseUrl: await resolveValue("HAPPYVIEW_BASE_URL", "HappyView URL"),
+    token: await resolveValue("HAPPYVIEW_ADMIN_TOKEN", "HappyView admin token", { hidden: true }),
   };
 }
 
@@ -700,17 +929,18 @@ Options:
 
 async function main() {
   const args = process.argv.slice(2);
-  const unknown = args.find((arg) => !['--debug', '--override', '--help'].includes(arg));
-  if (unknown) throw new Error(`Unknown installer option ${unknown}; use --help to see supported options`);
-  const debug = args.includes('--debug');
-  const override = args.includes('--override');
-  if (args.includes('--help')) {
+  const unknown = args.find((arg) => !["--debug", "--override", "--help"].includes(arg));
+  if (unknown)
+    throw new Error(`Unknown installer option ${unknown}; use --help to see supported options`);
+  const debug = args.includes("--debug");
+  const override = args.includes("--override");
+  if (args.includes("--help")) {
     console.log(INSTALLER_USAGE);
     return;
   }
   const { baseUrl: rawBaseUrl, token } = await resolveInstallConfig();
   const client = createAdminClient({ baseUrl: rawBaseUrl, token });
-  const { assets } = await loadAssets(fileURLToPath(new URL('../manifest.json', import.meta.url)));
+  const { assets } = await loadAssets(fileURLToPath(new URL("../manifest.json", import.meta.url)));
   const result = await applyAssets(assets, client, {
     debug,
     override,

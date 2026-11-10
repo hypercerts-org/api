@@ -1,29 +1,29 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
-import { spawnSync } from 'node:child_process';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
 
-const root = fileURLToPath(new URL('../../../', import.meta.url));
-const read = (relative) => readFile(path.resolve(root, relative), 'utf8');
+const root = fileURLToPath(new URL("../../../", import.meta.url));
+const read = (relative) => readFile(path.resolve(root, relative), "utf8");
 
-test('getContributorInformation preserves the exact record and hydrates its publisher sidecars', async () => {
+test("getContributorInformation preserves the exact record and hydrates its publisher sidecars", async () => {
   const sources = await Promise.all([
-    read('lua/shared/query.lua'),
-    read('lua/shared/didValidation.lua'),
-    read('lua/shared/recordIdentifier.lua'),
-    read('lua/shared/contributorInformationValidation.lua'),
-    read('lua/shared/recordView.lua'),
-    read('lua/shared/actorView.lua'),
-    read('lua/src/getContributorInformation.lua'),
+    read("lua/shared/query.lua"),
+    read("lua/shared/didValidation.lua"),
+    read("lua/shared/recordIdentifier.lua"),
+    read("lua/shared/contributorInformationValidation.lua"),
+    read("lua/shared/recordView.lua"),
+    read("lua/shared/actorView.lua"),
+    read("lua/src/getContributorInformation.lua"),
   ]);
   const program = `JSON_NULL = {}
 json = { decode = function(value)
   if value == "null" then return JSON_NULL end
   error("unexpected JSON decode before test fixtures")
 end }
-${sources.join('\n\n')}
+${sources.join("\n\n")}
 
 local null = JSON_NULL
 local decoded = {
@@ -114,7 +114,7 @@ fail_profile_lookup = true
 local lookup_ok, lookup_error = pcall(function() return handle() end)
 assert(not lookup_ok and tostring(lookup_error):find("ContributorInformationQueryFailed:", 1, true) ~= nil)
 `;
-  const result = spawnSync('lua', ['-e', program], { encoding: 'utf8' });
+  const result = spawnSync("lua", ["-e", program], { encoding: "utf8" });
   assert.equal(result.error, undefined, result.error?.message);
   assert.equal(result.status, 0, result.stderr || result.stdout);
 });

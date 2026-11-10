@@ -1,8 +1,8 @@
-export const DEFAULT_SERVER_URL = 'https://api.test.hypercerts.dev';
-export const LOCAL_SERVER_URL = 'http://127.0.0.1:8080';
+export const DEFAULT_SERVER_URL = "https://api.test.hypercerts.dev";
+export const LOCAL_SERVER_URL = "http://127.0.0.1:8080";
 
 const PRESENTATION_DESCRIPTION =
-  'Explore public Hypercerts XRPC queries. Browse endpoints, inspect parameters, and try requests against your selected server.';
+  "Explore public Hypercerts XRPC queries. Browse endpoints, inspect parameters, and try requests against your selected server.";
 
 /**
  * Validate and normalize a server base URL for the request client.
@@ -14,24 +14,22 @@ export function normalizeBaseUrl(input) {
   try {
     url = new URL(candidate);
   } catch {
-    throw new TypeError('Enter a complete http(s) base URL, such as https://api.example.test.');
+    throw new TypeError("Enter a complete http(s) base URL, such as https://api.example.test.");
   }
 
   if (
-    !['http:', 'https:'].includes(url.protocol) ||
+    !["http:", "https:"].includes(url.protocol) ||
     url.username ||
     url.password ||
-    candidate.includes('?') ||
-    candidate.includes('#')
+    candidate.includes("?") ||
+    candidate.includes("#")
   ) {
-    throw new TypeError(
-      'Use an http(s) base URL without credentials, a query, or a fragment.',
-    );
+    throw new TypeError("Use an http(s) base URL without credentials, a query, or a fragment.");
   }
 
   const pathname = url.pathname;
   let pathnameEnd = pathname.length;
-  while (pathnameEnd > 0 && pathname[pathnameEnd - 1] === '/') {
+  while (pathnameEnd > 0 && pathname[pathnameEnd - 1] === "/") {
     pathnameEnd--;
   }
 
@@ -45,7 +43,7 @@ export function normalizeBaseUrl(input) {
  */
 export function parseHappyviewServers(input) {
   if (input === undefined) {
-    return [{ label: 'API test', url: DEFAULT_SERVER_URL }];
+    return [{ label: "API test", url: DEFAULT_SERVER_URL }];
   }
 
   let configured;
@@ -67,13 +65,15 @@ export function parseHappyviewServers(input) {
     const entry = `VITE_HAPPYVIEW_SERVERS entry ${index + 1}`;
     if (
       !server ||
-      typeof server !== 'object' ||
+      typeof server !== "object" ||
       Array.isArray(server) ||
-      typeof server.label !== 'string' ||
+      typeof server.label !== "string" ||
       !server.label.trim() ||
-      typeof server.url !== 'string'
+      typeof server.url !== "string"
     ) {
-      throw new TypeError(`${entry} needs a non-empty label and an http(s) URL. Fix the entry or remove it.`);
+      throw new TypeError(
+        `${entry} needs a non-empty label and an http(s) URL. Fix the entry or remove it.`,
+      );
     }
 
     let url;
@@ -83,7 +83,9 @@ export function parseHappyviewServers(input) {
       throw new TypeError(`${entry} has an invalid URL: ${error.message}`);
     }
     if (seenUrls.has(url)) {
-      throw new TypeError(`${entry} repeats ${url}. Remove the duplicate URL or choose a different server.`);
+      throw new TypeError(
+        `${entry} repeats ${url}. Remove the duplicate URL or choose a different server.`,
+      );
     }
     seenUrls.add(url);
     return { label: server.label.trim(), url };
@@ -98,12 +100,12 @@ export function createPresentationSpec(source) {
   const spec = structuredClone(source);
   spec.info = {
     ...spec.info,
-    version: 'local',
+    version: "local",
     description: PRESENTATION_DESCRIPTION,
   };
   spec.servers = [
-    { url: DEFAULT_SERVER_URL, description: 'API test (default)' },
-    { url: LOCAL_SERVER_URL, description: 'Local (127.0.0.1:8080)' },
+    { url: DEFAULT_SERVER_URL, description: "API test (default)" },
+    { url: LOCAL_SERVER_URL, description: "Local (127.0.0.1:8080)" },
   ];
 
   stripPresentationExtensions(spec);
@@ -118,10 +120,10 @@ function stripPresentationExtensions(value) {
     for (const item of value) stripPresentationExtensions(item);
     return;
   }
-  if (!value || typeof value !== 'object') return;
+  if (!value || typeof value !== "object") return;
 
   for (const [key, child] of Object.entries(value)) {
-    if (key.startsWith('x-') && key !== 'x-lexicon-maxGraphemes') {
+    if (key.startsWith("x-") && key !== "x-lexicon-maxGraphemes") {
       delete value[key];
     } else {
       stripPresentationExtensions(child);

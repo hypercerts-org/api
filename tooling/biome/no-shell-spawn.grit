@@ -1,0 +1,24 @@
+language js
+
+// Subprocesses must take an executable and an argument array. A shell turns
+// arguments into a command string, which allows injection. Matches a bare,
+// quoted or string-computed `shell` key set to true in an object literal passed
+// directly to spawn/spawnSync (including member calls such as cp.spawn).
+`$callee($args)` where {
+  $callee <: or {
+    `spawn`,
+    `spawnSync`,
+    `$_.spawn`,
+    `$_.spawnSync`
+  },
+  $args <: contains bubble `$key: true` as $prop where {
+    $key <: or {
+      `shell`,
+      `'shell'`,
+      `"shell"`,
+      `['shell']`,
+      `["shell"]`
+    },
+    register_diagnostic(span=$prop, message="Do not enable shell execution for subprocess calls; pass an executable and argument array.")
+  }
+}

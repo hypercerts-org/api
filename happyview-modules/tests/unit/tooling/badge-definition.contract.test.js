@@ -1,54 +1,85 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
-import { spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
 
-const root = fileURLToPath(new URL('../../../', import.meta.url));
+const root = fileURLToPath(new URL("../../../", import.meta.url));
 const endpointPath = (name) => `lua/endpoints/${name}.lua`;
-const uri = 'at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.badge.definition/3jzfcijpj2z2z';
-const author = 'did:plc:aaaaaaaaaaaaaaaaaaaaaaaa';
-const secondAuthor = 'did:plc:bbbbbbbbbbbbbbbbbbbbbbbb';
-const profileCollection = 'app.certified.actor.profile';
-const organizationCollection = 'app.certified.actor.organization';
-const indexedAt = '2025-02-01T00:00:01.000Z';
+const uri = "at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.badge.definition/3jzfcijpj2z2z";
+const author = "did:plc:aaaaaaaaaaaaaaaaaaaaaaaa";
+const secondAuthor = "did:plc:bbbbbbbbbbbbbbbbbbbbbbbb";
+const profileCollection = "app.certified.actor.profile";
+const organizationCollection = "app.certified.actor.organization";
+const indexedAt = "2025-02-01T00:00:01.000Z";
 
 function lua(value) {
-  if (typeof value === 'string') return JSON.stringify(value);
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-  if (Array.isArray(value)) return `{${value.map(lua).join(',')}}`;
-  if (value && typeof value === 'object') {
-    return `{${Object.entries(value).map(([key, item]) => `[${JSON.stringify(key)}]=${lua(item)}`).join(',')}}`;
+  if (typeof value === "string") return JSON.stringify(value);
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value)) return `{${value.map(lua).join(",")}}`;
+  if (value && typeof value === "object") {
+    return `{${Object.entries(value)
+      .map(([key, item]) => `[${JSON.stringify(key)}]=${lua(item)}`)
+      .join(",")}}`;
   }
   throw new TypeError(`Cannot encode ${typeof value} as a Lua fixture`);
 }
 
-function definitionRow(did, rkey, record, sortTimestamp = '2025-02-01T00:00:00.000000Z') {
+function definitionRow(did, rkey, record, sortTimestamp = "2025-02-01T00:00:00.000000Z") {
   return {
-    uri: `at://${did}/app.certified.badge.definition/${rkey}`, did, cid: `bafy-${rkey}`,
-    indexed_at: indexedAt, record: rkey, record_json: { $type: 'app.certified.badge.definition', ...record },
+    uri: `at://${did}/app.certified.badge.definition/${rkey}`,
+    did,
+    cid: `bafy-${rkey}`,
+    indexed_at: indexedAt,
+    record: rkey,
+    record_json: { $type: "app.certified.badge.definition", ...record },
     sort_timestamp: sortTimestamp,
   };
 }
 
 function sidecarRow(collection, did, rkey, record) {
   return {
-    uri: `at://${did}/${collection}/${rkey}`, did, cid: `bafy-${collection}-${rkey}`, indexed_at: indexedAt,
-    record: `${collection}-${rkey}`, record_json: { $type: collection, ...record },
+    uri: `at://${did}/${collection}/${rkey}`,
+    did,
+    cid: `bafy-${collection}-${rkey}`,
+    indexed_at: indexedAt,
+    record: `${collection}-${rkey}`,
+    record_json: { $type: collection, ...record },
   };
 }
 
-function cursor({ direction = 'asc', timestamp = '2025-02-01T00:00:00.000000Z', recordUri = uri } = {}) {
-  return Buffer.from(JSON.stringify({ v: 1, d: direction, t: timestamp, u: recordUri }), 'utf8').toString('hex');
+function cursor({
+  direction = "asc",
+  timestamp = "2025-02-01T00:00:00.000000Z",
+  recordUri = uri,
+} = {}) {
+  return Buffer.from(
+    JSON.stringify({ v: 1, d: direction, t: timestamp, u: recordUri }),
+    "utf8",
+  ).toString("hex");
 }
 
-function runLua({ endpoint, params, queryResults = [], expectError, expectedCalls = 0, assertions }) {
+function runLua({
+  endpoint,
+  params,
+  queryResults = [],
+  expectError,
+  expectedCalls = 0,
+  assertions,
+}) {
   const file = endpointPath(endpoint);
-  assert.ok(existsSync(`${root}/${file}`), `${file} must be generated before exercising the handler`);
-  const records = Object.fromEntries(queryResults.flat().map(({ record, record_json }) => [record, record_json]));
-  const rows = queryResults.map((result) => result.map((row) => Object.fromEntries(
-    Object.entries(row).filter(([key]) => key !== 'record_json'),
-  )));
+  assert.ok(
+    existsSync(`${root}/${file}`),
+    `${file} must be generated before exercising the handler`,
+  );
+  const records = Object.fromEntries(
+    queryResults.flat().map(({ record, record_json }) => [record, record_json]),
+  );
+  const rows = queryResults.map((resultSet) =>
+    resultSet.map((row) =>
+      Object.fromEntries(Object.entries(row).filter(([key]) => key !== "record_json")),
+    ),
+  );
   const source = `
 local RECORDS = ${lua(records)}
 local RESULTS = ${lua(rows)}
@@ -85,46 +116,64 @@ db = {
 }
 dofile('${file}')
 local ok, result = pcall(handle)
-${expectError
+${
+  expectError
     ? `assert(not ok, 'expected handler to reject the request')\nassert(tostring(result):find(${JSON.stringify(expectError)}, 1, true), tostring(result))\nassert(#calls == ${expectedCalls}, 'unexpected query count')`
-    : `assert(ok, tostring(result))\n${assertions}`}
+    : `assert(ok, tostring(result))\n${assertions}`
+}
 `;
-  const result = spawnSync('lua5.4', ['-e', source], { cwd: root, encoding: 'utf8' });
+  const result = spawnSync("lua5.4", ["-e", source], { cwd: root, encoding: "utf8" });
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 }
 
-test('getBadgeDefinition reports RecordNotFound when the exact indexed URI is absent', () => {
-  runLua({ endpoint: 'getBadgeDefinition', params: { uri }, expectError: 'RecordNotFound:', expectedCalls: 1 });
+test("getBadgeDefinition reports RecordNotFound when the exact indexed URI is absent", () => {
+  runLua({
+    endpoint: "getBadgeDefinition",
+    params: { uri },
+    expectError: "RecordNotFound:",
+    expectedCalls: 1,
+  });
 });
 
-test('getBadgeDefinition rejects invalid authorities and other collections before querying', () => {
+test("getBadgeDefinition rejects invalid authorities and other collections before querying", () => {
   for (const invalidUri of [
-    'at://alice.example/app.certified.badge.definition/3jzfcijpj2z2z',
-    'at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.location/3jzfcijpj2z2z',
+    "at://alice.example/app.certified.badge.definition/3jzfcijpj2z2z",
+    "at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.location/3jzfcijpj2z2z",
   ]) {
-    runLua({ endpoint: 'getBadgeDefinition', params: { uri: invalidUri }, expectError: 'InvalidRequest:', expectedCalls: 0 });
+    runLua({
+      endpoint: "getBadgeDefinition",
+      params: { uri: invalidUri },
+      expectError: "InvalidRequest:",
+      expectedCalls: 0,
+    });
   }
 });
 
-test('getBadgeDefinition emits explicit JSON null when indexed_at is SQL NULL', () => {
-  const definition = definitionRow(author, 'unindexed', { title: 'Unindexed badge' });
+test("getBadgeDefinition emits explicit JSON null when indexed_at is SQL NULL", () => {
+  const definition = definitionRow(author, "unindexed", { title: "Unindexed badge" });
   delete definition.indexed_at;
   runLua({
-    endpoint: 'getBadgeDefinition', params: { uri: definition.uri }, queryResults: [[definition], [], []],
+    endpoint: "getBadgeDefinition",
+    params: { uri: definition.uri },
+    queryResults: [[definition], [], []],
     assertions: `assert(result.badgeDefinition.indexedAt == NULL, 'SQL NULL indexed_at must serialize as JSON null')`,
   });
 });
 
-test('getBadgeDefinition preserves icon and allowedIssuers while hydrating nullable author sidecars', () => {
+test("getBadgeDefinition preserves icon and allowedIssuers while hydrating nullable author sidecars", () => {
   const record = {
-    title: 'Verified watershed', badgeType: 'certification', createdAt: '2025-02-01T00:00:00Z',
-    icon: { $type: 'blob', ref: { $link: 'baf-icon' }, mimeType: 'image/png', size: 4 },
+    title: "Verified watershed",
+    badgeType: "certification",
+    createdAt: "2025-02-01T00:00:00Z",
+    icon: { $type: "blob", ref: { $link: "baf-icon" }, mimeType: "image/png", size: 4 },
     allowedIssuers: [author],
   };
-  const definition = definitionRow(author, '3jzfcijpj2z2z', record);
-  const profile = sidecarRow(profileCollection, author, 'self', { displayName: 'River Trust' });
+  const definition = definitionRow(author, "3jzfcijpj2z2z", record);
+  const profile = sidecarRow(profileCollection, author, "self", { displayName: "River Trust" });
   runLua({
-    endpoint: 'getBadgeDefinition', params: { uri: definition.uri }, queryResults: [[definition], [profile], []],
+    endpoint: "getBadgeDefinition",
+    params: { uri: definition.uri },
+    queryResults: [[definition], [profile], []],
     assertions: `
 assert(result.badgeDefinition.uri == '${definition.uri}' and result.badgeDefinition.cid == '${definition.cid}')
 assert(result.badgeDefinition.record.title == 'Verified watershed')
@@ -139,24 +188,32 @@ assert(calls[3].values[1] == '${organizationCollection}' and calls[3].values[2] 
   });
 });
 
-test('badge definition endpoints serialize absent indexed_at as explicit JSON null', () => {
-  const single = definitionRow(author, 'nil-indexed-at', {
-    title: 'Null timestamp', badgeType: 'award', createdAt: '2025-02-01T00:00:00Z',
+test("badge definition endpoints serialize absent indexed_at as explicit JSON null", () => {
+  const single = definitionRow(author, "nil-indexed-at", {
+    title: "Null timestamp",
+    badgeType: "award",
+    createdAt: "2025-02-01T00:00:00Z",
   });
   delete single.indexed_at;
   runLua({
-    endpoint: 'getBadgeDefinition', params: { uri: single.uri }, queryResults: [[single], [], []],
+    endpoint: "getBadgeDefinition",
+    params: { uri: single.uri },
+    queryResults: [[single], [], []],
     assertions: `
 assert(rawget(result.badgeDefinition, 'indexedAt') == NULL, 'getBadgeDefinition must include indexedAt as JSON null')
 `,
   });
 
-  const listed = definitionRow(author, 'nil-indexed-at-list', {
-    title: 'Null timestamp list', badgeType: 'award', createdAt: '2025-02-01T00:00:00Z',
+  const listed = definitionRow(author, "nil-indexed-at-list", {
+    title: "Null timestamp list",
+    badgeType: "award",
+    createdAt: "2025-02-01T00:00:00Z",
   });
   delete listed.indexed_at;
   runLua({
-    endpoint: 'listBadgeDefinitions', params: { sortDirection: 'asc' }, queryResults: [[listed], [], []],
+    endpoint: "listBadgeDefinitions",
+    params: { sortDirection: "asc" },
+    queryResults: [[listed], [], []],
     assertions: `
 assert(#result.badgeDefinitions == 1)
 assert(rawget(result.badgeDefinitions[1], 'indexedAt') == NULL, 'listBadgeDefinitions must include indexedAt as JSON null')
@@ -164,19 +221,39 @@ assert(rawget(result.badgeDefinitions[1], 'indexedAt') == NULL, 'listBadgeDefini
   });
 });
 
-test('listBadgeDefinitions combines author and exact badgeType filters, preserves records, and hydrates only the page', () => {
-  const icon = { $type: 'blob', ref: { $link: 'baf-icon' }, mimeType: 'image/webp', size: 7 };
-  const first = definitionRow(author, 'first', {
-    title: 'Forest certification', badgeType: 'certification', createdAt: '2025-02-01T00:00:00Z', icon,
-    allowedIssuers: [author, secondAuthor],
-  }, '2025-02-01T00:00:00.000000Z');
-  const lookahead = definitionRow(secondAuthor, 'lookahead', {
-    title: 'Participation', badgeType: 'participation', createdAt: '2025-02-02T00:00:00Z',
-  }, '2025-02-02T00:00:00.000000Z');
-  const profile = sidecarRow(profileCollection, author, 'self', { displayName: 'Forest Alliance' });
+test("listBadgeDefinitions combines author and exact badgeType filters, preserves records, and hydrates only the page", () => {
+  const icon = { $type: "blob", ref: { $link: "baf-icon" }, mimeType: "image/webp", size: 7 };
+  const first = definitionRow(
+    author,
+    "first",
+    {
+      title: "Forest certification",
+      badgeType: "certification",
+      createdAt: "2025-02-01T00:00:00Z",
+      icon,
+      allowedIssuers: [author, secondAuthor],
+    },
+    "2025-02-01T00:00:00.000000Z",
+  );
+  const lookahead = definitionRow(
+    secondAuthor,
+    "lookahead",
+    {
+      title: "Participation",
+      badgeType: "participation",
+      createdAt: "2025-02-02T00:00:00Z",
+    },
+    "2025-02-02T00:00:00.000000Z",
+  );
+  const profile = sidecarRow(profileCollection, author, "self", { displayName: "Forest Alliance" });
   runLua({
-    endpoint: 'listBadgeDefinitions',
-    params: { authors: [author, secondAuthor], badgeTypes: ['certification', 'award', 'certification'], sortDirection: 'asc', limit: '1' },
+    endpoint: "listBadgeDefinitions",
+    params: {
+      authors: [author, secondAuthor],
+      badgeTypes: ["certification", "award", "certification"],
+      sortDirection: "asc",
+      limit: "1",
+    },
     queryResults: [[first, lookahead], [profile], []],
     assertions: `
 assert(#result.badgeDefinitions == 1 and result.badgeDefinitions[1].uri == '${first.uri}')
@@ -198,9 +275,11 @@ assert(token.v == 1 and token.d == 'asc' and token.t == '${first.sort_timestamp}
   });
 });
 
-test('listBadgeDefinitions defaults to 25 descending and omits a terminal cursor', () => {
+test("listBadgeDefinitions defaults to 25 descending and omits a terminal cursor", () => {
   runLua({
-    endpoint: 'listBadgeDefinitions', params: {}, queryResults: [[]],
+    endpoint: "listBadgeDefinitions",
+    params: {},
+    queryResults: [[]],
     assertions: `
 assert(#result.badgeDefinitions == 0 and result.cursor == nil)
 assert(calls[1].values[1] == 'app.certified.badge.definition' and calls[1].values[2] == 26)
@@ -209,24 +288,39 @@ assert(calls[1].sql:find('ORDER BY sorted.sort_at DESC, uri DESC', 1, true))
   });
 });
 
-test('listBadgeDefinitions rejects invalid bounds, array values, unknown keys, and direction-mismatched cursors', () => {
+test("listBadgeDefinitions rejects invalid bounds, array values, unknown keys, and direction-mismatched cursors", () => {
   for (const params of [
-    { limit: 0 }, { limit: 101 }, { limit: [1, 2] }, { authors: ['alice.example'] },
-    { authors: Array(101).fill(author) }, { badgeTypes: Array(101).fill('award') },
-    { badgeTypes: ['x'.repeat(101)] }, { badgeTypes: [7] }, { unknown: 'value' },
-    { cursor: cursor({ direction: 'desc' }), sortDirection: 'asc' },
+    { limit: 0 },
+    { limit: 101 },
+    { limit: [1, 2] },
+    { authors: ["alice.example"] },
+    { authors: Array(101).fill(author) },
+    { badgeTypes: Array(101).fill("award") },
+    { badgeTypes: ["x".repeat(101)] },
+    { badgeTypes: [7] },
+    { unknown: "value" },
+    { cursor: cursor({ direction: "desc" }), sortDirection: "asc" },
   ]) {
-    runLua({ endpoint: 'listBadgeDefinitions', params, expectError: 'InvalidRequest:', expectedCalls: 0 });
+    runLua({
+      endpoint: "listBadgeDefinitions",
+      params,
+      expectError: "InvalidRequest:",
+      expectedCalls: 0,
+    });
   }
 });
 
-test('listBadgeDefinitions applies a strict keyset cursor to the createdAt and URI tuple', () => {
-  const next = definitionRow(secondAuthor, 'next', {
-    title: 'Later page', badgeType: 'award', createdAt: '2025-02-03T00:00:00Z',
+test("listBadgeDefinitions applies a strict keyset cursor to the createdAt and URI tuple", () => {
+  const next = definitionRow(secondAuthor, "next", {
+    title: "Later page",
+    badgeType: "award",
+    createdAt: "2025-02-03T00:00:00Z",
   });
-  const prior = 'at://did:plc:cccccccccccccccccccccccc/app.certified.badge.definition/prior';
+  const prior = "at://did:plc:cccccccccccccccccccccccc/app.certified.badge.definition/prior";
   runLua({
-    endpoint: 'listBadgeDefinitions', params: { sortDirection: 'asc', cursor: cursor({ recordUri: prior }) }, queryResults: [[next]],
+    endpoint: "listBadgeDefinitions",
+    params: { sortDirection: "asc", cursor: cursor({ recordUri: prior }) },
+    queryResults: [[next]],
     assertions: `
 assert(#result.badgeDefinitions == 1 and result.badgeDefinitions[1].uri == '${next.uri}')
 assert(calls[1].sql:find('(sorted.sort_at, uri) > (($2)::timestamptz, $3)', 1, true))

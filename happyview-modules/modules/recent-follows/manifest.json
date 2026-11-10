@@ -7,10 +7,7 @@
       "config": {
         "backfill": false
       },
-      "dependsOn": [
-        "app.certified.graph.follow",
-        "app.certified.graph.entityFollow"
-      ]
+      "dependsOn": ["app.certified.graph.follow", "app.certified.graph.entityFollow"]
     },
     {
       "kind": "script",
@@ -29,9 +26,7 @@
         "script_type": "lua",
         "description": "Beta recent account- and entity-follow query handler"
       },
-      "dependsOn": [
-        "app.certified.graph.listRecentFollows"
-      ]
+      "dependsOn": ["app.certified.graph.listRecentFollows"]
     }
   ]
 }

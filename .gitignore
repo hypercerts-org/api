@@ -1,1 +1,6 @@
 node_modules/
+
+# Created in the workspace by leafo/gh-actions-lua{,rocks} in CI
+.lua/
+.luarocks/
+.install-lua-*/

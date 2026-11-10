@@ -1,65 +1,107 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
-import { spawnSync } from 'node:child_process';
-import { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
 
-const root = fileURLToPath(new URL('../../../', import.meta.url));
-const actor = 'did:plc:aaaaaaaaaaaaaaaaaaaaaaaa';
-const author = 'did:plc:bbbbbbbbbbbbbbbbbbbbbbbb';
+const root = fileURLToPath(new URL("../../../", import.meta.url));
+const actor = "did:plc:aaaaaaaaaaaaaaaaaaaaaaaa";
+const author = "did:plc:bbbbbbbbbbbbbbbbbbbbbbbb";
 const entityUri = `at://${author}/org.hypercerts.entity.feature/feature-one`;
 const nextEntityUri = `at://${author}/org.hypercerts.entity.feature/feature-next`;
-const entityFollow = 'app.certified.graph.entityFollow';
-const featureCollection = 'org.hypercerts.entity.feature';
-const profileCollection = 'app.certified.actor.profile';
-const organizationCollection = 'app.certified.actor.organization';
+const entityFollow = "app.certified.graph.entityFollow";
+const featureCollection = "org.hypercerts.entity.feature";
+const profileCollection = "app.certified.actor.profile";
+const organizationCollection = "app.certified.actor.organization";
 
 function lua(value) {
-  if (value === null) return 'nil';
-  if (typeof value === 'string') return JSON.stringify(value);
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-  if (Array.isArray(value)) return `{${value.map(lua).join(',')}}`;
-  if (value && typeof value === 'object') {
-    return `{${Object.entries(value).filter(([, item]) => item !== null).map(([key, item]) => `[${JSON.stringify(key)}]=${lua(item)}`).join(',')}}`;
+  if (value === null) return "nil";
+  if (typeof value === "string") return JSON.stringify(value);
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value)) return `{${value.map(lua).join(",")}}`;
+  if (value && typeof value === "object") {
+    return `{${Object.entries(value)
+      .filter(([, item]) => item !== null)
+      .map(([key, item]) => `[${JSON.stringify(key)}]=${lua(item)}`)
+      .join(",")}}`;
   }
   throw new TypeError(`Cannot encode ${typeof value} as a Lua fixture`);
 }
 
 function runLua(endpoint, source) {
   const endpointPath = `${root}/lua/endpoints/${endpoint}.lua`;
-  assert.ok(existsSync(endpointPath), `generate the standalone Lua handler before exercising ${endpoint}`);
-  const result = spawnSync('lua5.4', ['-e', source], { cwd: root, encoding: 'utf8' });
+  assert.ok(
+    existsSync(endpointPath),
+    `generate the standalone Lua handler before exercising ${endpoint}`,
+  );
+  const result = spawnSync("lua5.4", ["-e", source], { cwd: root, encoding: "utf8" });
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 }
 
-test('listEntityFollowing keeps the URI-only target and follow, hydrates only the returned feature page, and emits a nullable indexedAt', () => {
+test("listEntityFollowing keeps the URI-only target and follow, hydrates only the returned feature page, and emits a nullable indexedAt", () => {
   const follows = [
     {
-      uri: `at://${actor}/${entityFollow}/follow-one`, did: actor, cid: 'bafy-follow-one',
-      indexed_at: null, record: 'follow-one', sort_timestamp: '2025-01-03T00:00:00.000000Z',
-      follow_record: { $type: entityFollow, subject: { uri: entityUri }, createdAt: '2025-01-03T00:00:00Z' },
+      uri: `at://${actor}/${entityFollow}/follow-one`,
+      did: actor,
+      cid: "bafy-follow-one",
+      indexed_at: null,
+      record: "follow-one",
+      sort_timestamp: "2025-01-03T00:00:00.000000Z",
+      follow_record: {
+        $type: entityFollow,
+        subject: { uri: entityUri },
+        createdAt: "2025-01-03T00:00:00Z",
+      },
     },
     {
-      uri: `at://${actor}/${entityFollow}/follow-next`, did: actor, cid: 'bafy-follow-next',
-      indexed_at: '2025-01-02T00:00:00Z', record: 'follow-next', sort_timestamp: '2025-01-02T00:00:00.000000Z',
-      follow_record: { $type: entityFollow, subject: { uri: nextEntityUri }, createdAt: '2025-01-02T00:00:00Z' },
+      uri: `at://${actor}/${entityFollow}/follow-next`,
+      did: actor,
+      cid: "bafy-follow-next",
+      indexed_at: "2025-01-02T00:00:00Z",
+      record: "follow-next",
+      sort_timestamp: "2025-01-02T00:00:00.000000Z",
+      follow_record: {
+        $type: entityFollow,
+        subject: { uri: nextEntityUri },
+        createdAt: "2025-01-02T00:00:00Z",
+      },
     },
   ];
   const featureRecord = {
-    $type: featureCollection, title: 'Protected forest', createdAt: '2025-01-01T00:00:00Z',
-    locations: [{ uri: 'at://did:plc:cccccccccccccccccccccccc/app.certified.location/zone', cid: 'bafylocation' }],
-    tags: [{ uri: 'at://did:plc:cccccccccccccccccccccccc/org.hypercerts.vocab.tag/forest', cid: 'bafytag' }],
-    sameAs: ['https://example.test/forest/one'],
+    $type: featureCollection,
+    title: "Protected forest",
+    createdAt: "2025-01-01T00:00:00Z",
+    locations: [
+      {
+        uri: "at://did:plc:cccccccccccccccccccccccc/app.certified.location/zone",
+        cid: "bafylocation",
+      },
+    ],
+    tags: [
+      {
+        uri: "at://did:plc:cccccccccccccccccccccccc/org.hypercerts.vocab.tag/forest",
+        cid: "bafytag",
+      },
+    ],
+    sameAs: ["https://example.test/forest/one"],
   };
   const feature = {
-    uri: entityUri, did: author, cid: 'bafy-feature-one', indexed_at: null,
-    record: 'feature-one', feature_record: featureRecord,
+    uri: entityUri,
+    did: author,
+    cid: "bafy-feature-one",
+    indexed_at: null,
+    record: "feature-one",
+    feature_record: featureRecord,
   };
   const profile = {
-    uri: `at://${author}/${profileCollection}/self`, did: author, cid: 'bafy-profile',
-    indexed_at: null, record: 'profile-author', profile_record: { $type: profileCollection, displayName: 'Feature author' },
+    uri: `at://${author}/${profileCollection}/self`,
+    did: author,
+    cid: "bafy-profile",
+    indexed_at: null,
+    record: "profile-author",
+    profile_record: { $type: profileCollection, displayName: "Feature author" },
   };
   const records = Object.fromEntries([
     ...follows.map(({ record, follow_record }) => [record, follow_record]),
@@ -148,19 +190,39 @@ local token = decode_cursor(token_json)
 assert(token.v == 1 and token.d == 'desc' and token.t == '2025-01-03T00:00:00.000000Z')
 assert(token.u == FIXTURE.follows[1].uri)
 `;
-  runLua('listEntityFollowing', source);
+  runLua("listEntityFollowing", source);
 });
 
-test('listEntityFollowing skips malformed subjects and refills descending pages without skipping the lookahead', () => {
-  const unsupportedCollection = 'org.example.unsupported';
+test("listEntityFollowing skips malformed subjects and refills descending pages without skipping the lookahead", () => {
+  const unsupportedCollection = "org.example.unsupported";
   const follows = [
-    { key: 'valid-1', timestamp: '2025-01-06T00:00:00.000000Z', subject: { uri: `at://${author}/${unsupportedCollection}/entity-1` } },
-    { key: 'malformed-1', timestamp: '2025-01-05T00:00:00.000000Z', subject: { uri: 'not-an-at-uri' } },
-    { key: 'valid-2', timestamp: '2025-01-04T00:00:00.000000Z', subject: { uri: `at://${author}/${unsupportedCollection}/entity-2` } },
-    { key: 'malformed-non-string', timestamp: '2025-01-03T12:00:00.000000Z', subject: { uri: 17 } },
-    { key: 'malformed-2', timestamp: '2025-01-03T00:00:00.000000Z', subject: {} },
-    { key: 'valid-3', timestamp: '2025-01-02T00:00:00.000000Z', subject: { uri: `at://${author}/${unsupportedCollection}/entity-3` } },
-    { key: 'valid-4', timestamp: '2025-01-01T00:00:00.000000Z', subject: { uri: `at://${author}/${unsupportedCollection}/entity-4` } },
+    {
+      key: "valid-1",
+      timestamp: "2025-01-06T00:00:00.000000Z",
+      subject: { uri: `at://${author}/${unsupportedCollection}/entity-1` },
+    },
+    {
+      key: "malformed-1",
+      timestamp: "2025-01-05T00:00:00.000000Z",
+      subject: { uri: "not-an-at-uri" },
+    },
+    {
+      key: "valid-2",
+      timestamp: "2025-01-04T00:00:00.000000Z",
+      subject: { uri: `at://${author}/${unsupportedCollection}/entity-2` },
+    },
+    { key: "malformed-non-string", timestamp: "2025-01-03T12:00:00.000000Z", subject: { uri: 17 } },
+    { key: "malformed-2", timestamp: "2025-01-03T00:00:00.000000Z", subject: {} },
+    {
+      key: "valid-3",
+      timestamp: "2025-01-02T00:00:00.000000Z",
+      subject: { uri: `at://${author}/${unsupportedCollection}/entity-3` },
+    },
+    {
+      key: "valid-4",
+      timestamp: "2025-01-01T00:00:00.000000Z",
+      subject: { uri: `at://${author}/${unsupportedCollection}/entity-4` },
+    },
   ].map(({ key, timestamp, subject }) => ({
     uri: `at://${actor}/${entityFollow}/${key}`,
     did: actor,
@@ -170,7 +232,9 @@ test('listEntityFollowing skips malformed subjects and refills descending pages 
     sort_timestamp: timestamp,
     follow_record: { $type: entityFollow, subject, createdAt: timestamp },
   }));
-  const records = Object.fromEntries(follows.map(({ record, follow_record }) => [record, follow_record]));
+  const records = Object.fromEntries(
+    follows.map(({ record, follow_record }) => [record, follow_record]),
+  );
   const source = `
 local FIXTURE = ${lua({ actor, author, entityFollow, follows, records })}
 local NULL_VALUE, calls = {}, {}
@@ -242,40 +306,77 @@ assert(second_page.entities[2].follow.uri == FIXTURE.follows[7].uri)
 assert(second_page.entities[1].uri == FIXTURE.follows[6].follow_record.subject.uri)
 assert(second_page.entities[2].uri == FIXTURE.follows[7].follow_record.subject.uri)
 `;
-  runLua('listEntityFollowing', source);
+  runLua("listEntityFollowing", source);
 });
 
-test('entity-follow listing selects earliest representatives before direction-bound cursor pagination', () => {
-  const followerA = 'did:plc:cccccccccccccccccccccccc';
-  const followerB = 'did:plc:dddddddddddddddddddddddd';
-  const followedEntity = 'at://did:plc:eeeeeeeeeeeeeeeeeeeeeeee/org.hypercerts.entity.feature/target';
+test("entity-follow listing selects earliest representatives before direction-bound cursor pagination", () => {
+  const followerA = "did:plc:cccccccccccccccccccccccc";
+  const followerB = "did:plc:dddddddddddddddddddddddd";
+  const followedEntity =
+    "at://did:plc:eeeeeeeeeeeeeeeeeeeeeeee/org.hypercerts.entity.feature/target";
   const cases = [
     {
-      direction: 'desc', operator: '<', ordering: 'DESC', cursorAt: '2025-01-04T00:00:00.000000Z',
+      direction: "desc",
+      operator: "<",
+      ordering: "DESC",
+      cursorAt: "2025-01-04T00:00:00.000000Z",
       cursorUri: `at://${actor}/${entityFollow}/cursor-desc`,
       rows: [
-        { did: followerA, key: 'earliest', createdAt: '2025-01-03T00:00:00Z', timestamp: '2025-01-03T00:00:00.000000Z' },
-        { did: followerB, key: 'desc-next', createdAt: '2025-01-02T00:00:00Z', timestamp: '2025-01-02T00:00:00.000000Z' },
+        {
+          did: followerA,
+          key: "earliest",
+          createdAt: "2025-01-03T00:00:00Z",
+          timestamp: "2025-01-03T00:00:00.000000Z",
+        },
+        {
+          did: followerB,
+          key: "desc-next",
+          createdAt: "2025-01-02T00:00:00Z",
+          timestamp: "2025-01-02T00:00:00.000000Z",
+        },
       ],
     },
     {
-      direction: 'asc', operator: '>', ordering: 'ASC', cursorAt: '2024-12-31T00:00:00.000000Z',
+      direction: "asc",
+      operator: ">",
+      ordering: "ASC",
+      cursorAt: "2024-12-31T00:00:00.000000Z",
       cursorUri: `at://${actor}/${entityFollow}/cursor-asc`,
       rows: [
-        { did: followerB, key: 'asc-first', createdAt: '2025-01-01T00:00:00Z', timestamp: '2025-01-01T00:00:00.000000Z' },
-        { did: followerA, key: 'asc-next', createdAt: '2025-01-02T00:00:00Z', timestamp: '2025-01-02T00:00:00.000000Z' },
+        {
+          did: followerB,
+          key: "asc-first",
+          createdAt: "2025-01-01T00:00:00Z",
+          timestamp: "2025-01-01T00:00:00.000000Z",
+        },
+        {
+          did: followerA,
+          key: "asc-next",
+          createdAt: "2025-01-02T00:00:00Z",
+          timestamp: "2025-01-02T00:00:00.000000Z",
+        },
       ],
     },
   ];
 
   for (const scenario of cases) {
     const follows = scenario.rows.map(({ did, key, createdAt, timestamp }) => ({
-      uri: `at://${did}/${entityFollow}/${key}`, did, cid: `bafy-${key}`,
-      indexed_at: '2025-01-05T00:00:00Z', record: key, sort_timestamp: timestamp, total_count: 4,
+      uri: `at://${did}/${entityFollow}/${key}`,
+      did,
+      cid: `bafy-${key}`,
+      indexed_at: "2025-01-05T00:00:00Z",
+      record: key,
+      sort_timestamp: timestamp,
+      total_count: 4,
       follow_record: { $type: entityFollow, subject: { uri: followedEntity }, createdAt },
     }));
-    const records = Object.fromEntries(follows.map(({ record, follow_record }) => [record, follow_record]));
-    const encodedCursor = Buffer.from(JSON.stringify({ v: 1, d: scenario.direction, t: scenario.cursorAt, u: scenario.cursorUri }), 'utf8').toString('hex');
+    const records = Object.fromEntries(
+      follows.map(({ record, follow_record }) => [record, follow_record]),
+    );
+    const encodedCursor = Buffer.from(
+      JSON.stringify({ v: 1, d: scenario.direction, t: scenario.cursorAt, u: scenario.cursorUri }),
+      "utf8",
+    ).toString("hex");
     const source = `
 local FIXTURE = ${lua({ entityFollow, profileCollection, organizationCollection, followedEntity, follows, records })}
 local NULL_VALUE = {}
@@ -338,11 +439,11 @@ local token = decode_cursor(token_json)
 assert(token.v == 1 and token.d == '${scenario.direction}' and token.t == '${scenario.rows[0].timestamp}')
 assert(token.u == 'at://${scenario.rows[0].did}/${entityFollow}/${scenario.rows[0].key}')
 `;
-    runLua('listEntityFollowers', source);
+    runLua("listEntityFollowers", source);
   }
 });
 
-test('entity-follow cursors reject a different direction, another collection, and invalid timestamps before querying', () => {
+test("entity-follow cursors reject a different direction, another collection, and invalid timestamps before querying", () => {
   const source = `
 local NULL_VALUE, active_cursor, calls = {}, nil, 0
 json = {
@@ -369,14 +470,22 @@ for _, invalid_cursor in ipairs({
 end
 assert(calls == 0, 'invalid cursors are rejected before database access')
 `;
-  runLua('listEntityFollowing', source);
+  runLua("listEntityFollowing", source);
 });
 
-test('getEntityFollow returns the earliest raw relationship or explicit null without hydrating its target', () => {
-  const entity = 'at://did:plc:cccccccccccccccccccccccc/org.example.unsupported/key';
+test("getEntityFollow returns the earliest raw relationship or explicit null without hydrating its target", () => {
+  const entity = "at://did:plc:cccccccccccccccccccccccc/org.example.unsupported/key";
   const row = {
-    uri: `at://${actor}/${entityFollow}/earliest`, did: actor, cid: 'bafy-earliest', indexed_at: null,
-    record: 'raw-follow', follow_record: { $type: entityFollow, subject: { uri: entity }, createdAt: '2025-01-01T00:00:00Z' },
+    uri: `at://${actor}/${entityFollow}/earliest`,
+    did: actor,
+    cid: "bafy-earliest",
+    indexed_at: null,
+    record: "raw-follow",
+    follow_record: {
+      $type: entityFollow,
+      subject: { uri: entity },
+      createdAt: "2025-01-01T00:00:00Z",
+    },
   };
   const source = `
 local NULL_VALUE = {}
@@ -413,19 +522,59 @@ ok, result = pcall(handle)
 assert(ok and result.follow == NULL_VALUE, tostring(result))
 assert(#calls == 2, 'singular lookup returns the raw relationship without target or actor hydration')
 `;
-  runLua('getEntityFollow', source);
+  runLua("getEntityFollow", source);
 });
 
-test('listEntityFollowers preserves follower identity and hydrates profiles and organization sidecars for the page only', () => {
-  const follower = 'did:plc:cccccccccccccccccccccccc';
-  const lookahead = 'did:plc:dddddddddddddddddddddddd';
-  const entity = 'at://did:plc:eeeeeeeeeeeeeeeeeeeeeeee/org.hypercerts.entity.feature/target';
+test("listEntityFollowers preserves follower identity and hydrates profiles and organization sidecars for the page only", () => {
+  const follower = "did:plc:cccccccccccccccccccccccc";
+  const lookahead = "did:plc:dddddddddddddddddddddddd";
+  const entity = "at://did:plc:eeeeeeeeeeeeeeeeeeeeeeee/org.hypercerts.entity.feature/target";
   const follows = [
-    { uri: `at://${follower}/${entityFollow}/incoming`, did: follower, cid: 'bafy-incoming', indexed_at: null, record: 'follow-incoming', sort_timestamp: '2025-01-03T00:00:00.000000Z', total_count: 5, follow_record: { $type: entityFollow, subject: { uri: entity }, createdAt: '2025-01-03T00:00:00Z' } },
-    { uri: `at://${lookahead}/${entityFollow}/lookahead`, did: lookahead, cid: 'bafy-lookahead', indexed_at: '2025-01-02T00:00:00Z', record: 'follow-lookahead', sort_timestamp: '2025-01-02T00:00:00.000000Z', total_count: 5, follow_record: { $type: entityFollow, subject: { uri: entity }, createdAt: '2025-01-02T00:00:00Z' } },
+    {
+      uri: `at://${follower}/${entityFollow}/incoming`,
+      did: follower,
+      cid: "bafy-incoming",
+      indexed_at: null,
+      record: "follow-incoming",
+      sort_timestamp: "2025-01-03T00:00:00.000000Z",
+      total_count: 5,
+      follow_record: {
+        $type: entityFollow,
+        subject: { uri: entity },
+        createdAt: "2025-01-03T00:00:00Z",
+      },
+    },
+    {
+      uri: `at://${lookahead}/${entityFollow}/lookahead`,
+      did: lookahead,
+      cid: "bafy-lookahead",
+      indexed_at: "2025-01-02T00:00:00Z",
+      record: "follow-lookahead",
+      sort_timestamp: "2025-01-02T00:00:00.000000Z",
+      total_count: 5,
+      follow_record: {
+        $type: entityFollow,
+        subject: { uri: entity },
+        createdAt: "2025-01-02T00:00:00Z",
+      },
+    },
   ];
-  const profile = { uri: `at://${follower}/${profileCollection}/self`, did: follower, cid: 'bafy-incoming-profile', indexed_at: '2025-01-01T00:00:00Z', record: 'incoming-profile', sidecar_record: { $type: profileCollection, displayName: 'Incoming follower' } };
-  const organization = { uri: `at://${follower}/${organizationCollection}/self`, did: follower, cid: 'bafy-incoming-org', indexed_at: '2025-01-01T00:00:00Z', record: 'incoming-org', sidecar_record: { $type: organizationCollection, organizationType: ['nonprofit'] } };
+  const profile = {
+    uri: `at://${follower}/${profileCollection}/self`,
+    did: follower,
+    cid: "bafy-incoming-profile",
+    indexed_at: "2025-01-01T00:00:00Z",
+    record: "incoming-profile",
+    sidecar_record: { $type: profileCollection, displayName: "Incoming follower" },
+  };
+  const organization = {
+    uri: `at://${follower}/${organizationCollection}/self`,
+    did: follower,
+    cid: "bafy-incoming-org",
+    indexed_at: "2025-01-01T00:00:00Z",
+    record: "incoming-org",
+    sidecar_record: { $type: organizationCollection, organizationType: ["nonprofit"] },
+  };
   const records = Object.fromEntries([
     ...follows.map(({ record, follow_record }) => [record, follow_record]),
     [profile.record, profile.sidecar_record],
@@ -488,17 +637,20 @@ local token_json = result.cursor:gsub('..', function(pair) return string.char(to
 local token = decode_cursor(token_json)
 assert(token.u == FIXTURE.follows[1].uri and token.d == 'desc')
 `;
-  runLua('listEntityFollowers', source);
+  runLua("listEntityFollowers", source);
 });
 
-test('listEntityFollowers retains the deduplicated total on an empty beyond-end page', () => {
-  const entity = 'at://did:plc:eeeeeeeeeeeeeeeeeeeeeeee/org.hypercerts.entity.feature/target';
-  const cursor = Buffer.from(JSON.stringify({
-    v: 1,
-    d: 'desc',
-    t: '2025-01-01T00:00:00.000000Z',
-    u: `at://${actor}/${entityFollow}/cursor`,
-  }), 'utf8').toString('hex');
+test("listEntityFollowers retains the deduplicated total on an empty beyond-end page", () => {
+  const entity = "at://did:plc:eeeeeeeeeeeeeeeeeeeeeeee/org.hypercerts.entity.feature/target";
+  const cursor = Buffer.from(
+    JSON.stringify({
+      v: 1,
+      d: "desc",
+      t: "2025-01-01T00:00:00.000000Z",
+      u: `at://${actor}/${entityFollow}/cursor`,
+    }),
+    "utf8",
+  ).toString("hex");
   const source = `
 local FIXTURE = ${lua({ actor, entityFollow, entity })}
 local calls = {}
@@ -543,33 +695,79 @@ assert(ok, tostring(result))
 assert(#result.followers == 0 and result.totalCount == 0, 'an empty relationship set returns a numeric zero')
 assert(#calls == 2)
 `;
-  runLua('listEntityFollowers', source);
+  runLua("listEntityFollowers", source);
 });
 
-test('listEntityFollowing returns hydrated ActivityView and CollectionView unions without expanding collection items', () => {
-  const activityDid = 'did:plc:cccccccccccccccccccccccc';
-  const collectionDid = 'did:plc:dddddddddddddddddddddddd';
-  const activityCollection = 'org.hypercerts.claim.activity';
-  const collectionCollection = 'org.hypercerts.collection';
+test("listEntityFollowing returns hydrated ActivityView and CollectionView unions without expanding collection items", () => {
+  const activityDid = "did:plc:cccccccccccccccccccccccc";
+  const collectionDid = "did:plc:dddddddddddddddddddddddd";
+  const activityCollection = "org.hypercerts.claim.activity";
+  const collectionCollection = "org.hypercerts.collection";
   const activityUri = `at://${activityDid}/${activityCollection}/activity-one`;
   const legacyContributorUri = `at://${activityDid}/org.hypercerts.claim.contributorInformation/legacy`;
   const collectionUri = `at://${collectionDid}/${collectionCollection}/collection-one`;
   const rawCollection = {
-    $type: collectionCollection, title: 'Root collection', createdAt: '2025-01-01T00:00:00Z',
-    items: [{ itemIdentifier: { uri: activityUri, cid: 'bafy-item-version' }, itemWeight: '1' }],
+    $type: collectionCollection,
+    title: "Root collection",
+    createdAt: "2025-01-01T00:00:00Z",
+    items: [{ itemIdentifier: { uri: activityUri, cid: "bafy-item-version" }, itemWeight: "1" }],
   };
   const follows = [
-    { uri: `at://${actor}/${entityFollow}/activity-follow`, did: actor, cid: 'bafy-fa', indexed_at: null, record: 'follow-activity', sort_timestamp: '2025-01-03T00:00:00.000000Z', follow_record: { $type: entityFollow, subject: { uri: activityUri }, createdAt: '2025-01-03T00:00:00Z' } },
-    { uri: `at://${actor}/${entityFollow}/collection-follow`, did: actor, cid: 'bafy-fc', indexed_at: null, record: 'follow-collection', sort_timestamp: '2025-01-02T00:00:00.000000Z', follow_record: { $type: entityFollow, subject: { uri: collectionUri }, createdAt: '2025-01-02T00:00:00Z' } },
+    {
+      uri: `at://${actor}/${entityFollow}/activity-follow`,
+      did: actor,
+      cid: "bafy-fa",
+      indexed_at: null,
+      record: "follow-activity",
+      sort_timestamp: "2025-01-03T00:00:00.000000Z",
+      follow_record: {
+        $type: entityFollow,
+        subject: { uri: activityUri },
+        createdAt: "2025-01-03T00:00:00Z",
+      },
+    },
+    {
+      uri: `at://${actor}/${entityFollow}/collection-follow`,
+      did: actor,
+      cid: "bafy-fc",
+      indexed_at: null,
+      record: "follow-collection",
+      sort_timestamp: "2025-01-02T00:00:00.000000Z",
+      follow_record: {
+        $type: entityFollow,
+        subject: { uri: collectionUri },
+        createdAt: "2025-01-02T00:00:00Z",
+      },
+    },
   ];
-  const activity = { uri: activityUri, did: activityDid, cid: 'bafy-activity-latest', indexed_at: null, record: 'activity-record', target_record: {
-    $type: activityCollection, title: 'Resolved activity', createdAt: '2025-01-01T00:00:00Z',
-    contributors: [legacyContributorUri, { contributorIdentity: { identity: activityDid }, contributionWeight: 'retained' }],
-  } };
-  const collection = { uri: collectionUri, did: collectionDid, cid: 'bafy-collection-latest', indexed_at: null, record: 'collection-record', target_record: rawCollection };
+  const activity = {
+    uri: activityUri,
+    did: activityDid,
+    cid: "bafy-activity-latest",
+    indexed_at: null,
+    record: "activity-record",
+    target_record: {
+      $type: activityCollection,
+      title: "Resolved activity",
+      createdAt: "2025-01-01T00:00:00Z",
+      contributors: [
+        legacyContributorUri,
+        { contributorIdentity: { identity: activityDid }, contributionWeight: "retained" },
+      ],
+    },
+  };
+  const collection = {
+    uri: collectionUri,
+    did: collectionDid,
+    cid: "bafy-collection-latest",
+    indexed_at: null,
+    record: "collection-record",
+    target_record: rawCollection,
+  };
   const records = Object.fromEntries([
     ...follows.map(({ record, follow_record }) => [record, follow_record]),
-    [activity.record, activity.target_record], [collection.record, collection.target_record],
+    [activity.record, activity.target_record],
+    [collection.record, collection.target_record],
   ]);
   const source = `
 local NULL_VALUE = {}
@@ -625,18 +823,51 @@ for _, target_call in ipairs({ calls[2], calls[5] }) do
   assert(target_call.sql:find('ORDER BY uri, COALESCE(indexed_at::timestamptz, created_at::timestamptz) DESC', 1, true))
 end
 `;
-  runLua('listEntityFollowing', source);
+  runLua("listEntityFollowing", source);
 });
 
-test('listEntityFollowing preserves unresolved targets as null and propagates database and hydration failures', () => {
+test("listEntityFollowing preserves unresolved targets as null and propagates database and hydration failures", () => {
   const featureUri = `at://${author}/org.hypercerts.entity.feature/maybe-missing`;
   const unsupportedUri = `at://${author}/org.example.unsupported/record`;
   const follows = {
-    missing: { uri: `at://${actor}/${entityFollow}/missing`, did: actor, cid: 'bafy-missing-follow', indexed_at: null, record: 'follow-missing', follow_record: { $type: entityFollow, subject: { uri: featureUri }, createdAt: '2025-01-03T00:00:00Z' } },
-    unsupported: { uri: `at://${actor}/${entityFollow}/unsupported`, did: actor, cid: 'bafy-unsupported-follow', indexed_at: null, record: 'follow-unsupported', follow_record: { $type: entityFollow, subject: { uri: unsupportedUri }, createdAt: '2025-01-02T00:00:00Z' } },
+    missing: {
+      uri: `at://${actor}/${entityFollow}/missing`,
+      did: actor,
+      cid: "bafy-missing-follow",
+      indexed_at: null,
+      record: "follow-missing",
+      follow_record: {
+        $type: entityFollow,
+        subject: { uri: featureUri },
+        createdAt: "2025-01-03T00:00:00Z",
+      },
+    },
+    unsupported: {
+      uri: `at://${actor}/${entityFollow}/unsupported`,
+      did: actor,
+      cid: "bafy-unsupported-follow",
+      indexed_at: null,
+      record: "follow-unsupported",
+      follow_record: {
+        $type: entityFollow,
+        subject: { uri: unsupportedUri },
+        createdAt: "2025-01-02T00:00:00Z",
+      },
+    },
   };
-  const featureRecord = { $type: featureCollection, title: 'Indexed feature', createdAt: '2025-01-01T00:00:00Z' };
-  const feature = { uri: featureUri, did: author, cid: 'bafy-feature', indexed_at: null, record: 'feature-target', feature_record: featureRecord };
+  const featureRecord = {
+    $type: featureCollection,
+    title: "Indexed feature",
+    createdAt: "2025-01-01T00:00:00Z",
+  };
+  const feature = {
+    uri: featureUri,
+    did: author,
+    cid: "bafy-feature",
+    indexed_at: null,
+    record: "feature-target",
+    feature_record: featureRecord,
+  };
   const records = Object.fromEntries([
     ...Object.values(follows).map(({ record, follow_record }) => [record, follow_record]),
     [feature.record, feature.feature_record],
@@ -696,128 +927,163 @@ for _, mode in ipairs({ 'primary-failure', 'target-failure', 'hydration-failure'
   assert(tostring(result):find(expected, 1, true), tostring(result))
 end
 `;
-  runLua('listEntityFollowing', source);
+  runLua("listEntityFollowing", source);
 });
 
-test('entity-follow module owns its view Lexicons and declares their shared dependencies', async () => {
-  const rootManifest = JSON.parse(await readFile(`${root}/manifest.json`, 'utf8'));
-  const modulePath = 'modules/entity-follow/manifest.json';
+test("entity-follow module owns its view Lexicons and declares their shared dependencies", async () => {
+  const rootManifest = JSON.parse(await readFile(`${root}/manifest.json`, "utf8"));
+  const modulePath = "modules/entity-follow/manifest.json";
   assert.ok(rootManifest.modules.includes(modulePath));
 
-  const moduleManifest = JSON.parse(await readFile(`${root}/${modulePath}`, 'utf8'));
+  const moduleManifest = JSON.parse(await readFile(`${root}/${modulePath}`, "utf8"));
   const moduleIds = moduleManifest.assets.map(({ id }) => id).sort();
-  assert.deepEqual(moduleIds, [
-    'app.certified.graph.getEntityFollow',
-    'app.certified.graph.getEntityFollows',
-    'app.certified.graph.listEntityFollowers',
-    'app.certified.graph.listEntityFollowing',
-    'xrpc.query:app.certified.graph.getEntityFollow',
-    'xrpc.query:app.certified.graph.getEntityFollows',
-    'xrpc.query:app.certified.graph.listEntityFollowers',
-    'xrpc.query:app.certified.graph.listEntityFollowing',
-  ].sort());
+  assert.deepEqual(
+    moduleIds,
+    [
+      "app.certified.graph.getEntityFollow",
+      "app.certified.graph.getEntityFollows",
+      "app.certified.graph.listEntityFollowers",
+      "app.certified.graph.listEntityFollowing",
+      "xrpc.query:app.certified.graph.getEntityFollow",
+      "xrpc.query:app.certified.graph.getEntityFollows",
+      "xrpc.query:app.certified.graph.listEntityFollowers",
+      "xrpc.query:app.certified.graph.listEntityFollowing",
+    ].sort(),
+  );
 
-  const moduleManifests = await Promise.all(rootManifest.modules.map(async (path) =>
-    JSON.parse(await readFile(resolve(root, path), 'utf8'))));
+  const moduleManifests = await Promise.all(
+    rootManifest.modules.map(async (path) =>
+      JSON.parse(await readFile(resolve(root, path), "utf8")),
+    ),
+  );
   const assets = moduleManifests.flatMap(({ assets: moduleAssets }) => moduleAssets);
   const assetsById = new Map(assets.map((asset) => [asset.id, asset]));
-  assert.equal(assetsById.size, assets.length, 'each installable asset has one owning module');
+  assert.equal(assetsById.size, assets.length, "each installable asset has one owning module");
   for (const asset of assets) {
     for (const dependency of asset.dependsOn ?? []) {
-      assert.ok(assetsById.has(dependency), `${asset.id} depends on an asset outside the install bundle: ${dependency}`);
+      assert.ok(
+        assetsById.has(dependency),
+        `${asset.id} depends on an asset outside the install bundle: ${dependency}`,
+      );
     }
   }
 
-  const record = assetsById.get('app.certified.graph.entityFollow');
+  const record = assetsById.get("app.certified.graph.entityFollow");
   assert.equal(record.config.backfill, true);
-  assert.deepEqual(record.dependsOn, ['app.certified.signature.defs']);
-  assert.deepEqual(assetsById.get('app.certified.graph.getEntityFollow').dependsOn, ['app.certified.graph.entityFollow']);
-  assert.deepEqual(assetsById.get('app.certified.graph.listEntityFollowers').dependsOn, [
-    'app.certified.graph.getEntityFollow',
-    'org.hypercerts.api.defs',
+  assert.deepEqual(record.dependsOn, ["app.certified.signature.defs"]);
+  assert.deepEqual(assetsById.get("app.certified.graph.getEntityFollow").dependsOn, [
+    "app.certified.graph.entityFollow",
   ]);
-  const following = assetsById.get('app.certified.graph.listEntityFollowing');
+  assert.deepEqual(assetsById.get("app.certified.graph.listEntityFollowers").dependsOn, [
+    "app.certified.graph.getEntityFollow",
+    "org.hypercerts.api.defs",
+  ]);
+  const following = assetsById.get("app.certified.graph.listEntityFollowing");
   for (const viewOwner of [
-    'org.hypercerts.claim.getActivity',
-    'org.hypercerts.collection.getCollection',
-    'org.hypercerts.collection.listCollectionItems',
-  ]) assert.ok(following.dependsOn.includes(viewOwner));
+    "org.hypercerts.claim.getActivity",
+    "org.hypercerts.collection.getCollection",
+    "org.hypercerts.collection.listCollectionItems",
+  ])
+    assert.ok(following.dependsOn.includes(viewOwner));
 
   const expectedValidationIds = [
-    'app.certified.defs',
-    'app.certified.graph.entityFollow',
-    'app.certified.graph.getEntityFollow',
-    'app.certified.graph.getEntityFollows',
-    'app.certified.graph.listEntityFollowers',
-    'app.certified.graph.listEntityFollowing',
-    'app.certified.signature.defs',
-    'com.atproto.repo.strongRef',
-    'org.hypercerts.api.defs',
-    'org.hypercerts.claim.getActivity',
-    'org.hypercerts.collection.getCollection',
-    'org.hypercerts.collection.listCollectionItems',
-    'org.hypercerts.entity.feature',
+    "app.certified.defs",
+    "app.certified.graph.entityFollow",
+    "app.certified.graph.getEntityFollow",
+    "app.certified.graph.getEntityFollows",
+    "app.certified.graph.listEntityFollowers",
+    "app.certified.graph.listEntityFollowing",
+    "app.certified.signature.defs",
+    "com.atproto.repo.strongRef",
+    "org.hypercerts.api.defs",
+    "org.hypercerts.claim.getActivity",
+    "org.hypercerts.collection.getCollection",
+    "org.hypercerts.collection.listCollectionItems",
+    "org.hypercerts.entity.feature",
   ];
-  const validationSources = new Map(rootManifest.validationLexicons.map((source) => [source.id, source]));
-  for (const id of expectedValidationIds) assert.ok(validationSources.has(id), `missing schema validation dependency ${id}`);
-  assert.equal(validationSources.get('app.certified.graph.entityFollow').packagePath, 'lexicons/app/certified/graph/entityFollow.json');
-  assert.equal(validationSources.get('app.certified.defs').packagePath, 'lexicons/app/certified/defs.json');
+  const validationSources = new Map(
+    rootManifest.validationLexicons.map((source) => [source.id, source]),
+  );
+  for (const id of expectedValidationIds)
+    assert.ok(validationSources.has(id), `missing schema validation dependency ${id}`);
+  assert.equal(
+    validationSources.get("app.certified.graph.entityFollow").packagePath,
+    "lexicons/app/certified/graph/entityFollow.json",
+  );
+  assert.equal(
+    validationSources.get("app.certified.defs").packagePath,
+    "lexicons/app/certified/defs.json",
+  );
 
   const localLexicons = new Map();
   for (const source of rootManifest.validationLexicons.filter(({ path }) => path)) {
-    const document = JSON.parse(await readFile(resolve(root, source.path), 'utf8'));
+    const document = JSON.parse(await readFile(resolve(root, source.path), "utf8"));
     assert.equal(document.id, source.id);
     localLexicons.set(document.id, document);
   }
-  const apiDefs = localLexicons.get('org.hypercerts.api.defs');
-  assert.deepEqual(apiDefs.defs.profileView.nullable, ['indexedAt']);
-  assert.deepEqual(apiDefs.defs.organizationView.nullable, ['indexedAt']);
+  const apiDefs = localLexicons.get("org.hypercerts.api.defs");
+  assert.deepEqual(apiDefs.defs.profileView.nullable, ["indexedAt"]);
+  assert.deepEqual(apiDefs.defs.organizationView.nullable, ["indexedAt"]);
   for (const id of [
-    'app.certified.graph.getEntityFollow',
-    'app.certified.graph.getEntityFollows',
-    'app.certified.graph.listEntityFollowers',
-    'app.certified.graph.listEntityFollowing',
+    "app.certified.graph.getEntityFollow",
+    "app.certified.graph.getEntityFollows",
+    "app.certified.graph.listEntityFollowers",
+    "app.certified.graph.listEntityFollowing",
   ]) {
     const asset = assetsById.get(id);
-    const source = JSON.parse(await readFile(resolve(`${root}/modules/entity-follow`, asset.path), 'utf8'));
+    const source = JSON.parse(
+      await readFile(resolve(`${root}/modules/entity-follow`, asset.path), "utf8"),
+    );
     assert.equal(source.id, id);
     assert.equal(asset.config.backfill, false);
   }
-  const get = localLexicons.get('app.certified.graph.getEntityFollow');
-  const getBatch = localLexicons.get('app.certified.graph.getEntityFollows');
-  const followers = localLexicons.get('app.certified.graph.listEntityFollowers');
-  const followingDoc = localLexicons.get('app.certified.graph.listEntityFollowing');
-  assert.deepEqual(get.defs.entityFollowRecordView.nullable, ['indexedAt']);
-  assert.deepEqual(followers.defs.entityFollowerView.nullable, ['profile', 'organization']);
-  assert.deepEqual(followers.defs.entityFollowerView.properties.follow.ref, 'app.certified.graph.getEntityFollow#entityFollowRecordView');
+  const get = localLexicons.get("app.certified.graph.getEntityFollow");
+  const getBatch = localLexicons.get("app.certified.graph.getEntityFollows");
+  const followers = localLexicons.get("app.certified.graph.listEntityFollowers");
+  const followingDoc = localLexicons.get("app.certified.graph.listEntityFollowing");
+  assert.deepEqual(get.defs.entityFollowRecordView.nullable, ["indexedAt"]);
+  assert.deepEqual(followers.defs.entityFollowerView.nullable, ["profile", "organization"]);
+  assert.deepEqual(
+    followers.defs.entityFollowerView.properties.follow.ref,
+    "app.certified.graph.getEntityFollow#entityFollowRecordView",
+  );
   const followingItem = followingDoc.defs.entityFollowingItem;
   assert.deepEqual(followingItem.properties.entity.refs, [
-    'org.hypercerts.claim.getActivity#activityView',
-    'org.hypercerts.collection.getCollection#collectionView',
-    'org.hypercerts.collection.listCollectionItems#featureView',
+    "org.hypercerts.claim.getActivity#activityView",
+    "org.hypercerts.collection.getCollection#collectionView",
+    "org.hypercerts.collection.listCollectionItems#featureView",
   ]);
-  assert.deepEqual(followingItem.properties.follow.ref, 'app.certified.graph.getEntityFollow#entityFollowRecordView');
-  assert.deepEqual(Object.keys(get.defs.main.parameters.properties).sort(), ['actor', 'entity']);
-  assert.deepEqual(Object.keys(getBatch.defs.main.parameters.properties).sort(), ['actor', 'entities']);
+  assert.deepEqual(
+    followingItem.properties.follow.ref,
+    "app.certified.graph.getEntityFollow#entityFollowRecordView",
+  );
+  assert.deepEqual(Object.keys(get.defs.main.parameters.properties).sort(), ["actor", "entity"]);
+  assert.deepEqual(Object.keys(getBatch.defs.main.parameters.properties).sort(), [
+    "actor",
+    "entities",
+  ]);
   assert.equal(getBatch.defs.main.parameters.properties.entities.minLength, 1);
   assert.equal(getBatch.defs.main.parameters.properties.entities.maxLength, 100);
-  assert.deepEqual(getBatch.defs.output.required, ['results']);
-  assert.equal(getBatch.defs.entityFollowResult.properties.follow.ref, 'app.certified.graph.getEntityFollow#entityFollowRecordView');
-  assert.deepEqual(getBatch.defs.entityFollowResult.nullable, ['follow']);
-  assert.deepEqual(get.defs.output.required, ['follow']);
-  assert.deepEqual(get.defs.output.nullable, ['follow']);
+  assert.deepEqual(getBatch.defs.output.required, ["results"]);
+  assert.equal(
+    getBatch.defs.entityFollowResult.properties.follow.ref,
+    "app.certified.graph.getEntityFollow#entityFollowRecordView",
+  );
+  assert.deepEqual(getBatch.defs.entityFollowResult.nullable, ["follow"]);
+  assert.deepEqual(get.defs.output.required, ["follow"]);
+  assert.deepEqual(get.defs.output.nullable, ["follow"]);
   assert.equal(followers.defs.main.parameters.properties.limit.minimum, 1);
   assert.equal(followers.defs.main.parameters.properties.limit.maximum, 100);
-  assert.deepEqual(followers.defs.output.required, ['followers', 'totalCount']);
-  assert.equal(followers.defs.output.properties.totalCount.type, 'integer');
+  assert.deepEqual(followers.defs.output.required, ["followers", "totalCount"]);
+  assert.equal(followers.defs.output.properties.totalCount.type, "integer");
   assert.equal(followers.defs.output.properties.totalCount.minimum, 0);
-  assert.equal(Object.hasOwn(followingDoc.defs.output.properties, 'totalCount'), false);
-  assert.deepEqual(followingDoc.defs.output.required, ['entities']);
+  assert.equal(Object.hasOwn(followingDoc.defs.output.properties, "totalCount"), false);
+  assert.deepEqual(followingDoc.defs.output.required, ["entities"]);
   assert.equal(followingDoc.defs.main.parameters.properties.limit.minimum, 1);
   assert.equal(followingDoc.defs.main.parameters.properties.limit.maximum, 100);
 });
 
-test('listEntityFollowing names unknown query parameters in InvalidRequest diagnostics', () => {
+test("listEntityFollowing names unknown query parameters in InvalidRequest diagnostics", () => {
   const source = `
 local NULL_VALUE = {}
 json = { decode = function(value) if value == 'null' then return NULL_VALUE end return {} end }
@@ -834,32 +1100,42 @@ assert(not ok)
 assert(tostring(result) == 'InvalidRequest: unknown query parameter: bogus', tostring(result))
 assert(calls == 0, 'unknown parameters must be rejected before database access')
 `;
-  runLua('listEntityFollowing', source);
+  runLua("listEntityFollowing", source);
 });
 
-test('getEntityFollows preserves request order and duplicates, matches target URIs, and returns raw nullable views', () => {
+test("getEntityFollows preserves request order and duplicates, matches target URIs, and returns raw nullable views", () => {
   const missingEntity = `at://${author}/org.example.unsupported/missing`;
   const rows = [
     {
       target: entityUri,
       uri: `at://${actor}/${entityFollow}/3jzfcijpj2z2a`,
       did: actor,
-      cid: 'bafy-earliest-entity-follow',
-      indexed_at: '2025-01-03T00:00:00Z',
-      record: 'entity-follow-earliest',
-      follow_record: { $type: entityFollow, subject: { $type: 'app.certified.defs#recordSubject', uri: entityUri }, createdAt: '2025-01-01T00:00:00Z' },
+      cid: "bafy-earliest-entity-follow",
+      indexed_at: "2025-01-03T00:00:00Z",
+      record: "entity-follow-earliest",
+      follow_record: {
+        $type: entityFollow,
+        subject: { $type: "app.certified.defs#recordSubject", uri: entityUri },
+        createdAt: "2025-01-01T00:00:00Z",
+      },
     },
     {
       target: nextEntityUri,
       uri: `at://${actor}/${entityFollow}/other-target`,
       did: actor,
-      cid: 'bafy-other-entity-follow',
+      cid: "bafy-other-entity-follow",
       indexed_at: null,
-      record: 'entity-follow-other',
-      follow_record: { $type: entityFollow, subject: { $type: 'app.certified.defs#recordSubject', uri: nextEntityUri }, createdAt: '2025-01-02T00:00:00Z' },
+      record: "entity-follow-other",
+      follow_record: {
+        $type: entityFollow,
+        subject: { $type: "app.certified.defs#recordSubject", uri: nextEntityUri },
+        createdAt: "2025-01-02T00:00:00Z",
+      },
     },
   ];
-  const records = Object.fromEntries(rows.map(({ record, follow_record }) => [record, follow_record]));
+  const records = Object.fromEntries(
+    rows.map(({ record, follow_record }) => [record, follow_record]),
+  );
   const source = `
 local FIXTURE = ${lua({ actor, entityUri, nextEntityUri, missingEntity, entityFollow, rows, records })}
 local NULL_VALUE, calls = {}, {}
@@ -899,10 +1175,10 @@ assert(calls[1].sql:find('DISTINCT ON (requested.target)', 1, true))
 assert(calls[1].sql:find('ORDER BY requested.target, sorted.sort_at ASC, uri ASC', 1, true))
 assert(not calls[1].sql:find("record::jsonb->'subject'->>'cid'", 1, true), 'entity relationships match by URI independently of CID')
 `;
-  runLua('getEntityFollows', source);
+  runLua("getEntityFollows", source);
 });
 
-test('getEntityFollows rejects malformed collection NSIDs but accepts valid arbitrary collections', () => {
+test("getEntityFollows rejects malformed collection NSIDs but accepts valid arbitrary collections", () => {
   const malformedEntityUri = `at://${author}/bad%20collection/key`;
   const arbitraryCollectionUri = `at://${author}/com.example.arbitrary/key`;
   const source = `
@@ -926,11 +1202,14 @@ assert(#result.results == 1 and result.results[1].entity == '${arbitraryCollecti
 assert(result.results[1].follow == NULL_VALUE, 'valid arbitrary collection NSIDs remain accepted when no follow exists')
 assert(calls == 1, 'valid arbitrary collections reach the database lookup')
 `;
-  runLua('getEntityFollows', source);
+  runLua("getEntityFollows", source);
 });
 
-test('getEntityFollows rejects invalid or oversized target arrays before querying and surfaces database failures', () => {
-  const oversizedUris = Array.from({ length: 3 }, (_, index) => `at://${author}/${'x'.repeat(2500)}/target-${index}`);
+test("getEntityFollows rejects invalid or oversized target arrays before querying and surfaces database failures", () => {
+  const oversizedUris = Array.from(
+    { length: 3 },
+    (_, index) => `at://${author}/${"x".repeat(2500)}/target-${index}`,
+  );
   const invalidSource = `
 local calls = 0
 json = { decode = function(value) if value == 'null' then return {} end return {} end }
@@ -948,15 +1227,15 @@ assert(calls == 0, 'invalid batch requests must fail before querying')
   for (const params of [
     { actor, entities: [] },
     { actor },
-    { actor, entities: [entityUri, 'not-an-at-uri'] },
+    { actor, entities: [entityUri, "not-an-at-uri"] },
     { actor, entities: [`at://${author}/org.example.collection/.`] },
     { actor, entities: Array(101).fill(entityUri) },
     { actor, entities: oversizedUris },
-    { actor, entities: [entityUri], unexpected: 'value' },
-    { actor: 'alice.example', entities: [entityUri] },
+    { actor, entities: [entityUri], unexpected: "value" },
+    { actor: "alice.example", entities: [entityUri] },
   ]) {
-    const source = invalidSource.replace('REQUEST_PARAMS', lua(params));
-    runLua('getEntityFollows', source);
+    const source = invalidSource.replace("REQUEST_PARAMS", lua(params));
+    runLua("getEntityFollows", source);
   }
 
   const failureSource = `
@@ -971,5 +1250,5 @@ dofile('lua/endpoints/getEntityFollows.lua')
 local ok, result = pcall(handle)
 assert(not ok and tostring(result):find('EntityFollowQueryFailed:', 1, true), tostring(result))
 `;
-  runLua('getEntityFollows', failureSource);
+  runLua("getEntityFollows", failureSource);
 });

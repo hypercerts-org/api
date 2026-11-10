@@ -1,13 +1,15 @@
 # JavaScript tooling safeguards
 
-The API package uses ESLint restrictions and strict TypeScript checking to keep
+The API package uses Biome lint restrictions and strict TypeScript checking to keep
 its JavaScript tooling predictable. These are static safeguards; accompanying
 type annotations preserve behavior for valid installer, seed, and HTTP-test
 inputs.
 
-## ESLint restrictions
+## Lint restrictions
 
-The package ESLint config applies these rules to JavaScript files under `happyview-modules/`:
+The root `biome.json` applies these rules to JavaScript files under `happyview-modules/`
+(`noRestrictedImports`, `noProcessExit` and the GritQL plugin
+`tooling/biome/no-shell-spawn.grit` at the repository root):
 
 - Named `exec` and `execSync` imports from `node:child_process` and
   `child_process` are rejected, including locally renamed imports. Namespace
@@ -26,7 +28,7 @@ These static rules do not perform data-flow analysis. Namespace imports are
 rejected wholesale, but a default import of either child-process module can
 bypass the named `exec`/`execSync` restriction; use named imports for allowed
 APIs. CommonJS `require` and computed/dynamic module loading are also not
-tracked. The subprocess selector does not follow a
+tracked. The subprocess plugin does not follow a
 named `spawn` import renamed to another identifier, copied function references,
 template/expression shell keys, inline object spreads, computed method names,
 or options stored in a variable or alias. Because it keys on call names, it can
@@ -52,19 +54,18 @@ behavior.
 Run from the repository root:
 
 ```sh
-pnpm --dir api run lint:js
-pnpm --dir api run typecheck
-pnpm --dir api run test:unit
+pnpm lint
+pnpm --filter @hypercerts-org/happyview-modules run typecheck
+pnpm --filter @hypercerts-org/happyview-modules run test:unit
 ```
 
 Focused checks for these safeguards and their owners are:
 
 ```sh
 cd happyview-modules
-pnpm exec eslint --max-warnings=0 --report-unused-disable-directives \
-  eslint.config.js tooling/installer.js tooling/run-http-tests.js tooling/seed.js \
-  tests/unit/tooling/eslint-maintainability.test.js
-node --test tests/unit/tooling/eslint-maintainability.test.js \
+pnpm exec biome lint --error-on-warnings tooling/installer.js tooling/run-http-tests.js \
+  tooling/seed.js tests/unit/tooling/lint-maintainability.test.js
+node --test tests/unit/tooling/lint-maintainability.test.js \
   tests/unit/tooling/installer.test.js \
   tests/unit/tooling/installer-core.test.js \
   tests/unit/tooling/seed.test.js

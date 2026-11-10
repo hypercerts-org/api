@@ -15,9 +15,7 @@
         "script_type": "lua",
         "description": "Hypercerts collection lookup handler"
       },
-      "dependsOn": [
-        "org.hypercerts.collection.getCollection"
-      ]
+      "dependsOn": ["org.hypercerts.collection.getCollection"]
     },
     {
       "kind": "lexicon",
@@ -27,9 +25,7 @@
         "backfill": false,
         "target_collection": "org.hypercerts.collection"
       },
-      "dependsOn": [
-        "org.hypercerts.collection.getCollection"
-      ]
+      "dependsOn": ["org.hypercerts.collection.getCollection"]
     },
     {
       "kind": "script",
@@ -49,9 +45,7 @@
         "script_type": "lua",
         "description": "Hypercerts collection listing handler"
       },
-      "dependsOn": [
-        "org.hypercerts.collection.listCollections"
-      ]
+      "dependsOn": ["org.hypercerts.collection.listCollections"]
     },
     {
       "kind": "lexicon",
@@ -61,9 +55,7 @@
         "backfill": false,
         "target_collection": "org.hypercerts.collection"
       },
-      "dependsOn": [
-        "org.hypercerts.collection.getCollection"
-      ]
+      "dependsOn": ["org.hypercerts.collection.getCollection"]
     },
     {
       "kind": "script",
@@ -83,9 +75,7 @@
         "script_type": "lua",
         "description": "Hypercerts collection search handler"
       },
-      "dependsOn": [
-        "org.hypercerts.collection.searchCollections"
-      ]
+      "dependsOn": ["org.hypercerts.collection.searchCollections"]
     },
     {
       "kind": "script",
@@ -104,9 +94,7 @@
         "script_type": "lua",
         "description": "Hypercerts collection item listing handler"
       },
-      "dependsOn": [
-        "org.hypercerts.collection.listCollectionItems"
-      ]
+      "dependsOn": ["org.hypercerts.collection.listCollectionItems"]
     }
   ]
 }

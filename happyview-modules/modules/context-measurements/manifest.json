@@ -9,10 +9,7 @@
         "backfill": false,
         "target_collection": "org.hypercerts.context.measurement"
       },
-      "dependsOn": [
-        "org.hypercerts.context.measurement",
-        "org.hypercerts.api.defs"
-      ]
+      "dependsOn": ["org.hypercerts.context.measurement", "org.hypercerts.api.defs"]
     },
     {
       "kind": "script",
@@ -40,10 +37,7 @@
         "backfill": false,
         "target_collection": "org.hypercerts.context.measurement"
       },
-      "dependsOn": [
-        "org.hypercerts.context.measurement",
-        "org.hypercerts.context.getMeasurement"
-      ]
+      "dependsOn": ["org.hypercerts.context.measurement", "org.hypercerts.context.getMeasurement"]
     },
     {
       "kind": "script",

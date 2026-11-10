@@ -1,22 +1,31 @@
-import test from 'node:test';
-import { readFile } from 'node:fs/promises';
-import { execFileSync } from 'node:child_process';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { execFileSync } from "node:child_process";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
 
-const root = fileURLToPath(new URL('../../../', import.meta.url));
-const read = (relative) => readFile(path.resolve(root, relative), 'utf8');
+const root = fileURLToPath(new URL("../../../", import.meta.url));
+const read = (relative) => readFile(path.resolve(root, relative), "utf8");
 
-test('getRights returns the full indexed record and a nullable hydrated publisher', async () => {
-  const [didValidation, query, recordIdentifier, rightsIdentifier, recordView, actorView, rightsView, getRights] = await Promise.all([
-    read('lua/shared/didValidation.lua'),
-    read('lua/shared/query.lua'),
-    read('lua/shared/recordIdentifier.lua'),
-    read('lua/shared/rightsIdentifier.lua'),
-    read('lua/shared/recordView.lua'),
-    read('lua/shared/actorView.lua'),
-    read('lua/shared/rightsView.lua'),
-    read('lua/src/getRights.lua'),
+test("getRights returns the full indexed record and a nullable hydrated publisher", async () => {
+  const [
+    didValidation,
+    query,
+    recordIdentifier,
+    rightsIdentifier,
+    recordView,
+    actorView,
+    rightsView,
+    getRights,
+  ] = await Promise.all([
+    read("lua/shared/didValidation.lua"),
+    read("lua/shared/query.lua"),
+    read("lua/shared/recordIdentifier.lua"),
+    read("lua/shared/rightsIdentifier.lua"),
+    read("lua/shared/recordView.lua"),
+    read("lua/shared/actorView.lua"),
+    read("lua/shared/rightsView.lua"),
+    read("lua/src/getRights.lua"),
   ]);
   const program = [
     `local null_value = {}`,
@@ -80,28 +89,28 @@ test('getRights returns the full indexed record and a nullable hydrated publishe
     assert(response.rights.author.profile.record.displayName == "Rights publisher")
     assert(response.rights.author.organization.indexedAt == null_value)
     assert(response.rights.author.organization.record.name == "Rights publisher organization")`,
-  ].join('\n\n');
+  ].join("\n\n");
 
-  execFileSync('lua', ['-'], { input: program, encoding: 'utf8' });
+  execFileSync("lua", ["-"], { input: program, encoding: "utf8" });
 });
 
 async function listRightsSources() {
   return Promise.all([
-    read('lua/shared/didValidation.lua'),
-    read('lua/shared/query.lua'),
-    read('lua/shared/recordIdentifier.lua'),
-    read('lua/shared/rightsIdentifier.lua'),
-    read('lua/shared/recordView.lua'),
-    read('lua/shared/actorView.lua'),
-    read('lua/shared/rightsView.lua'),
-    read('lua/shared/datetimeValidation.lua'),
-    read('lua/shared/listValidation.lua'),
-    read('lua/shared/listQuery.lua'),
-    read('lua/src/listRights.lua'),
+    read("lua/shared/didValidation.lua"),
+    read("lua/shared/query.lua"),
+    read("lua/shared/recordIdentifier.lua"),
+    read("lua/shared/rightsIdentifier.lua"),
+    read("lua/shared/recordView.lua"),
+    read("lua/shared/actorView.lua"),
+    read("lua/shared/rightsView.lua"),
+    read("lua/shared/datetimeValidation.lua"),
+    read("lua/shared/listValidation.lua"),
+    read("lua/shared/listQuery.lua"),
+    read("lua/src/listRights.lua"),
   ]);
 }
 
-test('listRights treats repeated authors as an OR filter', async () => {
+test("listRights treats repeated authors as an OR filter", async () => {
   const sources = await listRightsSources();
   const program = [
     `local null_value = {}`,
@@ -159,12 +168,12 @@ test('listRights treats repeated authors as an OR filter', async () => {
     assert(response.rights[1].author.organization.indexedAt == null_value)
     assert(response.rights[2].author.profile.indexedAt == null_value)
     assert(response.rights[2].author.organization.indexedAt == null_value)`,
-  ].join('\n\n');
+  ].join("\n\n");
 
-  execFileSync('lua', ['-'], { input: program, encoding: 'utf8' });
+  execFileSync("lua", ["-"], { input: program, encoding: "utf8" });
 });
 
-test('listRights paginates in both directions and rejects a cursor used with another direction', async () => {
+test("listRights paginates in both directions and rejects a cursor used with another direction", async () => {
   const sources = await listRightsSources();
   const program = [
     `local null_value = {}`,
@@ -253,7 +262,7 @@ test('listRights paginates in both directions and rejects a cursor used with ano
     assert(#second_desc.rights == 2)
     assert(second_desc.rights[1].record.rightsName == "B" and second_desc.rights[2].record.rightsName == "A")
     assert(second_desc.cursor == nil)`,
-  ].join('\n\n');
+  ].join("\n\n");
 
-  execFileSync('lua', ['-'], { input: program, encoding: 'utf8' });
+  execFileSync("lua", ["-"], { input: program, encoding: "utf8" });
 });

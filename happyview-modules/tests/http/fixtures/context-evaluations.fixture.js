@@ -1,87 +1,93 @@
-import { encode } from '@atcute/cbor';
-import * as CID from '@atcute/cid';
+import { encode } from "@atcute/cbor";
+import * as CID from "@atcute/cid";
 
-const evaluationCollection = 'org.hypercerts.context.evaluation';
-const profileCollection = 'app.certified.actor.profile';
-const organizationCollection = 'app.certified.actor.organization';
-const authorA = 'did:web:context-evaluation-a.invalid';
-const authorB = 'did:web:context-evaluation-b.invalid';
-const evaluatorA = 'did:web:context-evaluator-a.invalid';
-const evaluatorB = 'did:web:context-evaluator-b.invalid';
-const evaluatorC = 'did:web:context-evaluator-c.invalid';
-const evaluatorD = 'did:web:context-evaluator-d.invalid';
-const legacyEvaluatorDid = 'did:web:context-evaluator-legacy.invalid';
-const malformedAuthor = 'did:web:context-evaluation-malformed.invalid';
-const subjectA = 'at://did:web:context-eval-subject-a.invalid/org.hypercerts.claim.activity/subject-a';
-const subjectB = 'at://did:web:context-eval-subject-b.invalid/org.hypercerts.claim.activity/subject-b';
-const subjectC = 'at://did:web:context-eval-subject-c.invalid/org.hypercerts.claim.activity/subject-c';
-const subjectCid = 'bafyreiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
-const indexedAt = '2025-03-04T05:06:07.000Z';
-const tiedCreatedAt = '2025-03-01T00:00:00.000Z';
+const evaluationCollection = "org.hypercerts.context.evaluation";
+const profileCollection = "app.certified.actor.profile";
+const organizationCollection = "app.certified.actor.organization";
+const authorA = "did:web:context-evaluation-a.invalid";
+const authorB = "did:web:context-evaluation-b.invalid";
+const evaluatorA = "did:web:context-evaluator-a.invalid";
+const evaluatorB = "did:web:context-evaluator-b.invalid";
+const evaluatorC = "did:web:context-evaluator-c.invalid";
+const evaluatorD = "did:web:context-evaluator-d.invalid";
+const legacyEvaluatorDid = "did:web:context-evaluator-legacy.invalid";
+const malformedAuthor = "did:web:context-evaluation-malformed.invalid";
+const subjectA =
+  "at://did:web:context-eval-subject-a.invalid/org.hypercerts.claim.activity/subject-a";
+const subjectB =
+  "at://did:web:context-eval-subject-b.invalid/org.hypercerts.claim.activity/subject-b";
+const subjectC =
+  "at://did:web:context-eval-subject-c.invalid/org.hypercerts.claim.activity/subject-c";
+const subjectCid = "bafyreiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+const indexedAt = "2025-03-04T05:06:07.000Z";
+const tiedCreatedAt = "2025-03-01T00:00:00.000Z";
 
 const evaluationSpecs = [
   {
     did: authorA,
-    rkey: '3jzfcijpj2z2a',
+    rkey: "3jzfcijpj2z2a",
     record: {
       evaluators: [{ did: evaluatorA }, { did: evaluatorA }, { did: evaluatorB }],
-      summary: 'Evaluation A',
+      summary: "Evaluation A",
       createdAt: tiedCreatedAt,
       subject: { uri: subjectA, cid: subjectCid },
-      score: { min: '0', max: '5', value: '4.5' },
+      score: { min: "0", max: "5", value: "4.5" },
     },
   },
   {
     did: authorA,
-    rkey: '3jzfcijpj2z2b',
+    rkey: "3jzfcijpj2z2b",
     record: {
       evaluators: [{ did: evaluatorB }],
-      summary: 'Evaluation B',
+      summary: "Evaluation B",
       createdAt: tiedCreatedAt,
       subject: { uri: subjectB, cid: subjectCid },
-      score: { min: '0', max: '5', value: '3' },
+      score: { min: "0", max: "5", value: "3" },
     },
   },
   {
     did: authorB,
-    rkey: '3jzfcijpj2z2c',
+    rkey: "3jzfcijpj2z2c",
     record: {
       evaluators: [{ did: evaluatorB }],
-      summary: 'Evaluation C',
+      summary: "Evaluation C",
       createdAt: tiedCreatedAt,
       subject: { uri: subjectA, cid: subjectCid },
-      score: { min: '0', max: '5', value: '2' },
+      score: { min: "0", max: "5", value: "2" },
     },
   },
   {
     did: authorB,
-    rkey: '3jzfcijpj2z2d',
+    rkey: "3jzfcijpj2z2d",
     record: {
       evaluators: [{ did: evaluatorC }],
-      summary: 'Evaluation D',
-      createdAt: '2025-03-02T00:00:00.000Z',
+      summary: "Evaluation D",
+      createdAt: "2025-03-02T00:00:00.000Z",
       subject: { uri: subjectC, cid: subjectCid },
-      score: { min: '0', max: '5', value: '1' },
+      score: { min: "0", max: "5", value: "1" },
     },
   },
   {
     did: malformedAuthor,
-    rkey: '3jzfcijpj2z2e',
+    rkey: "3jzfcijpj2z2e",
     record: {
       evaluators: [
-        { did: evaluatorD }, legacyEvaluatorDid, { did: 'reviewer.example' }, { did: evaluatorD },
+        { did: evaluatorD },
+        legacyEvaluatorDid,
+        { did: "reviewer.example" },
+        { did: evaluatorD },
       ],
-      summary: 'Evaluation with malformed evaluator entries',
+      summary: "Evaluation with malformed evaluator entries",
       createdAt: tiedCreatedAt,
       subject: { uri: subjectA, cid: subjectCid },
     },
   },
   {
     did: malformedAuthor,
-    rkey: '3jzfcijpj2z2f',
+    rkey: "3jzfcijpj2z2f",
     record: {
       evaluators: [{ did: evaluatorC }],
-      summary: 'Evaluation after malformed evaluator entries',
+      summary: "Evaluation after malformed evaluator entries",
       createdAt: tiedCreatedAt,
       subject: { uri: subjectA, cid: subjectCid },
     },
@@ -102,22 +108,24 @@ async function seedRow(collection, did, rkey, fields) {
 }
 
 export const seedRows = await Promise.all([
-  ...evaluationSpecs.map(({ did, rkey, record }) => seedRow(evaluationCollection, did, rkey, record)),
-  seedRow(profileCollection, authorA, 'self', {
-    displayName: 'Context evaluation publisher',
+  ...evaluationSpecs.map(({ did, rkey, record }) =>
+    seedRow(evaluationCollection, did, rkey, record),
+  ),
+  seedRow(profileCollection, authorA, "self", {
+    displayName: "Context evaluation publisher",
     createdAt: indexedAt,
   }),
-  seedRow(profileCollection, evaluatorA, 'self', {
-    displayName: 'Named context evaluator',
+  seedRow(profileCollection, evaluatorA, "self", {
+    displayName: "Named context evaluator",
     createdAt: indexedAt,
   }),
-  seedRow(profileCollection, evaluatorD, 'self', {
-    displayName: 'Tolerated projection evaluator',
+  seedRow(profileCollection, evaluatorD, "self", {
+    displayName: "Tolerated projection evaluator",
     createdAt: indexedAt,
   }),
-  seedRow(organizationCollection, authorB, 'self', {
-    organizationType: ['nonprofit'],
-    visibility: 'public',
+  seedRow(organizationCollection, authorB, "self", {
+    organizationType: ["nonprofit"],
+    visibility: "public",
     createdAt: indexedAt,
   }),
 ]);

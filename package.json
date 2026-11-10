@@ -1,9 +1,13 @@
 {
   "name": "hypercerts-api-workspace",
   "private": true,
-  "packageManager": "pnpm@10.15.1",
+  "packageManager": "pnpm@12.15.0",
   "scripts": {
-    "check": "pnpm --filter @hypercerts-org/happyview-modules check && pnpm --filter hypercerts-api-endpoints test && pnpm --filter @hypercerts-org/api check",
+    "prepare": "lefthook install",
+    "lint": "biome lint --error-on-warnings .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "check": "pnpm lint && pnpm format:check && pnpm --filter @hypercerts-org/happyview-modules check && pnpm --filter hypercerts-api-endpoints test && pnpm --filter @hypercerts-org/api check",
     "test:unit": "pnpm --filter @hypercerts-org/happyview-modules run test:unit",
     "test:http": "pnpm --filter @hypercerts-org/happyview-modules run test:http",
     "build": "pnpm --filter @hypercerts-org/happyview-modules run build:lua && pnpm --filter hypercerts-api-endpoints build && pnpm --filter @hypercerts-org/api build",
@@ -15,7 +19,10 @@
     "version:packages": "changeset version && pnpm install --lockfile-only"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.6.4",
     "@changesets/changelog-github": "1.0.1",
-    "@changesets/cli": "3.0.2"
+    "@changesets/cli": "3.0.2",
+    "lefthook": "2.2.2",
+    "typescript": "7.0.2"
   }
 }

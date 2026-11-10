@@ -8,10 +8,7 @@
         "backfill": false,
         "target_collection": "org.hypercerts.workscope.tag"
       },
-      "dependsOn": [
-        "org.hypercerts.workscope.tag",
-        "org.hypercerts.api.defs"
-      ]
+      "dependsOn": ["org.hypercerts.workscope.tag", "org.hypercerts.api.defs"]
     },
     {
       "kind": "script",
@@ -40,9 +37,7 @@
         "backfill": false,
         "target_collection": "org.hypercerts.workscope.tag"
       },
-      "dependsOn": [
-        "org.hypercerts.workscope.getWorkscopeTag"
-      ]
+      "dependsOn": ["org.hypercerts.workscope.getWorkscopeTag"]
     },
     {
       "kind": "script",

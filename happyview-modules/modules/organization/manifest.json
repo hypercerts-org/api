@@ -22,9 +22,7 @@
         "backfill": false,
         "target_collection": "app.certified.actor.organization"
       },
-      "dependsOn": [
-        "app.certified.actor.getOrganization"
-      ]
+      "dependsOn": ["app.certified.actor.getOrganization"]
     },
     {
       "kind": "lexicon",
@@ -34,9 +32,7 @@
         "backfill": false,
         "target_collection": "app.certified.actor.organization"
       },
-      "dependsOn": [
-        "app.certified.actor.getOrganization"
-      ]
+      "dependsOn": ["app.certified.actor.getOrganization"]
     },
     {
       "kind": "lexicon",
@@ -46,9 +42,7 @@
         "backfill": false,
         "target_collection": "app.certified.actor.organization"
       },
-      "dependsOn": [
-        "app.certified.actor.getOrganization"
-      ]
+      "dependsOn": ["app.certified.actor.getOrganization"]
     },
     {
       "kind": "script",
@@ -65,9 +59,7 @@
         "script_type": "lua",
         "description": "Certified organization lookup handler"
       },
-      "dependsOn": [
-        "app.certified.actor.getOrganization"
-      ]
+      "dependsOn": ["app.certified.actor.getOrganization"]
     },
     {
       "kind": "script",
@@ -84,9 +76,7 @@
         "script_type": "lua",
         "description": "Certified organization batch lookup handler"
       },
-      "dependsOn": [
-        "app.certified.actor.getOrganizations"
-      ]
+      "dependsOn": ["app.certified.actor.getOrganizations"]
     },
     {
       "kind": "script",
@@ -108,9 +98,7 @@
         "script_type": "lua",
         "description": "Certified organization listing handler"
       },
-      "dependsOn": [
-        "app.certified.actor.listOrganizations"
-      ]
+      "dependsOn": ["app.certified.actor.listOrganizations"]
     },
     {
       "kind": "script",
@@ -132,9 +120,7 @@
         "script_type": "lua",
         "description": "Certified organization search handler"
       },
-      "dependsOn": [
-        "app.certified.actor.searchOrganizations"
-      ]
+      "dependsOn": ["app.certified.actor.searchOrganizations"]
     }
   ]
 }
