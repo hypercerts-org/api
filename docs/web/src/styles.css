@@ -18,8 +18,8 @@
 }
 
 @font-face {
-  font-family: "Switzer Variable";
-  src: url("/fonts/Switzer-Variable.woff2") format("woff2");
+  font-family: "Hanken Grotesk";
+  src: url("/fonts/HankenGrotesk-Variable.woff2") format("woff2");
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
@@ -35,7 +35,10 @@
   --ui-separator: #d2d2d2;
   --brand-accent: #af2901;
   --status-danger-bg: #f9eeeb;
-  --body-font-family: "Switzer Variable", system-ui, sans-serif;
+  --body-font-family: "Hanken Grotesk", system-ui, sans-serif;
+  /* @hypercerts-org/ui-react sets --font-body for its components (read through
+   * --hc-font-body); point it at the same stack. */
+  --font-body: var(--body-font-family);
   color-scheme: light;
   font-family: var(--body-font-family);
   font-synthesis: none;

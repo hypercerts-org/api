@@ -45,4 +45,4 @@ pnpm --filter hypercerts-api-endpoints test
 
 The filtered `build` command writes the deployable static site to `docs/dist/`; `preview` serves that build locally, and `test` runs the explorer suite. The workspace-root `pnpm build` also builds the API Lua bundles.
 
-**Font licence:** This repo bundles Switzer Variable. Its redistribution through a repository or package may be restricted under the Fontshare ITF Free Font License; resolve that risk before distributing a release. This is not legal clearance.
+**Font license:** The body font is Hanken Grotesk, under the SIL Open Font License 1.1. Its license is in `docs/public/fonts/OFL.txt`.
