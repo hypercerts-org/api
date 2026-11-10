@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "https://api.test.hypercerts.dev",
+      "url": "https://test.api.hypercerts.dev",
       "description": "API test server (default)"
     }
   ],

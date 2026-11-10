@@ -6,7 +6,7 @@
     "description": "Public, read-only Hypercerts XRPC query endpoints. This static contract snapshot describes declared behavior, not availability on a particular deployment."
   },
   "servers": [
-    { "url": "https://api.test.hypercerts.dev", "description": "API test server (default)" }
+    { "url": "https://test.api.hypercerts.dev", "description": "API test server (default)" }
   ],
   "tags": [
     { "name": "app.certified.actor" },
