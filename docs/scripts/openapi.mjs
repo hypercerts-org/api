@@ -1,4 +1,4 @@
-export const DEFAULT_SERVER_URL = "https://api.test.hypercerts.dev";
+export const DEFAULT_SERVER_URL = "https://test.api.hypercerts.dev";
 
 const SCHEMA_FIELDS = [
   "type",
