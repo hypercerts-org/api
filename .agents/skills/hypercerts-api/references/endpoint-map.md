@@ -11,6 +11,7 @@ This task index lists the public query NSIDs in the bundled [OpenAPI contract](o
 - **Relationship checks:** use `get...Follow` for a single pair, or `getFollows` / `getEntityFollows` to check repeated target values for one actor. List queries answer who follows whom or which entities an actor follows.
 - **Follower counts:** use `getFollowerCounts` for counts across many accounts and entities in one call; use a follower list's `totalCount` only when you also need that subject's followers.
 - **Feed reactions:** use `getLikes` or `getReposts` for distinct actors reacting to one subject URI, `getActorLikes` / `getActorReposts` for one actor's raw representative reactions, `getActorReactions` to check one actor across a bounded set of known subject URIs, or `getReactionCounts` for indexed like and repost counts across known subjects.
+- **Comment counts:** use `org.hypercerts.context.getCommentCounts` for comment counts across known subjects. Comments are attachments, not feed reactions; list them with `listAttachments` filtered by `subjects` and `contentTypes=comment`.
 
 Inspect the exact operation in the bundled OpenAPI contract before constructing a request: names such as `authors`, `actors`, `uri`, and `collection` have endpoint-specific meanings. Do not infer that a filter, search operation, output array name, or error exists just because a related endpoint has one.
 
@@ -64,7 +65,7 @@ Choose `listCollectionItems` when the caller needs the referenced item versions,
 | Browse/filter badge definitions | `app.certified.badge.listBadgeDefinitions` | Use publisher/type filters and pagination. |
 | Search badge definitions | `app.certified.badge.searchBadgeDefinitions` | `search` is required; use for text discovery, not status checking. |
 | Load one award and its response status | `app.certified.badge.getBadgeAward` | Exact award AT-URI in `uri`; includes `responseStatus` (`accepted`, `rejected`, or `unanswered`) and nullable recipient response. |
-| Browse/filter awards | `app.certified.badge.listBadgeAwards` | Use when the award URI is not known or multiple awards are needed; the result includes response status. |
+| Browse/filter awards | `app.certified.badge.listBadgeAwards` | Use when the award URI is not known or multiple awards are needed; the result includes response status. Set `includeTotal=true` to get `totalCount`: award records matching all filters before cursor and limit, not deduplicated, also on empty pages (use `limit=1` for a count-only request). |
 | Load one raw response record | `app.certified.badge.getBadgeResponse` | Exact response AT-URI in `uri`. |
 | List raw responses for an award | `app.certified.badge.listBadgeResponses` | Optional `badgeAward` filter; use to inspect response records, not as a substitute for the award's derived status. |
 
@@ -100,7 +101,7 @@ Do not confuse actor follows with entity follows; their identifiers and list out
 
 Paginated reaction-list queries use the earliest record per author/subject URI, with reaction URI ascending on ties, and sort pages by the representative's `createdAt` and URI. `getActorReactions` uses the same representative selection but preserves request order and has no pagination. Check each operation for exact cursor and response details.
 
-## Context and supporting records (8)
+## Context and supporting records (9)
 
 | User task | Query NSID | Practical choice |
 |---|---|---|
@@ -108,6 +109,7 @@ Paginated reaction-list queries use the earliest record per author/subject URI, 
 | List acknowledgements | `org.hypercerts.context.listAcknowledgements` | Filter by publisher or subject as documented. |
 | Load one attachment | `org.hypercerts.context.getAttachment` | Exact record AT-URI in `uri`. |
 | List attachments | `org.hypercerts.context.listAttachments` | Filter by publisher, record URI, subject, or content type. |
+| Count comments for subjects | `org.hypercerts.context.getCommentCounts` | Pass 1–100 full subject record AT-URIs as repeated, unbracketed `subjects`. Counts attachments with `contentType` `comment` whose `subjects` include the URI, ignoring CID. Each comment record counts, so several by one author each count. Results preserve input order and duplicates. |
 | Load one evaluation | `org.hypercerts.context.getEvaluation` | Exact record AT-URI in `uri`; includes publisher/evaluator projections and preserves raw records when malformed evaluator entries are omitted. |
 | List evaluations | `org.hypercerts.context.listEvaluations` | Filter by publisher, evaluator, or subject; malformed evaluator entries do not hide otherwise valid records. |
 | Load one measurement | `org.hypercerts.context.getMeasurement` | Exact record AT-URI in `uri`. |

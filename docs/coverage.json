@@ -5,12 +5,12 @@
   },
   "runtimeValidation": "not-assessed",
   "deploymentValidation": "not-assessed",
-  "endpointCount": 64,
+  "endpointCount": 65,
   "methods": {
-    "GET": 64
+    "GET": 65
   },
   "inclusion": {
-    "manifest-registered": 64
+    "manifest-registered": 65
   },
   "unresolvedReferences": [],
   "endpoints": [
@@ -310,6 +310,12 @@
     },
     {
       "id": "org.hypercerts.context.getAttachment",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/context-attachments/manifest.json"
+    },
+    {
+      "id": "org.hypercerts.context.getCommentCounts",
       "method": "GET",
       "inclusion": "manifest-registered",
       "module": "modules/context-attachments/manifest.json"

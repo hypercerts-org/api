@@ -195,6 +195,10 @@
       "path": "lexicons/org.hypercerts.context.listAttachments.json"
     },
     {
+      "id": "org.hypercerts.context.getCommentCounts",
+      "path": "lexicons/org.hypercerts.context.getCommentCounts.json"
+    },
+    {
       "id": "org.hypercerts.context.attachment",
       "packagePath": "lexicons/org/hypercerts/context/attachment.json"
     },

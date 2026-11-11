@@ -1,6 +1,7 @@
 {
   "name": "hypercerts-api-workspace",
   "private": true,
+  "license": "MIT OR Apache-2.0",
   "packageManager": "pnpm@12.15.0",
   "scripts": {
     "prepare": "lefthook install",

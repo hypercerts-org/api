@@ -13,7 +13,7 @@ pnpm install --frozen-lockfile
 pnpm docs:dev
 ```
 
-Open <http://127.0.0.1:5173>. The explorer defaults to `https://api.test.hypercerts.dev`; Local (`http://127.0.0.1:8080`) and Custom server choices are also available. Requests go directly from your browser to the selected server.
+Open <http://127.0.0.1:5173>. The explorer defaults to `https://test.api.hypercerts.dev`; Local (`http://127.0.0.1:8080`) and Custom server choices are also available. Requests go directly from your browser to the selected server.
 
 To offer named servers, set `VITE_HAPPYVIEW_SERVERS` when starting the dev server or building the site:
 
@@ -45,4 +45,4 @@ pnpm --filter hypercerts-api-endpoints test
 
 The filtered `build` command writes the deployable static site to `docs/dist/`; `preview` serves that build locally, and `test` runs the explorer suite. The workspace-root `pnpm build` also builds the API Lua bundles.
 
-**Font licence:** This repo bundles Switzer Variable. Its redistribution through a repository or package may be restricted under the Fontshare ITF Free Font License; resolve that risk before distributing a release. This is not legal clearance.
+**Font licenses:** The body font, Hanken Grotesk, and the display font, Instrument Serif, are both under the SIL Open Font License 1.1. Their licenses are in `docs/public/fonts/OFL-HankenGrotesk.txt` and `docs/public/fonts/OFL-InstrumentSerif.txt`.

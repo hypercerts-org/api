@@ -18,7 +18,8 @@
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
-        "../../lua/shared/entityFollowTarget.lua",
+        "../../lua/shared/nsidValidation.lua",
+        "../../lua/shared/subjectRecordUri.lua",
         "../../lua/shared/followBatch.lua"
       ],
       "config": {

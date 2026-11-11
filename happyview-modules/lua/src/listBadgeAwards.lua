@@ -13,22 +13,6 @@ local function valid_badge_definition_uri(value)
   return valid and collection == DEFINITION
 end
 
-local function valid_badge_subject_nsid(value)
-  if type(value) ~= "string" or #value > 317 then return false end
-  local segments = {}
-  for segment in value:gmatch("[^%.]+") do segments[#segments + 1] = segment end
-  if #segments < 3 or table.concat(segments, ".") ~= value then return false end
-  for index = 1, #segments - 1 do
-    local segment = segments[index]
-    if #segment > 63 or segment:find("[^A-Za-z0-9%-]") then return false end
-    local first, last = segment:sub(1, 1), segment:sub(-1)
-    if not first:match(index == 1 and "^[A-Za-z]$" or "^[A-Za-z0-9]$")
-      or not last:match("^[A-Za-z0-9]$") then return false end
-  end
-  local name = segments[#segments]
-  return #name <= 63 and name:match("^[A-Za-z][A-Za-z0-9]*$") ~= nil
-end
-
 local function query(sql, values)
   if db.backend() ~= "postgres" then
     error("BadgeAwardQueryFailed: badge award API requires PostgreSQL", 0)
@@ -80,7 +64,7 @@ local function subject_values()
     local is_did = valid_did(item)
     local valid_uri, collection
     if not is_did then valid_uri, collection = valid_record_uri(item) end
-    if not is_did and (not valid_uri or not valid_badge_subject_nsid(collection)) then
+    if not is_did and (not valid_uri or not valid_nsid(collection)) then
       invalid("subjects[" .. index .. "] must be a valid DID or full record AT-URI with a valid collection NSID")
     end
     if not seen[item] then
@@ -199,7 +183,18 @@ local function badge_award_view(row)
   return view
 end
 
-local function list_badge_awards(authors, badge_uris, badge_types, subjects, responses, limit, cursor, direction)
+local function parse_include_total()
+  local value = params.includeTotal
+  if value == nil then return false end
+  if type(value) == "boolean" then return value end
+  value = scalar(params, "includeTotal")
+  if value == "true" then return true end
+  if value == "false" then return false end
+  invalid("includeTotal must be true or false")
+end
+
+local function list_badge_awards(authors, badge_uris, badge_types, subjects, responses, limit, cursor, direction,
+  include_total)
   local where, values = { "award.collection = $1" }, { AWARD }
   add_filter(where, values, "award.did", authors)
   if badge_uris then
@@ -220,18 +215,23 @@ local function list_badge_awards(authors, badge_uris, badge_types, subjects, res
         table.concat(placeholders, ",") .. ")"
     end
   end
+  -- The cursor is kept out of `where` so that, when a total is requested, the
+  -- count and the page share one `matched` set and differ only by cursor/limit.
+  local cursor_timestamp, cursor_uri
   if cursor then
     values[#values + 1] = cursor.t
-    local timestamp = "$" .. #values
+    cursor_timestamp = "($" .. #values .. ")::timestamptz"
     values[#values + 1] = cursor.u
-    local uri = "$" .. #values
-    local operator = direction == "asc" and ">" or "<"
-    where[#where + 1] = "(sorted.sort_at, award.uri) " .. operator ..
-      " ((" .. timestamp .. ")::timestamptz, " .. uri .. ")"
+    cursor_uri = "$" .. #values
   end
+  local operator = direction == "asc" and ">" or "<"
   values[#values + 1] = limit + 1
   local ordering = direction == "asc" and "ASC" or "DESC"
-  local sql = "SELECT award.uri, award.did, award.cid, award.indexed_at::text AS indexed_at, " ..
+  local page_columns = "page.uri, page.did, page.cid, page.indexed_at, page.record, page.sort_timestamp, " ..
+    "page.badge_uri, page.badge_cid, page.badge_indexed_at, page.badge_did, page.badge_record, " ..
+    "page.recipient_response_uri, page.recipient_response_cid, page.recipient_response_indexed_at, " ..
+    "page.recipient_response_did, page.recipient_response_record"
+  local select_from = "SELECT award.uri, award.did, award.cid, award.indexed_at::text AS indexed_at, " ..
     "award.record::text AS record, to_char(sorted.sort_at AT TIME ZONE 'UTC', " ..
     "'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp, " ..
     "badge.uri AS badge_uri, badge.cid AS badge_cid, badge.indexed_at::text AS badge_indexed_at, " ..
@@ -250,9 +250,39 @@ local function list_badge_awards(authors, badge_uris, badge_types, subjects, res
     "AND response.record::jsonb->'badgeAward'->>'cid' = award.cid " ..
     "AND response.record::jsonb->>'response' IN ('accepted', 'rejected') " ..
     "ORDER BY response.indexed_at DESC NULLS LAST, response.uri DESC LIMIT 1) AS recipient_response ON TRUE " ..
-    "WHERE " .. table.concat(where, " AND ") .. " ORDER BY sorted.sort_at " .. ordering ..
-    ", award.uri " .. ordering .. " LIMIT $" .. #values
+    "WHERE " .. table.concat(where, " AND ")
+  local sql
+  if include_total then
+    local page_filter = ""
+    if cursor then
+      page_filter = " WHERE (sort_at, uri) " .. operator .. " (" .. cursor_timestamp .. ", " .. cursor_uri .. ")"
+    end
+    -- sort_at stays inside the CTEs: HappyView cannot decode raw timestamptz output columns.
+    local matched = select_from:gsub("^SELECT ", "SELECT sorted.sort_at, ", 1)
+    sql = "WITH matched AS (" .. matched .. "), " ..
+      "total AS (SELECT COUNT(*) AS total_count FROM matched), " ..
+      "page AS (SELECT * FROM matched" .. page_filter .. " ORDER BY sort_at " .. ordering ..
+      ", uri " .. ordering .. " LIMIT $" .. #values .. ") " ..
+      "SELECT " .. page_columns .. ", total.total_count FROM total LEFT JOIN page ON TRUE " ..
+      "ORDER BY page.sort_at " .. ordering .. ", page.uri " .. ordering
+  else
+    local cursor_filter = ""
+    if cursor then
+      cursor_filter = " AND (sorted.sort_at, award.uri) " .. operator .. " (" .. cursor_timestamp .. ", " .. cursor_uri .. ")"
+    end
+    sql = select_from .. cursor_filter .. " ORDER BY sorted.sort_at " .. ordering ..
+      ", award.uri " .. ordering .. " LIMIT $" .. #values
+  end
   local rows = query(sql, values)
+  local total_count
+  if include_total then
+    total_count = rows[1] and tonumber(rows[1].total_count)
+    if not total_count or total_count < 0 or total_count % 1 ~= 0 then
+      error("BadgeAwardQueryFailed: badge award count unavailable", 0)
+    end
+    -- `total LEFT JOIN page` yields one row with a NULL page when the page is empty.
+    if rows[1].uri == nil then rows = {} end
+  end
   local more = #rows > limit
   if more then rows[#rows] = nil end
   local views, author_views = {}, {}
@@ -275,13 +305,13 @@ local function list_badge_awards(authors, badge_uris, badge_types, subjects, res
     local last = rows[#rows]
     next_cursor = cursor_encode({ v = 1, d = direction, t = last.sort_timestamp, u = last.uri })
   end
-  return views, next_cursor
+  return views, next_cursor, total_count
 end
 
 local function handle_list_badge_awards()
   keys_only(params, {
     authors = true, badgeUris = true, badgeTypes = true, subjects = true, responses = true,
-    sortDirection = true, limit = true, cursor = true,
+    sortDirection = true, limit = true, cursor = true, includeTotal = true,
   })
   local authors = array_values("authors", valid_did, "valid DIDs")
   local badge_uris = array_values("badgeUris", valid_badge_definition_uri, "badge-definition AT-URIs")
@@ -292,9 +322,12 @@ local function handle_list_badge_awards()
   local limit = parse_list_limit(params)
   local direction = parse_sort_direction(params)
   local cursor = decode_badge_award_cursor(scalar(params, "cursor"), direction)
-  local views, next_cursor = list_badge_awards(authors, badge_uris, badge_types, subjects, responses, limit, cursor, direction)
+  local include_total = parse_include_total()
+  local views, next_cursor, total_count = list_badge_awards(authors, badge_uris, badge_types, subjects, responses,
+    limit, cursor, direction, include_total)
   local response = { badgeAwards = toarray(views) }
   if next_cursor then response.cursor = next_cursor end
+  if include_total then response.totalCount = total_count end
   return response
 end
 

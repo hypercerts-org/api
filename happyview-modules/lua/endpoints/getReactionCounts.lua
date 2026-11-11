@@ -39,23 +39,8 @@ local function valid_record_uri(value)
   return true, collection, authority
 end
 
-local LIKE = "app.certified.feed.like"
-local REPOST = "app.certified.feed.repost"
-
-local function reaction_count_valid_did_percent_escapes(authority)
-  local index = 1
-  while index <= #authority do
-    if authority:sub(index, index) == "%" then
-      if not authority:sub(index + 1, index + 2):match("^%x%x$") then return false end
-      index = index + 3
-    else
-      index = index + 1
-    end
-  end
-  return true
-end
-
-local function reaction_count_valid_nsid(value)
+-- An atproto NSID: at least three dot-separated segments, at most 317 characters.
+local function valid_nsid(value)
   if type(value) ~= "string" or #value > 317 then return false end
   local segments = {}
   for segment in value:gmatch("[^%.]+") do segments[#segments + 1] = segment end
@@ -70,6 +55,30 @@ local function reaction_count_valid_nsid(value)
   local name = segments[#segments]
   return #name <= 63 and name:match("^[A-Za-z][A-Za-z0-9]*$") ~= nil
 end
+
+-- valid_did allows "%" in a DID; the DID syntax requires two hex digits after it.
+local function valid_did_percent_escapes(authority)
+  local index = 1
+  while index <= #authority do
+    if authority:sub(index, index) == "%" then
+      if not authority:sub(index + 1, index + 2):match("^%x%x$") then return false end
+      index = index + 3
+    else
+      index = index + 1
+    end
+  end
+  return true
+end
+
+-- A record subject: a full DID-authority AT-URI with a valid collection NSID.
+local function valid_subject_record_uri(value)
+  if #value > 8192 then return false end
+  local valid, collection, authority = valid_record_uri(value)
+  return valid and valid_did_percent_escapes(authority) and valid_nsid(collection)
+end
+
+local LIKE = "app.certified.feed.like"
+local REPOST = "app.certified.feed.repost"
 
 local function reaction_count_subjects()
   local value = params.subjects
@@ -102,9 +111,7 @@ local function reaction_count_subjects()
 
   local unique, seen = {}, {}
   for _, subject in ipairs(supplied) do
-    local valid, collection, authority = valid_record_uri(subject)
-    if not valid or not reaction_count_valid_did_percent_escapes(authority)
-      or not reaction_count_valid_nsid(collection) then
+    if not valid_subject_record_uri(subject) then
       invalid("each subjects value must be a full AT-URI with a valid DID authority and collection NSID")
     end
     if not seen[subject] then

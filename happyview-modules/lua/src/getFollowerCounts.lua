@@ -4,7 +4,7 @@ local ENTITY_FOLLOW = "app.certified.graph.entityFollow"
 -- DIDs are account follows; anything else must be an entity-follow AT-URI.
 local function valid_follower_count_subject(value)
   if value:sub(1, 4) == "did:" then return valid_did(value) end
-  return valid_entity_follow_uri(value)
+  return valid_subject_record_uri(value)
 end
 
 local function follower_count_placeholders(values, subjects)

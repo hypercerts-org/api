@@ -44,3 +44,14 @@ pnpm install:api
 ```
 
 The admin token needs `script-variables:read`; if the resolver setting is absent and the installer must create it, it also needs `script-variables:create`. Conflicting assets stop installation by default; `--override` opts into replacing declared conflicts. The installer sends admin requests and uploads assets, and writes are not rolled back if a later asset fails. Run it only against an explicitly approved target with approved credentials. For tagged-release installation and resolver-setting behavior, see [happyview-modules/README.md](happyview-modules/README.md#install-a-released-api-bundle).
+
+## License
+
+Licensed under either [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option.
+
+The licenses don't cover the logos (`docs/public/brand/` and `docs/public/favicon.ico`) or the fonts (`docs/public/fonts/`): logos belong to their owners, and each font keeps its own license.
+
+The Lexicon schemas in `docs/sources/lexicons/` that were copied from other projects keep their upstream licenses:
+
+- `app.bsky` and `com.atproto` come from Bluesky's [atproto](https://github.com/bluesky-social/atproto): MIT OR Apache-2.0, Copyright (c) 2022-2026 Bluesky Social PBC, and Contributors.
+- `pub.leaflet` comes from [Leaflet](https://github.com/hyperlink-academy/leaflet): MIT, Copyright (c) 2025 Learning Futures Inc.

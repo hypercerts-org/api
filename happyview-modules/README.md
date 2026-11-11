@@ -20,6 +20,10 @@ Subject queries match by AT-URI without requiring a subject CID match, return on
 
 `getReactionCounts` accepts 1–100 repeated, unbracketed `subjects` values and returns one ordered count pair per input occurrence, counting distinct indexed publisher DIDs by subject URI across both reaction collections. Its counts do not require the subject record to be indexed and may change as reaction indexing changes.
 
+## Comment counts
+
+`modules/context-attachments/manifest.json` also provides `org.hypercerts.context.getCommentCounts`. A comment is an `org.hypercerts.context.attachment` with `contentType` `comment` whose `subjects` point at the record it comments on. The query accepts 1–100 repeated subject AT-URIs and counts, per subject, the current comment records whose `subjects[].uri` matches, ignoring CID. It counts records rather than authors, so a comment that lists a subject twice counts once while two comments by one author count twice. Results keep input order and duplicates, and the subject need not be indexed.
+
 ## Local validation
 
 From the repository root:

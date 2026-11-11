@@ -456,6 +456,15 @@
       }
     },
     {
+      "id": "org.hypercerts.context.getCommentCounts",
+      "type": "query",
+      "module": "modules/context-attachments/manifest.json",
+      "file": "sources/lexicons/org.hypercerts.context.getCommentCounts.json",
+      "source": {
+        "path": "../../lexicons/org.hypercerts.context.getCommentCounts.json"
+      }
+    },
+    {
       "id": "org.hypercerts.context.getEvaluation",
       "type": "query",
       "module": "modules/context-evaluation/manifest.json",
@@ -1223,6 +1232,15 @@
       "source": {
         "module": "modules/context-attachments/manifest.json",
         "path": "../../lexicons/org.hypercerts.context.getAttachment.json"
+      }
+    },
+    {
+      "id": "org.hypercerts.context.getCommentCounts",
+      "file": "sources/lexicons/org.hypercerts.context.getCommentCounts.json",
+      "kind": "endpoint",
+      "source": {
+        "module": "modules/context-attachments/manifest.json",
+        "path": "../../lexicons/org.hypercerts.context.getCommentCounts.json"
       }
     },
     {

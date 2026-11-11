@@ -54,6 +54,7 @@
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",
         "../../lua/shared/evaluation.lua",
+        "../../lua/shared/nsidValidation.lua",
         "../../lua/shared/evaluationList.lua"
       ],
       "config": {

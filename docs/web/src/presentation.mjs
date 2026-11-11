@@ -1,4 +1,4 @@
-export const DEFAULT_SERVER_URL = "https://api.test.hypercerts.dev";
+export const DEFAULT_SERVER_URL = "https://test.api.hypercerts.dev";
 export const LOCAL_SERVER_URL = "http://127.0.0.1:8080";
 
 const PRESENTATION_DESCRIPTION =

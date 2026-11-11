@@ -39,28 +39,42 @@ local function valid_record_uri(value)
   return true, collection, authority
 end
 
-local function entity_follow_valid_nsid(value)
+-- An atproto NSID: at least three dot-separated segments, at most 317 characters.
+local function valid_nsid(value)
   if type(value) ~= "string" or #value > 317 then return false end
   local segments = {}
   for segment in value:gmatch("[^%.]+") do segments[#segments + 1] = segment end
   if #segments < 3 or table.concat(segments, ".") ~= value then return false end
-
-  for _, segment in ipairs(segments) do
-    if #segment > 63 or segment:find("[^A-Za-z0-9%-]")
-      or segment:sub(1, 1) == "-" or segment:sub(-1) == "-" then
-      return false
-    end
+  for index = 1, #segments - 1 do
+    local segment = segments[index]
+    if #segment > 63 or segment:find("[^A-Za-z0-9%-]") then return false end
+    local first, last = segment:sub(1, 1), segment:sub(-1)
+    if not first:match(index == 1 and "^[A-Za-z]$" or "^[A-Za-z0-9]$")
+      or not last:match("^[A-Za-z0-9]$") then return false end
   end
-
-  if not segments[1]:sub(1, 1):match("^[A-Za-z]$") then return false end
-  return segments[#segments]:match("^[A-Za-z][A-Za-z0-9]*$") ~= nil
+  local name = segments[#segments]
+  return #name <= 63 and name:match("^[A-Za-z][A-Za-z0-9]*$") ~= nil
 end
 
--- An entity-follow target: a full DID-authority AT-URI with a valid collection NSID.
-local function valid_entity_follow_uri(value)
+-- valid_did allows "%" in a DID; the DID syntax requires two hex digits after it.
+local function valid_did_percent_escapes(authority)
+  local index = 1
+  while index <= #authority do
+    if authority:sub(index, index) == "%" then
+      if not authority:sub(index + 1, index + 2):match("^%x%x$") then return false end
+      index = index + 3
+    else
+      index = index + 1
+    end
+  end
+  return true
+end
+
+-- A record subject: a full DID-authority AT-URI with a valid collection NSID.
+local function valid_subject_record_uri(value)
   if #value > 8192 then return false end
-  local valid, collection = valid_record_uri(value)
-  return valid and entity_follow_valid_nsid(collection)
+  local valid, collection, authority = valid_record_uri(value)
+  return valid and valid_did_percent_escapes(authority) and valid_nsid(collection)
 end
 
 local FOLLOW_BATCH_MAX_TARGETS = 100
@@ -140,7 +154,7 @@ local ENTITY_FOLLOW = "app.certified.graph.entityFollow"
 -- DIDs are account follows; anything else must be an entity-follow AT-URI.
 local function valid_follower_count_subject(value)
   if value:sub(1, 4) == "did:" then return valid_did(value) end
-  return valid_entity_follow_uri(value)
+  return valid_subject_record_uri(value)
 end
 
 local function follower_count_placeholders(values, subjects)

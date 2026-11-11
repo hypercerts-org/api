@@ -51,23 +51,8 @@ local function record_view(row)
   }
 end
 
-local ACTOR_REACTION_NULL = json.decode("null")
-local ACTOR_REACTION_LIMIT = 100
-local ACTOR_REACTION_COLLECTIONS = {
-  like = "app.certified.feed.like",
-  repost = "app.certified.feed.repost",
-}
-
-local function actor_reaction_sort_key()
-  -- Keep representative selection aligned with feedReaction.lua's validated createdAt fallback.
-  local created = "record::jsonb->>'createdAt'"
-  local zoned = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
-  return "CASE WHEN jsonb_typeof(record::jsonb->'createdAt') = 'string' AND " .. created ..
-    " ~ '" .. zoned .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created ..
-    ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE COALESCE(indexed_at::timestamptz, created_at::timestamptz) END"
-end
-
-local function valid_actor_reaction_nsid(value)
+-- An atproto NSID: at least three dot-separated segments, at most 317 characters.
+local function valid_nsid(value)
   if type(value) ~= "string" or #value > 317 then return false end
   local segments = {}
   for segment in value:gmatch("[^%.]+") do segments[#segments + 1] = segment end
@@ -83,9 +68,41 @@ local function valid_actor_reaction_nsid(value)
   return #name <= 63 and name:match("^[A-Za-z][A-Za-z0-9]*$") ~= nil
 end
 
-local function valid_actor_reaction_subject_uri(value)
-  local valid, collection = valid_record_uri(value)
-  return valid and valid_actor_reaction_nsid(collection)
+-- valid_did allows "%" in a DID; the DID syntax requires two hex digits after it.
+local function valid_did_percent_escapes(authority)
+  local index = 1
+  while index <= #authority do
+    if authority:sub(index, index) == "%" then
+      if not authority:sub(index + 1, index + 2):match("^%x%x$") then return false end
+      index = index + 3
+    else
+      index = index + 1
+    end
+  end
+  return true
+end
+
+-- A record subject: a full DID-authority AT-URI with a valid collection NSID.
+local function valid_subject_record_uri(value)
+  if #value > 8192 then return false end
+  local valid, collection, authority = valid_record_uri(value)
+  return valid and valid_did_percent_escapes(authority) and valid_nsid(collection)
+end
+
+local ACTOR_REACTION_NULL = json.decode("null")
+local ACTOR_REACTION_LIMIT = 100
+local ACTOR_REACTION_COLLECTIONS = {
+  like = "app.certified.feed.like",
+  repost = "app.certified.feed.repost",
+}
+
+local function actor_reaction_sort_key()
+  -- Keep representative selection aligned with feedReaction.lua's validated createdAt fallback.
+  local created = "record::jsonb->>'createdAt'"
+  local zoned = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
+  return "CASE WHEN jsonb_typeof(record::jsonb->'createdAt') = 'string' AND " .. created ..
+    " ~ '" .. zoned .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created ..
+    ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE COALESCE(indexed_at::timestamptz, created_at::timestamptz) END"
 end
 
 local function feed_actor_reaction_subjects(value)
@@ -115,7 +132,7 @@ local function feed_actor_reaction_subjects(value)
     invalid("subjects must contain 1 through 100 AT-URIs")
   end
   for _, subject in ipairs(subjects) do
-    if #subject > 8192 or not valid_actor_reaction_subject_uri(subject) then
+    if not valid_subject_record_uri(subject) then
       invalid("each subjects value must be a full DID-authority AT-URI with a valid collection NSID")
     end
   end
