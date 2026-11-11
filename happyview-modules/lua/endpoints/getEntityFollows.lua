@@ -39,6 +39,30 @@ local function valid_record_uri(value)
   return true, collection, authority
 end
 
+local function entity_follow_valid_nsid(value)
+  if type(value) ~= "string" or #value > 317 then return false end
+  local segments = {}
+  for segment in value:gmatch("[^%.]+") do segments[#segments + 1] = segment end
+  if #segments < 3 or table.concat(segments, ".") ~= value then return false end
+
+  for _, segment in ipairs(segments) do
+    if #segment > 63 or segment:find("[^A-Za-z0-9%-]")
+      or segment:sub(1, 1) == "-" or segment:sub(-1) == "-" then
+      return false
+    end
+  end
+
+  if not segments[1]:sub(1, 1):match("^[A-Za-z]$") then return false end
+  return segments[#segments]:match("^[A-Za-z][A-Za-z0-9]*$") ~= nil
+end
+
+-- An entity-follow target: a full DID-authority AT-URI with a valid collection NSID.
+local function valid_entity_follow_uri(value)
+  if #value > 8192 then return false end
+  local valid, collection = valid_record_uri(value)
+  return valid and entity_follow_valid_nsid(collection)
+end
+
 local ENTITY_FOLLOW = "app.certified.graph.entityFollow"
 local ENTITY_FOLLOW_NULL = json.decode("null")
 
@@ -123,7 +147,12 @@ local function follow_batch_targets(actor, key, value, validate, description, en
     invalid(key .. " must contain 1 through " .. FOLLOW_BATCH_MAX_TARGETS .. " values")
   end
 
-  local request_target_length = #("/xrpc/" .. endpoint .. "?actor=") + encoded_query_value_length(actor)
+  -- actor is nil for batch queries that take only the target list; the first
+  -- target's "&" then stands in for the "?".
+  local request_target_length = #("/xrpc/" .. endpoint)
+  if actor then
+    request_target_length = request_target_length + #("?actor=") + encoded_query_value_length(actor)
+  end
   local unique, seen = {}, {}
   for _, target in ipairs(targets) do
     if type(target) ~= "string" or not validate(target) then
@@ -146,30 +175,8 @@ local function get_entity_follows()
   keys_only(params, { actor = true, entities = true })
   local actor = scalar(params, "actor")
   if not actor or not valid_did(actor) then invalid("actor must be a valid DID") end
-  local function valid_nsid(value)
-    if type(value) ~= "string" or #value > 317 then return false end
-    local segments = {}
-    for segment in value:gmatch("[^%.]+") do segments[#segments + 1] = segment end
-    if #segments < 3 or table.concat(segments, ".") ~= value then return false end
-
-    for _, segment in ipairs(segments) do
-      if #segment > 63 or segment:find("[^A-Za-z0-9%-]")
-        or segment:sub(1, 1) == "-" or segment:sub(-1) == "-" then
-        return false
-      end
-    end
-
-    if not segments[1]:sub(1, 1):match("^[A-Za-z]$") then return false end
-    return segments[#segments]:match("^[A-Za-z][A-Za-z0-9]*$") ~= nil
-  end
-
-  local function valid_entity_uri(value)
-    if #value > 8192 then return false end
-    local valid, collection = valid_record_uri(value)
-    return valid and valid_nsid(collection)
-  end
   local entities, unique_entities = follow_batch_targets(
-    actor, "entities", params.entities, valid_entity_uri,
+    actor, "entities", params.entities, valid_entity_follow_uri,
     "full AT-URI with a DID authority and valid collection NSID", "app.certified.graph.getEntityFollows")
 
   local values, requested = { ENTITY_FOLLOW, actor }, {}

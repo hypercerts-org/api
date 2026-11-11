@@ -72,6 +72,7 @@
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/entityFollowTarget.lua",
         "../../lua/shared/entityFollow.lua",
         "../../lua/shared/followBatch.lua"
       ],
