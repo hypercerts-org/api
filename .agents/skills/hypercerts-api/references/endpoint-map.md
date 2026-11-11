@@ -9,6 +9,7 @@ This task index lists the public query NSIDs in the bundled [OpenAPI contract](o
 - **Browse or filter without free text:** choose `list...` in the relevant domain.
 - **Text discovery:** use `search...` only where listed below. A search query is not interchangeable with a list filter, and search semantics vary by endpoint.
 - **Relationship checks:** use `get...Follow` for a single pair, or `getFollows` / `getEntityFollows` to check repeated target values for one actor. List queries answer who follows whom or which entities an actor follows.
+- **Follower counts:** use `getFollowerCounts` for counts across many accounts and entities in one call; use a follower list's `totalCount` only when you also need that subject's followers.
 - **Feed reactions:** use `getLikes` or `getReposts` for distinct actors reacting to one subject URI, `getActorLikes` / `getActorReposts` for one actor's raw representative reactions, `getActorReactions` to check one actor across a bounded set of known subject URIs, or `getReactionCounts` for indexed like and repost counts across known subjects.
 
 Inspect the exact operation in the bundled OpenAPI contract before constructing a request: names such as `authors`, `actors`, `uri`, and `collection` have endpoint-specific meanings. Do not infer that a filter, search operation, output array name, or error exists just because a related endpoint has one.
@@ -69,11 +70,12 @@ Choose `listCollectionItems` when the caller needs the referenced item versions,
 
 An `unanswered` award is a successful indexed award result, not a not-found response. See [the badge recipe](recipes.md#read-badge-award-response-status).
 
-## Follow relationships (9)
+## Follow relationships (10)
 
 | User task | Query NSID | Practical choice |
 |---|---|---|
 | Check one actor-to-actor follow | `app.certified.graph.getFollow` | Supply actor and subject DIDs; the representative `follow` may be null when none is indexed. |
+| Count followers for many accounts and entities | `app.certified.graph.getFollowerCounts` | Supply 1–100 repeated `subjects` values, mixing account DIDs and entity AT-URIs freely. Results preserve input order and duplicates; each count equals that subject's `listActorFollowers` or `listEntityFollowers` `totalCount`. |
 | Check one actor against many subject DIDs | `app.certified.graph.getFollows` | Supply 1–100 repeated `subjects` values; each `{subject, follow}` result preserves input order and duplicates. |
 | List an actor's followers | `app.certified.graph.listActorFollowers` | `actor` is the followed actor DID. |
 | List actors an actor follows | `app.certified.graph.listActorFollowing` | `actor` is the follower DID. |

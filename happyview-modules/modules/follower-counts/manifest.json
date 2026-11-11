@@ -1,0 +1,31 @@
+{
+  "assets": [
+    {
+      "kind": "lexicon",
+      "id": "app.certified.graph.getFollowerCounts",
+      "path": "../../lexicons/app.certified.graph.getFollowerCounts.json",
+      "config": {
+        "backfill": false
+      },
+      "dependsOn": ["app.certified.graph.follow", "app.certified.graph.entityFollow"]
+    },
+    {
+      "kind": "script",
+      "id": "xrpc.query:app.certified.graph.getFollowerCounts",
+      "path": "../../lua/endpoints/getFollowerCounts.lua",
+      "sourcePath": "../../lua/src/getFollowerCounts.lua",
+      "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/query.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/entityFollowTarget.lua",
+        "../../lua/shared/followBatch.lua"
+      ],
+      "config": {
+        "script_type": "lua",
+        "description": "Batched account and entity follower count query handler"
+      },
+      "dependsOn": ["app.certified.graph.getFollowerCounts"]
+    }
+  ]
+}

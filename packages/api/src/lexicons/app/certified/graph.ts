@@ -7,6 +7,7 @@ export * as follow from "@hypercerts-org/lexicon/app/certified/graph/follow";
 export * as getEntityFollow from "./graph/getEntityFollow.js";
 export * as getEntityFollows from "./graph/getEntityFollows.js";
 export * as getFollow from "./graph/getFollow.js";
+export * as getFollowerCounts from "./graph/getFollowerCounts.js";
 export * as getFollows from "./graph/getFollows.js";
 export * as listActorFollowers from "./graph/listActorFollowers.js";
 export * as listActorFollowing from "./graph/listActorFollowing.js";

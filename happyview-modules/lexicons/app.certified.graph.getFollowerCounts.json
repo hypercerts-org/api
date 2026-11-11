@@ -1,0 +1,64 @@
+{
+  "lexicon": 1,
+  "id": "app.certified.graph.getFollowerCounts",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Returns current indexed follower counts for a mixed list of accounts and entities. No authentication is required. A DID subject counts distinct publishers of app.certified.graph.follow records naming that DID; an AT-URI subject counts distinct publishers of app.certified.graph.entityFollow records naming that URI. Counts match listActorFollowers and listEntityFollowers totalCount, and do not require the subject to be indexed.",
+      "parameters": {
+        "type": "params",
+        "required": ["subjects"],
+        "properties": {
+          "subjects": {
+            "type": "array",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Pass 1–100 account DIDs or full DID-authority entity AT-URIs, mixed freely, as repeated unbracketed subjects query parameters. The encoded GET request-target must not exceed 7,000 bytes.",
+            "items": { "type": "string", "format": "uri", "maxLength": 8192 }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": { "type": "ref", "ref": "#output" }
+      },
+      "errors": [
+        {
+          "name": "InvalidRequest",
+          "description": "The subjects list is empty, has more than 100 entries, exceeds the request-target limit, or contains a value that is neither a valid DID nor a full DID-authority AT-URI; correct the list and retry."
+        },
+        {
+          "name": "FollowerCountQueryFailed",
+          "description": "The indexed follower count query failed; retry the request."
+        }
+      ]
+    },
+    "subjectFollowerCount": {
+      "type": "object",
+      "required": ["subject", "followerCount"],
+      "properties": {
+        "subject": {
+          "type": "string",
+          "format": "uri",
+          "description": "Subject DID or AT-URI exactly as requested by the caller."
+        },
+        "followerCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of distinct indexed publisher DIDs with a current follow of this subject; zero when none are indexed."
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["counts"],
+      "properties": {
+        "counts": {
+          "type": "array",
+          "description": "One entry for each requested subject, in request order. Repeated inputs produce repeated entries. Counts reflect current indexed state and may change between requests.",
+          "items": { "type": "ref", "ref": "#subjectFollowerCount" }
+        }
+      }
+    }
+  }
+}

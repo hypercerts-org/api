@@ -5,12 +5,12 @@
   },
   "runtimeValidation": "not-assessed",
   "deploymentValidation": "not-assessed",
-  "endpointCount": 63,
+  "endpointCount": 64,
   "methods": {
-    "GET": 63
+    "GET": 64
   },
   "inclusion": {
-    "manifest-registered": 63
+    "manifest-registered": 64
   },
   "unresolvedReferences": [],
   "endpoints": [
@@ -157,6 +157,12 @@
       "method": "GET",
       "inclusion": "manifest-registered",
       "module": "modules/actor-follow/manifest.json"
+    },
+    {
+      "id": "app.certified.graph.getFollowerCounts",
+      "method": "GET",
+      "inclusion": "manifest-registered",
+      "module": "modules/follower-counts/manifest.json"
     },
     {
       "id": "app.certified.graph.getFollows",
