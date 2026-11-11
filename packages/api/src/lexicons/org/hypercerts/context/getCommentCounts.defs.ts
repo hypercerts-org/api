@@ -19,7 +19,7 @@ export const $output = /*#__PURE__*/ l.payload("application/json", /*#__PURE__*/
 export type $Output<B = l.BinaryData> = l.InferPayload<typeof $output, B>;
 export type $OutputBody<B = l.BinaryData> = l.InferPayloadBody<typeof $output, B>;
 
-/** Returns current indexed comment counts for a list of subject records. No authentication is required. A comment is an org.hypercerts.context.attachment with contentType "comment" whose subjects include the record; each comment record counts once, so several comments by one author each count. Matching uses subjects[].uri regardless of CID or whether the subject is indexed. */
+/** Returns indexed comment counts for a list of subject records, with no authentication required. A comment is an org.hypercerts.context.attachment with contentType "comment" whose subjects include the record; every comment record counts, even several by the same author, and matching uses subjects[].uri, ignoring CID and whether the subject is indexed. */
 const main = /*#__PURE__*/ l.query($nsid, $params, $output, ["InvalidRequest","CommentCountQueryFailed"]);
 
 export { main };
