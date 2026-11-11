@@ -13,22 +13,6 @@ local function valid_badge_definition_uri(value)
   return valid and collection == DEFINITION
 end
 
-local function valid_badge_subject_nsid(value)
-  if type(value) ~= "string" or #value > 317 then return false end
-  local segments = {}
-  for segment in value:gmatch("[^%.]+") do segments[#segments + 1] = segment end
-  if #segments < 3 or table.concat(segments, ".") ~= value then return false end
-  for index = 1, #segments - 1 do
-    local segment = segments[index]
-    if #segment > 63 or segment:find("[^A-Za-z0-9%-]") then return false end
-    local first, last = segment:sub(1, 1), segment:sub(-1)
-    if not first:match(index == 1 and "^[A-Za-z]$" or "^[A-Za-z0-9]$")
-      or not last:match("^[A-Za-z0-9]$") then return false end
-  end
-  local name = segments[#segments]
-  return #name <= 63 and name:match("^[A-Za-z][A-Za-z0-9]*$") ~= nil
-end
-
 local function query(sql, values)
   if db.backend() ~= "postgres" then
     error("BadgeAwardQueryFailed: badge award API requires PostgreSQL", 0)
@@ -80,7 +64,7 @@ local function subject_values()
     local is_did = valid_did(item)
     local valid_uri, collection
     if not is_did then valid_uri, collection = valid_record_uri(item) end
-    if not is_did and (not valid_uri or not valid_badge_subject_nsid(collection)) then
+    if not is_did and (not valid_uri or not valid_nsid(collection)) then
       invalid("subjects[" .. index .. "] must be a valid DID or full record AT-URI with a valid collection NSID")
     end
     if not seen[item] then

@@ -53,7 +53,8 @@
         "../../lua/shared/listQuery.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",
-        "../../lua/shared/measurementQuery.lua"
+        "../../lua/shared/measurementQuery.lua",
+        "../../lua/shared/nsidValidation.lua"
       ],
       "config": {
         "script_type": "lua"
