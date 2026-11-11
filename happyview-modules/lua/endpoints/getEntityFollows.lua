@@ -142,27 +142,27 @@ local function follow_batch_targets(actor, key, value, validate, description, en
   return targets, unique
 end
 
+-- An atproto NSID: at least three dot-separated segments, at most 317 characters.
+local function valid_nsid(value)
+  if type(value) ~= "string" or #value > 317 then return false end
+  local segments = {}
+  for segment in value:gmatch("[^%.]+") do segments[#segments + 1] = segment end
+  if #segments < 3 or table.concat(segments, ".") ~= value then return false end
+  for index = 1, #segments - 1 do
+    local segment = segments[index]
+    if #segment > 63 or segment:find("[^A-Za-z0-9%-]") then return false end
+    local first, last = segment:sub(1, 1), segment:sub(-1)
+    if not first:match(index == 1 and "^[A-Za-z]$" or "^[A-Za-z0-9]$")
+      or not last:match("^[A-Za-z0-9]$") then return false end
+  end
+  local name = segments[#segments]
+  return #name <= 63 and name:match("^[A-Za-z][A-Za-z0-9]*$") ~= nil
+end
+
 local function get_entity_follows()
   keys_only(params, { actor = true, entities = true })
   local actor = scalar(params, "actor")
   if not actor or not valid_did(actor) then invalid("actor must be a valid DID") end
-  local function valid_nsid(value)
-    if type(value) ~= "string" or #value > 317 then return false end
-    local segments = {}
-    for segment in value:gmatch("[^%.]+") do segments[#segments + 1] = segment end
-    if #segments < 3 or table.concat(segments, ".") ~= value then return false end
-
-    for _, segment in ipairs(segments) do
-      if #segment > 63 or segment:find("[^A-Za-z0-9%-]")
-        or segment:sub(1, 1) == "-" or segment:sub(-1) == "-" then
-        return false
-      end
-    end
-
-    if not segments[1]:sub(1, 1):match("^[A-Za-z]$") then return false end
-    return segments[#segments]:match("^[A-Za-z][A-Za-z0-9]*$") ~= nil
-  end
-
   local function valid_entity_uri(value)
     if #value > 8192 then return false end
     local valid, collection = valid_record_uri(value)

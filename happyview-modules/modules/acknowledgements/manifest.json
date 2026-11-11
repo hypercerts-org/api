@@ -67,6 +67,7 @@
         "../../lua/shared/datetimeValidation.lua",
         "../../lua/shared/listValidation.lua",
         "../../lua/shared/acknowledgement.lua",
+        "../../lua/shared/nsidValidation.lua",
         "../../lua/shared/acknowledgementList.lua"
       ],
       "config": {
