@@ -2,13 +2,8 @@ local function get_entity_follows()
   keys_only(params, { actor = true, entities = true })
   local actor = scalar(params, "actor")
   if not actor or not valid_did(actor) then invalid("actor must be a valid DID") end
-  local function valid_entity_uri(value)
-    if #value > 8192 then return false end
-    local valid, collection = valid_record_uri(value)
-    return valid and valid_nsid(collection)
-  end
   local entities, unique_entities = follow_batch_targets(
-    actor, "entities", params.entities, valid_entity_uri,
+    actor, "entities", params.entities, valid_subject_record_uri,
     "full AT-URI with a DID authority and valid collection NSID", "app.certified.graph.getEntityFollows")
 
   local values, requested = { ENTITY_FOLLOW, actor }, {}

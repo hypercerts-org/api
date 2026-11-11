@@ -7,6 +7,7 @@ export * as attachment from "@hypercerts-org/lexicon/org/hypercerts/context/atta
 export * as evaluation from "@hypercerts-org/lexicon/org/hypercerts/context/evaluation";
 export * as getAcknowledgement from "./context/getAcknowledgement.js";
 export * as getAttachment from "./context/getAttachment.js";
+export * as getCommentCounts from "./context/getCommentCounts.js";
 export * as getEvaluation from "./context/getEvaluation.js";
 export * as getMeasurement from "./context/getMeasurement.js";
 export * as listAcknowledgements from "./context/listAcknowledgements.js";

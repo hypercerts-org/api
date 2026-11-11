@@ -3933,6 +3933,62 @@
         ]
       }
     },
+    "/xrpc/org.hypercerts.context.getCommentCounts": {
+      "get": {
+        "operationId": "org_hypercerts_context_getCommentCounts",
+        "tags": [
+          "org.hypercerts.context"
+        ],
+        "description": "Returns indexed comment counts for a list of subject records, with no authentication required. A comment is an org.hypercerts.context.attachment with contentType \"comment\" whose subjects include the record; every comment record counts, even several by the same author, and matching uses subjects[].uri, ignoring CID and whether the subject is indexed.",
+        "parameters": [
+          {
+            "name": "subjects",
+            "in": "query",
+            "required": true,
+            "description": "Pass 1–100 full DID-authority subject record AT-URIs as repeated, unbracketed subjects query parameters. The encoded GET request-target must not exceed 7,000 bytes.",
+            "schema": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "at-uri",
+                "maxLength": 8192
+              }
+            },
+            "style": "form",
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/org.hypercerts.context.getCommentCounts.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "org.hypercerts.context.getCommentCounts",
+        "x-hypercerts-coverage": "manifest-registered",
+        "x-hypercerts-source": {
+          "module": "modules/context-attachments/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "The subjects list is empty, has more than 100 entries, exceeds the request-target limit, or contains an invalid subject AT-URI; correct the list and retry."
+          },
+          {
+            "name": "CommentCountQueryFailed",
+            "description": "The indexed comment count query failed; retry the request."
+          }
+        ]
+      }
+    },
     "/xrpc/org.hypercerts.context.getEvaluation": {
       "get": {
         "operationId": "org_hypercerts_context_getEvaluation",
@@ -7940,6 +7996,40 @@
         "properties": {
           "attachment": {
             "$ref": "#/components/schemas/org.hypercerts.context.getAttachment.attachmentView"
+          }
+        }
+      },
+      "org.hypercerts.context.getCommentCounts.subjectCommentCount": {
+        "type": "object",
+        "required": [
+          "subject",
+          "commentCount"
+        ],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "description": "Subject AT-URI requested by the caller; matching ignores the subject CID.",
+            "format": "at-uri"
+          },
+          "commentCount": {
+            "type": "integer",
+            "description": "Number of current indexed comment attachments whose subjects include this URI; zero when none are indexed.",
+            "minimum": 0
+          }
+        }
+      },
+      "org.hypercerts.context.getCommentCounts.output": {
+        "type": "object",
+        "required": [
+          "counts"
+        ],
+        "properties": {
+          "counts": {
+            "type": "array",
+            "description": "One entry for each requested subject, in request order. Repeated input URIs produce repeated entries. Counts reflect current indexed state and may change between requests.",
+            "items": {
+              "$ref": "#/components/schemas/org.hypercerts.context.getCommentCounts.subjectCommentCount"
+            }
           }
         }
       },
