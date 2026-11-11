@@ -61,6 +61,34 @@
         "description": "Hypercerts attachment listing handler"
       },
       "dependsOn": ["org.hypercerts.context.listAttachments"]
+    },
+    {
+      "kind": "lexicon",
+      "id": "org.hypercerts.context.getCommentCounts",
+      "path": "../../lexicons/org.hypercerts.context.getCommentCounts.json",
+      "config": {
+        "backfill": false
+      },
+      "dependsOn": ["org.hypercerts.context.attachment"]
+    },
+    {
+      "kind": "script",
+      "id": "xrpc.query:org.hypercerts.context.getCommentCounts",
+      "path": "../../lua/endpoints/getCommentCounts.lua",
+      "sourcePath": "../../lua/src/getCommentCounts.lua",
+      "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/query.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/nsidValidation.lua",
+        "../../lua/shared/subjectRecordUri.lua",
+        "../../lua/shared/followBatch.lua"
+      ],
+      "config": {
+        "script_type": "lua",
+        "description": "Batched comment count query handler"
+      },
+      "dependsOn": ["org.hypercerts.context.getCommentCounts"]
     }
   ]
 }

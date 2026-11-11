@@ -1,0 +1,64 @@
+{
+  "lexicon": 1,
+  "id": "org.hypercerts.context.getCommentCounts",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Returns indexed comment counts for a list of subject records, with no authentication required. A comment is an org.hypercerts.context.attachment with contentType \"comment\" whose subjects include the record; every comment record counts, even several by the same author, and matching uses subjects[].uri, ignoring CID and whether the subject is indexed.",
+      "parameters": {
+        "type": "params",
+        "required": ["subjects"],
+        "properties": {
+          "subjects": {
+            "type": "array",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Pass 1–100 full DID-authority subject record AT-URIs as repeated, unbracketed subjects query parameters. The encoded GET request-target must not exceed 7,000 bytes.",
+            "items": { "type": "string", "format": "at-uri", "maxLength": 8192 }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": { "type": "ref", "ref": "#output" }
+      },
+      "errors": [
+        {
+          "name": "InvalidRequest",
+          "description": "The subjects list is empty, has more than 100 entries, exceeds the request-target limit, or contains an invalid subject AT-URI; correct the list and retry."
+        },
+        {
+          "name": "CommentCountQueryFailed",
+          "description": "The indexed comment count query failed; retry the request."
+        }
+      ]
+    },
+    "subjectCommentCount": {
+      "type": "object",
+      "required": ["subject", "commentCount"],
+      "properties": {
+        "subject": {
+          "type": "string",
+          "format": "at-uri",
+          "description": "Subject AT-URI requested by the caller; matching ignores the subject CID."
+        },
+        "commentCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of current indexed comment attachments whose subjects include this URI; zero when none are indexed."
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["counts"],
+      "properties": {
+        "counts": {
+          "type": "array",
+          "description": "One entry for each requested subject, in request order. Repeated input URIs produce repeated entries. Counts reflect current indexed state and may change between requests.",
+          "items": { "type": "ref", "ref": "#subjectCommentCount" }
+        }
+      }
+    }
+  }
+}

@@ -143,6 +143,7 @@
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/nsidValidation.lua",
+        "../../lua/shared/subjectRecordUri.lua",
         "../../lua/shared/feedActorReactions.lua"
       ],
       "config": { "script_type": "lua", "description": "Actor feed reaction API handler" },
@@ -157,7 +158,8 @@
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
-        "../../lua/shared/nsidValidation.lua"
+        "../../lua/shared/nsidValidation.lua",
+        "../../lua/shared/subjectRecordUri.lua"
       ],
       "config": {
         "script_type": "lua",

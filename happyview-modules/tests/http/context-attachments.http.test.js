@@ -99,7 +99,7 @@ test("listAttachments applies each filter and ANDs distinct filters", async () =
   }
 });
 
-test("listAttachments paginates the complete feed across tied createdAt timestamps", async () => {
+test("listAttachments paginates every fixture attachment across tied createdAt timestamps", async () => {
   const listEndpoint = "org.hypercerts.context.listAttachments";
   const expected = [
     `at://${publisher}/org.hypercerts.context.attachment/3jzfcijpj2z2a`,
@@ -107,7 +107,13 @@ test("listAttachments paginates the complete feed across tied createdAt timestam
     "at://did:web:context-attachment-b.invalid/org.hypercerts.context.attachment/3jzfcijpj2z2c",
     "at://did:web:context-attachment-c.invalid/org.hypercerts.context.attachment/3jzfcijpj2z2d",
   ];
-  const first = await request(listEndpoint, { sortDirection: "asc", limit: 2 });
+  // Other suites seed attachments too, so page through this fixture's publishers only.
+  const authors = [
+    publisher,
+    "did:web:context-attachment-b.invalid",
+    "did:web:context-attachment-c.invalid",
+  ];
+  const first = await request(listEndpoint, { authors, sortDirection: "asc", limit: 2 });
   assert.equal(first.response.status, 200, JSON.stringify(first.body));
   assert.deepEqual(
     first.body.attachments.map(({ uri }) => uri),
@@ -116,6 +122,7 @@ test("listAttachments paginates the complete feed across tied createdAt timestam
   assert.equal(typeof first.body.cursor, "string");
 
   const second = await request(listEndpoint, {
+    authors,
     sortDirection: "asc",
     limit: 2,
     cursor: first.body.cursor,
