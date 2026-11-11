@@ -11,7 +11,7 @@ type $nsid = typeof $nsid;
 
 export { $nsid };
 
-export const $params = /*#__PURE__*/ l.params({"authors":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.array(/*#__PURE__*/ l.string({"format":"did"}), {"maxLength":100})),"badgeUris":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.array(/*#__PURE__*/ l.string({"format":"at-uri"}), {"maxLength":100})),"badgeTypes":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.array(/*#__PURE__*/ l.string({"maxLength":100}), {"maxLength":100})),"subjects":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.array(/*#__PURE__*/ l.string(), {"maxLength":100})),"responses":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.array(/*#__PURE__*/ l.enum(["accepted","rejected","unanswered"]), {"maxLength":100})),"sortDirection":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.withDefault(/*#__PURE__*/ l.enum(["asc","desc"]), "desc")),"limit":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.withDefault(/*#__PURE__*/ l.integer({"minimum":1,"maximum":100}), 25)),"cursor":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string())});
+export const $params = /*#__PURE__*/ l.params({"authors":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.array(/*#__PURE__*/ l.string({"format":"did"}), {"maxLength":100})),"badgeUris":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.array(/*#__PURE__*/ l.string({"format":"at-uri"}), {"maxLength":100})),"badgeTypes":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.array(/*#__PURE__*/ l.string({"maxLength":100}), {"maxLength":100})),"subjects":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.array(/*#__PURE__*/ l.string(), {"maxLength":100})),"responses":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.array(/*#__PURE__*/ l.enum(["accepted","rejected","unanswered"]), {"maxLength":100})),"sortDirection":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.withDefault(/*#__PURE__*/ l.enum(["asc","desc"]), "desc")),"limit":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.withDefault(/*#__PURE__*/ l.integer({"minimum":1,"maximum":100}), 25)),"cursor":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string()),"includeTotal":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.withDefault(/*#__PURE__*/ l.boolean(), false))});
 
 export type $Params = l.InferOutput<typeof $params>;
 
@@ -36,10 +36,15 @@ type Output = { $type?: "app.certified.badge.listBadgeAwards#output";"badgeAward
   /**
    * Opaque cursor for the next page; omitted when pagination is complete.
    */
-  "cursor"?:string };
+  "cursor"?:string;
+
+  /**
+   * Number of badge award records matching all filters, before cursor and limit are applied. Not deduplicated. Only returned when includeTotal is true.
+   */
+  "totalCount"?:number };
 
 export type { Output };
 
-const output = /*#__PURE__*/ l.typedObject<Output>($nsid, "output", /*#__PURE__*/ l.object({"badgeAwards":/*#__PURE__*/ l.array(/*#__PURE__*/ l.ref<BadgeGetBadgeAward.BadgeAwardView>((() => BadgeGetBadgeAward.badgeAwardView) as any), ),"cursor":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string())}));
+const output = /*#__PURE__*/ l.typedObject<Output>($nsid, "output", /*#__PURE__*/ l.object({"badgeAwards":/*#__PURE__*/ l.array(/*#__PURE__*/ l.ref<BadgeGetBadgeAward.BadgeAwardView>((() => BadgeGetBadgeAward.badgeAwardView) as any), ),"cursor":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string()),"totalCount":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.integer({"minimum":0}))}));
 
 export { output };
