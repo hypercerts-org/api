@@ -1,6 +1,7 @@
 ---
 name: hypercerts-api
 description: Use whenever a user needs to call Hypercerts' public, read-only XRPC API directly; select an endpoint from the bundled contract, construct GET requests, paginate, and interpret indexed results from production or staging.
+license: MIT OR Apache-2.0
 ---
 Production: https://api.hypercerts.dev
 Staging: https://api.staging.hypercerts.dev
