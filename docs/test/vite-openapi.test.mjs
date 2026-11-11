@@ -44,8 +44,8 @@ test("Vite serves the website favicon and fonts byte-for-byte", async () => {
       sha256: "6ee678c33f388dd7ba59700ebea635deb98821baafd817b09891f7927177f702",
     },
     {
-      url: "/fonts/Switzer-Variable.woff2",
-      sha256: "d1bf801ffb1a6096def70a7c532255722ad87d948b13a8a586e342f7091f8ee4",
+      url: "/fonts/HankenGrotesk-Variable.woff2",
+      sha256: "170db667e22d3d138440de92431b2a4c7695ad06bef89354e59b25b4114dd7eb",
     },
   ];
   const server = await createServer({
