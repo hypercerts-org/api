@@ -546,6 +546,95 @@ assert(calls[1].sql:find("COALESCE(recipient_response.record::jsonb->>'response'
   });
 });
 
+test("listBadgeAwards counts matched awards before cursor and limit only when includeTotal is true", async () => {
+  const badgeUri = `at://${issuer}/${definitionCollection}/forest`;
+  const awardRow = (rkey, createdAt) => ({
+    uri: `at://${issuer}/${awardCollection}/${rkey}`,
+    did: issuer,
+    cid: `bafy-${rkey}`,
+    indexed_at: indexedAt,
+    record: `award-${rkey}`,
+    record_json: {
+      $type: awardCollection,
+      badge: { uri: badgeUri, cid: "bafy-definition-v1" },
+      subject: "did:plc:bbbbbbbbbbbbbbbbbbbbbbbb",
+      createdAt,
+    },
+    sort_timestamp: createdAt.replace("Z", ".000000Z"),
+    total_count: 7,
+  });
+  const cursor = Buffer.from(
+    JSON.stringify({
+      v: 1,
+      d: "desc",
+      t: "2025-01-05T00:00:00.000000Z",
+      u: `at://${issuer}/${awardCollection}/cursor`,
+    }),
+  ).toString("hex");
+
+  runLua(await handlerSource("listBadgeAwards"), {
+    params: { authors: [issuer], badgeUris: [badgeUri], limit: "1", cursor, includeTotal: "true" },
+    queryResults: [
+      [awardRow("two", "2025-01-02T00:00:00Z"), awardRow("one", "2025-01-01T00:00:00Z")],
+      [],
+      [],
+    ],
+    assertions: `
+assert(#result.badgeAwards == 1 and result.cursor ~= nil)
+assert(result.totalCount == 7 and type(result.totalCount) == 'number')
+local sql = calls[1].sql
+local matched = assert(sql:find('WITH matched AS (SELECT sorted.sort_at, award.uri', 1, true))
+local total = assert(sql:find('total AS (SELECT COUNT(*) AS total_count FROM matched)', 1, true))
+local page = assert(sql:find('page AS (SELECT * FROM matched WHERE (sort_at, uri) < ', 1, true))
+assert(matched < total and total < page)
+assert(sql:find('FROM total LEFT JOIN page ON TRUE', 1, true))
+local matched_sql = sql:sub(matched, total)
+assert(matched_sql:find('award.did IN', 1, true) and matched_sql:find("award.record::jsonb->'badge'->>'uri' IN", 1, true),
+  'filters belong to the shared matched set')
+assert(not matched_sql:find('timestamptz, $', 1, true), 'the cursor is not applied to the count')
+assert(not matched_sql:find(' LIMIT $', 1, true), 'the limit is not applied to the count')
+assert(calls[1].values[#calls[1].values] == 2)
+`,
+  });
+
+  runLua(await handlerSource("listBadgeAwards"), {
+    params: { authors: [issuer], cursor, includeTotal: true },
+    queryResults: [[{ total_count: 3, record: "none", record_json: {} }]],
+    assertions: `
+assert(#result.badgeAwards == 0 and result.cursor == nil)
+assert(result.totalCount == 3, 'a past-the-end page still carries the total')
+`,
+  });
+
+  for (const includeTotal of [undefined, "false"]) {
+    runLua(await handlerSource("listBadgeAwards"), {
+      params: includeTotal ? { authors: [issuer], includeTotal } : { authors: [issuer] },
+      assertions: `
+assert(result.totalCount == nil)
+assert(not calls[1].sql:find('COUNT(*)', 1, true) and not calls[1].sql:find('WITH matched', 1, true))
+`,
+    });
+  }
+
+  for (const totalCount of [undefined, -1, 1.5]) {
+    runLua(await handlerSource("listBadgeAwards"), {
+      params: { includeTotal: "true" },
+      queryResults: [
+        totalCount === undefined
+          ? [{ uri: "unused", record: "unused", record_json: {} }]
+          : [{ total_count: totalCount, record: "none", record_json: {} }],
+      ],
+      expectedError: "BadgeAwardQueryFailed: badge award count unavailable",
+    });
+  }
+
+  runLua(await handlerSource("listBadgeAwards"), {
+    params: { includeTotal: "yes" },
+    expectedError: "InvalidRequest: includeTotal must be true or false",
+    assertions: "assert(#calls == 0)",
+  });
+});
+
 test("listBadgeAwards rejects invalid subject identifiers before querying", async () => {
   runLua(await handlerSource("listBadgeAwards"), {
     params: { subjects: ["did:plc:bbbbbbbbbbbbbbbbbbbbbbbb", "recipient.example"] },
