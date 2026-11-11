@@ -405,6 +405,84 @@ test("listBadgeAwards combines discriminating filters and traverses ties in both
   );
 });
 
+test("listBadgeAwards totalCount counts filtered awards before cursor and limit only when requested", async () => {
+  const filters = { authors: [badgeQueryDids.publisher], badgeUris: [definitionUri] };
+  const counts = [
+    [{}, 6],
+    [filters, 4],
+    // awardD references an unavailable definition version, so badgeTypes excludes it.
+    [{ ...filters, badgeTypes: ["certification"] }, 3],
+    [
+      {
+        ...filters,
+        badgeTypes: ["certification"],
+        subjects: [badgeQueryDids.recipient, recordSubjectUri],
+        responses: ["accepted", "rejected"],
+      },
+      2,
+    ],
+    [{ ...filters, badgeTypes: ["recognition"] }, 0],
+  ];
+  for (const [params, expected] of counts) {
+    const { response, body } = await requestBadgeEndpoint(endpoints.listBadgeAwards, {
+      ...params,
+      limit: 1,
+      includeTotal: true,
+    });
+    assert.equal(response.status, 200, JSON.stringify(body));
+    assert.equal(body.totalCount, expected, JSON.stringify(params));
+    assert.equal(body.badgeAwards.length, Math.min(expected, 1));
+  }
+
+  const firstPage = await requestBadgeEndpoint(endpoints.listBadgeAwards, {
+    ...filters,
+    sortDirection: "asc",
+    limit: 3,
+    includeTotal: true,
+  });
+  assert.equal(firstPage.response.status, 200, JSON.stringify(firstPage.body));
+  assert.equal(firstPage.body.totalCount, 4);
+  const lastPage = await requestBadgeEndpoint(endpoints.listBadgeAwards, {
+    ...filters,
+    sortDirection: "asc",
+    limit: 3,
+    cursor: firstPage.body.cursor,
+    includeTotal: true,
+  });
+  assert.equal(lastPage.response.status, 200, JSON.stringify(lastPage.body));
+  assert.deepEqual(
+    lastPage.body.badgeAwards.map(({ uri }) => uri),
+    [canonicalRecords.awardD.uri],
+  );
+  assert.equal(lastPage.body.totalCount, 4, "the cursor does not reduce the count");
+
+  const pastTheEnd = Buffer.from(
+    JSON.stringify({
+      v: 1,
+      d: "asc",
+      t: "2999-01-01T00:00:00.000000Z",
+      u: canonicalRecords.awardD.uri,
+    }),
+  ).toString("hex");
+  const empty = await requestBadgeEndpoint(endpoints.listBadgeAwards, {
+    ...filters,
+    sortDirection: "asc",
+    cursor: pastTheEnd,
+    includeTotal: true,
+  });
+  assert.equal(empty.response.status, 200, JSON.stringify(empty.body));
+  assert.deepEqual(empty.body.badgeAwards, []);
+  assert.equal(Object.hasOwn(empty.body, "cursor"), false);
+  assert.equal(empty.body.totalCount, 4);
+
+  for (const params of [filters, { ...filters, includeTotal: false }]) {
+    const { response, body } = await requestBadgeEndpoint(endpoints.listBadgeAwards, params);
+    assert.equal(response.status, 200, JSON.stringify(body));
+    assert.equal(body.badgeAwards.length, 4);
+    assert.equal(Object.hasOwn(body, "totalCount"), false);
+  }
+});
+
 test("listBadgeAwards returns InvalidRequest through the pinned runtime error response", async () => {
   await assertRuntimeError(
     endpoints.listBadgeAwards,

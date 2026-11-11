@@ -64,7 +64,7 @@ Choose `listCollectionItems` when the caller needs the referenced item versions,
 | Browse/filter badge definitions | `app.certified.badge.listBadgeDefinitions` | Use publisher/type filters and pagination. |
 | Search badge definitions | `app.certified.badge.searchBadgeDefinitions` | `search` is required; use for text discovery, not status checking. |
 | Load one award and its response status | `app.certified.badge.getBadgeAward` | Exact award AT-URI in `uri`; includes `responseStatus` (`accepted`, `rejected`, or `unanswered`) and nullable recipient response. |
-| Browse/filter awards | `app.certified.badge.listBadgeAwards` | Use when the award URI is not known or multiple awards are needed; the result includes response status. |
+| Browse/filter awards | `app.certified.badge.listBadgeAwards` | Use when the award URI is not known or multiple awards are needed; the result includes response status. Set `includeTotal=true` to get `totalCount`: award records matching all filters before cursor and limit, not deduplicated, also on empty pages (use `limit=1` for a count-only request). |
 | Load one raw response record | `app.certified.badge.getBadgeResponse` | Exact response AT-URI in `uri`. |
 | List raw responses for an award | `app.certified.badge.listBadgeResponses` | Optional `badgeAward` filter; use to inspect response records, not as a substitute for the award's derived status. |
 

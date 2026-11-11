@@ -936,6 +936,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "includeTotal",
+            "in": "query",
+            "required": false,
+            "description": "When true, the output includes totalCount.",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {
@@ -5822,6 +5832,11 @@
           "cursor": {
             "type": "string",
             "description": "Opaque cursor for the next page; omitted when pagination is complete."
+          },
+          "totalCount": {
+            "type": "integer",
+            "description": "Number of badge award records matching all filters, before cursor and limit are applied. Not deduplicated. Only returned when includeTotal is true.",
+            "minimum": 0
           }
         }
       },
