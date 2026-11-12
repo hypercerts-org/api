@@ -17,7 +17,7 @@
     "client:generate": "pnpm --filter @hypercerts-org/api generate",
     "changeset": "changeset",
     "changeset:status": "changeset status",
-    "version:packages": "changeset version && pnpm install --lockfile-only"
+    "version:packages": "changeset version && biome format --write . && pnpm install --lockfile-only"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.4",
