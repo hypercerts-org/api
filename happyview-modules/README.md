@@ -56,7 +56,7 @@ For bundles that register `app.certified.actor.getProfile`, handle lookups requi
 
 ## Deploys
 
-Pushing to the `staging` or `production` branch runs [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml), which installs this bundle into that environment's HappyView with `pnpm install:api` (no `--override`, so asset conflicts stop the deploy). Each branch uses the GitHub environment of the same name (`staging` or `production`), and each environment must define its own values; never reuse the production token for staging:
+Pushing to the `staging` or `production` branch runs [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml), which installs this bundle into that environment's HappyView with `pnpm install:api --override`, so assets that differ from this repository are replaced (the repository is the source of truth). Each branch uses the GitHub environment of the same name (`staging` or `production`), and each environment must define its own values; never reuse the production token for staging:
 
 - variable `HAPPYVIEW_BASE_URL`: that environment's HappyView origin
 - secret `HAPPYVIEW_ADMIN_TOKEN`: a scoped admin token for that HappyView, including `script-variables:read`
