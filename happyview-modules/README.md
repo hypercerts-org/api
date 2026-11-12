@@ -53,3 +53,13 @@ pnpm install:api
 ```
 
 For bundles that register `app.certified.actor.getProfile`, handle lookups require `HYPERCERTS_HANDLE_RESOLVER_URL` to be an HTTPS origin without credentials, path, query, or fragment. Interactive installs prompt when it is absent; noninteractive installs must set it. The admin token needs `script-variables:read`, and `script-variables:create` if the installer must create the setting. Existing settings are retained; HappyView exposes only a masked preview, so the installer cannot verify the configured value. See [CONTRIBUTING.md](../CONTRIBUTING.md) for release-note requirements and installer safety details.
+
+## Production deploy
+
+Pushing to the `production` branch runs [`.github/workflows/deploy-production.yml`](../.github/workflows/deploy-production.yml), which installs this bundle into the production HappyView with `pnpm install:api` (no `--override`, so asset conflicts stop the deploy). The workflow uses the `production` GitHub environment, which must define:
+
+- variable `HAPPYVIEW_BASE_URL`: the production HappyView origin
+- secret `HAPPYVIEW_ADMIN_TOKEN`: a scoped admin token, including `script-variables:read`
+- variable `HYPERCERTS_HANDLE_RESOLVER_URL`: needed only if HappyView does not already have this setting; the token then also needs `script-variables:create`
+
+Deploys run one at a time and are never cancelled midway.
