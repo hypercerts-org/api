@@ -55,6 +55,10 @@
       "path": "lexicons/app.certified.graph.listRecentFollows.json"
     },
     {
+      "id": "app.certified.graph.getFollowerCounts",
+      "path": "lexicons/app.certified.graph.getFollowerCounts.json"
+    },
+    {
       "id": "app.certified.feed.getLikes",
       "path": "lexicons/app.certified.feed.getLikes.json"
     },
@@ -498,6 +502,7 @@
     "modules/actor-follow/manifest.json",
     "modules/entity-follow/manifest.json",
     "modules/recent-follows/manifest.json",
+    "modules/follower-counts/manifest.json",
     "modules/feed-reactions/manifest.json",
     "modules/context-evaluation/manifest.json",
     "modules/context-attachments/manifest.json",

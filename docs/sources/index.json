@@ -222,6 +222,15 @@
       }
     },
     {
+      "id": "app.certified.graph.getFollowerCounts",
+      "type": "query",
+      "module": "modules/follower-counts/manifest.json",
+      "file": "sources/lexicons/app.certified.graph.getFollowerCounts.json",
+      "source": {
+        "path": "../../lexicons/app.certified.graph.getFollowerCounts.json"
+      }
+    },
+    {
       "id": "app.certified.graph.getFollows",
       "type": "query",
       "module": "modules/actor-follow/manifest.json",
@@ -885,6 +894,15 @@
       "source": {
         "module": "modules/actor-follow/manifest.json",
         "path": "../../lexicons/app.certified.graph.getFollow.json"
+      }
+    },
+    {
+      "id": "app.certified.graph.getFollowerCounts",
+      "file": "sources/lexicons/app.certified.graph.getFollowerCounts.json",
+      "kind": "endpoint",
+      "source": {
+        "module": "modules/follower-counts/manifest.json",
+        "path": "../../lexicons/app.certified.graph.getFollowerCounts.json"
       }
     },
     {

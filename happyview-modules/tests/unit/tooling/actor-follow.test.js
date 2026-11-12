@@ -197,6 +197,7 @@ test("actor-follow module installs the follow record schema, three queries, and 
       "xrpc.query:app.certified.graph.listEntityFollowers",
       "xrpc.query:app.certified.graph.listEntityFollowing",
       "xrpc.query:app.certified.graph.listRecentFollows",
+      "xrpc.query:app.certified.graph.getFollowerCounts",
     ].sort(),
   );
 });

@@ -1894,6 +1894,62 @@
         ]
       }
     },
+    "/xrpc/app.certified.graph.getFollowerCounts": {
+      "get": {
+        "operationId": "app_certified_graph_getFollowerCounts",
+        "tags": [
+          "app.certified.graph"
+        ],
+        "description": "Returns current indexed follower counts for a mixed list of accounts and entities. No authentication is required. A DID subject counts distinct publishers of app.certified.graph.follow records naming that DID; an AT-URI subject counts distinct publishers of app.certified.graph.entityFollow records naming that URI. Counts match listActorFollowers and listEntityFollowers totalCount, and do not require the subject to be indexed.",
+        "parameters": [
+          {
+            "name": "subjects",
+            "in": "query",
+            "required": true,
+            "description": "Pass 1–100 account DIDs or full DID-authority entity AT-URIs, mixed freely, as repeated unbracketed subjects query parameters. The encoded GET request-target must not exceed 7,000 bytes.",
+            "schema": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "uri",
+                "maxLength": 8192
+              }
+            },
+            "style": "form",
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app.certified.graph.getFollowerCounts.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "app.certified.graph.getFollowerCounts",
+        "x-hypercerts-coverage": "manifest-registered",
+        "x-hypercerts-source": {
+          "module": "modules/follower-counts/manifest.json"
+        },
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "The subjects list is empty, has more than 100 entries, exceeds the request-target limit, or contains a value that is neither a valid DID nor a full DID-authority AT-URI; correct the list and retry."
+          },
+          {
+            "name": "FollowerCountQueryFailed",
+            "description": "The indexed follower count query failed; retry the request."
+          }
+        ]
+      }
+    },
     "/xrpc/app.certified.graph.getFollows": {
       "get": {
         "operationId": "app_certified_graph_getFollows",
@@ -6436,6 +6492,40 @@
                 "type": "null"
               }
             ]
+          }
+        }
+      },
+      "app.certified.graph.getFollowerCounts.subjectFollowerCount": {
+        "type": "object",
+        "required": [
+          "subject",
+          "followerCount"
+        ],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "description": "Subject DID or AT-URI exactly as requested by the caller.",
+            "format": "uri"
+          },
+          "followerCount": {
+            "type": "integer",
+            "description": "Number of distinct indexed publisher DIDs with a current follow of this subject; zero when none are indexed.",
+            "minimum": 0
+          }
+        }
+      },
+      "app.certified.graph.getFollowerCounts.output": {
+        "type": "object",
+        "required": [
+          "counts"
+        ],
+        "properties": {
+          "counts": {
+            "type": "array",
+            "description": "One entry for each requested subject, in request order. Repeated inputs produce repeated entries. Counts reflect current indexed state and may change between requests.",
+            "items": {
+              "$ref": "#/components/schemas/app.certified.graph.getFollowerCounts.subjectFollowerCount"
+            }
           }
         }
       },
