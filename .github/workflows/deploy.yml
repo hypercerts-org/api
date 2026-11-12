@@ -1,21 +1,22 @@
-name: Deploy production
+name: Deploy
 
 on:
   push:
-    branches: [production]
+    # Each branch deploys to the GitHub environment with the same name.
+    branches: [staging, production]
 
 permissions:
   contents: read
 
 concurrency:
-  group: deploy-production
+  group: deploy-${{ github.ref_name }}
   cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Install HappyView modules
+    name: Install HappyView modules (${{ github.ref_name }})
     runs-on: ubuntu-latest
-    environment: production
+    environment: ${{ github.ref_name }}
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
