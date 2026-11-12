@@ -59,7 +59,7 @@
         "tags": [
           "app.certified.actor"
         ],
-        "description": "Gets an actor's indexed organization sidecar and associated profile by DID. Authentication is not required.",
+        "description": "Gets an actor's indexed organization sidecar, associated profile and primary location by DID. Authentication is not required.",
         "parameters": [
           {
             "name": "actor",
@@ -100,7 +100,7 @@
           },
           {
             "name": "OrganizationQueryFailed",
-            "description": "The indexed organization sidecar or associated profile could not be queried."
+            "description": "The indexed organization sidecar, associated profile or primary location could not be queried."
           }
         ]
       }
@@ -111,7 +111,7 @@
         "tags": [
           "app.certified.actor"
         ],
-        "description": "Returns an indexed organization sidecar and associated profile for each supplied actor DID. Authentication is not required.",
+        "description": "Returns an indexed organization sidecar, associated profile and primary location for each supplied actor DID. Authentication is not required.",
         "parameters": [
           {
             "name": "actors",
@@ -155,7 +155,7 @@
           },
           {
             "name": "OrganizationQueryFailed",
-            "description": "The indexed organization sidecars or associated profiles could not be queried."
+            "description": "The indexed organization sidecars, associated profiles or primary locations could not be queried."
           }
         ]
       }
@@ -366,7 +366,7 @@
           },
           {
             "name": "OrganizationQueryFailed",
-            "description": "The indexed organization sidecar or associated profile could not be queried."
+            "description": "The indexed organization sidecar, associated profile or primary location could not be queried."
           }
         ]
       }
@@ -558,7 +558,7 @@
           },
           {
             "name": "OrganizationQueryFailed",
-            "description": "The indexed organization sidecar or associated profile could not be queried."
+            "description": "The indexed organization sidecar, associated profile or primary location could not be queried."
           }
         ]
       }
@@ -5354,9 +5354,52 @@
           }
         }
       },
+      "app.certified.location.main": {
+        "type": "record",
+        "description": "A location reference"
+      },
+      "app.certified.actor.getOrganization.locationRecordView": {
+        "type": "object",
+        "description": "Indexed app.certified.location record view preserving the full record exactly as getLocation returns it, but without the hydrated author; indexedAt may be null when the index has no timestamp.",
+        "required": [
+          "uri",
+          "cid",
+          "indexedAt",
+          "did",
+          "record"
+        ],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "cid": {
+            "type": "string",
+            "format": "cid"
+          },
+          "indexedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "datetime"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "did": {
+            "type": "string",
+            "format": "did"
+          },
+          "record": {
+            "$ref": "#/components/schemas/app.certified.location.main"
+          }
+        }
+      },
       "app.certified.actor.getOrganization.organizationActorView": {
         "type": "object",
-        "description": "Actor with an indexed organization sidecar and nullable profile view.",
+        "description": "Actor with an indexed organization sidecar, nullable profile view and nullable primary location view.",
         "required": [
           "did",
           "profile",
@@ -5379,6 +5422,16 @@
           },
           "organization": {
             "$ref": "#/components/schemas/org.hypercerts.api.defs.organizationView"
+          },
+          "primaryLocation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/app.certified.actor.getOrganization.locationRecordView"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },
@@ -7059,10 +7112,6 @@
       "org.hypercerts.collection.main": {
         "type": "record",
         "description": "A collection/group of items (activities and/or other collections). Collections support recursive nesting."
-      },
-      "app.certified.location.main": {
-        "type": "record",
-        "description": "A location reference"
       },
       "org.hypercerts.collection.getCollection.locationRecordView": {
         "type": "object",

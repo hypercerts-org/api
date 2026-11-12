@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Returns an indexed organization sidecar and associated profile for each supplied actor DID. Authentication is not required.",
+      "description": "Returns an indexed organization sidecar, associated profile and primary location for each supplied actor DID. Authentication is not required.",
       "parameters": {
         "type": "params",
         "required": ["actors"],
@@ -24,7 +24,7 @@
       },
       "errors": [
         { "name": "InvalidRequest", "description": "An actor DID or query parameter is invalid." },
-        { "name": "OrganizationQueryFailed", "description": "The indexed organization sidecars or associated profiles could not be queried." }
+        { "name": "OrganizationQueryFailed", "description": "The indexed organization sidecars, associated profiles or primary locations could not be queried." }
       ]
     },
     "output": {

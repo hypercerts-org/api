@@ -8,8 +8,11 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const organizationCollection = "app.certified.actor.organization";
 const profileCollection = "app.certified.actor.profile";
+const locationCollection = "app.certified.location";
 const actor = "did:plc:aaaaaaaaaaaaaaaaaaaaaaaa";
 const secondActor = "did:plc:bbbbbbbbbbbbbbbbbbbbbbbb";
+const thirdActor = "did:plc:cccccccccccccccccccccccc";
+const fourthActor = "did:plc:dddddddddddddddddddddddd";
 const indexedAt = "2025-01-02T03:04:05.000Z";
 
 function lua(value) {
@@ -46,6 +49,29 @@ function profileRow(did, id, record) {
     record_json: { $type: profileCollection, ...record },
   };
 }
+
+function locationRef(did, rkey, cid = "bafy-pinned") {
+  return { uri: `at://${did}/${locationCollection}/${rkey}`, cid };
+}
+
+function locationRow(did, rkey, id, record, cid = `bafy-${id}`) {
+  return {
+    uri: `at://${did}/${locationCollection}/${rkey}`,
+    did,
+    cid,
+    indexed_at: indexedAt,
+    record: id,
+    record_json: { $type: locationCollection, ...record },
+  };
+}
+
+const pointLocation = {
+  lpVersion: "1.0.0",
+  srs: "https://www.opengis.net/def/crs/OGC/1.3/CRS84",
+  locationType: "geojson-point",
+  location: { $type: "app.certified.location#string", string: "POINT(89.64 27.47)" },
+  createdAt: "2025-01-01T00:00:00Z",
+};
 
 function cursor({
   direction = "desc",
@@ -180,7 +206,10 @@ test("organization Lexicons declare batch lookup results and separate list outpu
   assert.equal(getParams.properties.actor.format, "did");
   const actorView = getOrganization.defs.organizationActorView;
   assert.deepEqual(actorView.required, ["did", "profile", "organization"]);
-  assert.deepEqual(actorView.nullable, ["profile"]);
+  assert.deepEqual(actorView.nullable, ["profile", "primaryLocation"]);
+  const locationView = getOrganization.defs.locationRecordView;
+  assert.deepEqual(locationView.required, ["uri", "cid", "indexedAt", "did", "record"]);
+  assert.equal(locationView.properties.record.ref, "app.certified.location");
   assert.equal(actorView.properties.organization.ref, "org.hypercerts.api.defs#organizationView");
   assert.equal(getOrganization.defs.output.properties.actor.ref, "#organizationActorView");
 
@@ -614,5 +643,162 @@ test("organization misses and operational database failures remain distinct erro
     queryFailureAt: 2,
     expectError: "OrganizationQueryFailed:",
     expectedCalls: 2,
+  });
+});
+
+test("getOrganization returns the indexed location record its reference points to, unchanged", () => {
+  const organization = organizationRow(actor, "with-location", {
+    organizationType: ["nonprofit"],
+    location: locationRef(actor, "3jzfcijpj2z2a", "bafy-location"),
+  });
+  const location = locationRow(actor, "3jzfcijpj2z2a", "location", pointLocation, "bafy-location");
+  runLua({
+    endpoint: "getOrganization",
+    params: { actor },
+    queryResults: [[organization], [], [location]],
+    assertions: `
+local primary = result.actor.primaryLocation
+assert(primary.uri == '${location.uri}' and primary.cid == 'bafy-location' and primary.did == '${actor}')
+assert(primary.indexedAt == '${indexedAt}')
+assert(primary.record['$type'] == '${locationCollection}' and primary.record.locationType == 'geojson-point')
+assert(primary.record.location.string == 'POINT(89.64 27.47)')
+assert(primary.author == nil, 'the location view carries no hydrated author')
+assert(#calls == 3 and calls[3].values[1] == '${locationCollection}' and calls[3].values[2] == '${location.uri}' and #calls[3].values == 2)
+assert(calls[3].sql:find('collection = $1 AND uri IN ($2)', 1, true))
+`,
+  });
+});
+
+test("organization views return an explicit null primaryLocation without querying when the reference cannot name a location record", () => {
+  const references = {
+    absent: undefined,
+    notAnObject: "at://x",
+    missingUri: { cid: "bafy-pinned" },
+    notAtUri: { uri: "https://example.com/location", cid: "bafy-pinned" },
+    wrongCollection: {
+      uri: `at://${actor}/org.hypercerts.claim.activity/3jzfcijpj2z2a`,
+      cid: "bafy-pinned",
+    },
+    wrongCollectionPrefix: {
+      uri: `at://${actor}/${locationCollection}.extra/3jzfcijpj2z2a`,
+      cid: "bafy-pinned",
+    },
+  };
+  for (const [name, reference] of Object.entries(references)) {
+    const organization = organizationRow(actor, `ref-${name}`, {
+      organizationType: ["nonprofit"],
+      ...(reference === undefined ? {} : { location: reference }),
+    });
+    runLua({
+      endpoint: "getOrganization",
+      params: { actor },
+      queryResults: [[organization], []],
+      assertions: `
+assert(result.actor.primaryLocation == NULL, '${name}: primaryLocation must be explicit null')
+assert(result.actor.primaryLocation ~= nil, '${name}: primaryLocation must be present')
+assert(#calls == 2, '${name}: no location query for a reference that cannot be a location record')
+`,
+    });
+  }
+});
+
+test("primaryLocation matches by URI and returns the latest indexed version when the pinned cid differs", () => {
+  const organization = organizationRow(actor, "stale-location", {
+    location: locationRef(actor, "3jzfcijpj2z2a", "bafy-pinned"),
+  });
+  const newer = locationRow(
+    actor,
+    "3jzfcijpj2z2a",
+    "newer",
+    { ...pointLocation, name: "Edited name" },
+    "bafy-newer",
+  );
+  runLua({
+    endpoint: "getOrganization",
+    params: { actor },
+    queryResults: [[organization], [], [newer]],
+    assertions: `
+assert(result.actor.primaryLocation.cid == 'bafy-newer')
+assert(result.actor.primaryLocation.record.name == 'Edited name')
+assert(result.actor.organization.record.location.cid == 'bafy-pinned')
+assert(#calls[3].values == 2 and not calls[3].sql:find('cid =', 1, true), 'lookup must not filter by cid')
+`,
+  });
+});
+
+test("getOrganizations hydrates every primaryLocation with one batched lookup over distinct URIs", () => {
+  const sharedRkey = "3jzfcijpj2z2a";
+  const first = organizationRow(actor, "batch-first", { location: locationRef(actor, sharedRkey) });
+  const second = organizationRow(secondActor, "batch-second", {
+    location: locationRef(actor, sharedRkey),
+  });
+  const third = organizationRow(thirdActor, "batch-third", {
+    location: locationRef(thirdActor, "3jzfcijpj2z2b"),
+  });
+  const without = organizationRow(fourthActor, "batch-without", {});
+  const shared = locationRow(actor, sharedRkey, "shared", pointLocation);
+  const own = locationRow(thirdActor, "3jzfcijpj2z2b", "own", { ...pointLocation, name: "Own" });
+  runLua({
+    endpoint: "getOrganizations",
+    params: { actors: [fourthActor, actor, secondActor, thirdActor, actor] },
+    queryResults: [[first, second, third, without], [], [own, shared]],
+    assertions: `
+local function primary(index) return result.organizations[index].organization.primaryLocation end
+assert(primary(1) == NULL, 'organization without a location reference')
+assert(primary(2).uri == '${shared.uri}', 'first organization')
+assert(primary(3).uri == '${shared.uri}', 'second organization shares the location')
+assert(primary(4).uri == '${own.uri}' and primary(4).record.name == 'Own', 'third organization')
+assert(primary(5).uri == '${shared.uri}', 'repeated occurrence')
+assert(#calls == 3, 'one organization, one profile and one location query')
+assert(#calls[3].values == 3 and calls[3].values[1] == '${locationCollection}', 'distinct location URIs only')
+assert(calls[3].sql:find('uri IN ($2, $3)', 1, true))
+`,
+  });
+});
+
+test("listOrganizations and searchOrganizations hydrate primaryLocation for returned rows only", () => {
+  const first = organizationRow(actor, "list-first", {
+    location: locationRef(actor, "3jzfcijpj2z2a"),
+  });
+  const lookahead = organizationRow(secondActor, "list-lookahead", {
+    location: locationRef(secondActor, "3jzfcijpj2z2b"),
+  });
+  const location = locationRow(actor, "3jzfcijpj2z2a", "list-location", pointLocation);
+  runLua({
+    endpoint: "listOrganizations",
+    params: { limit: "1" },
+    queryResults: [[first, lookahead], [], [location]],
+    assertions: `
+assert(#result.actors == 1 and result.actors[1].primaryLocation.uri == '${location.uri}')
+assert(#calls == 3 and #calls[3].values == 2, 'the lookahead row must not be hydrated')
+assert(calls[3].values[2] == '${location.uri}')
+`,
+  });
+
+  const withoutLocation = organizationRow(secondActor, "search-without", {});
+  runLua({
+    endpoint: "searchOrganizations",
+    params: { search: "forest" },
+    queryResults: [[first, withoutLocation], [], [location]],
+    assertions: `
+assert(#result.actors == 2)
+assert(result.actors[1].primaryLocation.uri == '${location.uri}')
+assert(result.actors[2].primaryLocation == NULL and result.actors[2].primaryLocation ~= nil)
+assert(#calls == 3)
+`,
+  });
+});
+
+test("a failed primaryLocation lookup is reported as an organization query failure, not an empty location", () => {
+  const organization = organizationRow(actor, "location-error", {
+    location: locationRef(actor, "3jzfcijpj2z2a"),
+  });
+  runLua({
+    endpoint: "getOrganization",
+    params: { actor },
+    queryResults: [[organization], []],
+    queryFailureAt: 3,
+    expectError: "OrganizationQueryFailed:",
+    expectedCalls: 3,
   });
 });

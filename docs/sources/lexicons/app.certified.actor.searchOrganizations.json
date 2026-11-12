@@ -71,7 +71,7 @@
         },
         {
           "name": "OrganizationQueryFailed",
-          "description": "The indexed organization sidecar or associated profile could not be queried."
+          "description": "The indexed organization sidecar, associated profile or primary location could not be queried."
         }
       ]
     },

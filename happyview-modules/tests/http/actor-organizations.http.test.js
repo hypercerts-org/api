@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { locationRecords } from "../fixtures/records.js";
 import { actorFixtureDids, seedRows } from "./fixtures/actors.fixture.js";
 import { contractUrl, requireContractTarget } from "./helpers.js";
 
@@ -16,6 +17,8 @@ const profilelessOrganization = organizationRecords.find(
 );
 const unlistedOrganization = organizationRecords.find(({ did }) => did === actorFixtureDids.forest);
 const unlistedProfile = profileRecords.find(({ did }) => did === unlistedOrganization.did);
+const pointLocation = locationRecords.find(({ rkey }) => rkey === "3jzfcijpj2z2a");
+const blobLocation = locationRecords.find(({ rkey }) => rkey === "3jzfcijpj2z2c");
 
 function recordView(record) {
   return {
@@ -25,6 +28,18 @@ function recordView(record) {
     did: record.did,
     record: record.record,
   };
+}
+
+// What each fixture organization's primaryLocation must be; null for every reference that cannot be
+// resolved to an indexed app.certified.location record.
+function expectedPrimaryLocation(did) {
+  const expected = {
+    [actorFixtureDids.alpine]: recordView(pointLocation),
+    [actorFixtureDids.forest]: recordView(blobLocation),
+    // River pins blobLocation's CID but its URI is pointLocation's: the latest indexed record wins.
+    [actorFixtureDids.river]: recordView(pointLocation),
+  };
+  return expected[did] ?? null;
 }
 
 async function get(nsid, params) {
@@ -51,6 +66,7 @@ test("getOrganization returns the original sidecar and explicit nullable profile
     did: publicOrganization.did,
     profile: recordView(profileRecords[0]),
     organization: recordView(publicOrganization),
+    primaryLocation: recordView(pointLocation),
   });
 
   const withoutProfile = await get("app.certified.actor.getOrganization", {
@@ -60,6 +76,7 @@ test("getOrganization returns the original sidecar and explicit nullable profile
     did: profilelessOrganization.did,
     profile: null,
     organization: recordView(profilelessOrganization),
+    primaryLocation: null,
   });
 });
 
@@ -109,6 +126,7 @@ test("getOrganizations preserves repeated DID occurrences and serializes a missi
     did: profilelessOrganization.did,
     profile: null,
     organization: recordView(profilelessOrganization),
+    primaryLocation: null,
   });
   assert.deepEqual(result.organizations[0], result.organizations[3]);
   assert.deepEqual(result.organizations[2].organization.profile, recordView(profileRecords[0]));
@@ -215,4 +233,52 @@ test("listOrganizations paginates stably in both directions without skipping equ
     itemsByDirection[direction] = items;
   }
   assert.deepEqual(itemsByDirection.asc, [...itemsByDirection.desc].reverse());
+});
+
+test("getOrganization returns the raw primary location record, or null when the reference cannot be resolved", async () => {
+  const dids = [
+    actorFixtureDids.alpine,
+    actorFixtureDids.forest,
+    actorFixtureDids.river,
+    actorFixtureDids.organizationOnly,
+    actorFixtureDids.unindexedLocation,
+    actorFixtureDids.wrongCollectionLocation,
+  ];
+  for (const did of dids) {
+    const { actor } = await get("app.certified.actor.getOrganization", { actor: did });
+    assert.deepEqual(actor.primaryLocation, expectedPrimaryLocation(did), did);
+    assert.equal(Object.hasOwn(actor, "primaryLocation"), true, `${did}: key must be present`);
+  }
+});
+
+test("getOrganizations, listOrganizations and searchOrganizations return the same primaryLocation per organization", async () => {
+  const fixtureDids = [
+    actorFixtureDids.alpine,
+    actorFixtureDids.forest,
+    actorFixtureDids.river,
+    actorFixtureDids.organizationOnly,
+    actorFixtureDids.unindexedLocation,
+    actorFixtureDids.wrongCollectionLocation,
+  ];
+  const requested = [...fixtureDids, actorFixtureDids.alpine];
+  const batch = await get("app.certified.actor.getOrganizations", { actors: requested });
+  assert.deepEqual(
+    batch.organizations.map(({ organization }) => organization.primaryLocation),
+    requested.map(expectedPrimaryLocation),
+  );
+
+  const listed = await get("app.certified.actor.listOrganizations", { limit: 100 });
+  const listedByDid = new Map(listed.actors.map((actor) => [actor.did, actor]));
+  for (const did of fixtureDids) {
+    assert.deepEqual(listedByDid.get(did).primaryLocation, expectedPrimaryLocation(did), did);
+  }
+
+  const searched = await get("app.certified.actor.searchOrganizations", {
+    search: "Alpine Forest",
+    actors: [actorFixtureDids.alpine],
+  });
+  assert.deepEqual(
+    searched.actors.map(({ primaryLocation }) => primaryLocation),
+    [recordView(pointLocation)],
+  );
 });

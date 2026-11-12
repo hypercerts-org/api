@@ -20,7 +20,7 @@ export const $output = /*#__PURE__*/ l.payload("application/json", /*#__PURE__*/
 export type $Output<B = l.BinaryData> = l.InferPayload<typeof $output, B>;
 export type $OutputBody<B = l.BinaryData> = l.InferPayloadBody<typeof $output, B>;
 
-/** Returns an indexed organization sidecar and associated profile for each supplied actor DID. Authentication is not required. */
+/** Returns an indexed organization sidecar, associated profile and primary location for each supplied actor DID. Authentication is not required. */
 const main = /*#__PURE__*/ l.query($nsid, $params, $output, ["InvalidRequest","OrganizationQueryFailed"]);
 
 export { main };
