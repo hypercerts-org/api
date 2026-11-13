@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Returns an indexed organization sidecar, associated profile and primary location for each supplied actor DID. Authentication is not required.",
+      "description": "Returns an indexed organization sidecar, associated profile and location for each supplied actor DID. Authentication is not required.",
       "parameters": {
         "type": "params",
         "required": [
@@ -37,7 +37,7 @@
         },
         {
           "name": "OrganizationQueryFailed",
-          "description": "The indexed organization sidecars, associated profiles or primary locations could not be queried."
+          "description": "The indexed organization sidecars, associated profiles or locations could not be queried."
         }
       ]
     },

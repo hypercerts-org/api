@@ -206,7 +206,7 @@ test("organization Lexicons declare batch lookup results and separate list outpu
   assert.equal(getParams.properties.actor.format, "did");
   const actorView = getOrganization.defs.organizationActorView;
   assert.deepEqual(actorView.required, ["did", "profile", "organization"]);
-  assert.deepEqual(actorView.nullable, ["profile", "primaryLocation"]);
+  assert.deepEqual(actorView.nullable, ["profile", "location"]);
   const locationView = getOrganization.defs.locationRecordView;
   assert.deepEqual(locationView.required, ["uri", "cid", "indexedAt", "did", "record"]);
   assert.equal(locationView.properties.record.ref, "app.certified.location");
@@ -657,7 +657,7 @@ test("getOrganization returns the indexed location record its reference points t
     params: { actor },
     queryResults: [[organization], [], [location]],
     assertions: `
-local primary = result.actor.primaryLocation
+local primary = result.actor.location
 assert(primary.uri == '${location.uri}' and primary.cid == 'bafy-location' and primary.did == '${actor}')
 assert(primary.indexedAt == '${indexedAt}')
 assert(primary.record['$type'] == '${locationCollection}' and primary.record.locationType == 'geojson-point')
@@ -669,7 +669,7 @@ assert(calls[3].sql:find('collection = $1 AND uri IN ($2)', 1, true))
   });
 });
 
-test("organization views return an explicit null primaryLocation without querying when the reference cannot name a location record", () => {
+test("organization views return an explicit null location without querying when the reference cannot name a location record", () => {
   const references = {
     absent: undefined,
     notAnObject: "at://x",
@@ -694,15 +694,15 @@ test("organization views return an explicit null primaryLocation without queryin
       params: { actor },
       queryResults: [[organization], []],
       assertions: `
-assert(result.actor.primaryLocation == NULL, '${name}: primaryLocation must be explicit null')
-assert(result.actor.primaryLocation ~= nil, '${name}: primaryLocation must be present')
+assert(result.actor.location == NULL, '${name}: location must be explicit null')
+assert(result.actor.location ~= nil, '${name}: location must be present')
 assert(#calls == 2, '${name}: no location query for a reference that cannot be a location record')
 `,
     });
   }
 });
 
-test("primaryLocation matches by URI and returns the latest indexed version when the pinned cid differs", () => {
+test("location matches by URI and returns the latest indexed version when the pinned cid differs", () => {
   const organization = organizationRow(actor, "stale-location", {
     location: locationRef(actor, "3jzfcijpj2z2a", "bafy-pinned"),
   });
@@ -718,15 +718,15 @@ test("primaryLocation matches by URI and returns the latest indexed version when
     params: { actor },
     queryResults: [[organization], [], [newer]],
     assertions: `
-assert(result.actor.primaryLocation.cid == 'bafy-newer')
-assert(result.actor.primaryLocation.record.name == 'Edited name')
+assert(result.actor.location.cid == 'bafy-newer')
+assert(result.actor.location.record.name == 'Edited name')
 assert(result.actor.organization.record.location.cid == 'bafy-pinned')
 assert(#calls[3].values == 2 and not calls[3].sql:find('cid =', 1, true), 'lookup must not filter by cid')
 `,
   });
 });
 
-test("getOrganizations hydrates every primaryLocation with one batched lookup over distinct URIs", () => {
+test("getOrganizations hydrates every location with one batched lookup over distinct URIs", () => {
   const sharedRkey = "3jzfcijpj2z2a";
   const first = organizationRow(actor, "batch-first", { location: locationRef(actor, sharedRkey) });
   const second = organizationRow(secondActor, "batch-second", {
@@ -743,7 +743,7 @@ test("getOrganizations hydrates every primaryLocation with one batched lookup ov
     params: { actors: [fourthActor, actor, secondActor, thirdActor, actor] },
     queryResults: [[first, second, third, without], [], [own, shared]],
     assertions: `
-local function primary(index) return result.organizations[index].organization.primaryLocation end
+local function primary(index) return result.organizations[index].organization.location end
 assert(primary(1) == NULL, 'organization without a location reference')
 assert(primary(2).uri == '${shared.uri}', 'first organization')
 assert(primary(3).uri == '${shared.uri}', 'second organization shares the location')
@@ -756,7 +756,7 @@ assert(calls[3].sql:find('uri IN ($2, $3)', 1, true))
   });
 });
 
-test("listOrganizations and searchOrganizations hydrate primaryLocation for returned rows only", () => {
+test("listOrganizations and searchOrganizations hydrate location for returned rows only", () => {
   const first = organizationRow(actor, "list-first", {
     location: locationRef(actor, "3jzfcijpj2z2a"),
   });
@@ -769,7 +769,7 @@ test("listOrganizations and searchOrganizations hydrate primaryLocation for retu
     params: { limit: "1" },
     queryResults: [[first, lookahead], [], [location]],
     assertions: `
-assert(#result.actors == 1 and result.actors[1].primaryLocation.uri == '${location.uri}')
+assert(#result.actors == 1 and result.actors[1].location.uri == '${location.uri}')
 assert(#calls == 3 and #calls[3].values == 2, 'the lookahead row must not be hydrated')
 assert(calls[3].values[2] == '${location.uri}')
 `,
@@ -782,14 +782,14 @@ assert(calls[3].values[2] == '${location.uri}')
     queryResults: [[first, withoutLocation], [], [location]],
     assertions: `
 assert(#result.actors == 2)
-assert(result.actors[1].primaryLocation.uri == '${location.uri}')
-assert(result.actors[2].primaryLocation == NULL and result.actors[2].primaryLocation ~= nil)
+assert(result.actors[1].location.uri == '${location.uri}')
+assert(result.actors[2].location == NULL and result.actors[2].location ~= nil)
 assert(#calls == 3)
 `,
   });
 });
 
-test("a failed primaryLocation lookup is reported as an organization query failure, not an empty location", () => {
+test("a failed location lookup is reported as an organization query failure, not an empty location", () => {
   const organization = organizationRow(actor, "location-error", {
     location: locationRef(actor, "3jzfcijpj2z2a"),
   });

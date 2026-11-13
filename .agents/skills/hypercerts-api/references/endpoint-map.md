@@ -28,7 +28,7 @@ Inspect the exact operation in the bundled OpenAPI contract before constructing 
 | Browse/filter organizations | `app.certified.actor.listOrganizations` | Use for organization-type/visibility filters and pagination. |
 | Find organizations by text | `app.certified.actor.searchOrganizations` | Searches associated profile text, with optional organization filters. |
 
-Use `getProfiles`/`getOrganizations` for known DID sets; use `list` or `search` for discovery. A missing optional profile inside an organization view is not the same as a missing organization record. Organization actor views from these four endpoints include `primaryLocation` (the raw indexed location record, or null); use it instead of a second `getLocation` call. Organization views nested in other endpoints' author or actor views do not include it.
+Use `getProfiles`/`getOrganizations` for known DID sets; use `list` or `search` for discovery. A missing optional profile inside an organization view is not the same as a missing organization record. Organization actor views from these four endpoints include `location` (the resolved, raw indexed location record, or null; `organization.record.location` stays the strong reference); use it instead of a second `getLocation` call. Organization views nested in other endpoints' author or actor views do not include it.
 
 ## Activities, contributors, contributions, and rights (9)
 

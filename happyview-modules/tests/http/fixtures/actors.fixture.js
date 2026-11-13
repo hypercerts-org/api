@@ -21,10 +21,10 @@ const locationCollection = "app.certified.location";
 const pointLocation = locationRecords.find(({ rkey }) => rkey === "3jzfcijpj2z2a");
 const blobLocation = locationRecords.find(({ rkey }) => rkey === "3jzfcijpj2z2c");
 
-// Primary-location scenarios: alpine pins the current point location, forest a blob-payload
+// Location scenarios: alpine pins the current point location, forest a blob-payload
 // location, river a stale CID, and the two sidecar-only actors a never-indexed location and a
 // reference to an indexed record in another collection. organizationOnly has no reference.
-const primaryLocationRefs = {
+const locationRefs = {
   alpine: { uri: pointLocation.uri, cid: pointLocation.cid },
   forest: { uri: blobLocation.uri, cid: blobLocation.cid },
   river: { uri: pointLocation.uri, cid: blobLocation.cid },
@@ -85,7 +85,7 @@ const records = [
     rkey: "self",
     record: {
       organizationType: ["nonprofit", "cooperative"],
-      location: primaryLocationRefs.alpine,
+      location: locationRefs.alpine,
       visibility: "public",
       createdAt,
     },
@@ -96,7 +96,7 @@ const records = [
     rkey: "self",
     record: {
       organizationType: ["community"],
-      location: primaryLocationRefs.forest,
+      location: locationRefs.forest,
       visibility: "unlisted",
       createdAt,
     },
@@ -107,7 +107,7 @@ const records = [
     rkey: "self",
     record: {
       organizationType: ["nonprofit"],
-      location: primaryLocationRefs.river,
+      location: locationRefs.river,
       visibility: "public",
       createdAt,
     },
@@ -127,7 +127,7 @@ const records = [
     rkey: "self",
     record: {
       organizationType: ["location-fixture"],
-      location: primaryLocationRefs.unindexed,
+      location: locationRefs.unindexed,
       createdAt,
     },
   },
@@ -137,7 +137,7 @@ const records = [
     rkey: "self",
     record: {
       organizationType: ["location-fixture"],
-      location: primaryLocationRefs.wrongCollection,
+      location: locationRefs.wrongCollection,
       createdAt,
     },
   },

@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Gets an actor's indexed organization sidecar, associated profile and primary location by DID. Authentication is not required.",
+      "description": "Gets an actor's indexed organization sidecar, associated profile and location by DID. Authentication is not required.",
       "parameters": {
         "type": "params",
         "required": [
@@ -36,7 +36,7 @@
         },
         {
           "name": "OrganizationQueryFailed",
-          "description": "The indexed organization sidecar, associated profile or primary location could not be queried."
+          "description": "The indexed organization sidecar, associated profile or location could not be queried."
         }
       ]
     },
@@ -78,7 +78,7 @@
     },
     "organizationActorView": {
       "type": "object",
-      "description": "Actor with an indexed organization sidecar, nullable profile view and nullable primary location view.",
+      "description": "Actor with an indexed organization sidecar, nullable profile view and nullable location view.",
       "required": [
         "did",
         "profile",
@@ -86,7 +86,7 @@
       ],
       "nullable": [
         "profile",
-        "primaryLocation"
+        "location"
       ],
       "properties": {
         "did": {
@@ -101,7 +101,7 @@
           "type": "ref",
           "ref": "org.hypercerts.api.defs#organizationView"
         },
-        "primaryLocation": {
+        "location": {
           "type": "ref",
           "ref": "#locationRecordView",
           "description": "The location record that the organization sidecar's location reference points to, with the record unchanged: a blob payload stays a blob reference and no URL is resolved. Returned by getOrganization, getOrganizations, listOrganizations and searchOrganizations; organization views nested in other endpoints' author or actor views do not include it. Null when the sidecar has no location reference, the reference does not point to an app.certified.location record, or that record is not indexed. The record is matched by AT-URI, not CID: if the indexed cid differs from organization.record.location.cid, the latest indexed record is returned."

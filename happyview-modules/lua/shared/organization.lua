@@ -16,7 +16,7 @@ local function organization_actor_view(row)
     did = row.did,
     profile = NULL,
     organization = record_view(row),
-    primaryLocation = NULL,
+    location = NULL,
   }
 end
 
@@ -47,7 +47,7 @@ end
 
 -- The organization's location reference pins a CID, but the lookup matches the URI only, so a newer
 -- indexed version is returned as-is. Anything that is not a location record URI yields no lookup.
-local function primary_location_uri(organization)
+local function location_uri(organization)
   local reference = organization.record.location
   if type(reference) ~= "table" or type(reference.uri) ~= "string" then return nil end
   local valid, collection = valid_record_uri(reference.uri)
@@ -55,10 +55,10 @@ local function primary_location_uri(organization)
   return nil
 end
 
-local function hydrate_primary_locations(actors)
+local function hydrate_locations(actors)
   local uris, seen = {}, {}
   for _, actor in ipairs(actors) do
-    local uri = primary_location_uri(actor.organization)
+    local uri = location_uri(actor.organization)
     if uri and not seen[uri] then
       seen[uri] = true
       uris[#uris + 1] = uri
@@ -78,13 +78,13 @@ local function hydrate_primary_locations(actors)
   local locations = {}
   for _, row in ipairs(rows) do locations[row.uri] = row end
   for _, actor in ipairs(actors) do
-    local uri = primary_location_uri(actor.organization)
-    if uri and locations[uri] then actor.primaryLocation = record_view(locations[uri]) end
+    local uri = location_uri(actor.organization)
+    if uri and locations[uri] then actor.location = record_view(locations[uri]) end
   end
 end
 
 local function hydrate_organization_actors(actors)
   if #actors == 0 then return end
   hydrate_profiles(actors)
-  hydrate_primary_locations(actors)
+  hydrate_locations(actors)
 end

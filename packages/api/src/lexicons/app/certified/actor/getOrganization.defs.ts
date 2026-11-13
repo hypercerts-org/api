@@ -21,7 +21,7 @@ export const $output = /*#__PURE__*/ l.payload("application/json", /*#__PURE__*/
 export type $Output<B = l.BinaryData> = l.InferPayload<typeof $output, B>;
 export type $OutputBody<B = l.BinaryData> = l.InferPayloadBody<typeof $output, B>;
 
-/** Gets an actor's indexed organization sidecar, associated profile and primary location by DID. Authentication is not required. */
+/** Gets an actor's indexed organization sidecar, associated profile and location by DID. Authentication is not required. */
 const main = /*#__PURE__*/ l.query($nsid, $params, $output, ["InvalidRequest","RecordNotFound","OrganizationQueryFailed"]);
 
 export { main };
@@ -42,18 +42,18 @@ const locationRecordView = /*#__PURE__*/ l.typedObject<LocationRecordView>($nsid
 
 export { locationRecordView };
 
-/** Actor with an indexed organization sidecar, nullable profile view and nullable primary location view. */
+/** Actor with an indexed organization sidecar, nullable profile view and nullable location view. */
 type OrganizationActorView = { $type?: "app.certified.actor.getOrganization#organizationActorView";"did":l.DidString;"profile":ApiDefs.ProfileView | null;"organization":ApiDefs.OrganizationView;
 
   /**
    * The location record that the organization sidecar's location reference points to, with the record unchanged: a blob payload stays a blob reference and no URL is resolved. Returned by getOrganization, getOrganizations, listOrganizations and searchOrganizations; organization views nested in other endpoints' author or actor views do not include it. Null when the sidecar has no location reference, the reference does not point to an app.certified.location record, or that record is not indexed. The record is matched by AT-URI, not CID: if the indexed cid differs from organization.record.location.cid, the latest indexed record is returned.
    */
-  "primaryLocation"?:LocationRecordView | null };
+  "location"?:LocationRecordView | null };
 
 export type { OrganizationActorView };
 
-/** Actor with an indexed organization sidecar, nullable profile view and nullable primary location view. */
-const organizationActorView = /*#__PURE__*/ l.typedObject<OrganizationActorView>($nsid, "organizationActorView", /*#__PURE__*/ l.object({"did":/*#__PURE__*/ l.string({"format":"did"}),"profile":/*#__PURE__*/ l.nullable(/*#__PURE__*/ l.ref<ApiDefs.ProfileView>((() => ApiDefs.profileView) as any)),"organization":/*#__PURE__*/ l.ref<ApiDefs.OrganizationView>((() => ApiDefs.organizationView) as any),"primaryLocation":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.nullable(/*#__PURE__*/ l.ref<LocationRecordView>((() => locationRecordView) as any)))}));
+/** Actor with an indexed organization sidecar, nullable profile view and nullable location view. */
+const organizationActorView = /*#__PURE__*/ l.typedObject<OrganizationActorView>($nsid, "organizationActorView", /*#__PURE__*/ l.object({"did":/*#__PURE__*/ l.string({"format":"did"}),"profile":/*#__PURE__*/ l.nullable(/*#__PURE__*/ l.ref<ApiDefs.ProfileView>((() => ApiDefs.profileView) as any)),"organization":/*#__PURE__*/ l.ref<ApiDefs.OrganizationView>((() => ApiDefs.organizationView) as any),"location":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.nullable(/*#__PURE__*/ l.ref<LocationRecordView>((() => locationRecordView) as any)))}));
 
 export { organizationActorView };
 

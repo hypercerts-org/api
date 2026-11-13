@@ -30,9 +30,9 @@ function recordView(record) {
   };
 }
 
-// What each fixture organization's primaryLocation must be; null for every reference that cannot be
+// What each fixture organization's location must be; null for every reference that cannot be
 // resolved to an indexed app.certified.location record.
-function expectedPrimaryLocation(did) {
+function expectedLocation(did) {
   const expected = {
     [actorFixtureDids.alpine]: recordView(pointLocation),
     [actorFixtureDids.forest]: recordView(blobLocation),
@@ -66,7 +66,7 @@ test("getOrganization returns the original sidecar and explicit nullable profile
     did: publicOrganization.did,
     profile: recordView(profileRecords[0]),
     organization: recordView(publicOrganization),
-    primaryLocation: recordView(pointLocation),
+    location: recordView(pointLocation),
   });
 
   const withoutProfile = await get("app.certified.actor.getOrganization", {
@@ -76,7 +76,7 @@ test("getOrganization returns the original sidecar and explicit nullable profile
     did: profilelessOrganization.did,
     profile: null,
     organization: recordView(profilelessOrganization),
-    primaryLocation: null,
+    location: null,
   });
 });
 
@@ -126,7 +126,7 @@ test("getOrganizations preserves repeated DID occurrences and serializes a missi
     did: profilelessOrganization.did,
     profile: null,
     organization: recordView(profilelessOrganization),
-    primaryLocation: null,
+    location: null,
   });
   assert.deepEqual(result.organizations[0], result.organizations[3]);
   assert.deepEqual(result.organizations[2].organization.profile, recordView(profileRecords[0]));
@@ -235,7 +235,7 @@ test("listOrganizations paginates stably in both directions without skipping equ
   assert.deepEqual(itemsByDirection.asc, [...itemsByDirection.desc].reverse());
 });
 
-test("getOrganization returns the raw primary location record, or null when the reference cannot be resolved", async () => {
+test("getOrganization returns the raw location record, or null when the reference cannot be resolved", async () => {
   const dids = [
     actorFixtureDids.alpine,
     actorFixtureDids.forest,
@@ -246,12 +246,12 @@ test("getOrganization returns the raw primary location record, or null when the 
   ];
   for (const did of dids) {
     const { actor } = await get("app.certified.actor.getOrganization", { actor: did });
-    assert.deepEqual(actor.primaryLocation, expectedPrimaryLocation(did), did);
-    assert.equal(Object.hasOwn(actor, "primaryLocation"), true, `${did}: key must be present`);
+    assert.deepEqual(actor.location, expectedLocation(did), did);
+    assert.equal(Object.hasOwn(actor, "location"), true, `${did}: key must be present`);
   }
 });
 
-test("getOrganizations, listOrganizations and searchOrganizations return the same primaryLocation per organization", async () => {
+test("getOrganizations, listOrganizations and searchOrganizations return the same location per organization", async () => {
   const fixtureDids = [
     actorFixtureDids.alpine,
     actorFixtureDids.forest,
@@ -263,14 +263,14 @@ test("getOrganizations, listOrganizations and searchOrganizations return the sam
   const requested = [...fixtureDids, actorFixtureDids.alpine];
   const batch = await get("app.certified.actor.getOrganizations", { actors: requested });
   assert.deepEqual(
-    batch.organizations.map(({ organization }) => organization.primaryLocation),
-    requested.map(expectedPrimaryLocation),
+    batch.organizations.map(({ organization }) => organization.location),
+    requested.map(expectedLocation),
   );
 
   const listed = await get("app.certified.actor.listOrganizations", { limit: 100 });
   const listedByDid = new Map(listed.actors.map((actor) => [actor.did, actor]));
   for (const did of fixtureDids) {
-    assert.deepEqual(listedByDid.get(did).primaryLocation, expectedPrimaryLocation(did), did);
+    assert.deepEqual(listedByDid.get(did).location, expectedLocation(did), did);
   }
 
   const searched = await get("app.certified.actor.searchOrganizations", {
@@ -278,7 +278,7 @@ test("getOrganizations, listOrganizations and searchOrganizations return the sam
     actors: [actorFixtureDids.alpine],
   });
   assert.deepEqual(
-    searched.actors.map(({ primaryLocation }) => primaryLocation),
+    searched.actors.map(({ location }) => location),
     [recordView(pointLocation)],
   );
 });
