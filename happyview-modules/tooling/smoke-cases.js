@@ -4,7 +4,8 @@
  *
  * - phase 1: list endpoints that need no input; their first items become seeds.
  * - phase 2: everything that needs a seed. A case whose seed is missing is skipped, not failed,
- *   because an environment may legitimately have no data of that kind.
+ *   because an environment may legitimately have no data of that kind. Exception: the batch
+ *   getProfiles/getOrganizations cases fail when the listing has fewer than two DIDs.
  *
  * Output shape is validated generically against the lexicon (see smoke.js); `check` adds
  * endpoint-specific invariants.
@@ -16,6 +17,7 @@
  * @typedef {object} SmokeCase
  * @property {1 | 2} phase
  * @property {(seeds: Seeds) => QueryParams | undefined} params undefined = no seed, skip.
+ *   Throwing SmokeFailure reports the case as failed instead.
  * @property {(json: any) => Seeds} [collect] Seeds to record from a phase 1 response.
  * @property {(json: any, params: QueryParams) => string[]} [check] Extra invariants; [] = ok.
  */
@@ -37,6 +39,46 @@ const NS = {
 };
 
 const LIST_PARAMS = () => ({ limit: 5 });
+
+/** Thrown from `params` when missing seeds are a real failure, not an empty environment. */
+export class SmokeFailure extends Error {}
+
+/** DIDs of the first two listed items, for the batch `get*` cases. */
+const firstTwoDids = (items) =>
+  items
+    .slice(0, 2)
+    .map((i) => i?.did)
+    .filter(Boolean);
+
+/**
+ * Batch lookups must be exercised with at least two DIDs. Fewer than two on the listing fails.
+ * @param {string} seedKey @param {string} what
+ */
+function twoDids(seedKey, what) {
+  return (s) => {
+    const dids = s[seedKey] ?? [];
+    if (dids.length < 2)
+      throw new SmokeFailure(
+        `need 2 ${what} DIDs from the listing to test batching, found ${dids.length}`,
+      );
+    return { actors: dids };
+  };
+}
+
+/** Batch result must hold one non-null `field` per requested actor, in request order. */
+const batchInOrder = (key, field) => (json, params) => {
+  const items = json[key] ?? [];
+  const got = items.map((i) => i?.actor);
+  const errors = [];
+  if (JSON.stringify(got) !== JSON.stringify(params.actors))
+    errors.push(
+      `${key} actors ${JSON.stringify(got)} do not match request order ${JSON.stringify(params.actors)}`,
+    );
+  const missing = items.filter((i) => !i?.[field]).map((i) => i?.actor);
+  if (missing.length)
+    errors.push(`no ${field} returned for listed actor(s): ${missing.join(", ")}`);
+  return errors;
+};
 
 /** First word of at least 4 letters from the first string field found; a stable search term. */
 export function searchTermFrom(record, fields = ["title", "name", "displayName"]) {
@@ -72,7 +114,8 @@ const withSeed = (build, check) => ({
   params: (s) => {
     try {
       return build(s);
-    } catch {
+    } catch (error) {
+      if (error instanceof SmokeFailure) throw error;
       return undefined;
     }
   },
@@ -89,10 +132,12 @@ export const SMOKE_CASES = {
   // ---- phase 1: lists that need no input ----
   [`${NS.actor}.listProfiles`]: listCase("profiles", "profileUri", (items) => ({
     actor: items[0]?.did,
+    actors: firstTwoDids(items),
     profileTerm: searchTermFrom(items[0]?.record),
   })),
   [`${NS.actor}.listOrganizations`]: listCase("actors", "orgUri", (items) => ({
     org: items[0]?.did,
+    orgs: firstTwoDids(items),
     orgTerm: searchTermFrom(items[0]?.organization?.record, ["legalName"]),
   })),
   [`${NS.badge}.listBadgeAwards`]: listCase("badgeAwards", "badgeAward"),
@@ -162,9 +207,15 @@ export const SMOKE_CASES = {
 
   // ---- phase 2: actors, graph, feed ----
   [`${NS.actor}.getProfile`]: withSeed((s) => ({ actor: need(s.actor) })),
-  [`${NS.actor}.getProfiles`]: withSeed((s) => ({ actors: [need(s.actor)] })),
+  [`${NS.actor}.getProfiles`]: withSeed(
+    twoDids("actors", "profile"),
+    batchInOrder("profiles", "profile"),
+  ),
   [`${NS.actor}.getOrganization`]: withSeed((s) => ({ actor: need(s.org) })),
-  [`${NS.actor}.getOrganizations`]: withSeed((s) => ({ actors: [need(s.org)] })),
+  [`${NS.actor}.getOrganizations`]: withSeed(
+    twoDids("orgs", "organization"),
+    batchInOrder("organizations", "organization"),
+  ),
   [`${NS.actor}.searchProfiles`]: withSeed(
     (s) => ({ search: need(s.profileTerm) }),
     nonEmpty("profiles"),

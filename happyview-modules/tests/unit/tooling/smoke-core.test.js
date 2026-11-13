@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { genericInvariants, installedQueryIds } from "../../../tooling/smoke.js";
-import { SMOKE_CASES } from "../../../tooling/smoke-cases.js";
+import { SMOKE_CASES, SmokeFailure } from "../../../tooling/smoke-cases.js";
 import {
   assertReadOnlyRequest,
   createHttpClient,
@@ -120,4 +120,50 @@ test("generic invariants flag oversized pages, small totals, reordered counts an
 test("every installed query has a smoke case (adding a query lexicon requires one)", async () => {
   const gaps = findCoverageGaps(await installedQueryIds(), Object.keys(SMOKE_CASES));
   assert.deepEqual(gaps, { missing: [], stale: [] });
+});
+
+for (const [list, listKey, get, seedKey, resultKey, field] of [
+  ["listProfiles", "profiles", "getProfiles", "actors", "profiles", "profile"],
+  ["listOrganizations", "actors", "getOrganizations", "orgs", "organizations", "organization"],
+]) {
+  test(`${get} batches the first two DIDs from ${list} and checks request order`, () => {
+    const listCase = SMOKE_CASES[`app.certified.actor.${list}`];
+    const getCase = SMOKE_CASES[`app.certified.actor.${get}`];
+    const seeds = listCase.collect({
+      [listKey]: [{ did: "did:plc:a" }, { did: "did:plc:b" }, { did: "did:plc:c" }],
+    });
+    assert.deepEqual(seeds[seedKey], ["did:plc:a", "did:plc:b"]);
+
+    const params = getCase.params(seeds);
+    assert.deepEqual(params, { actors: ["did:plc:a", "did:plc:b"] });
+    const ok = {
+      [resultKey]: [
+        { actor: "did:plc:a", [field]: {} },
+        { actor: "did:plc:b", [field]: {} },
+      ],
+    };
+    assert.deepEqual(getCase.check(ok, params), []);
+    const reversed = { [resultKey]: [...ok[resultKey]].reverse() };
+    assert.match(getCase.check(reversed, params).join(), /request order/);
+    const missing = { [resultKey]: [ok[resultKey][0], { actor: "did:plc:b", [field]: null }] };
+    assert.match(getCase.check(missing, params).join(), /did:plc:b/);
+  });
+
+  test(`${get} fails instead of skipping when ${list} has fewer than two DIDs`, () => {
+    const getCase = SMOKE_CASES[`app.certified.actor.${get}`];
+    assert.throws(() => getCase.params({ [seedKey]: ["did:plc:a"] }), SmokeFailure);
+    assert.throws(() => getCase.params({}), SmokeFailure);
+  });
+}
+
+test("single-DID getProfile and getOrganization still send one actor", () => {
+  assert.deepEqual(SMOKE_CASES["app.certified.actor.getProfile"].params({ actor: "did:plc:a" }), {
+    actor: "did:plc:a",
+  });
+  assert.deepEqual(
+    SMOKE_CASES["app.certified.actor.getOrganization"].params({ org: "did:plc:a" }),
+    {
+      actor: "did:plc:a",
+    },
+  );
 });

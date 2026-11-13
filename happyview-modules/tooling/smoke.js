@@ -2,7 +2,7 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { Lexicons } from "@atproto/lexicon";
 import { loadAssets } from "./installer.js";
-import { discoverEntityFollow, SMOKE_CASES } from "./smoke-cases.js";
+import { discoverEntityFollow, SMOKE_CASES, SmokeFailure } from "./smoke-cases.js";
 import {
   createHttpClient,
   findCoverageGaps,
@@ -148,7 +148,13 @@ function validateBody(nsid, json, params, smokeCase, lexicons) {
  * @returns {Promise<import("./smoke-core.js").CheckResult>}
  */
 async function runCase(nsid, smokeCase, seeds, { get, lexicons }) {
-  const params = smokeCase.params(seeds);
+  let params;
+  try {
+    params = smokeCase.params(seeds);
+  } catch (error) {
+    if (!(error instanceof SmokeFailure)) throw error;
+    return { name: nsid, status: "fail", ms: 0, detail: error.message };
+  }
   if (!params)
     return { name: nsid, status: "skip", ms: 0, detail: "no seed record in this environment" };
 
