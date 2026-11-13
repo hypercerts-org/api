@@ -3,6 +3,42 @@ name: Deploy
 on:
   push:
     branches: [main, staging, production]
+    paths-ignore:
+      - "docs/**"
+      - "packages/**"
+      - ".agents/**"
+      - ".changeset/**"
+      - "**/*.md"
+      - "LICENSE-APACHE"
+      - "LICENSE-MIT"
+      - ".gitignore"
+      - ".git-blame-ignore-revs"
+      - "biome.json"
+      - "lefthook.yml"
+      - "tsconfig.base.json"
+      - "tooling/**"
+      - ".github/workflows/hypercerts-api.yml"
+      - ".github/workflows/release.yml"
+      - "happyview-modules/tests/**"
+      - "happyview-modules/.luacheckrc"
+      - "happyview-modules/tsconfig.json"
+      - "happyview-modules/docker-compose.contracts.yml"
+      # Installer (installer.js, lexicon-source.js) is deliberately NOT listed. Other scripts are
+      # listed by name so a new file the installer starts importing fails safe (deploys).
+      - "happyview-modules/tooling/build-lua.js"
+      - "happyview-modules/tooling/lint-lua.js"
+      - "happyview-modules/tooling/lua-bundles.js"
+      - "happyview-modules/tooling/lua-maintainability.js"
+      - "happyview-modules/tooling/run-http-tests.js"
+      - "happyview-modules/tooling/run-unit-tests.js"
+      - "happyview-modules/tooling/seed.js"
+      - "happyview-modules/tooling/validate-lexicons.js"
+      - "happyview-modules/tooling/smoke.js"
+      - "happyview-modules/tooling/smoke-core.js"
+      - "happyview-modules/tooling/smoke-cases.js"
+      - "happyview-modules/tooling/e2e.js"
+      - ".github/workflows/smoke.yml"
+      - ".github/workflows/e2e-nightly.yml"
 
 permissions:
   contents: read
