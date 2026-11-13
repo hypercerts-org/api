@@ -57,13 +57,16 @@ function toSearch(params) {
 }
 
 /** @param {number} status */
-const isRetryableStatus = (status) => status === 0 || status >= 500;
+// Only timeouts and network errors (status 0) are retried. A real HTTP error, 4xx or 5xx, is
+// returned at once so a broken endpoint fails fast.
+const isRetryableStatus = (status) => status === 0;
+const RETRY_BASE_MS = 1000;
 
 /**
  * @param {object} options
  * @param {string} options.baseUrl
  * @param {number} [options.timeoutMs]
- * @param {number} [options.retries] Extra attempts after a timeout, network error or 5xx.
+ * @param {number} [options.retries] Extra attempts after a timeout or network error, with 1s, 2s, 4s… backoff.
  * @param {number} [options.paceMs] Minimum gap between the start of consecutive requests.
  * @param {typeof fetch} [options.fetchImpl]
  * @param {(ms: number) => Promise<void>} [options.sleep]
@@ -71,7 +74,7 @@ const isRetryableStatus = (status) => status === 0 || status >= 500;
 export function createHttpClient({
   baseUrl,
   timeoutMs = DEFAULT_TIMEOUT_MS,
-  retries = 1,
+  retries = 3,
   paceMs = 0,
   fetchImpl = globalThis.fetch,
   sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
@@ -117,7 +120,7 @@ export function createHttpClient({
       return requests;
     },
     /**
-     * One GET with a single retry on timeout/network error/5xx. 4xx is never retried.
+     * One GET, retried with exponential backoff on timeout/network error only. HTTP errors are not retried.
      * @param {string} nsid @param {QueryParams} [params] @returns {Promise<HttpResult>}
      */
     async get(nsid, params = {}) {
@@ -128,6 +131,7 @@ export function createHttpClient({
       let result = await attempt(url);
       let attempts = 1;
       while (isRetryableStatus(result.status) && attempts <= retries) {
+        await sleep(RETRY_BASE_MS * 2 ** (attempts - 1));
         result = await attempt(url);
         attempts += 1;
       }

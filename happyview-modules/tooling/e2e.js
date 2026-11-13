@@ -409,7 +409,7 @@ export async function main(argv) {
     return 0;
   }
   const baseUrl = resolveBaseUrl(parseFlags(argv, ["base-url"]));
-  const client = createHttpClient({ baseUrl, timeoutMs: TIMEOUT_MS, retries: 1, paceMs: PACE_MS });
+  const client = createHttpClient({ baseUrl, timeoutMs: TIMEOUT_MS, retries: 3, paceMs: PACE_MS });
   const started = Date.now();
   /** @type {import("./smoke-core.js").CheckResult[]} */
   const results = [];

@@ -21,7 +21,15 @@ function scripted(...replies) {
     if (reply instanceof Error) throw reply;
     return reply;
   };
-  return { calls, client: createHttpClient({ baseUrl: "https://api.example/", fetchImpl }) };
+  const sleeps = [];
+  const sleep = async (ms) => {
+    sleeps.push(ms);
+  };
+  return {
+    calls,
+    sleeps,
+    client: createHttpClient({ baseUrl: "https://api.example/", fetchImpl, sleep }),
+  };
 }
 
 test("only GET requests to /xrpc/ are allowed", () => {
@@ -37,24 +45,36 @@ test("base URL rejects credentials and non-http schemes", () => {
   assert.throws(() => normalizeBaseUrl("not a url"), /Invalid API base URL/);
 });
 
-test("retries once on 5xx and returns the second result", async () => {
+test("does not retry a 5xx", async () => {
   const { client, calls } = scripted(response(503), response(200, { ok: 1 }));
   const res = await client.get("a.b.c", { x: ["1", "2"] });
-  assert.equal(res.status, 200);
-  assert.equal(res.attempts, 2);
+  assert.equal(res.status, 503);
+  assert.equal(res.attempts, 1);
   assert.deepEqual(
     calls.map((c) => c.method),
-    ["GET", "GET"],
+    ["GET"],
   );
   assert.equal(calls[0]?.url, "https://api.example/xrpc/a.b.c?x=1&x=2");
 });
 
-test("retries once on a network failure, then reports status 0", async () => {
-  const { client, calls } = scripted(new Error("reset"), new Error("reset"));
+test("retries a network failure 3 times with 1s, 2s, 4s backoff, then reports status 0", async () => {
+  const { client, calls, sleeps } = scripted(
+    ...Array.from({ length: 4 }, () => new Error("reset")),
+  );
   const res = await client.get("a.b.c");
   assert.equal(res.status, 0);
+  assert.equal(res.attempts, 4);
+  assert.equal(calls.length, 4);
+  assert.deepEqual(sleeps, [1000, 2000, 4000]);
+});
+
+test("stops retrying once a timed-out request succeeds", async () => {
+  const timeout = Object.assign(new Error("timed out"), { name: "TimeoutError" });
+  const { client, sleeps } = scripted(timeout, response(200, { ok: 1 }));
+  const res = await client.get("a.b.c");
+  assert.equal(res.status, 200);
   assert.equal(res.attempts, 2);
-  assert.equal(calls.length, 2);
+  assert.deepEqual(sleeps, [1000]);
 });
 
 test("never retries a 4xx", async () => {
