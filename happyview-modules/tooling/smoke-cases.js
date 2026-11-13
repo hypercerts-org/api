@@ -239,14 +239,18 @@ function need(value) {
 /**
  * Entity follows have no list endpoint of their own, so take one from the recent-follows feed
  * (it mixes account and entity follows). Returns no seeds when the feed has none; dependent
- * cases then skip.
- * @param {(nsid: string, params: QueryParams) => Promise<{ status: number; json: any }>} get
- * @returns {Promise<Seeds>}
+ * cases then skip. A failed request is returned as `error` so it is reported, not skipped.
+ * @param {(nsid: string, params: QueryParams) => Promise<{ status: number; json: any; error?: string }>} get
+ * @returns {Promise<{ seeds: Seeds; error?: string }>}
  */
 export async function discoverEntityFollow(get) {
   const res = await get(`${NS.graph}.listRecentFollows`, { limit: 100 });
-  const follow = (res.status === 200 ? (res.json?.follows ?? []) : []).find(
+  if (res.status !== 200 || !Array.isArray(res.json?.follows)) {
+    const why = res.status === 0 ? res.error : `HTTP ${res.status}`;
+    return { seeds: {}, error: `listRecentFollows discovery failed: ${why ?? "no follows array"}` };
+  }
+  const follow = res.json.follows.find(
     (f) => f.record?.$type === "app.certified.graph.entityFollow" && f.record?.subject?.uri,
   );
-  return follow ? { entity: follow.record.subject.uri, entityFollower: follow.did } : {};
+  return { seeds: follow ? { entity: follow.record.subject.uri, entityFollower: follow.did } : {} };
 }

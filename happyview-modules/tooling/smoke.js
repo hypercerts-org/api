@@ -109,10 +109,35 @@ function uriEchoErrors(json, uri) {
     : [];
 }
 
-/** @param {any} json @returns {string[]} URIs of the first array of records, for overlap checks */
+/**
+ * Identities of the first array of records, for overlap checks. Actor views (listOrganizations)
+ * have no top-level `uri`, so fall back to the organization record URI, then the DID.
+ * @param {any} json @returns {string[]}
+ */
 function pageUris(json) {
   const items = Object.values(json ?? {}).find(Array.isArray) ?? [];
-  return items.map((/** @type {any} */ i) => i?.uri).filter(Boolean);
+  return items
+    .map((/** @type {any} */ i) => i?.uri ?? i?.organization?.uri ?? i?.did)
+    .filter(Boolean);
+}
+
+/**
+ * JSON, lexicon, generic-invariant and case-specific checks for one 200 response.
+ * @param {string} nsid @param {any} json @param {Record<string, any>} params
+ * @param {import("./smoke-cases.js").SmokeCase} smokeCase @param {any} lexicons
+ * @returns {string[]}
+ */
+function validateBody(nsid, json, params, smokeCase, lexicons) {
+  if (json === undefined) return ["response body is not JSON"];
+  /** @type {string[]} */
+  const errors = [];
+  try {
+    lexicons.assertValidXrpcOutput(nsid, json);
+  } catch (error) {
+    errors.push(`output does not match lexicon: ${/** @type {Error} */ (error).message}`);
+  }
+  errors.push(...genericInvariants(json, params), ...(smokeCase.check?.(json, params) ?? []));
+  return errors;
 }
 
 /**
@@ -134,21 +159,11 @@ async function runCase(nsid, smokeCase, seeds, { get, lexicons }) {
     const why =
       res.status === 0 ? res.error : `${res.json?.error ?? ""} ${res.json?.message ?? ""}`.trim();
     errors.push(`HTTP ${res.status} after ${res.attempts} attempt(s): ${why}`);
-  } else if (res.json === undefined) {
-    errors.push("response body is not JSON");
   } else {
-    try {
-      lexicons.assertValidXrpcOutput(nsid, res.json);
-    } catch (error) {
-      errors.push(`output does not match lexicon: ${/** @type {Error} */ (error).message}`);
-    }
-    errors.push(
-      ...genericInvariants(res.json, params),
-      ...(smokeCase.check?.(res.json, params) ?? []),
-    );
+    errors.push(...validateBody(nsid, res.json, params, smokeCase, lexicons));
     if (smokeCase.phase === 1 && !errors.length)
-      errors.push(...(await checkSecondPage(nsid, params, res.json, get)));
-    Object.assign(seeds, smokeCase.collect?.(res.json));
+      errors.push(...(await checkSecondPage(nsid, params, res.json, smokeCase, { get, lexicons })));
+    if (res.json !== undefined) Object.assign(seeds, smokeCase.collect?.(res.json));
   }
   const slow = res.ms > SLOW_MS ? ` (slow: ${res.ms}ms)` : "";
   return errors.length
@@ -156,11 +171,14 @@ async function runCase(nsid, smokeCase, seeds, { get, lexicons }) {
     : { name: nsid, status: "pass", ms: res.ms, detail: `ok${slow}` };
 }
 
-/** Page 2 must not repeat page 1. @returns {Promise<string[]>} */
-async function checkSecondPage(nsid, params, first, get) {
+/** Page 2 must be a valid response and must not repeat page 1. @returns {Promise<string[]>} */
+async function checkSecondPage(nsid, params, first, smokeCase, { get, lexicons }) {
   if (typeof first.cursor !== "string") return [];
-  const second = await get(nsid, { ...params, cursor: first.cursor });
+  const secondParams = { ...params, cursor: first.cursor };
+  const second = await get(nsid, secondParams);
   if (second.status !== 200) return [`page 2 returned HTTP ${second.status}`];
+  const invalid = validateBody(nsid, second.json, secondParams, smokeCase, lexicons);
+  if (invalid.length) return invalid.map((e) => `page 2: ${e}`);
   const seen = new Set(pageUris(first));
   const repeated = pageUris(second.json).filter((uri) => seen.has(uri));
   return repeated.length ? [`page 2 repeats ${repeated.length} item(s) from page 1`] : [];
@@ -195,16 +213,25 @@ export async function main(argv) {
   const only = flags.only;
   /** @type {Record<string, any>} */
   const seeds = {};
+  const wanted = (/** @type {string} */ nsid) => !only || nsid.includes(only);
   const select = (/** @type {number} */ phase) =>
-    installed.filter(
-      (nsid) => SMOKE_CASES[nsid]?.phase === phase && (!only || nsid.includes(only)),
-    );
+    installed.filter((nsid) => SMOKE_CASES[nsid]?.phase === phase);
   const tasks = (/** @type {string[]} */ ids) =>
     ids.map((nsid) => () => runCase(nsid, /** @type {any} */ (SMOKE_CASES[nsid]), seeds, deps));
 
-  const results = await runPool(tasks(select(1)), CONCURRENCY);
-  Object.assign(seeds, await discoverEntityFollow(client.get));
-  results.push(...(await runPool(tasks(select(2)), CONCURRENCY)));
+  // Phase 1 always runs in full: it discovers the seeds phase 2 needs. `--only` filters what
+  // is reported from it and which phase 2 cases run.
+  const results = (await runPool(tasks(select(1)), CONCURRENCY)).filter((r) => wanted(r.name));
+  const discovery = await discoverEntityFollow(client.get);
+  if (discovery.error)
+    results.push({
+      name: "entity-follow discovery",
+      status: "fail",
+      ms: 0,
+      detail: discovery.error,
+    });
+  Object.assign(seeds, discovery.seeds);
+  results.push(...(await runPool(tasks(select(2).filter(wanted)), CONCURRENCY)));
 
   const markdown = renderSummary("Post-deploy smoke", results, {
     baseUrl,
