@@ -102,6 +102,8 @@
       "includes": [
         "happyview-modules/tooling/installer.js",
         "happyview-modules/tooling/seed.js",
+        "happyview-modules/tooling/smoke.js",
+        "happyview-modules/tooling/e2e.js",
         "happyview-modules/tooling/lint-lua.js"
       ],
       "linter": {

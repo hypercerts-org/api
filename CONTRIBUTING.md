@@ -73,6 +73,47 @@ The HTTP gate fails if it discovers no suites, executes no `node:test` cases, or
 
 For the pinned HappyView release, ordinary Lua `error()` exceptions return HTTP 500 JSON with `error: "script_error"` and `errorType: "runtime"`; the error name appears in `message`. Negative HTTP tests assert this observed behavior. It is not a statement of the ideal public HTTP status contract, and does not guarantee 4xx mapping for `RecordNotFound` or `InvalidRequest`.
 
+## Smoke and e2e checks against a live API
+
+Two read-only runners check a deployed API. They send anonymous `GET` requests only and never write.
+
+```sh
+API_BASE_URL=https://test.api.hypercerts.dev pnpm smoke   # one call per installed query, about 10 seconds
+API_BASE_URL=https://test.api.hypercerts.dev pnpm e2e     # pagination walks, batches, count invariants, about 1-2 minutes
+```
+
+`--base-url <url>` works instead of `API_BASE_URL`. Run them against Test; Staging and Production are checked by CI.
+
+- `pnpm smoke` takes its query list from `happyview-modules/manifest.json`, finds real records through the list endpoints, and checks each response against its Lexicon output schema plus basic invariants (page size, `totalCount`, count order, `uri` echo). A case is skipped when an environment has no record of that kind. It retries a timeout or network error up to 3 times (1s, 2s, 4s backoff); HTTP errors such as 4xx and 5xx fail at once. Adding a query without a case in `happyview-modules/tooling/smoke-cases.js` fails `pnpm test:unit`.
+- `pnpm e2e` compares live counts only loosely (small drift allowed, never fixed numbers) and paces requests 300 ms apart. It does not test invalid input.
+- CI: `deploy.yml` runs the smoke test after each install (a push that only touches docs, tests or tooling skips the deploy and smoke test; run the Deploy workflow by hand, from the environment's branch, to force one); `smoke.yml` runs it on Production every 30 minutes (or on demand for any environment); `e2e-nightly.yml` runs the e2e checks on Test, Staging and Production in turn at 03:17 UTC. `smoke.yml` and `e2e-nightly.yml` run from `main` without a GitHub environment (the environments only accept their own deploy branch), so their API URLs are written in the workflow files; update them there if a public URL changes. Failures show up as a failed run (default GitHub notifications). When `deploy.yml` (install or post-deploy smoke test; the message says which), `smoke.yml` or `e2e-nightly.yml` fails, the shared `.github/actions/telegram-alert` step also sends a Telegram message (workflow, what failed, environment and branch, run link) if the repository secrets `TELEGRAM_BOT_TOKEN` (bot token from @BotFather) and `TELEGRAM_CHAT_ID` (target chat) are both set; without them the alert step is skipped and the run is not affected.
+
+How the post-deploy checks fit together (`deploy.yml`, `smoke.yml`, `e2e-nightly.yml`):
+
+```mermaid
+flowchart TD
+  push["Push to main / staging / production"] --> ignore{"Every changed file in paths-ignore?"}
+  ignore -- yes --> skip["No deploy, no smoke"]
+  ignore -- no --> guard
+  dispatch["Manual dispatch (environment, optional rollback commit)"] --> guard["resolve job: branch guard<br/>main→Test, staging→Staging, production→Production<br/>dispatch env must match branch; commit must be a full SHA"]
+  guard --> deploy["deploy job (one per environment, never cancelled)<br/>install:api --override"]
+  deploy --> smoke
+  cron30["smoke.yml: Production every 30 min, or on demand"] --> smoke
+  subgraph smoke["pnpm smoke"]
+    p1["Phase 1: list endpoints, collect seed records"] --> ef["entity-follow discovery"] --> p2["Phase 2: lookups using the seeds"]
+    p2 --> resp["Per response: Lexicon output schema + invariants<br/>(page size, totalCount, count order, uri echo)"]
+    cov["Manifest coverage: every installed query has a smoke case"]
+  end
+  nightly["e2e-nightly.yml: 03:17 UTC, Test → Staging → Production"] --> e2e["pnpm e2e: pagination walks (max 60 pages),<br/>100-subject batches, loose cross-endpoint counts"]
+  retry["HTTP client: timeout / network error retried 3x (1s, 2s, 4s);<br/>4xx and 5xx fail at once"] -.-> smoke
+  retry -.-> e2e
+  smoke -- fails --> tg["Telegram alert (if TELEGRAM_* secrets set)"]
+  deploy -- fails --> tg
+  e2e -- fails --> tg
+```
+
+- Both runners write a results table to the GitHub step summary.
+
 ## Operations with external effects
 
 For pull requests that change the installable API bundle or operator-visible behavior, add a release note following the [Changesets guidance](.changeset/README.md). Documentation-only or endpoint-explorer-only changes do not need a Changeset.

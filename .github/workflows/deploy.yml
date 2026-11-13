@@ -1,8 +1,60 @@
 name: Deploy
 
+run-name: Deploy ${{ inputs.environment || github.ref_name }} (${{ github.event_name }})
+
 on:
   push:
     branches: [main, staging, production]
+    # A push is skipped only when EVERY changed file matches one of these. Anything not
+    # listed (new files included) still deploys. Keep the installer and its inputs out of this list.
+    paths-ignore:
+      - "docs/**"
+      - "packages/**"
+      - ".agents/**"
+      - ".changeset/**"
+      - "**/*.md"
+      - "LICENSE-APACHE"
+      - "LICENSE-MIT"
+      - ".gitignore"
+      - ".git-blame-ignore-revs"
+      - "biome.json"
+      - "lefthook.yml"
+      - "tsconfig.base.json"
+      - "tooling/**"
+      - ".github/workflows/hypercerts-api.yml"
+      - ".github/workflows/release.yml"
+      - "happyview-modules/tests/**"
+      - "happyview-modules/.luacheckrc"
+      - "happyview-modules/tsconfig.json"
+      - "happyview-modules/docker-compose.contracts.yml"
+      # Installer (installer.js, lexicon-source.js) is deliberately NOT listed. Other scripts are
+      # listed by name so a new file the installer starts importing fails safe (deploys).
+      - "happyview-modules/tooling/build-lua.js"
+      - "happyview-modules/tooling/lint-lua.js"
+      - "happyview-modules/tooling/lua-bundles.js"
+      - "happyview-modules/tooling/lua-maintainability.js"
+      - "happyview-modules/tooling/run-http-tests.js"
+      - "happyview-modules/tooling/run-unit-tests.js"
+      - "happyview-modules/tooling/seed.js"
+      - "happyview-modules/tooling/validate-lexicons.js"
+      - "happyview-modules/tooling/smoke.js"
+      - "happyview-modules/tooling/smoke-core.js"
+      - "happyview-modules/tooling/smoke-cases.js"
+      - "happyview-modules/tooling/e2e.js"
+      - ".github/workflows/smoke.yml"
+      - ".github/workflows/e2e-nightly.yml"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment to deploy. Run the workflow from that environment's branch (Test=main, Staging=staging, Production=production).
+        type: choice
+        required: true
+        options: [Test, Staging, Production]
+      commit:
+        description: Optional full commit SHA to redeploy (rollback). Must already be on the environment's branch. Leave empty for the branch head.
+        type: string
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -15,25 +67,41 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       environment: ${{ steps.map.outputs.environment }}
+      branch: ${{ steps.map.outputs.branch }}
     steps:
       - id: map
         env:
-          BRANCH: ${{ github.ref_name }}
+          EVENT: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          INPUT_ENVIRONMENT: ${{ inputs.environment }}
+          INPUT_COMMIT: ${{ inputs.commit }}
         run: |
-          case "$BRANCH" in
+          set -euo pipefail
+          if [ "$REF_TYPE" != branch ]; then
+            echo "::error::Deploys run from a branch, not a $REF_TYPE ('$REF_NAME'). Pick main, staging or production under 'Use workflow from'." >&2; exit 1
+          fi
+          case "$REF_NAME" in
             main) environment=Test ;;
             staging) environment=Staging ;;
             production) environment=Production ;;
-            *) echo "::error::No deploy environment is mapped to branch '$BRANCH'; add it to deploy.yml." >&2; exit 1 ;;
+            *) echo "::error::No deploy environment is mapped to branch '$REF_NAME'. Run from main, staging or production, or add the branch to deploy.yml." >&2; exit 1 ;;
           esac
+          if [ "$EVENT" = workflow_dispatch ] && [ "$INPUT_ENVIRONMENT" != "$environment" ]; then
+            echo "::error::Deploying $INPUT_ENVIRONMENT must run from its own branch, but this run is from '$REF_NAME' (which deploys $environment). Re-run with 'Use workflow from' set to the matching branch." >&2; exit 1
+          fi
+          if [ -n "$INPUT_COMMIT" ] && ! printf '%s' "$INPUT_COMMIT" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "::error::'commit' must be a full 40-character lowercase SHA, got '$INPUT_COMMIT'." >&2; exit 1
+          fi
           echo "environment=$environment" >> "$GITHUB_OUTPUT"
+          echo "branch=$REF_NAME" >> "$GITHUB_OUTPUT"
 
   deploy:
     name: Install HappyView modules (${{ needs.resolve.outputs.environment }})
     needs: resolve
     runs-on: ubuntu-latest
     environment: ${{ needs.resolve.outputs.environment }}
-    # Deploys to one environment run one at a time and are never cancelled midway.
+    # Deploys to one environment (install + smoke) run one at a time and are never cancelled midway.
     concurrency:
       group: deploy-${{ needs.resolve.outputs.environment }}
       cancel-in-progress: false
@@ -41,7 +109,19 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.commit || github.sha }}
+          # Full history: the rollback ancestry check needs origin/<branch>.
+          fetch-depth: 0
           persist-credentials: false
+
+      - name: Check the commit is on the deploy branch
+        if: inputs.commit != ''
+        env:
+          COMMIT: ${{ inputs.commit }}
+          BRANCH: ${{ needs.resolve.outputs.branch }}
+        run: |
+          git merge-base --is-ancestor "$COMMIT" "origin/$BRANCH" || {
+            echo "::error::$COMMIT is not on $BRANCH. Only commits that were merged to the environment's branch can be redeployed to it." >&2; exit 1; }
 
       - name: Set up pnpm
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
@@ -62,3 +142,37 @@ jobs:
           HYPERCERTS_HANDLE_RESOLVER_URL: ${{ vars.HYPERCERTS_HANDLE_RESOLVER_URL }}
         # The repo is the source of truth: replace any differing installed assets.
         run: pnpm --filter @hypercerts-org/happyview-modules install:api --override
+
+      # Smoke test runs in this job so the deploy lock above covers it: another deploy to the same
+      # environment cannot start until this check finishes. Anonymous GETs only, no secrets.
+      # A rollback to a commit that predates smoke.js skips it.
+      - name: Smoke test the deployed API
+        id: smoke
+        timeout-minutes: 5
+        env:
+          API_BASE_URL: ${{ vars.HAPPYVIEW_BASE_URL }}
+        run: |
+          if [ ! -f happyview-modules/tooling/smoke.js ]; then
+            echo "::notice::Skipping smoke test: the deployed commit predates it."
+            exit 0
+          fi
+          pnpm smoke
+
+      # A rollback checks out an older commit that may lack the alert action, so fetch it from the
+      # workflow's own commit.
+      - name: Check out alert action
+        if: failure()
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: .ci-alert
+          sparse-checkout: .github/actions
+          persist-credentials: false
+
+      - name: Send Telegram alert on failure
+        if: failure()
+        uses: ./.ci-alert/.github/actions/telegram-alert
+        with:
+          bot-token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          chat-id: ${{ secrets.TELEGRAM_CHAT_ID }}
+          summary: ${{ steps.smoke.outcome == 'failure' && 'post-deploy smoke test failed' || 'deploy failed' }} (${{ needs.resolve.outputs.environment }}, ${{ needs.resolve.outputs.branch }})

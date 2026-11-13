@@ -1,0 +1,74 @@
+name: Smoke
+
+# Catches drift between deploys: runs the same read-only smoke test as deploy.yml against the
+# live API. Scheduled runs target Production; use "Run workflow" for Test or Staging.
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment to check
+        type: choice
+        options: [Test, Staging, Production]
+        default: Production
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Smoke test (${{ inputs.environment || 'Production' }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Own group per environment, deliberately not the deploy group: a smoke run never queues
+    # behind or cancels a deploy. A run that is still going when the next one starts is left alone.
+    concurrency:
+      group: smoke-${{ inputs.environment || 'Production' }}
+      cancel-in-progress: false
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # No `environment:` here: Test/Staging/Production deployment branch policies only allow
+      # main/staging/production, and this workflow runs from main. So the URLs are mapped here
+      # instead of read from the environment's HAPPYVIEW_BASE_URL variable.
+      - name: Resolve API URL
+        id: target
+        env:
+          ENVIRONMENT: ${{ inputs.environment || 'Production' }}
+        run: |
+          case "$ENVIRONMENT" in
+            Test) url=https://test.api.hypercerts.dev ;;
+            Staging) url=https://api.staging.hypercerts.dev ;;
+            Production) url=https://api.hypercerts.dev ;;
+            *) echo "::error::Unknown environment '$ENVIRONMENT'; add its URL to smoke.yml." >&2; exit 1 ;;
+          esac
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Smoke test the live API
+        env:
+          API_BASE_URL: ${{ steps.target.outputs.url }}
+        run: pnpm smoke
+
+      - name: Send Telegram alert on failure
+        if: failure()
+        uses: ./.github/actions/telegram-alert
+        with:
+          bot-token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          chat-id: ${{ secrets.TELEGRAM_CHAT_ID }}
+          summary: smoke test failed (${{ inputs.environment || 'Production' }}, ${{ github.ref_name }})
