@@ -178,6 +178,7 @@ export function buildChecks(get) {
     const entity = need(s.entities, "followed entity")[0];
     const w = await walk(get, `${GRAPH}.listEntityFollowers`, { entity }, "followers");
     const note = expectConsistentWalk(w, (f) => f.did, "listEntityFollowers");
+    s.entityFollowersWalk = w;
     const count = s.followerCounts?.get(entity);
     if (w.complete && count !== undefined)
       expect(near(count, w.items.length), `getFollowerCounts ${count} vs ${w.items.length} walked`);
@@ -192,6 +193,17 @@ export function buildChecks(get) {
       small.totals.length <= 2,
       `totalCount changed ${small.totals.length} times during the walk`,
     );
+    const large = s.entityFollowersWalk;
+    if (small.complete && large?.complete) {
+      const largeIds = new Set(large.items.map((f) => f.did));
+      const shared = small.items.filter((f) => largeIds.has(f.did)).length;
+      const most = Math.max(small.items.length, large.items.length);
+      // Live data can change between walks, so allow the same drift as near().
+      expect(
+        near(shared, most),
+        `limit=7 and limit=100 walks share ${shared} of ${most} followers`,
+      );
+    }
     return note;
   });
 
@@ -243,7 +255,7 @@ export function buildChecks(get) {
     );
     const bySubject = new Map(counts.map((c) => [c.subject, c.commentCount]));
     expect(bySubject.get(FAKE_URI) === 0, "unknown subject should count 0");
-    const low = s.commented.filter((u) => !(bySubject.get(u) >= 1));
+    const low = s.commented.filter((u) => (bySubject.get(u) ?? 0) < 1);
     expect(
       !low.length,
       `subjects with comment attachments but commentCount < 1: ${low.join(", ")}`,
@@ -352,7 +364,7 @@ export function buildChecks(get) {
       near(desc.items.length, asc.items.length),
       `desc ${desc.items.length} vs asc ${asc.items.length} items`,
     );
-    if (desc.items.length === asc.items.length && desc.items.length < 100)
+    if (desc.items.length === asc.items.length)
       expect(
         JSON.stringify(desc.items.map((a) => a.uri)) ===
           JSON.stringify(asc.items.map((a) => a.uri).reverse()),
@@ -378,7 +390,7 @@ export function buildChecks(get) {
         const note = expectConsistentWalk(w, (i) => i.uri, nsid);
         const desc = await getOk(nsid, { limit: 1, sortDirection: "desc" });
         const asc = await getOk(nsid, { limit: 1, sortDirection: "asc" });
-        if (desc[key][0] && asc[key][0] && w.complete && w.items.length > 1)
+        if (desc[key][0] && asc[key][0] && w.items.length > 1)
           expect(desc[key][0].uri !== asc[key][0].uri, "asc and desc start with the same record");
         return note;
       },
