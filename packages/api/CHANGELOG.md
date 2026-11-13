@@ -1,5 +1,11 @@
 # @hypercerts-org/api
 
+## 0.3.0
+
+### Minor Changes
+
+- [#63](https://github.com/hypercerts-org/api/pull/63) [`102293a`](https://github.com/hypercerts-org/api/commit/102293a9dcf86026e38f71356951bada7bd7bf76) Thanks [@Kzoeps](https://github.com/Kzoeps)! - Organization queries (`getOrganization`, `getOrganizations`, `listOrganizations`, `searchOrganizations`) now return each organization's location record in `location` (the resolved view of the strong reference at `organization.record.location`, which is unchanged), so you no longer need a second `getLocation` call. It is the location record exactly as stored, or `null` when the organization has no location or the record is not indexed.
+
 ## 0.2.0
 
 ### Minor Changes
