@@ -64,3 +64,25 @@ jobs:
         env:
           API_BASE_URL: ${{ steps.target.outputs.url }}
         run: pnpm smoke
+
+      # Alerting is optional: with TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID unset the step only logs a
+      # notice. The token goes to curl through stdin (-K -), so it never appears in argv or the log.
+      - name: Send Telegram alert on failure
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TARGET: ${{ inputs.environment || 'Production' }}, ${{ github.ref_name }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
+            echo "::notice::Telegram alert skipped: TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID is not set."
+            exit 0
+          fi
+          text="❌ $GITHUB_WORKFLOW failed ($TARGET)
+          $RUN_URL"
+          printf 'url = "https://api.telegram.org/bot%s/sendMessage"\n' "$TELEGRAM_BOT_TOKEN" |
+            curl --silent --show-error --fail --max-time 15 --output /dev/null --config - \
+              --data-urlencode "chat_id=$TELEGRAM_CHAT_ID" \
+              --data-urlencode "text=$text" \
+              || echo "::warning::Telegram alert could not be sent."
