@@ -1378,7 +1378,7 @@
             "name": "subjects",
             "in": "query",
             "required": true,
-            "description": "One or more full record AT-URIs with DID authorities, not handle authorities, supplied as repeated unbracketed query values. Results preserve each occurrence and its input order.",
+            "description": "One or more full record AT-URIs with DID authorities, not handle authorities, supplied as repeated unbracketed query values. Results preserve each occurrence and its input order. The encoded GET request-target must not exceed 16,384 bytes.",
             "schema": {
               "type": "array",
               "minItems": 1,
@@ -1412,7 +1412,7 @@
         "x-lexicon-errors": [
           {
             "name": "InvalidRequest",
-            "description": "The actor DID, subjects array, subject AT-URI, or another query parameter is invalid."
+            "description": "The actor DID, subjects array, subject AT-URI, request-target length, or another query parameter is invalid."
           },
           {
             "name": "ActorReactionsQueryFailed",
@@ -1595,7 +1595,7 @@
             "name": "subjects",
             "in": "query",
             "required": true,
-            "description": "Pass 1–100 full DID-authority subject record AT-URIs as repeated, unbracketed subjects query parameters.",
+            "description": "Pass 1–100 full DID-authority subject record AT-URIs as repeated, unbracketed subjects query parameters. The encoded GET request-target must not exceed 16,384 bytes.",
             "schema": {
               "type": "array",
               "minItems": 1,
@@ -1629,7 +1629,7 @@
         "x-lexicon-errors": [
           {
             "name": "InvalidRequest",
-            "description": "The subjects list is empty, has more than 100 entries, or contains an invalid subject AT-URI; correct the list and retry."
+            "description": "The subjects list is empty, has more than 100 entries, exceeds the request-target limit, or contains an invalid subject AT-URI; correct the list and retry."
           },
           {
             "name": "ReactionCountQueryFailed",
@@ -1779,7 +1779,7 @@
         "tags": [
           "app.certified.graph"
         ],
-        "description": "Returns the representative raw entity-follow record, or null, for each requested actor-to-entity relationship. Authentication is not required. Supply 1–100 repeated entities values; the encoded GET request-target must not exceed 7,000 bytes.",
+        "description": "Returns the representative raw entity-follow record, or null, for each requested actor-to-entity relationship. Authentication is not required. Supply 1–100 repeated entities values; the encoded GET request-target must not exceed 16,384 bytes.",
         "parameters": [
           {
             "name": "actor",
@@ -1906,7 +1906,7 @@
             "name": "subjects",
             "in": "query",
             "required": true,
-            "description": "Pass 1–100 account DIDs or full DID-authority entity AT-URIs, mixed freely, as repeated unbracketed subjects query parameters. The encoded GET request-target must not exceed 7,000 bytes.",
+            "description": "Pass 1–100 account DIDs or full DID-authority entity AT-URIs, mixed freely, as repeated unbracketed subjects query parameters. The encoded GET request-target must not exceed 16,384 bytes.",
             "schema": {
               "type": "array",
               "minItems": 1,
@@ -1956,7 +1956,7 @@
         "tags": [
           "app.certified.graph"
         ],
-        "description": "Returns the representative raw follow record, or null, for each requested actor-to-actor relationship. Authentication is not required. Supply 1–100 repeated subjects values; the encoded GET request-target must not exceed 7,000 bytes.",
+        "description": "Returns the representative raw follow record, or null, for each requested actor-to-actor relationship. Authentication is not required. Supply 1–100 repeated subjects values; the encoded GET request-target must not exceed 16,384 bytes.",
         "parameters": [
           {
             "name": "actor",
@@ -4011,7 +4011,7 @@
             "name": "subjects",
             "in": "query",
             "required": true,
-            "description": "Pass 1–100 full DID-authority subject record AT-URIs as repeated, unbracketed subjects query parameters. The encoded GET request-target must not exceed 7,000 bytes.",
+            "description": "Pass 1–100 full DID-authority subject record AT-URIs as repeated, unbracketed subjects query parameters. The encoded GET request-target must not exceed 16,384 bytes.",
             "schema": {
               "type": "array",
               "minItems": 1,

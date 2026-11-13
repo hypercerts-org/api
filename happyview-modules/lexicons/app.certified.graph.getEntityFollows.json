@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Returns the representative raw entity-follow record, or null, for each requested actor-to-entity relationship. Authentication is not required. Supply 1–100 repeated entities values; the encoded GET request-target must not exceed 7,000 bytes.",
+      "description": "Returns the representative raw entity-follow record, or null, for each requested actor-to-entity relationship. Authentication is not required. Supply 1–100 repeated entities values; the encoded GET request-target must not exceed 16,384 bytes.",
       "parameters": {
         "type": "params",
         "required": ["actor", "entities"],

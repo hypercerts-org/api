@@ -37,13 +37,13 @@ Do not use `authors[]=` or comma-joined values unless that exact endpoint contra
 
 A useful starting distinction: arrays often mean “any of these” for a filter, while separate filters may combine with AND, but this is **not a universal rule**. For example, the bundled collection contract says `tagUris` requires every supplied tag URI, while `itemUris` matches URI without CID. Confirm the exact operation before relying on filter logic.
 
-The batch relationship checks `app.certified.graph.getFollows` and `app.certified.graph.getEntityFollows` each take one `actor` and 1–100 repeated, unbracketed `subjects` or `entities` values. Keep duplicates if the caller supplied them: each output `results` entry echoes its target and preserves its position. The encoded GET request-target must stay within 7,000 bytes. A null `follow` means only that no indexed relationship was found; database failures are errors, not nulls.
+The batch relationship checks `app.certified.graph.getFollows` and `app.certified.graph.getEntityFollows` each take one `actor` and 1–100 repeated, unbracketed `subjects` or `entities` values. Keep duplicates if the caller supplied them: each output `results` entry echoes its target and preserves its position. The encoded GET request-target must stay within 16,384 bytes. A null `follow` means only that no indexed relationship was found; database failures are errors, not nulls.
 
-`app.certified.graph.getFollowerCounts` takes no `actor`: append 1–100 account DIDs and full DID-authority entity AT-URIs under the same unbracketed `subjects` key, in any mix. A value starting with `did:` is counted as an account; any other value must be an entity AT-URI. The response has one `{subject, followerCount}` entry per input occurrence in the same order, including duplicates. The same 7,000-byte request-target limit applies, and a zero count means no indexed followers were found at query time.
+`app.certified.graph.getFollowerCounts` takes no `actor`: append 1–100 account DIDs and full DID-authority entity AT-URIs under the same unbracketed `subjects` key, in any mix. A value starting with `did:` is counted as an account; any other value must be an entity AT-URI. The response has one `{subject, followerCount}` entry per input occurrence in the same order, including duplicates. The same 16,384-byte request-target limit applies, and a zero count means no indexed followers were found at query time.
 
 ### Batch an actor's reactions for known subjects
 
-`app.certified.feed.getActorReactions` requires one actor DID and 1–100 full record AT-URIs with DID authorities, not handle authorities. Encode `subjects` as repeated, unbracketed query parameters; keep input order and duplicates if each occurrence matters:
+`app.certified.feed.getActorReactions` requires one actor DID and 1–100 full record AT-URIs with DID authorities, not handle authorities, within a 16,384-byte encoded request-target. Encode `subjects` as repeated, unbracketed query parameters; keep input order and duplicates if each occurrence matters:
 
 ```ts
 const params = new URLSearchParams();
@@ -56,9 +56,9 @@ const url = new URL(
 ```
 
 The response contains one `results` item per supplied occurrence in that same order. Each item repeats the explicit `subject` AT-URI and has `like` and `repost` fields that are either raw record views or null. Matching ignores the subject CID. A null means the successful indexed lookup found no such reaction; a query failure is an error, not null. Preserve a non-null view's `uri` and `cid` when you need to identify that reaction record elsewhere.
-`app.certified.feed.getReactionCounts` accepts 1–100 full subject record AT-URIs with DID authorities, not handle authorities. Append each value under the unbracketed `subjects` key; do not use `subjects[]` or comma-join values. Its response has one entry per input occurrence in the same order, including duplicates. A zero count means no matching indexed reaction publishers were found at query time; counts may change as indexing changes.
+`app.certified.feed.getReactionCounts` accepts 1–100 full subject record AT-URIs with DID authorities, not handle authorities. Append each value under the unbracketed `subjects` key; do not use `subjects[]` or comma-join values. The encoded request-target must stay within 16,384 bytes. Its response has one entry per input occurrence in the same order, including duplicates. A zero count means no matching indexed reaction publishers were found at query time; counts may change as indexing changes.
 
-`org.hypercerts.context.getCommentCounts` takes the same `subjects` encoding: 1–100 full subject record AT-URIs with DID authorities, appended under the unbracketed `subjects` key, within a 7,000-byte encoded request-target. Each `{subject, commentCount}` entry follows input order, including duplicates. The count is the number of current comment attachment records, not distinct commenters, and zero means none were indexed at query time.
+`org.hypercerts.context.getCommentCounts` takes the same `subjects` encoding: 1–100 full subject record AT-URIs with DID authorities, appended under the unbracketed `subjects` key, within a 16,384-byte encoded request-target. Each `{subject, commentCount}` entry follows input order, including duplicates. The count is the number of current comment attachment records, not distinct commenters, and zero means none were indexed at query time.
 
 ## Keep page requests cursor-consistent
 

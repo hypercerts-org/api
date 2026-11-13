@@ -19,7 +19,7 @@
           },
           "subjects": {
             "type": "array",
-            "description": "One or more full record AT-URIs with DID authorities, not handle authorities, supplied as repeated unbracketed query values. Results preserve each occurrence and its input order.",
+            "description": "One or more full record AT-URIs with DID authorities, not handle authorities, supplied as repeated unbracketed query values. Results preserve each occurrence and its input order. The encoded GET request-target must not exceed 16,384 bytes.",
             "minLength": 1,
             "maxLength": 100,
             "items": {
@@ -39,7 +39,7 @@
       "errors": [
         {
           "name": "InvalidRequest",
-          "description": "The actor DID, subjects array, subject AT-URI, or another query parameter is invalid."
+          "description": "The actor DID, subjects array, subject AT-URI, request-target length, or another query parameter is invalid."
         },
         {
           "name": "ActorReactionsQueryFailed",
