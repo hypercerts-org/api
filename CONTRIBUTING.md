@@ -73,6 +73,22 @@ The HTTP gate fails if it discovers no suites, executes no `node:test` cases, or
 
 For the pinned HappyView release, ordinary Lua `error()` exceptions return HTTP 500 JSON with `error: "script_error"` and `errorType: "runtime"`; the error name appears in `message`. Negative HTTP tests assert this observed behavior. It is not a statement of the ideal public HTTP status contract, and does not guarantee 4xx mapping for `RecordNotFound` or `InvalidRequest`.
 
+## Smoke and e2e checks against a live API
+
+Two read-only runners check a deployed API. They send anonymous `GET` requests only and never write.
+
+```sh
+API_BASE_URL=https://test.api.hypercerts.dev pnpm smoke   # one call per installed query, about 10 seconds
+API_BASE_URL=https://test.api.hypercerts.dev pnpm e2e     # pagination walks, batches, count invariants, about 1-2 minutes
+```
+
+`--base-url <url>` works instead of `API_BASE_URL`. Run them against Test; Staging and Production are checked by CI.
+
+- `pnpm smoke` takes its query list from `happyview-modules/manifest.json`, finds real records through the list endpoints, and checks each response against its Lexicon output schema plus basic invariants (page size, `totalCount`, count order, `uri` echo). A case is skipped when an environment has no record of that kind. It retries once on a timeout or 5xx. Adding a query without a case in `happyview-modules/tooling/smoke-cases.js` fails `pnpm test:unit`.
+- `pnpm e2e` compares live counts only loosely (small drift allowed, never fixed numbers) and paces requests 300 ms apart. It does not test invalid input.
+- CI: `deploy.yml` runs the smoke test after each install; `smoke.yml` runs it on Production every 30 minutes (or on demand for any environment); `e2e-nightly.yml` runs the e2e checks on Test, Staging and Production in turn at 03:17 UTC. `smoke.yml` and `e2e-nightly.yml` run from `main` without a GitHub environment (the environments only accept their own deploy branch), so their API URLs are written in the workflow files; update them there if a public URL changes. Failures show up as a failed run (default GitHub notifications); there is no other alerting.
+- Both runners write a results table to the GitHub step summary.
+
 ## Operations with external effects
 
 For pull requests that change the installable API bundle or operator-visible behavior, add a release note following the [Changesets guidance](.changeset/README.md). Documentation-only or endpoint-explorer-only changes do not need a Changeset.
