@@ -10,6 +10,8 @@
     "format:check": "biome format .",
     "check": "pnpm lint && pnpm format:check && pnpm --filter @hypercerts-org/happyview-modules check && pnpm --filter hypercerts-api-endpoints test && pnpm --filter @hypercerts-org/api check",
     "test:unit": "pnpm --filter @hypercerts-org/happyview-modules run test:unit",
+    "smoke": "pnpm --filter @hypercerts-org/happyview-modules run smoke",
+    "e2e": "pnpm --filter @hypercerts-org/happyview-modules run e2e",
     "test:http": "pnpm --filter @hypercerts-org/happyview-modules run test:http",
     "build": "pnpm --filter @hypercerts-org/happyview-modules run build:lua && pnpm --filter hypercerts-api-endpoints build && pnpm --filter @hypercerts-org/api build",
     "docs:dev": "pnpm --filter hypercerts-api-endpoints dev",
