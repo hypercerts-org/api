@@ -15,7 +15,7 @@
             "type": "array",
             "minLength": 1,
             "maxLength": 100,
-            "description": "Pass 1–100 account DIDs or full DID-authority entity AT-URIs, mixed freely, as repeated unbracketed subjects query parameters. The encoded GET request-target must not exceed 7,000 bytes.",
+            "description": "Pass 1–100 account DIDs or full DID-authority entity AT-URIs, mixed freely, as repeated unbracketed subjects query parameters.",
             "items": {
               "type": "string",
               "format": "uri",
@@ -34,7 +34,7 @@
       "errors": [
         {
           "name": "InvalidRequest",
-          "description": "The subjects list is empty, has more than 100 entries, exceeds the request-target limit, or contains a value that is neither a valid DID nor a full DID-authority AT-URI; correct the list and retry."
+          "description": "The subjects list is empty, has more than 100 entries, or contains a value that is neither a valid DID nor a full DID-authority AT-URI; correct the list and retry."
         },
         {
           "name": "FollowerCountQueryFailed",
