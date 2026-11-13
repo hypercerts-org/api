@@ -55,12 +55,11 @@ local function query(sql, values)
   return result
 end
 
-local FOLLOW_BATCH_MAX_TARGETS = 100
 -- 16 KiB fits 100 typical hypercert AT-URIs (~10.5 KB encoded) and stays within
 -- Node's default 16 KiB header limit for downstream callers. The pinned
 -- HappyView release turns every Lua error() into HTTP 500 script_error, so an
 -- overflow cannot be a 400 yet; the InvalidRequest: prefix names the cause.
-local FOLLOW_BATCH_MAX_REQUEST_TARGET_BYTES = 16384
+local BATCH_MAX_REQUEST_TARGET_BYTES = 16384
 
 local function encoded_query_value_length(value)
   local length = 0
@@ -87,10 +86,12 @@ local function assert_batch_request_target(endpoint, actor, key, targets)
   for _, target in ipairs(targets) do
     request_target_length = request_target_length + #("&" .. key .. "=") + encoded_query_value_length(target)
   end
-  if request_target_length > FOLLOW_BATCH_MAX_REQUEST_TARGET_BYTES then
-    invalid(key .. " makes the encoded GET request-target exceed " .. FOLLOW_BATCH_MAX_REQUEST_TARGET_BYTES .. " bytes")
+  if request_target_length > BATCH_MAX_REQUEST_TARGET_BYTES then
+    invalid(key .. " makes the encoded GET request-target exceed " .. BATCH_MAX_REQUEST_TARGET_BYTES .. " bytes")
   end
 end
+
+local FOLLOW_BATCH_MAX_TARGETS = 100
 
 local function follow_batch_targets(actor, key, value, validate, description, endpoint)
   if value == nil then invalid(key .. " is required") end

@@ -124,7 +124,7 @@ test("getFollowerCounts accepts 100 subjects and rejects invalid batches before 
     { subjects: ["at://alice.example/org.hypercerts.collection/project"] },
     { subjects: ["at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/invalid/key"] },
     { subjects: [`${entity}?query`] },
-    { subjects: Array(15).fill(longEntity) },
+    { subjects: Array(30).fill(longEntity) },
   ]) {
     runLua({ params, expectError: "InvalidRequest:", expectedCalls: 0 });
   }
