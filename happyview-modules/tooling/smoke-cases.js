@@ -42,7 +42,7 @@ const LIST_PARAMS = () => ({ limit: 5 });
 export function searchTermFrom(record, fields = ["title", "name", "displayName"]) {
   for (const field of fields) {
     const value = record?.[field];
-    const word = typeof value === "string" ? value.match(/\p{L}{4,}/u)?.[0] : undefined;
+    const word = typeof value === "string" ? /\p{L}{4,}/u.exec(value)?.[0] : undefined;
     if (word) return word;
   }
   return undefined;

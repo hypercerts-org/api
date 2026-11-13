@@ -28,7 +28,7 @@ export async function installedQueryIds() {
   return assets
     .filter((asset) => asset.kind === "script" && asset.id.startsWith("xrpc.query:"))
     .map((asset) => asset.id.slice("xrpc.query:".length))
-    .sort();
+    .sort((a, b) => a.localeCompare(b));
 }
 
 /**
@@ -57,33 +57,56 @@ export function createViewValidator(documents, lexicons) {
  * @param {any} json @param {Record<string, any>} params @returns {string[]}
  */
 export function genericInvariants(json, params) {
-  const errors = [];
-  const limit = params.limit;
-  for (const [key, value] of Object.entries(json ?? {})) {
-    if (Array.isArray(value) && typeof limit === "number" && value.length > limit)
-      errors.push(`${key} has ${value.length} items, more than limit=${limit}`);
-  }
-  const arrays = Object.values(json ?? {}).filter(Array.isArray);
-  const longest = Math.max(0, ...arrays.map((a) => a.length));
-  if (typeof json?.totalCount === "number" && json.totalCount < longest)
-    errors.push(`totalCount ${json.totalCount} is smaller than the ${longest} items returned`);
-  for (const countKey of ["likeCount", "repostCount"]) {
-    if (typeof json?.[countKey] === "number" && json[countKey] < longest)
-      errors.push(`${countKey} ${json[countKey]} is smaller than the ${longest} items returned`);
-  }
-  if (Array.isArray(json?.counts) && Array.isArray(params.subjects)) {
-    const got = json.counts.map((/** @type {any} */ c) => c.subject);
-    if (JSON.stringify(got) !== JSON.stringify(params.subjects))
-      errors.push("counts are not returned in request order (subject list differs)");
-  }
-  if (typeof params.uri === "string") {
-    const record = Object.values(json ?? {}).find((v) => v && typeof v === "object" && "uri" in v);
-    if (record && /** @type {any} */ (record).uri !== params.uri)
-      errors.push(
-        `returned uri ${/** @type {any} */ (record).uri} does not echo requested ${params.uri}`,
-      );
-  }
-  return errors;
+  return [
+    ...limitErrors(json, params.limit),
+    ...countErrors(json),
+    ...subjectOrderErrors(json, params.subjects),
+    ...uriEchoErrors(json, params.uri),
+  ];
+}
+
+/** @param {any} json @param {unknown} limit @returns {string[]} */
+function limitErrors(json, limit) {
+  if (typeof limit !== "number") return [];
+  return Object.entries(json ?? {})
+    .filter(([, value]) => Array.isArray(value) && value.length > limit)
+    .map(
+      ([key, value]) =>
+        `${key} has ${/** @type {any[]} */ (value).length} items, more than limit=${limit}`,
+    );
+}
+
+/** @param {any} json @returns {string[]} */
+function countErrors(json) {
+  const longest = Math.max(
+    0,
+    ...Object.values(json ?? {})
+      .filter(Array.isArray)
+      .map((a) => a.length),
+  );
+  return ["totalCount", "likeCount", "repostCount"]
+    .filter((key) => typeof json?.[key] === "number" && json[key] < longest)
+    .map((key) => `${key} ${json[key]} is smaller than the ${longest} items returned`);
+}
+
+/** @param {any} json @param {unknown} subjects @returns {string[]} */
+function subjectOrderErrors(json, subjects) {
+  if (!Array.isArray(json?.counts) || !Array.isArray(subjects)) return [];
+  const got = json.counts.map((/** @type {any} */ c) => c.subject);
+  return JSON.stringify(got) === JSON.stringify(subjects)
+    ? []
+    : ["counts are not returned in request order (subject list differs)"];
+}
+
+/** @param {any} json @param {unknown} uri @returns {string[]} */
+function uriEchoErrors(json, uri) {
+  if (typeof uri !== "string") return [];
+  const record = /** @type {any} */ (
+    Object.values(json ?? {}).find((v) => v && typeof v === "object" && "uri" in v)
+  );
+  return record && record.uri !== uri
+    ? [`returned uri ${record.uri} does not echo requested ${uri}`]
+    : [];
 }
 
 /** @param {any} json @returns {string[]} URIs of the first array of records, for overlap checks */

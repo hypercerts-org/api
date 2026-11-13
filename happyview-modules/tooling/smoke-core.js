@@ -31,7 +31,9 @@ export function normalizeBaseUrl(raw) {
     throw new Error(`API base URL must be http(s), got "${raw}"`);
   if (url.username || url.password)
     throw new Error("API base URL must not contain credentials; these checks are anonymous");
-  return `${url.origin}${url.pathname}`.replace(/\/+$/, "");
+  let end = url.pathname.length;
+  while (end > 0 && url.pathname[end - 1] === "/") end -= 1;
+  return `${url.origin}${url.pathname.slice(0, end)}`;
 }
 
 /**
@@ -120,7 +122,8 @@ export function createHttpClient({
      */
     async get(nsid, params = {}) {
       const search = toSearch(params);
-      const url = `${base}/xrpc/${nsid}${search ? `?${search}` : ""}`;
+      const query = search ? `?${search}` : "";
+      const url = `${base}/xrpc/${nsid}${query}`;
       assertReadOnlyRequest("GET", url);
       let result = await attempt(url);
       let attempts = 1;
@@ -142,8 +145,8 @@ export function findCoverageGaps(installed, cased) {
   const have = new Set(cased);
   const want = new Set(installed);
   return {
-    missing: installed.filter((nsid) => !have.has(nsid)).sort(),
-    stale: cased.filter((nsid) => !want.has(nsid)).sort(),
+    missing: installed.filter((nsid) => !have.has(nsid)).sort((a, b) => a.localeCompare(b)),
+    stale: cased.filter((nsid) => !want.has(nsid)).sort((a, b) => a.localeCompare(b)),
   };
 }
 
@@ -169,7 +172,7 @@ export async function runPool(tasks, limit) {
 /** @typedef {{ name: string; status: "pass" | "fail" | "skip" | "info"; ms: number; detail: string }} CheckResult */
 
 /** @param {string} text */
-const cell = (text) => text.replace(/\|/g, "\\|").replace(/\s+/g, " ").slice(0, 300);
+const cell = (text) => text.replaceAll("|", String.raw`\|`).replace(/\s+/g, " ").slice(0, 300);
 
 /** @param {string} title @param {CheckResult[]} results @param {{ baseUrl: string; requests: number; seconds: number }} meta */
 export function renderSummary(title, results, meta) {
@@ -205,13 +208,12 @@ export async function writeStepSummary(markdown) {
 export function parseFlags(argv, flagsWithValue) {
   /** @type {Record<string, string>} */
   const flags = {};
+  const supported = flagsWithValue.map((f) => `--${f} <value>`).join(", ");
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i] ?? "";
     const name = arg.replace(/^--/, "");
     if (!arg.startsWith("--") || !flagsWithValue.includes(name))
-      throw new Error(
-        `Unknown option ${arg}; supported: ${flagsWithValue.map((f) => `--${f} <value>`).join(", ")}`,
-      );
+      throw new Error(`Unknown option ${arg}; supported: ${supported}`);
     const value = argv[++i];
     if (value === undefined) throw new Error(`Option ${arg} needs a value`);
     flags[name] = value;
