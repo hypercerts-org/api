@@ -70,4 +70,6 @@ Each environment must allow deployments from its branch and define its own value
 - secret `HAPPYVIEW_ADMIN_TOKEN`: a scoped admin token for that HappyView, including `script-variables:read`
 - variable `HYPERCERTS_HANDLE_RESOLVER_URL`: needed only if that HappyView does not already have this setting; the token then also needs `script-variables:create`
 
+Pushes that only change docs, tests or tooling skip the deploy (`paths-ignore` in `deploy.yml`). To deploy by hand, run the workflow with `workflow_dispatch`: choose the environment, run it from that environment's branch, and optionally give a rollback commit SHA, which must be on that branch. A smoke job runs after every deploy and checks the live API.
+
 Deploys to each environment run one at a time and are never cancelled midway; deploys to different environments do not block each other.
