@@ -14,7 +14,7 @@ local function actor_reaction_sort_key()
     ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE COALESCE(indexed_at::timestamptz, created_at::timestamptz) END"
 end
 
-local function feed_actor_reaction_subjects(value)
+local function feed_actor_reaction_subjects(actor, value)
   if value == nil then invalid("subjects is required") end
 
   local subjects = {}
@@ -45,6 +45,7 @@ local function feed_actor_reaction_subjects(value)
       invalid("each subjects value must be a full DID-authority AT-URI with a valid collection NSID")
     end
   end
+  assert_batch_request_target("app.certified.feed.getActorReactions", actor, "subjects", subjects)
   return subjects
 end
 
@@ -164,7 +165,7 @@ local function feed_actor_reactions()
   keys_only(params, { actor = true, subjects = true })
   local actor = scalar(params, "actor")
   if not actor or not valid_did(actor) then invalid("actor must be a valid DID") end
-  local subjects = feed_actor_reaction_subjects(params.subjects)
+  local subjects = feed_actor_reaction_subjects(actor, params.subjects)
   local rows = feed_actor_reactions_query(actor, subjects)
   local ok, response = pcall(feed_actor_reaction_results, rows, actor, subjects)
   if not ok then

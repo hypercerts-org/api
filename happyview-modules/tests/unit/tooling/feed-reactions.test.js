@@ -432,6 +432,49 @@ assert(calls[1].values[2] == '${firstSubject}' and calls[1].values[3] == '${seco
   });
 });
 
+const typicalSubjects = Array.from(
+  { length: 100 },
+  (_, index) =>
+    `at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3lbx${String(index).padStart(9, "0")}`,
+);
+// 30 URIs with 500-character record keys encode to about 17.4 KB, above the 16 KiB guard.
+const oversizeSubjects = Array.from(
+  { length: 30 },
+  (_, index) =>
+    `at://did:plc:dddddddddddddddddddddddd/org.example.thing/${String(index).padStart(500, "k")}`,
+);
+
+test("getReactionCounts accepts 100 typical AT-URIs and rejects an oversize request-target before querying", () => {
+  runLua({
+    endpoint: "getReactionCounts",
+    params: { subjects: typicalSubjects },
+    assertions: "assert(#result.counts == 100 and #calls == 1)",
+  });
+  runLua({
+    endpoint: "getReactionCounts",
+    params: { subjects: oversizeSubjects },
+    expectError: "InvalidRequest: subjects makes the encoded GET request-target exceed 16384 bytes",
+    expectedCalls: 0,
+  });
+});
+
+test("getActorReactions accepts 100 typical AT-URIs and rejects an oversize request-target before querying", () => {
+  runLua({
+    endpoint: "getActorReactions",
+    params: { actor, subjects: typicalSubjects },
+    rows: typicalSubjects.map((subjectUri, index) =>
+      actorReactionResultRow(index + 1, subjectUri, null, null),
+    ),
+    assertions: "assert(#result.results == 100 and #calls == 1)",
+  });
+  runLua({
+    endpoint: "getActorReactions",
+    params: { actor, subjects: oversizeSubjects },
+    expectError: "InvalidRequest: subjects makes the encoded GET request-target exceed 16384 bytes",
+    expectedCalls: 0,
+  });
+});
+
 test("getActorReactions accepts 100 subject occurrences but rejects larger batches before querying", () => {
   const subjects = Array.from(
     { length: 100 },
