@@ -46,7 +46,7 @@ export { locationRecordView };
 type OrganizationActorView = { $type?: "app.certified.actor.getOrganization#organizationActorView";"did":l.DidString;"profile":ApiDefs.ProfileView | null;"organization":ApiDefs.OrganizationView;
 
   /**
-   * The location record that the organization sidecar's location reference points to, with the record unchanged: a blob payload stays a blob reference and no URL is resolved. Returned by getOrganization, getOrganizations, listOrganizations and searchOrganizations; organization views nested in other endpoints' author or actor views do not include it. Null when the sidecar has no location reference, the reference does not point to an app.certified.location record, or that record is not indexed. The record is matched by AT-URI, not CID: if the indexed cid differs from organization.record.location.cid, the latest indexed record is returned.
+   * The organization's location record, as stored (blobs are not resolved). Only returned by getOrganization, getOrganizations, listOrganizations and searchOrganizations. Null if there is no location or it is not indexed. Matched by URI, so it may be a newer version than organization.record.location.cid.
    */
   "location"?:LocationRecordView | null };
 
