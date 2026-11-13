@@ -2,21 +2,41 @@ name: Deploy
 
 on:
   push:
-    # Each branch deploys to the GitHub environment with the same name.
-    branches: [staging, production]
+    branches: [main, staging, production]
 
 permissions:
   contents: read
 
-concurrency:
-  group: deploy-${{ github.ref_name }}
-  cancel-in-progress: false
-
 jobs:
-  deploy:
-    name: Install HappyView modules (${{ github.ref_name }})
+  # Branch and GitHub environment names differ, so map them explicitly here,
+  # once; the `environment` and `concurrency` keys cannot read workflow `env`.
+  resolve:
+    name: Resolve deploy environment
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name }}
+    outputs:
+      environment: ${{ steps.map.outputs.environment }}
+    steps:
+      - id: map
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          case "$BRANCH" in
+            main) environment=Test ;;
+            staging) environment=Staging ;;
+            production) environment=Production ;;
+            *) echo "::error::No deploy environment is mapped to branch '$BRANCH'; add it to deploy.yml." >&2; exit 1 ;;
+          esac
+          echo "environment=$environment" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    name: Install HappyView modules (${{ needs.resolve.outputs.environment }})
+    needs: resolve
+    runs-on: ubuntu-latest
+    environment: ${{ needs.resolve.outputs.environment }}
+    # Deploys to one environment run one at a time and are never cancelled midway.
+    concurrency:
+      group: deploy-${{ needs.resolve.outputs.environment }}
+      cancel-in-progress: false
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

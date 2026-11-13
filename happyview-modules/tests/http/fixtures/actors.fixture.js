@@ -1,5 +1,6 @@
 import { encode } from "@atcute/cbor";
 import * as CID from "@atcute/cid";
+import { locationRecords } from "../../fixtures/records.js";
 
 const profileCollection = "app.certified.actor.profile";
 const organizationCollection = "app.certified.actor.organization";
@@ -12,6 +13,29 @@ export const actorFixtureDids = {
   river: "did:plc:oooooooooooooooooooooooo",
   profileOnly: "did:plc:pppppppppppppppppppppppp",
   organizationOnly: "did:plc:qqqqqqqqqqqqqqqqqqqqqqqq",
+  unindexedLocation: "did:web:org-location-unindexed.example",
+  wrongCollectionLocation: "did:web:org-location-wrong-collection.example",
+};
+
+const locationCollection = "app.certified.location";
+const pointLocation = locationRecords.find(({ rkey }) => rkey === "3jzfcijpj2z2a");
+const blobLocation = locationRecords.find(({ rkey }) => rkey === "3jzfcijpj2z2c");
+
+// Location scenarios: alpine pins the current point location, forest a blob-payload
+// location, river a stale CID, and the two sidecar-only actors a never-indexed location and a
+// reference to an indexed record in another collection. organizationOnly has no reference.
+const locationRefs = {
+  alpine: { uri: pointLocation.uri, cid: pointLocation.cid },
+  forest: { uri: blobLocation.uri, cid: blobLocation.cid },
+  river: { uri: pointLocation.uri, cid: blobLocation.cid },
+  unindexed: {
+    uri: `at://${pointLocation.did}/${locationCollection}/3jzfcijpj2z2z`,
+    cid: pointLocation.cid,
+  },
+  wrongCollection: {
+    uri: `at://${actorFixtureDids.alpine}/${profileCollection}/self`,
+    cid: pointLocation.cid,
+  },
 };
 
 const records = [
@@ -61,6 +85,7 @@ const records = [
     rkey: "self",
     record: {
       organizationType: ["nonprofit", "cooperative"],
+      location: locationRefs.alpine,
       visibility: "public",
       createdAt,
     },
@@ -71,6 +96,7 @@ const records = [
     rkey: "self",
     record: {
       organizationType: ["community"],
+      location: locationRefs.forest,
       visibility: "unlisted",
       createdAt,
     },
@@ -81,6 +107,7 @@ const records = [
     rkey: "self",
     record: {
       organizationType: ["nonprofit"],
+      location: locationRefs.river,
       visibility: "public",
       createdAt,
     },
@@ -91,6 +118,26 @@ const records = [
     rkey: "self",
     record: {
       organizationType: ["community"],
+      createdAt,
+    },
+  },
+  {
+    did: actorFixtureDids.unindexedLocation,
+    collection: organizationCollection,
+    rkey: "self",
+    record: {
+      organizationType: ["location-fixture"],
+      location: locationRefs.unindexed,
+      createdAt,
+    },
+  },
+  {
+    did: actorFixtureDids.wrongCollectionLocation,
+    collection: organizationCollection,
+    rkey: "self",
+    record: {
+      organizationType: ["location-fixture"],
+      location: locationRefs.wrongCollection,
       createdAt,
     },
   },

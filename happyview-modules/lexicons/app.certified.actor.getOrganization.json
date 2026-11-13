@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Gets an actor's indexed organization sidecar and associated profile by DID. Authentication is not required.",
+      "description": "Gets an actor's indexed organization sidecar, associated profile and location by DID. Authentication is not required.",
       "parameters": {
         "type": "params",
         "required": ["actor"],
@@ -23,18 +23,36 @@
       "errors": [
         { "name": "InvalidRequest", "description": "The actor DID is invalid or an unsupported parameter was supplied." },
         { "name": "RecordNotFound", "description": "No indexed organization sidecar exists for this DID." },
-        { "name": "OrganizationQueryFailed", "description": "The indexed organization sidecar or associated profile could not be queried." }
+        { "name": "OrganizationQueryFailed", "description": "The indexed organization sidecar, associated profile or location could not be queried." }
       ]
+    },
+    "locationRecordView": {
+      "type": "object",
+      "description": "Indexed app.certified.location record view preserving the full record exactly as getLocation returns it, but without the hydrated author; indexedAt may be null when the index has no timestamp.",
+      "required": ["uri", "cid", "indexedAt", "did", "record"],
+      "nullable": ["indexedAt"],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
+        "indexedAt": { "type": "string", "format": "datetime" },
+        "did": { "type": "string", "format": "did" },
+        "record": { "type": "ref", "ref": "app.certified.location" }
+      }
     },
     "organizationActorView": {
       "type": "object",
-      "description": "Actor with an indexed organization sidecar and nullable profile view.",
+      "description": "Actor with an indexed organization sidecar, nullable profile view and nullable location view.",
       "required": ["did", "profile", "organization"],
-      "nullable": ["profile"],
+      "nullable": ["profile", "location"],
       "properties": {
         "did": { "type": "string", "format": "did" },
         "profile": { "type": "ref", "ref": "org.hypercerts.api.defs#profileView" },
-        "organization": { "type": "ref", "ref": "org.hypercerts.api.defs#organizationView" }
+        "organization": { "type": "ref", "ref": "org.hypercerts.api.defs#organizationView" },
+        "location": {
+          "type": "ref",
+          "ref": "#locationRecordView",
+          "description": "The organization's location record, as stored (blobs are not resolved). Only returned by getOrganization, getOrganizations, listOrganizations and searchOrganizations. Null if there is no location or it is not indexed. Matched by URI, so it may be a newer version than organization.record.location.cid."
+        }
       }
     },
     "output": {

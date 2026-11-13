@@ -161,8 +161,12 @@ if (hasModule("modules/organization/manifest.json"))
       "app.certified.actor.getOrganization#organizationActorView",
     );
     assert.deepEqual(actorView.required, ["did", "profile", "organization"]);
-    assert.deepEqual(actorView.nullable, ["profile"]);
+    assert.deepEqual(actorView.nullable, ["profile", "location"]);
     assert.equal(actorView.properties.profile.ref, "lex:org.hypercerts.api.defs#profileView");
+    assert.equal(
+      actorView.properties.location.ref,
+      "lex:app.certified.actor.getOrganization#locationRecordView",
+    );
     assert.equal(
       actorView.properties.organization.ref,
       "lex:org.hypercerts.api.defs#organizationView",
@@ -173,7 +177,8 @@ if (hasModule("modules/organization/manifest.json"))
     );
     const organizationQueryFailed = {
       name: "OrganizationQueryFailed",
-      description: "The indexed organization sidecar or associated profile could not be queried.",
+      description:
+        "The indexed organization sidecar, associated profile or location could not be queried.",
     };
     assert.deepEqual(
       getOrganization.defs.main.errors.map(({ name }) => name),
