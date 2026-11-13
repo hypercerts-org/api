@@ -56,10 +56,18 @@ For bundles that register `app.certified.actor.getProfile`, handle lookups requi
 
 ## Deploys
 
-Pushing to the `staging` or `production` branch runs [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml), which installs this bundle into that environment's HappyView with `pnpm install:api --override`, so assets that differ from this repository are replaced (the repository is the source of truth). Each branch uses the GitHub environment of the same name (`staging` or `production`), and each environment must define its own values; never reuse the production token for staging:
+Pushing to `main`, `staging` or `production` runs [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml), which installs this bundle into the matching environment's HappyView with `pnpm install:api --override`, so assets that differ from this repository are replaced (the repository is the source of truth). Branches map to GitHub environments explicitly:
+
+| Branch       | GitHub environment |
+| ------------ | ------------------ |
+| `main`       | `Test`             |
+| `staging`    | `Staging`          |
+| `production` | `Production`       |
+
+Each environment must allow deployments from its branch and define its own values; never reuse a token across environments:
 
 - variable `HAPPYVIEW_BASE_URL`: that environment's HappyView origin
 - secret `HAPPYVIEW_ADMIN_TOKEN`: a scoped admin token for that HappyView, including `script-variables:read`
 - variable `HYPERCERTS_HANDLE_RESOLVER_URL`: needed only if that HappyView does not already have this setting; the token then also needs `script-variables:create`
 
-Deploys to each environment run one at a time and are never cancelled midway; staging and production deploys do not block each other.
+Deploys to each environment run one at a time and are never cancelled midway; deploys to different environments do not block each other.
