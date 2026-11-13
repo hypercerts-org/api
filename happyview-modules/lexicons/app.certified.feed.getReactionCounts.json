@@ -13,7 +13,7 @@
             "type": "array",
             "minLength": 1,
             "maxLength": 100,
-            "description": "Pass 1–100 full DID-authority subject record AT-URIs as repeated, unbracketed subjects query parameters.",
+            "description": "Pass 1–100 full DID-authority subject record AT-URIs as repeated, unbracketed subjects query parameters. The encoded GET request-target must not exceed 16,384 bytes.",
             "items": { "type": "string", "format": "at-uri" }
           }
         }
@@ -25,7 +25,7 @@
       "errors": [
         {
           "name": "InvalidRequest",
-          "description": "The subjects list is empty, has more than 100 entries, or contains an invalid subject AT-URI; correct the list and retry."
+          "description": "The subjects list is empty, has more than 100 entries, exceeds the request-target limit, or contains an invalid subject AT-URI; correct the list and retry."
         },
         {
           "name": "ReactionCountQueryFailed",

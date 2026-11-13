@@ -13,7 +13,7 @@
             "type": "array",
             "minLength": 1,
             "maxLength": 100,
-            "description": "Pass 1–100 full DID-authority subject record AT-URIs as repeated, unbracketed subjects query parameters. The encoded GET request-target must not exceed 7,000 bytes.",
+            "description": "Pass 1–100 full DID-authority subject record AT-URIs as repeated, unbracketed subjects query parameters. The encoded GET request-target must not exceed 16,384 bytes.",
             "items": { "type": "string", "format": "at-uri", "maxLength": 8192 }
           }
         }

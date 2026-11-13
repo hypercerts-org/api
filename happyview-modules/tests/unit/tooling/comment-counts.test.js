@@ -83,6 +83,15 @@ assert(math.type(result.counts[1].commentCount) == 'integer')
   });
 });
 
+test("getCommentCounts accepts 100 typical hypercert AT-URIs within the request-target guard", () => {
+  const subjects = Array.from(
+    { length: 100 },
+    (_, index) =>
+      `at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3lbx${String(index).padStart(9, "0")}`,
+  );
+  runLua({ params: { subjects }, assertions: "assert(#result.counts == 100 and #calls == 1)" });
+});
+
 test("getCommentCounts rejects subjects that are not full record AT-URIs before querying", () => {
   const longPost = `at://did:plc:dddddddddddddddddddddddd/org.example.thing/${"k".repeat(500)}`;
   for (const subjects of [
@@ -91,7 +100,7 @@ test("getCommentCounts rejects subjects that are not full record AT-URIs before 
     ["at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/invalid/key"],
     [`${post}?query`],
     ["at://did:web:example%GG/org.hypercerts.context.attachment/post"],
-    Array(15).fill(longPost),
+    Array(30).fill(longPost),
   ]) {
     runLua({ params: { subjects }, expectError: "InvalidRequest:", expectedCalls: 0 });
   }

@@ -76,8 +76,11 @@ local function entity_follow_record_view(row)
   return view
 end
 
-local FOLLOW_BATCH_MAX_TARGETS = 100
-local FOLLOW_BATCH_MAX_REQUEST_TARGET_BYTES = 7000
+-- 16 KiB fits 100 typical hypercert AT-URIs (~10.5 KB encoded) and stays within
+-- Node's default 16 KiB header limit for downstream callers. The pinned
+-- HappyView release turns every Lua error() into HTTP 500 script_error, so an
+-- overflow cannot be a 400 yet; the InvalidRequest: prefix names the cause.
+local BATCH_MAX_REQUEST_TARGET_BYTES = 16384
 
 local function encoded_query_value_length(value)
   local length = 0
@@ -92,6 +95,24 @@ local function encoded_query_value_length(value)
   end
   return length
 end
+
+-- Rejects batches whose percent-encoded GET request-target would exceed the
+-- shared byte limit. actor is nil for batch queries that take only the target
+-- list; the first target's "&" then stands in for the "?".
+local function assert_batch_request_target(endpoint, actor, key, targets)
+  local request_target_length = #("/xrpc/" .. endpoint)
+  if actor then
+    request_target_length = request_target_length + #("?actor=") + encoded_query_value_length(actor)
+  end
+  for _, target in ipairs(targets) do
+    request_target_length = request_target_length + #("&" .. key .. "=") + encoded_query_value_length(target)
+  end
+  if request_target_length > BATCH_MAX_REQUEST_TARGET_BYTES then
+    invalid(key .. " makes the encoded GET request-target exceed " .. BATCH_MAX_REQUEST_TARGET_BYTES .. " bytes")
+  end
+end
+
+local FOLLOW_BATCH_MAX_TARGETS = 100
 
 local function follow_batch_targets(actor, key, value, validate, description, endpoint)
   if value == nil then invalid(key .. " is required") end
@@ -123,27 +144,18 @@ local function follow_batch_targets(actor, key, value, validate, description, en
     invalid(key .. " must contain 1 through " .. FOLLOW_BATCH_MAX_TARGETS .. " values")
   end
 
-  -- actor is nil for batch queries that take only the target list; the first
-  -- target's "&" then stands in for the "?".
-  local request_target_length = #("/xrpc/" .. endpoint)
-  if actor then
-    request_target_length = request_target_length + #("?actor=") + encoded_query_value_length(actor)
-  end
   local unique, seen = {}, {}
   for _, target in ipairs(targets) do
     if type(target) ~= "string" or not validate(target) then
       invalid("each " .. key .. " value must be " .. description)
     end
-    request_target_length = request_target_length + #("&" .. key .. "=") + encoded_query_value_length(target)
     if not seen[target] then
       seen[target] = true
       unique[#unique + 1] = target
     end
   end
 
-  if request_target_length > FOLLOW_BATCH_MAX_REQUEST_TARGET_BYTES then
-    invalid(key .. " makes the encoded GET request-target exceed " .. FOLLOW_BATCH_MAX_REQUEST_TARGET_BYTES .. " bytes")
-  end
+  assert_batch_request_target(endpoint, actor, key, targets)
   return targets, unique
 end
 

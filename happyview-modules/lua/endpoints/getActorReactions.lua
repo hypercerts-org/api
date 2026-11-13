@@ -89,6 +89,42 @@ local function valid_subject_record_uri(value)
   return valid and valid_did_percent_escapes(authority) and valid_nsid(collection)
 end
 
+-- 16 KiB fits 100 typical hypercert AT-URIs (~10.5 KB encoded) and stays within
+-- Node's default 16 KiB header limit for downstream callers. The pinned
+-- HappyView release turns every Lua error() into HTTP 500 script_error, so an
+-- overflow cannot be a 400 yet; the InvalidRequest: prefix names the cause.
+local BATCH_MAX_REQUEST_TARGET_BYTES = 16384
+
+local function encoded_query_value_length(value)
+  local length = 0
+  for index = 1, #value do
+    local byte = value:byte(index)
+    if (byte >= 48 and byte <= 57) or (byte >= 65 and byte <= 90) or (byte >= 97 and byte <= 122)
+      or byte == 42 or byte == 45 or byte == 46 or byte == 95 then
+      length = length + 1
+    else
+      length = length + 3
+    end
+  end
+  return length
+end
+
+-- Rejects batches whose percent-encoded GET request-target would exceed the
+-- shared byte limit. actor is nil for batch queries that take only the target
+-- list; the first target's "&" then stands in for the "?".
+local function assert_batch_request_target(endpoint, actor, key, targets)
+  local request_target_length = #("/xrpc/" .. endpoint)
+  if actor then
+    request_target_length = request_target_length + #("?actor=") + encoded_query_value_length(actor)
+  end
+  for _, target in ipairs(targets) do
+    request_target_length = request_target_length + #("&" .. key .. "=") + encoded_query_value_length(target)
+  end
+  if request_target_length > BATCH_MAX_REQUEST_TARGET_BYTES then
+    invalid(key .. " makes the encoded GET request-target exceed " .. BATCH_MAX_REQUEST_TARGET_BYTES .. " bytes")
+  end
+end
+
 local ACTOR_REACTION_NULL = json.decode("null")
 local ACTOR_REACTION_LIMIT = 100
 local ACTOR_REACTION_COLLECTIONS = {
@@ -105,7 +141,7 @@ local function actor_reaction_sort_key()
     ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE COALESCE(indexed_at::timestamptz, created_at::timestamptz) END"
 end
 
-local function feed_actor_reaction_subjects(value)
+local function feed_actor_reaction_subjects(actor, value)
   if value == nil then invalid("subjects is required") end
 
   local subjects = {}
@@ -136,6 +172,7 @@ local function feed_actor_reaction_subjects(value)
       invalid("each subjects value must be a full DID-authority AT-URI with a valid collection NSID")
     end
   end
+  assert_batch_request_target("app.certified.feed.getActorReactions", actor, "subjects", subjects)
   return subjects
 end
 
@@ -255,7 +292,7 @@ local function feed_actor_reactions()
   keys_only(params, { actor = true, subjects = true })
   local actor = scalar(params, "actor")
   if not actor or not valid_did(actor) then invalid("actor must be a valid DID") end
-  local subjects = feed_actor_reaction_subjects(params.subjects)
+  local subjects = feed_actor_reaction_subjects(actor, params.subjects)
   local rows = feed_actor_reactions_query(actor, subjects)
   local ok, response = pcall(feed_actor_reaction_results, rows, actor, subjects)
   if not ok then

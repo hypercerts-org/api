@@ -20,7 +20,7 @@ export const $output = /*#__PURE__*/ l.payload("application/json", /*#__PURE__*/
 export type $Output<B = l.BinaryData> = l.InferPayload<typeof $output, B>;
 export type $OutputBody<B = l.BinaryData> = l.InferPayloadBody<typeof $output, B>;
 
-/** Returns the representative raw follow record, or null, for each requested actor-to-actor relationship. Authentication is not required. Supply 1–100 repeated subjects values; the encoded GET request-target must not exceed 7,000 bytes. */
+/** Returns the representative raw follow record, or null, for each requested actor-to-actor relationship. Authentication is not required. Supply 1–100 repeated subjects values; the encoded GET request-target must not exceed 16,384 bytes. */
 const main = /*#__PURE__*/ l.query($nsid, $params, $output, ["InvalidRequest","ActorFollowQueryFailed"]);
 
 export { main };

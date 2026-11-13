@@ -40,6 +40,7 @@ local function reaction_count_subjects()
       unique[#unique + 1] = subject
     end
   end
+  assert_batch_request_target("app.certified.feed.getReactionCounts", nil, "subjects", supplied)
   return supplied, unique
 end
 

@@ -68,6 +68,7 @@
         "../../lua/shared/query.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorFollow.lua",
+        "../../lua/shared/batchRequestTarget.lua",
         "../../lua/shared/followBatch.lua"
       ],
       "config": {

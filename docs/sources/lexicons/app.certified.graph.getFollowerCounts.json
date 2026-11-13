@@ -15,7 +15,7 @@
             "type": "array",
             "minLength": 1,
             "maxLength": 100,
-            "description": "Pass 1–100 account DIDs or full DID-authority entity AT-URIs, mixed freely, as repeated unbracketed subjects query parameters. The encoded GET request-target must not exceed 7,000 bytes.",
+            "description": "Pass 1–100 account DIDs or full DID-authority entity AT-URIs, mixed freely, as repeated unbracketed subjects query parameters. The encoded GET request-target must not exceed 16,384 bytes.",
             "items": {
               "type": "string",
               "format": "uri",
