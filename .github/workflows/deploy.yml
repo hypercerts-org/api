@@ -100,11 +100,8 @@ jobs:
     name: Install HappyView modules (${{ needs.resolve.outputs.environment }})
     needs: resolve
     runs-on: ubuntu-latest
-    outputs:
-      api_url: ${{ vars.HAPPYVIEW_BASE_URL }}
-      environment: ${{ needs.resolve.outputs.environment }}
     environment: ${{ needs.resolve.outputs.environment }}
-    # Deploys to one environment run one at a time and are never cancelled midway.
+    # Deploys to one environment (install + smoke) run one at a time and are never cancelled midway.
     concurrency:
       group: deploy-${{ needs.resolve.outputs.environment }}
       cancel-in-progress: false
@@ -146,51 +143,16 @@ jobs:
         # The repo is the source of truth: replace any differing installed assets.
         run: pnpm --filter @hypercerts-org/happyview-modules install:api --override
 
-  # Read-only check that the live API answers every installed query after the install.
-  # Anonymous GETs only, so it needs no secrets. It has no `environment:` on purpose: that would
-  # ask required reviewers to approve a second time. The API URL comes from the deploy job's
-  # `api_url` output instead. HAPPYVIEW_BASE_URL is the HappyView origin, which serves both
-  # /admin (used above) and the public /xrpc API.
-  smoke:
-    name: Smoke test (${{ needs.deploy.outputs.environment }})
-    needs: [deploy]
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          # Same commit that was deployed, so a rollback is checked by its own smoke cases.
-          ref: ${{ inputs.commit || github.sha }}
-          persist-credentials: false
-
-      - name: Check that this commit has smoke tests
-        id: smoke_check
-        run: |
-          if [ -f happyview-modules/tooling/smoke.js ]; then
-            echo "has_smoke=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_smoke=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Skipping smoke test: the deployed commit predates it."
-          fi
-
-      - name: Set up pnpm
-        if: steps.smoke_check.outputs.has_smoke == 'true'
-        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
-
-      - name: Set up Node.js
-        if: steps.smoke_check.outputs.has_smoke == 'true'
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-
-      - name: Install dependencies
-        if: steps.smoke_check.outputs.has_smoke == 'true'
-        run: pnpm install --frozen-lockfile
-
+      # Smoke test runs in this job so the deploy lock above covers it: another deploy to the same
+      # environment cannot start until this check finishes. Anonymous GETs only, no secrets.
+      # A rollback to a commit that predates smoke.js skips it.
       - name: Smoke test the deployed API
-        if: steps.smoke_check.outputs.has_smoke == 'true'
+        timeout-minutes: 5
         env:
-          API_BASE_URL: ${{ needs.deploy.outputs.api_url }}
-        run: pnpm smoke
+          API_BASE_URL: ${{ vars.HAPPYVIEW_BASE_URL }}
+        run: |
+          if [ ! -f happyview-modules/tooling/smoke.js ]; then
+            echo "::notice::Skipping smoke test: the deployed commit predates it."
+            exit 0
+          fi
+          pnpm smoke
