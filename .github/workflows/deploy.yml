@@ -147,6 +147,7 @@ jobs:
       # environment cannot start until this check finishes. Anonymous GETs only, no secrets.
       # A rollback to a commit that predates smoke.js skips it.
       - name: Smoke test the deployed API
+        id: smoke
         timeout-minutes: 5
         env:
           API_BASE_URL: ${{ vars.HAPPYVIEW_BASE_URL }}
@@ -156,3 +157,22 @@ jobs:
             exit 0
           fi
           pnpm smoke
+
+      # A rollback checks out an older commit that may lack the alert action, so fetch it from the
+      # workflow's own commit.
+      - name: Check out alert action
+        if: failure()
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: .ci-alert
+          sparse-checkout: .github/actions
+          persist-credentials: false
+
+      - name: Send Telegram alert on failure
+        if: failure()
+        uses: ./.ci-alert/.github/actions/telegram-alert
+        with:
+          bot-token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          chat-id: ${{ secrets.TELEGRAM_CHAT_ID }}
+          summary: ${{ steps.smoke.outcome == 'failure' && 'post-deploy smoke test failed' || 'deploy failed' }} (${{ needs.resolve.outputs.environment }}, ${{ needs.resolve.outputs.branch }})
