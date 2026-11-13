@@ -1,8 +1,12 @@
 name: Deploy
 
+run-name: Deploy ${{ inputs.environment || github.ref_name }} (${{ github.event_name }})
+
 on:
   push:
     branches: [main, staging, production]
+    # A push is skipped only when EVERY changed file matches one of these. Anything not
+    # listed (new files included) still deploys. Keep the installer and its inputs out of this list.
     paths-ignore:
       - "docs/**"
       - "packages/**"
@@ -39,6 +43,18 @@ on:
       - "happyview-modules/tooling/e2e.js"
       - ".github/workflows/smoke.yml"
       - ".github/workflows/e2e-nightly.yml"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment to deploy. Run the workflow from that environment's branch (Test=main, Staging=staging, Production=production).
+        type: choice
+        required: true
+        options: [Test, Staging, Production]
+      commit:
+        description: Optional full commit SHA to redeploy (rollback). Must already be on the environment's branch. Leave empty for the branch head.
+        type: string
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -51,23 +67,42 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       environment: ${{ steps.map.outputs.environment }}
+      branch: ${{ steps.map.outputs.branch }}
     steps:
       - id: map
         env:
-          BRANCH: ${{ github.ref_name }}
+          EVENT: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          INPUT_ENVIRONMENT: ${{ inputs.environment }}
+          INPUT_COMMIT: ${{ inputs.commit }}
         run: |
-          case "$BRANCH" in
+          set -euo pipefail
+          if [ "$REF_TYPE" != branch ]; then
+            echo "::error::Deploys run from a branch, not a $REF_TYPE ('$REF_NAME'). Pick main, staging or production under 'Use workflow from'." >&2; exit 1
+          fi
+          case "$REF_NAME" in
             main) environment=Test ;;
             staging) environment=Staging ;;
             production) environment=Production ;;
-            *) echo "::error::No deploy environment is mapped to branch '$BRANCH'; add it to deploy.yml." >&2; exit 1 ;;
+            *) echo "::error::No deploy environment is mapped to branch '$REF_NAME'. Run from main, staging or production, or add the branch to deploy.yml." >&2; exit 1 ;;
           esac
+          if [ "$EVENT" = workflow_dispatch ] && [ "$INPUT_ENVIRONMENT" != "$environment" ]; then
+            echo "::error::Deploying $INPUT_ENVIRONMENT must run from its own branch, but this run is from '$REF_NAME' (which deploys $environment). Re-run with 'Use workflow from' set to the matching branch." >&2; exit 1
+          fi
+          if [ -n "$INPUT_COMMIT" ] && ! printf '%s' "$INPUT_COMMIT" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "::error::'commit' must be a full 40-character lowercase SHA, got '$INPUT_COMMIT'." >&2; exit 1
+          fi
           echo "environment=$environment" >> "$GITHUB_OUTPUT"
+          echo "branch=$REF_NAME" >> "$GITHUB_OUTPUT"
 
   deploy:
     name: Install HappyView modules (${{ needs.resolve.outputs.environment }})
     needs: resolve
     runs-on: ubuntu-latest
+    outputs:
+      api_url: ${{ vars.HAPPYVIEW_BASE_URL }}
+      environment: ${{ needs.resolve.outputs.environment }}
     environment: ${{ needs.resolve.outputs.environment }}
     # Deploys to one environment run one at a time and are never cancelled midway.
     concurrency:
@@ -77,7 +112,19 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.commit || github.sha }}
+          # Full history: the rollback ancestry check needs origin/<branch>.
+          fetch-depth: 0
           persist-credentials: false
+
+      - name: Check the commit is on the deploy branch
+        if: inputs.commit != ''
+        env:
+          COMMIT: ${{ inputs.commit }}
+          BRANCH: ${{ needs.resolve.outputs.branch }}
+        run: |
+          git merge-base --is-ancestor "$COMMIT" "origin/$BRANCH" || {
+            echo "::error::$COMMIT is not on $BRANCH. Only commits that were merged to the environment's branch can be redeployed to it." >&2; exit 1; }
 
       - name: Set up pnpm
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
@@ -100,18 +147,21 @@ jobs:
         run: pnpm --filter @hypercerts-org/happyview-modules install:api --override
 
   # Read-only check that the live API answers every installed query after the install.
-  # Anonymous GETs only, so it needs no secrets. HAPPYVIEW_BASE_URL is the HappyView origin,
-  # which serves both /admin (used above) and the public /xrpc API.
+  # Anonymous GETs only, so it needs no secrets. It has no `environment:` on purpose: that would
+  # ask required reviewers to approve a second time. The API URL comes from the deploy job's
+  # `api_url` output instead. HAPPYVIEW_BASE_URL is the HappyView origin, which serves both
+  # /admin (used above) and the public /xrpc API.
   smoke:
-    name: Smoke test (${{ needs.resolve.outputs.environment }})
-    needs: [resolve, deploy]
+    name: Smoke test (${{ needs.deploy.outputs.environment }})
+    needs: [deploy]
     runs-on: ubuntu-latest
-    environment: ${{ needs.resolve.outputs.environment }}
     timeout-minutes: 5
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # Same commit that was deployed, so a rollback is checked by its own smoke cases.
+          ref: ${{ inputs.commit || github.sha }}
           persist-credentials: false
 
       - name: Set up pnpm
@@ -128,5 +178,5 @@ jobs:
 
       - name: Smoke test the deployed API
         env:
-          API_BASE_URL: ${{ vars.HAPPYVIEW_BASE_URL }}
+          API_BASE_URL: ${{ needs.deploy.outputs.api_url }}
         run: pnpm smoke
