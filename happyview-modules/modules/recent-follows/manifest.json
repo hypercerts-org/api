@@ -20,6 +20,7 @@
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/datetimeValidation.lua",
         "../../lua/shared/listValidation.lua",
+        "../../lua/shared/legacyProjectFollow.lua",
         "../../lua/shared/recentFollows.lua"
       ],
       "config": {

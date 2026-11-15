@@ -20,7 +20,7 @@ local function cursor_decode(token, direction)
 end
 
 local function build_actor_follow_query(mode, actor, limit, cursor, direction)
-  local filters, values = { "collection = $1" }, { FOLLOW }
+  local filters, values = { "collection = $1", not_legacy_project_follow_sql() }, { FOLLOW }
   values[#values + 1] = actor
   if mode == "followers" then
     filters[#filters + 1] = "record::jsonb->>'subject' = $2"

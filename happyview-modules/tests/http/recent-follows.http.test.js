@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { graphDids } from "./fixtures/graph-follows.fixture.js";
+import { graphDids, legacyFollowUris } from "./fixtures/graph-follows.fixture.js";
 import { contractUrl, requireContractTarget } from "./helpers.js";
 
 const baseUrl = requireContractTarget();
@@ -36,7 +36,11 @@ async function request(params = {}) {
 }
 
 test("listRecentFollows returns the exact global feed across tied-key pages, including baseline account follows", async () => {
+  // The two legacy project follows (legacyOnly, legacyEarlier) are indexed but never listed.
   const expectedUris = [
+    legacyFollowUris.legitStarterPack,
+    legacyFollowUris.legitCollection,
+    legacyFollowUris.plainLater,
     `at://${graphDids.secondPublisher}/${accountFollow}/3jzfcijpj2z2e`,
     `at://${graphDids.secondPublisher}/${entityFollow}/3jzfcijpj2z2e`,
     `at://${graphDids.publisher}/${accountFollow}/3jzfcijpj2z2d`,

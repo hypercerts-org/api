@@ -49,6 +49,7 @@
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordView.lua",
+        "../../lua/shared/legacyProjectFollow.lua",
         "../../lua/shared/actorFollow.lua",
         "../../lua/shared/actorFollowLookup.lua"
       ],
@@ -67,6 +68,7 @@
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordView.lua",
+        "../../lua/shared/legacyProjectFollow.lua",
         "../../lua/shared/actorFollow.lua",
         "../../lua/shared/followBatch.lua"
       ],
@@ -90,6 +92,7 @@
         "../../lua/shared/listQuery.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",
+        "../../lua/shared/legacyProjectFollow.lua",
         "../../lua/shared/actorFollow.lua",
         "../../lua/shared/actorFollowList.lua"
       ],
@@ -113,6 +116,7 @@
         "../../lua/shared/listQuery.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",
+        "../../lua/shared/legacyProjectFollow.lua",
         "../../lua/shared/actorFollow.lua",
         "../../lua/shared/actorFollowList.lua"
       ],
