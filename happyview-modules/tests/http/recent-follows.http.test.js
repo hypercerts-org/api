@@ -71,8 +71,8 @@ test("listRecentFollows returns the exact global feed across tied-key pages, inc
     records.map(({ uri }) => uri),
     expectedUris,
   );
-  assert.equal(records[0].record.$type, accountFollow);
-  assert.equal(records[1].record.$type, entityFollow);
+  assert.equal(records[3].record.$type, accountFollow);
+  assert.equal(records[4].record.$type, entityFollow);
   assert.equal(
     records.filter(
       ({ uri }) => uri === `at://${graphDids.publisher}/${accountFollow}/3jzfcijpj2z2a`,
