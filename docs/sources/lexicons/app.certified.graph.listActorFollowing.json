@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Lists actors named as subjects by the requested DID's follow records. No authentication is required; duplicate relationships are collapsed before pagination, and only the returned actors are hydrated.",
+      "description": "Lists actors named as subjects by the requested DID's follow records. No authentication is required; duplicate relationships are collapsed before pagination, and only the returned actors are hydrated. Legacy project follows are excluded: an account follow whose via points to an org.hypercerts.collection owned by the followed DID is not an account follow. Follows with any other via are kept.",
       "parameters": {
         "type": "params",
         "required": [

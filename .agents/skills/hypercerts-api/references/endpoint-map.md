@@ -86,7 +86,7 @@ An `unanswered` award is a successful indexed award result, not a not-found resp
 | List entities an actor follows | `app.certified.graph.listEntityFollowing` | `actor` is an actor DID; targets are hydrated from indexed records. |
 | Browse recent raw follow records | `app.certified.graph.listRecentFollows` | Beta feed across publishers; `before` and pagination have distinct feed semantics. Not a per-actor relationship check. |
 
-Do not confuse actor follows with entity follows; their identifiers and list outputs differ. Recent raw follows preserve duplicates and are not a snapshot; consult that endpoint's description before using cursors.
+Account-follow endpoints (`getFollow`, `getFollows`, `listActorFollowers`, `listActorFollowing`, `getFollowerCounts`, and account records in `listRecentFollows`) skip legacy project follows: a `graph.follow` whose `via` points to an `org.hypercerts.collection` owned by the followed DID. Other `via` values (starter pack, list, another DID's collection) are kept, and `entityFollow` is unaffected. Expect lower org follower counts than older responses showed; the lists and counts agree. Do not confuse actor follows with entity follows; their identifiers and list outputs differ. Recent raw follows preserve duplicates and are not a snapshot; consult that endpoint's description before using cursors.
 
 ## Feed reactions (6)
 

@@ -21,7 +21,7 @@ export const $output = /*#__PURE__*/ l.payload("application/json", /*#__PURE__*/
 export type $Output<B = l.BinaryData> = l.InferPayload<typeof $output, B>;
 export type $OutputBody<B = l.BinaryData> = l.InferPayloadBody<typeof $output, B>;
 
-/** Beta query for raw account- and entity-follow records from any publisher. No authentication is required; duplicates are preserved, and before is an exclusive bound on publisher-declared createdAt. Pages are not a snapshot, so late indexing or concurrent changes may cause records to be missed. */
+/** Beta query for raw account- and entity-follow records from any publisher. No authentication is required; duplicates are preserved, and before is an exclusive bound on publisher-declared createdAt. Pages are not a snapshot, so late indexing or concurrent changes may cause records to be missed. Legacy project follows are not listed: an account follow whose via points to an org.hypercerts.collection owned by the followed DID is skipped. Follows with any other via are listed. */
 const main = /*#__PURE__*/ l.query($nsid, $params, $output, ["InvalidRequest"]);
 
 export { main };

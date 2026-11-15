@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Returns current indexed follower counts for a mixed list of accounts and entities. No authentication is required. A DID subject counts distinct publishers of app.certified.graph.follow records naming that DID; an AT-URI subject counts distinct publishers of app.certified.graph.entityFollow records naming that URI. Counts match listActorFollowers and listEntityFollowers totalCount, and do not require the subject to be indexed.",
+      "description": "Returns current indexed follower counts for a mixed list of accounts and entities. No authentication is required. A DID subject counts distinct publishers of app.certified.graph.follow records naming that DID; an AT-URI subject counts distinct publishers of app.certified.graph.entityFollow records naming that URI. Counts match listActorFollowers and listEntityFollowers totalCount, and do not require the subject to be indexed. Legacy project follows are excluded: an account follow whose via points to an org.hypercerts.collection owned by the followed DID is not an account follow. Follows with any other via are kept.",
       "parameters": {
         "type": "params",
         "required": [

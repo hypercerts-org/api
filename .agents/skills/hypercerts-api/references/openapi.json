@@ -1431,7 +1431,7 @@
       "get": {
         "operationId": "app_certified_graph_getFollow",
         "tags": ["app.certified.graph"],
-        "description": "Returns the representative follow record for an actor-to-actor relationship, or null if none is indexed. No authentication is required.",
+        "description": "Returns the representative follow record for an actor-to-actor relationship, or null if none is indexed. No authentication is required. Legacy project follows are excluded: an account follow whose via points to an org.hypercerts.collection owned by the followed DID is not an account follow. Follows with any other via are kept.",
         "parameters": [
           {
             "name": "actor",
@@ -1470,7 +1470,7 @@
       "get": {
         "operationId": "app_certified_graph_getFollowerCounts",
         "tags": ["app.certified.graph"],
-        "description": "Returns current indexed follower counts for a mixed list of accounts and entities. No authentication is required. A DID subject counts distinct publishers of app.certified.graph.follow records naming that DID; an AT-URI subject counts distinct publishers of app.certified.graph.entityFollow records naming that URI. Counts match listActorFollowers and listEntityFollowers totalCount, and do not require the subject to be indexed.",
+        "description": "Returns current indexed follower counts for a mixed list of accounts and entities. No authentication is required. A DID subject counts distinct publishers of app.certified.graph.follow records naming that DID; an AT-URI subject counts distinct publishers of app.certified.graph.entityFollow records naming that URI. Counts match listActorFollowers and listEntityFollowers totalCount, and do not require the subject to be indexed. Legacy project follows are excluded: an account follow whose via points to an org.hypercerts.collection owned by the followed DID is not an account follow. Follows with any other via are kept.",
         "parameters": [
           {
             "name": "subjects",
@@ -1520,7 +1520,7 @@
       "get": {
         "operationId": "app_certified_graph_getFollows",
         "tags": ["app.certified.graph"],
-        "description": "Returns the representative raw follow record, or null, for each requested actor-to-actor relationship. Authentication is not required. Supply 1–100 repeated subjects values; the encoded GET request-target must not exceed 7,000 bytes.",
+        "description": "Returns the representative raw follow record, or null, for each requested actor-to-actor relationship. Authentication is not required. Supply 1–100 repeated subjects values; the encoded GET request-target must not exceed 7,000 bytes. Legacy project follows are excluded: an account follow whose via points to an org.hypercerts.collection owned by the followed DID is not an account follow. Follows with any other via are kept.",
         "parameters": [
           {
             "name": "actor",
@@ -1573,7 +1573,7 @@
       "get": {
         "operationId": "app_certified_graph_listActorFollowers",
         "tags": ["app.certified.graph"],
-        "description": "Lists actors whose follow records name the requested DID as subject. No authentication is required; duplicate relationships are collapsed before pagination, and only the returned actors are hydrated.",
+        "description": "Lists actors whose follow records name the requested DID as subject. No authentication is required; duplicate relationships are collapsed before pagination, and only the returned actors are hydrated. Legacy project follows are excluded: an account follow whose via points to an org.hypercerts.collection owned by the followed DID is not an account follow. Follows with any other via are kept.",
         "parameters": [
           {
             "name": "actor",
@@ -1628,7 +1628,7 @@
       "get": {
         "operationId": "app_certified_graph_listActorFollowing",
         "tags": ["app.certified.graph"],
-        "description": "Lists actors named as subjects by the requested DID's follow records. No authentication is required; duplicate relationships are collapsed before pagination, and only the returned actors are hydrated.",
+        "description": "Lists actors named as subjects by the requested DID's follow records. No authentication is required; duplicate relationships are collapsed before pagination, and only the returned actors are hydrated. Legacy project follows are excluded: an account follow whose via points to an org.hypercerts.collection owned by the followed DID is not an account follow. Follows with any other via are kept.",
         "parameters": [
           {
             "name": "actor",
@@ -1799,7 +1799,7 @@
       "get": {
         "operationId": "app_certified_graph_listRecentFollows",
         "tags": ["app.certified.graph"],
-        "description": "Beta query for raw account- and entity-follow records from any publisher. No authentication is required; duplicates are preserved, and before is an exclusive bound on publisher-declared createdAt. Pages are not a snapshot, so late indexing or concurrent changes may cause records to be missed.",
+        "description": "Beta query for raw account- and entity-follow records from any publisher. No authentication is required; duplicates are preserved, and before is an exclusive bound on publisher-declared createdAt. Pages are not a snapshot, so late indexing or concurrent changes may cause records to be missed. Legacy project follows are not listed: an account follow whose via points to an org.hypercerts.collection owned by the followed DID is skipped. Follows with any other via are listed.",
         "parameters": [
           {
             "name": "before",

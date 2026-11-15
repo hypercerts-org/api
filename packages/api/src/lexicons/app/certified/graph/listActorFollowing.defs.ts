@@ -20,7 +20,7 @@ export const $output = /*#__PURE__*/ l.payload("application/json", /*#__PURE__*/
 export type $Output<B = l.BinaryData> = l.InferPayload<typeof $output, B>;
 export type $OutputBody<B = l.BinaryData> = l.InferPayloadBody<typeof $output, B>;
 
-/** Lists actors named as subjects by the requested DID's follow records. No authentication is required; duplicate relationships are collapsed before pagination, and only the returned actors are hydrated. */
+/** Lists actors named as subjects by the requested DID's follow records. No authentication is required; duplicate relationships are collapsed before pagination, and only the returned actors are hydrated. Legacy project follows are excluded: an account follow whose via points to an org.hypercerts.collection owned by the followed DID is not an account follow. Follows with any other via are kept. */
 const main = /*#__PURE__*/ l.query($nsid, $params, $output, ["InvalidRequest"]);
 
 export { main };
