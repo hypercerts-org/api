@@ -314,11 +314,12 @@ local function query_organizations(actors, organization_types, visibility, searc
     local search_parameter = "$" .. #values
     values[#values + 1] = PROFILE
     local profile_collection = "$" .. #values
-    where[#where + 1] = "EXISTS (SELECT 1 FROM happyview_records AS profile " ..
+    where[#where + 1] = "(strpos(lower(COALESCE(organization.record::jsonb->>'legalName', '')), lower(" ..
+      search_parameter .. ")) > 0 OR EXISTS (SELECT 1 FROM happyview_records AS profile " ..
       "WHERE profile.collection = " .. profile_collection .. " AND profile.did = organization.did " ..
       "AND profile.rkey = 'self' AND (strpos(lower(COALESCE(profile.record::jsonb->>'displayName', '')), lower(" ..
       search_parameter .. ")) > 0 OR strpos(lower(COALESCE(profile.record::jsonb->>'description', '')), lower(" ..
-      search_parameter .. ")) > 0))"
+      search_parameter .. ")) > 0)))"
   end
   if cursor then
     values[#values + 1] = cursor.t

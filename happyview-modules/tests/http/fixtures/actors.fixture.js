@@ -106,6 +106,7 @@ const records = [
     collection: organizationCollection,
     rkey: "self",
     record: {
+      legalName: "Chhu Catchment Trust",
       organizationType: ["nonprofit"],
       location: locationRefs.river,
       visibility: "public",
@@ -117,6 +118,7 @@ const records = [
     collection: organizationCollection,
     rkey: "self",
     record: {
+      legalName: "Bumthang Weavers Cooperative",
       organizationType: ["community"],
       createdAt,
     },

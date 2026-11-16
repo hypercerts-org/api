@@ -470,7 +470,7 @@ assert(#calls == 2 and calls[2].values[1] == '${profileCollection}' and calls[2]
   });
 });
 
-test("searchOrganizations binds the complete trimmed literal and excludes actors without a profile", () => {
+test("searchOrganizations binds the complete trimmed literal and also matches legalName without requiring a profile", () => {
   const organization = organizationRow(actor, "search", {
     organizationType: ["nonprofit"],
     createdAt: "2025-01-01T00:00:00Z",
@@ -490,7 +490,8 @@ test("searchOrganizations binds the complete trimmed literal and excludes actors
     assertions: `
 assert(#result.actors == 1 and result.actors[1].did == '${actor}', 'actor result')
 assert(calls[1].sql:find('strpos(lower', 1, true), 'literal substring SQL')
-assert(calls[1].sql:find('EXISTS', 1, true) and calls[1].sql:find('profile.did = organization.did', 1, true), 'profile existence predicate')
+assert(calls[1].sql:find("organization.record::jsonb->>'legalName'", 1, true), 'legalName predicate')
+assert(calls[1].sql:find(') > 0 OR EXISTS (SELECT 1', 1, true) and calls[1].sql:find('profile.did = organization.did', 1, true), 'profile alternative predicate')
 assert(not calls[1].sql:find('Forest', 1, true), 'search text must be a bound SQL value')
 assert(calls[1].sql:find('organization.did IN ($2)', 1, true), 'search retains its actors filter')
 assert(calls[1].values[2] == '${actor}' and calls[1].values[3] == 'nonprofit' and calls[1].values[4] == 'Forest %_ Restoration', table.concat(calls[1].values, '|'))
