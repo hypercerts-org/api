@@ -1,5 +1,11 @@
 # @hypercerts-org/api
 
+## 0.4.0
+
+### Minor Changes
+
+- [#73](https://github.com/hypercerts-org/api/pull/73) [`3090a34`](https://github.com/hypercerts-org/api/commit/3090a34da204a95917daee1cdd7f5b0d5abbad3b) Thanks [@Kzoeps](https://github.com/Kzoeps)! - Evaluation evaluators now have one simple shape: a `did`, plus `profile` and `organization` when they were found. The `hydrationStatus` field is gone and missing values are left out instead of `null`. Only the first 100 evaluators in a response are looked up; later ones carry just the `did`. This also fixes `listEvaluations` and `getEvaluation` failing response validation when evaluators were present.
+
 ## 0.3.1
 
 ### Patch Changes
