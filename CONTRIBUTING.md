@@ -73,6 +73,53 @@ The HTTP gate fails if it discovers no suites, executes no `node:test` cases, or
 
 For the pinned HappyView release, ordinary Lua `error()` exceptions return HTTP 500 JSON with `error: "script_error"` and `errorType: "runtime"`; the error name appears in `message`. Negative HTTP tests assert this observed behavior. It is not a statement of the ideal public HTTP status contract, and does not guarantee 4xx mapping for `RecordNotFound` or `InvalidRequest`.
 
+## Smoke and e2e checks against a live API
+
+Two read-only runners check a deployed API. They send anonymous `GET` requests only and never write.
+
+```sh
+API_BASE_URL=https://test.api.hypercerts.dev pnpm smoke   # one call per installed query, about 10 seconds
+API_BASE_URL=https://test.api.hypercerts.dev pnpm e2e     # pagination walks, batches, count invariants, about 1-2 minutes
+```
+
+`--base-url <url>` works instead of `API_BASE_URL`. Run them against Test; Staging and Production are checked by CI.
+
+- **Smoke** (`pnpm smoke`) calls every installed query once and checks that the answer has the right shape. It runs after each deploy and every 30 minutes on Production.
+- **E2E** (`pnpm e2e`) does slower checks: it pages through lists, sends big batches and compares counts between endpoints. It runs nightly at 03:17 UTC on Test, Staging and Production.
+- To force a deploy, run the Deploy workflow by hand from the environment's branch. Pushes that only change docs, tests or tooling skip the deploy.
+- A new query needs a case in `happyview-modules/tooling/smoke-cases.js`, or `pnpm test:unit` fails.
+- The API URLs for smoke and e2e are written in `smoke.yml` and `e2e-nightly.yml`; change them there if a URL changes.
+- When a deploy, smoke or e2e run fails, a short Telegram message names the failing checks and links to the run. It needs the repository secrets `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`; without them the alert is skipped.
+
+How the post-deploy checks fit together (`deploy.yml`, `smoke.yml`, `e2e-nightly.yml`):
+
+```mermaid
+flowchart LR
+  push["Push"] --> ignore{"Docs/tests only?"}
+  ignore -- yes --> skip["Skip"]
+  ignore -- no --> guard["Branch guard"]
+  manual["Manual deploy"] --> guard
+  guard --> deploy["Deploy"]
+  deploy --> smoke["Smoke test"]
+  cron["Cron, every 30 min"] --> smoke
+  nightly["Nightly"] --> e2e["E2E checks"]
+  deploy -- failure --> tg["Telegram alert"]
+  smoke -- failure --> tg
+  e2e -- failure --> tg
+```
+
+- **Push:** to `main`, `staging` or `production`. If every changed file is in the workflow's `paths-ignore` (docs, tests, tooling), there is no deploy and no smoke test.
+- **Branch guard:** the `resolve` job maps `main` to Test, `staging` to Staging and `production` to Production. A manual dispatch must pick the environment that matches its branch, and an optional rollback commit must be a full SHA.
+- **Deploy:** one `deploy` job per environment, never cancelled midway; it runs `install:api --override`, then the smoke test in the same job so the deploy lock covers it.
+- **Smoke test (`pnpm smoke`):** entered after a deploy, or from `smoke.yml` (Production every 30 minutes, or on demand for any environment).
+  - Phase 1 calls the list endpoints and collects seed records; an entity-follow discovery step follows; phase 2 runs the lookups that need those seeds.
+  - Every response is checked against its Lexicon output schema and the invariants (page size, `totalCount`, count order, `uri` echo).
+  - Manifest coverage: every installed query must have a smoke case.
+- **E2E checks (`pnpm e2e`):** `e2e-nightly.yml` at 03:17 UTC, Test, then Staging, then Production. Pagination walks (at most 60 pages), 100-subject batches, and loosely compared cross-endpoint counts.
+- **Retries:** both runners' HTTP client retries a timeout or network error 3 times (1s, 2s, 4s); 4xx and 5xx responses fail at once.
+- **Telegram alert:** sent when the deploy, the smoke test or the e2e checks fail, if the `TELEGRAM_*` secrets are set.
+- Both runners write a results table to the GitHub step summary.
+
 ## Operations with external effects
 
 For pull requests that change the installable API bundle or operator-visible behavior, add a release note following the [Changesets guidance](.changeset/README.md). Documentation-only or endpoint-explorer-only changes do not need a Changeset.
