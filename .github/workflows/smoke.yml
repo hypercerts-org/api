@@ -2,6 +2,11 @@ name: Smoke
 
 # Catches drift between deploys: runs the same read-only smoke test as deploy.yml against the
 # live API. Scheduled runs target Production; use "Run workflow" for Test or Staging.
+# Telegram: one alert when the smoke test starts failing, one when it recovers, none in between.
+# The alert compares the smoke step's result with the previous run of this environment, found by its
+# run name, so the run name must stay unique per environment. Any other failure of this workflow
+# (install, URL lookup) alerts every time.
+run-name: Smoke ${{ inputs.environment || 'Production' }}
 on:
   schedule:
     - cron: "*/30 * * * *"
@@ -21,6 +26,10 @@ jobs:
     name: Smoke test (${{ inputs.environment || 'Production' }})
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # actions: read lets the alert step read this workflow's previous runs.
+    permissions:
+      contents: read
+      actions: read
     # Own group per environment, deliberately not the deploy group: a smoke run never queues
     # behind or cancels a deploy. A run that is still going when the next one starts is left alone.
     concurrency:
@@ -60,17 +69,37 @@ jobs:
           esac
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
+      # The step name is also read by the alert step below to find the previous result.
       - name: Smoke test the live API
+        id: smoke
         env:
           API_BASE_URL: ${{ steps.target.outputs.url }}
           FAILED_CHECKS_FILE: ${{ runner.temp }}/failed-checks.txt
         run: pnpm smoke
 
-      - name: Send Telegram alert on failure
-        if: failure()
+      # A failure before the smoke test finished (install, URL lookup) is a one-off event, not a
+      # repeating smoke result, so it alerts every time.
+      - name: Send Telegram alert on workflow failure
+        if: failure() && steps.smoke.outcome != 'failure'
         uses: ./.github/actions/telegram-alert
         with:
           bot-token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           chat-id: ${{ secrets.TELEGRAM_CHAT_ID }}
+          summary: smoke workflow failed before the smoke test finished (${{ inputs.environment || 'Production' }}, ${{ github.ref_name }})
+
+      # Alerts only when the smoke step's result differs from the last run of this environment
+      # whose smoke step finished. Runs that failed before it, or were cancelled, do not count.
+      - name: Send Telegram alert when the smoke status changes
+        if: (success() || failure()) && (steps.smoke.outcome == 'success' || steps.smoke.outcome == 'failure')
+        uses: ./.github/actions/telegram-alert
+        with:
+          bot-token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          chat-id: ${{ secrets.TELEGRAM_CHAT_ID }}
+          github-token: ${{ github.token }}
+          result: ${{ steps.smoke.outcome }}
+          previous-workflow: smoke.yml
+          previous-match: title
+          previous-step: Smoke test the live API
           failed-checks-file: ${{ runner.temp }}/failed-checks.txt
           summary: smoke test failed (${{ inputs.environment || 'Production' }}, ${{ github.ref_name }})
+          recovered-summary: smoke test recovered (${{ inputs.environment || 'Production' }}, ${{ github.ref_name }})

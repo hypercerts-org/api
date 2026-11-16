@@ -101,6 +101,10 @@ jobs:
     needs: resolve
     runs-on: ubuntu-latest
     environment: ${{ needs.resolve.outputs.environment }}
+    # actions: read lets the alert step read this workflow's previous runs.
+    permissions:
+      contents: read
+      actions: read
     # Deploys to one environment (install + smoke) run one at a time and are never cancelled midway.
     concurrency:
       group: deploy-${{ needs.resolve.outputs.environment }}
@@ -145,24 +149,29 @@ jobs:
 
       # Smoke test runs in this job so the deploy lock above covers it: another deploy to the same
       # environment cannot start until this check finishes. Anonymous GETs only, no secrets.
-      # A rollback to a commit that predates smoke.js skips it.
+      # A rollback to a commit that predates smoke.js skips it (the step shows as skipped, so it
+      # never counts as a smoke result). The step name is also read by the alert step below.
+      - name: Note that the deployed commit has no smoke test
+        if: hashFiles('happyview-modules/tooling/smoke.js') == ''
+        run: |
+          echo "::notice::Skipping smoke test: the deployed commit predates it."
+
       - name: Smoke test the deployed API
         id: smoke
+        if: hashFiles('happyview-modules/tooling/smoke.js') != ''
         timeout-minutes: 5
         env:
           API_BASE_URL: ${{ vars.HAPPYVIEW_BASE_URL }}
           FAILED_CHECKS_FILE: ${{ runner.temp }}/failed-checks.txt
-        run: |
-          if [ ! -f happyview-modules/tooling/smoke.js ]; then
-            echo "::notice::Skipping smoke test: the deployed commit predates it."
-            exit 0
-          fi
-          pnpm smoke
+        run: pnpm smoke
 
       # A rollback checks out an older commit that may lack the alert action, so fetch it from the
-      # workflow's own commit.
+      # workflow's own commit. This now runs after a good deploy too, so a failed fetch must not turn
+      # that deploy red (continue-on-error); the alert steps below run only if it succeeded.
       - name: Check out alert action
-        if: failure()
+        id: alert-action
+        if: success() || failure()
+        continue-on-error: true
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
@@ -170,11 +179,30 @@ jobs:
           sparse-checkout: .github/actions
           persist-credentials: false
 
-      - name: Send Telegram alert on failure
-        if: failure()
+      # A failed deploy (anything other than the smoke test) alerts every time: each deploy is a
+      # one-off event, so there is no repeating alert to suppress.
+      - name: Send Telegram alert on deploy failure
+        if: failure() && steps.smoke.outcome != 'failure' && steps.alert-action.outcome == 'success'
         uses: ./.ci-alert/.github/actions/telegram-alert
         with:
           bot-token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           chat-id: ${{ secrets.TELEGRAM_CHAT_ID }}
+          summary: deploy failed (${{ needs.resolve.outputs.environment }}, ${{ needs.resolve.outputs.branch }})
+
+      # The post-deploy smoke test alerts only when its result differs from the last deploy to this
+      # environment (same branch) whose smoke test finished: one alert when it starts failing, one
+      # when it recovers. Deploys that failed before the smoke test do not count.
+      - name: Send Telegram alert when the smoke status changes
+        if: (success() || failure()) && steps.alert-action.outcome == 'success' && (steps.smoke.outcome == 'success' || steps.smoke.outcome == 'failure')
+        uses: ./.ci-alert/.github/actions/telegram-alert
+        with:
+          bot-token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          chat-id: ${{ secrets.TELEGRAM_CHAT_ID }}
+          github-token: ${{ github.token }}
+          result: ${{ steps.smoke.outcome }}
+          previous-workflow: deploy.yml
+          previous-match: branch
+          previous-step: Smoke test the deployed API
           failed-checks-file: ${{ runner.temp }}/failed-checks.txt
-          summary: ${{ steps.smoke.outcome == 'failure' && 'post-deploy smoke test failed' || 'deploy failed' }} (${{ needs.resolve.outputs.environment }}, ${{ needs.resolve.outputs.branch }})
+          summary: post-deploy smoke test failed (${{ needs.resolve.outputs.environment }}, ${{ needs.resolve.outputs.branch }})
+          recovered-summary: post-deploy smoke test recovered (${{ needs.resolve.outputs.environment }}, ${{ needs.resolve.outputs.branch }})

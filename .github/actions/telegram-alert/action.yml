@@ -1,7 +1,10 @@
-name: Telegram failure alert
+name: Telegram status alert
 description: >
-  Sends a Telegram message for a failed run. Skips with a notice when the token or chat ID is
-  empty, and only warns if sending fails, so it never changes the job result.
+  Sends a Telegram message for a failed run, and with previous-workflow set only when the result
+  changed since the previous run: one message when it starts failing, one when it recovers, none
+  while the status stays the same. Skips with a notice when the token or chat ID is empty, and only
+  warns if deciding or sending fails, so it never changes the job result. Needs Node.js on the
+  runner (preinstalled on ubuntu-latest).
 inputs:
   bot-token:
     description: Telegram bot token (pass secrets.TELEGRAM_BOT_TOKEN).
@@ -14,21 +17,80 @@ inputs:
   summary:
     description: What failed and where, e.g. "smoke test failed (Production, main)".
     required: true
+  recovered-summary:
+    description: >
+      What recovered and where, e.g. "smoke test recovered (Production, main)". Used when the
+      result changes from failure to success; a generic text is used when empty.
+    required: false
+    default: ""
   failed-checks-file:
     description: >
       Optional path to a file with one line naming the failing checks (written by pnpm smoke / e2e
       via FAILED_CHECKS_FILE). Ignored when missing.
     required: false
     default: ""
+  result:
+    description: >
+      Result being reported: "success" or "failure" (pass job.status or steps.<id>.outcome).
+      Any other value, such as "cancelled" or "skipped", sends nothing. The default suits callers
+      that run this action only after a failure.
+    required: false
+    default: failure
+  previous-workflow:
+    description: >
+      File name of the workflow whose previous completed run to compare with, e.g. smoke.yml. Only
+      the previous run of the same target counts (see previous-match). When empty, nothing is
+      compared: a failure always alerts and a success never does. When the previous result cannot
+      be read or does not exist, the same applies.
+    required: false
+    default: ""
+  previous-match:
+    description: >
+      How to recognise a run of the same target: "title" (same run name, for workflows whose
+      run-name carries the environment) or "branch" (same branch, for workflows where the branch
+      implies the environment).
+    required: false
+    default: title
+  previous-step:
+    description: >
+      Optional name of a step. When set, a previous run's result is that step's conclusion instead
+      of the run's, and previous runs where the step did not finish are skipped.
+    required: false
+    default: ""
+  github-token:
+    description: >
+      Token for reading previous runs (pass github.token); the job needs "actions: read".
+    required: false
+    default: ""
 runs:
   using: composite
   steps:
+    - id: decide
+      shell: bash
+      env:
+        RESULT: ${{ inputs.result }}
+        PREVIOUS_WORKFLOW: ${{ inputs.previous-workflow }}
+        PREVIOUS_MATCH: ${{ inputs.previous-match }}
+        PREVIOUS_STEP: ${{ inputs.previous-step }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        # Writes send=failed|recovered|none to $GITHUB_OUTPUT. If the script breaks, or exits without
+        # writing a decision (for example it was not run as the entry point), fall back to the old
+        # behaviour (alert on failure) rather than lose a failure alert.
+        if ! node "$GITHUB_ACTION_PATH/status-change.mjs" || ! grep -q '^send=' "$GITHUB_OUTPUT"; then
+          echo "::warning::Could not decide whether the status changed; alerting on failures only."
+          if [ "$RESULT" = failure ]; then echo "send=failed" >> "$GITHUB_OUTPUT"; fi
+        fi
+
     # The token goes to curl through stdin (-K -), so it never appears in argv or the log.
-    - shell: bash
+    - if: steps.decide.outputs.send == 'failed' || steps.decide.outputs.send == 'recovered'
+      shell: bash
       env:
         TELEGRAM_BOT_TOKEN: ${{ inputs.bot-token }}
         TELEGRAM_CHAT_ID: ${{ inputs.chat-id }}
+        SEND: ${{ steps.decide.outputs.send }}
         SUMMARY: ${{ inputs.summary }}
+        RECOVERED_SUMMARY: ${{ inputs.recovered-summary }}
         FAILED_CHECKS_FILE: ${{ inputs.failed-checks-file }}
         RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       run: |
@@ -36,16 +98,20 @@ runs:
           echo "::notice::Telegram alert skipped: TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID is not set."
           exit 0
         fi
-        # Short on purpose: what failed, which checks (already capped), and the run link.
-        text="❌ $SUMMARY"
-        if [ -n "$FAILED_CHECKS_FILE" ] && [ -s "$FAILED_CHECKS_FILE" ]; then
-          text="$text
+        # Short on purpose: what changed, which checks failed (already capped), and the run link.
+        if [ "$SEND" = recovered ]; then
+          text="✅ ${RECOVERED_SUMMARY:-recovered: $SUMMARY}"
+        else
+          text="❌ $SUMMARY"
+          if [ -n "$FAILED_CHECKS_FILE" ] && [ -s "$FAILED_CHECKS_FILE" ]; then
+            text="$text
         Failing: $(head -c 800 "$FAILED_CHECKS_FILE" | head -n 1)"
+          fi
         fi
         text="$text
         $RUN_URL"
         printf 'url = "https://api.telegram.org/bot%s/sendMessage"\n' "$TELEGRAM_BOT_TOKEN" |
-          curl --silent --show-error --fail --max-time 15 --output /dev/null --config - \
+          curl --silent --show-error --fail --retry 2 --max-time 15 --output /dev/null --config - \
             --data-urlencode "chat_id=$TELEGRAM_CHAT_ID" \
             --data-urlencode "text=$text" \
             || echo "::warning::Telegram alert could not be sent."
