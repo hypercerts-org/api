@@ -89,7 +89,7 @@ API_BASE_URL=https://test.api.hypercerts.dev pnpm e2e     # pagination walks, ba
 - To force a deploy, run the Deploy workflow by hand from the environment's branch. Pushes that only change docs, tests or tooling skip the deploy.
 - A new query needs a case in `happyview-modules/tooling/smoke-cases.js`, or `pnpm test:unit` fails.
 - The API URLs for smoke and e2e are written in `smoke.yml` and `e2e-nightly.yml`; change them there if a URL changes.
-- When a deploy, smoke or e2e run fails, a short Telegram message names the failing checks and links to the run. It needs the repository secrets `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`; without them the alert is skipped.
+- A failed deploy or e2e run sends a short Telegram message with a link to the run. The smoke test (after each deploy, and every 30 minutes on Production) sends a message only when its status changes: one when it starts failing, naming the failing checks, and one when it recovers. While it keeps failing or keeps passing, it stays silent. The alerts need the repository secrets `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`; without them they are skipped.
 
 How the post-deploy checks fit together (`deploy.yml`, `smoke.yml`, `e2e-nightly.yml`):
 
@@ -104,7 +104,7 @@ flowchart LR
   cron["Cron, every 30 min"] --> smoke
   nightly["Nightly"] --> e2e["E2E checks"]
   deploy -- failure --> tg["Telegram alert"]
-  smoke -- failure --> tg
+  smoke -- "status change" --> tg
   e2e -- failure --> tg
 ```
 
@@ -117,7 +117,13 @@ flowchart LR
   - Manifest coverage: every installed query must have a smoke case.
 - **E2E checks (`pnpm e2e`):** `e2e-nightly.yml` at 03:17 UTC, Test, then Staging, then Production. Pagination walks (at most 60 pages), 100-subject batches, and loosely compared cross-endpoint counts.
 - **Retries:** both runners' HTTP client retries a timeout or network error 3 times (1s, 2s, 4s); 4xx and 5xx responses fail at once.
-- **Telegram alert:** sent when the deploy, the smoke test or the e2e checks fail, if the `TELEGRAM_*` secrets are set.
+- **Telegram alert:** sent if the `TELEGRAM_*` secrets are set.
+  - A failed deploy (before the smoke test) and a failed e2e run alert every time.
+  - The smoke test alerts only when its result differs from the previous completed run: one failure message when it starts failing, one "recovered" message when it passes again, nothing in between. Cancelled and skipped runs are ignored.
+  - `smoke.yml` compares with the previous run of the same environment (matched by its run name, `Smoke <environment>`). The post-deploy smoke test compares with the previous deploy to the same branch whose smoke test finished. The two do not see each other's results.
+  - With no previous result to compare (first run, no comparable recent run, GitHub API read fails), a failure alerts and a pass stays silent.
+  - The previous runs are read with the job's `GITHUB_TOKEN` (`actions: read`); nothing else is stored. The logic is in `.github/actions/telegram-alert/status-change.mjs`.
+  - Sending an alert never changes the job result.
 - Both runners write a results table to the GitHub step summary.
 
 ## Operations with external effects
