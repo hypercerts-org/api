@@ -166,9 +166,12 @@ jobs:
         run: pnpm smoke
 
       # A rollback checks out an older commit that may lack the alert action, so fetch it from the
-      # workflow's own commit.
+      # workflow's own commit. This now runs after a good deploy too, so a failed fetch must not turn
+      # that deploy red (continue-on-error); the alert steps below run only if it succeeded.
       - name: Check out alert action
+        id: alert-action
         if: success() || failure()
+        continue-on-error: true
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
@@ -179,7 +182,7 @@ jobs:
       # A failed deploy (anything other than the smoke test) alerts every time: each deploy is a
       # one-off event, so there is no repeating alert to suppress.
       - name: Send Telegram alert on deploy failure
-        if: failure() && steps.smoke.outcome != 'failure'
+        if: failure() && steps.smoke.outcome != 'failure' && steps.alert-action.outcome == 'success'
         uses: ./.ci-alert/.github/actions/telegram-alert
         with:
           bot-token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -190,7 +193,7 @@ jobs:
       # environment (same branch) whose smoke test finished: one alert when it starts failing, one
       # when it recovers. Deploys that failed before the smoke test do not count.
       - name: Send Telegram alert when the smoke status changes
-        if: (success() || failure()) && (steps.smoke.outcome == 'success' || steps.smoke.outcome == 'failure')
+        if: (success() || failure()) && steps.alert-action.outcome == 'success' && (steps.smoke.outcome == 'success' || steps.smoke.outcome == 'failure')
         uses: ./.ci-alert/.github/actions/telegram-alert
         with:
           bot-token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
