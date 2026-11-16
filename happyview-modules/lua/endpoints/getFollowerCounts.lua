@@ -77,8 +77,29 @@ local function valid_subject_record_uri(value)
   return valid and valid_did_percent_escapes(authority) and valid_nsid(collection)
 end
 
-local FOLLOW_BATCH_MAX_TARGETS = 100
-local FOLLOW_BATCH_MAX_REQUEST_TARGET_BYTES = 7000
+-- Some clients wrote account follows whose `via` points at the followed
+-- account's own org.hypercerts.collection, using the account follow as a
+-- project follow. Those records stay indexed but are not account follows, so
+-- every account-follow query applies this predicate in its WHERE clause, before
+-- any per-relationship deduplication, so a user's genuine follow of the same
+-- account is still found.
+--
+-- The rule is deliberately narrow: only a collection owned by the subject
+-- matches. A starter pack, list, or collection owned by another DID is a real
+-- mediating record and is kept. COALESCE keeps records with no usable `via`.
+-- The expression only reads the row's own `record`, so it adds a per-row filter
+-- on rows already selected by collection, subject, or publisher.
+local function account_follow_filter_sql()
+  return "NOT COALESCE(starts_with(record::jsonb->'via'->>'uri', 'at://' || (record::jsonb->>'subject') || '/org.hypercerts.collection/'), FALSE)"
+end
+
+-- 16 KiB fits 100 typical hypercert AT-URIs (~10.5 KB encoded). The cap covers
+-- only the request-target; Node clients and proxies count the whole header block
+-- against --max-http-header-size (default 16 KiB), so callers sending near-limit
+-- batches may need to raise it. The pinned
+-- HappyView release turns every Lua error() into HTTP 500 script_error, so an
+-- overflow cannot be a 400 yet; the InvalidRequest: prefix names the cause.
+local BATCH_MAX_REQUEST_TARGET_BYTES = 16384
 
 local function encoded_query_value_length(value)
   local length = 0
@@ -93,6 +114,24 @@ local function encoded_query_value_length(value)
   end
   return length
 end
+
+-- Rejects batches whose percent-encoded GET request-target would exceed the
+-- shared byte limit. actor is nil for batch queries that take only the target
+-- list; the first target's "&" then stands in for the "?".
+local function assert_batch_request_target(endpoint, actor, key, targets)
+  local request_target_length = #("/xrpc/" .. endpoint)
+  if actor then
+    request_target_length = request_target_length + #("?actor=") + encoded_query_value_length(actor)
+  end
+  for _, target in ipairs(targets) do
+    request_target_length = request_target_length + #("&" .. key .. "=") + encoded_query_value_length(target)
+  end
+  if request_target_length > BATCH_MAX_REQUEST_TARGET_BYTES then
+    invalid(key .. " makes the encoded GET request-target exceed " .. BATCH_MAX_REQUEST_TARGET_BYTES .. " bytes")
+  end
+end
+
+local FOLLOW_BATCH_MAX_TARGETS = 100
 
 local function follow_batch_targets(actor, key, value, validate, description, endpoint)
   if value == nil then invalid(key .. " is required") end
@@ -124,27 +163,18 @@ local function follow_batch_targets(actor, key, value, validate, description, en
     invalid(key .. " must contain 1 through " .. FOLLOW_BATCH_MAX_TARGETS .. " values")
   end
 
-  -- actor is nil for batch queries that take only the target list; the first
-  -- target's "&" then stands in for the "?".
-  local request_target_length = #("/xrpc/" .. endpoint)
-  if actor then
-    request_target_length = request_target_length + #("?actor=") + encoded_query_value_length(actor)
-  end
   local unique, seen = {}, {}
   for _, target in ipairs(targets) do
     if type(target) ~= "string" or not validate(target) then
       invalid("each " .. key .. " value must be " .. description)
     end
-    request_target_length = request_target_length + #("&" .. key .. "=") + encoded_query_value_length(target)
     if not seen[target] then
       seen[target] = true
       unique[#unique + 1] = target
     end
   end
 
-  if request_target_length > FOLLOW_BATCH_MAX_REQUEST_TARGET_BYTES then
-    invalid(key .. " makes the encoded GET request-target exceed " .. FOLLOW_BATCH_MAX_REQUEST_TARGET_BYTES .. " bytes")
-  end
+  assert_batch_request_target(endpoint, actor, key, targets)
   return targets, unique
 end
 
@@ -182,7 +212,7 @@ local function follower_count_query(dids, entity_uris)
     local subject = "record::jsonb->>'subject'"
     branches[#branches + 1] = "SELECT " .. subject .. " AS subject, COUNT(DISTINCT did) AS follower_count " ..
       "FROM happyview_records WHERE collection = " .. collection .. " AND " .. subject ..
-      " IN (" .. follower_count_placeholders(values, dids) .. ") GROUP BY " .. subject
+      " IN (" .. follower_count_placeholders(values, dids) .. ") AND " .. account_follow_filter_sql() .. " GROUP BY " .. subject
   end
   if #entity_uris > 0 then
     values[#values + 1] = ENTITY_FOLLOW

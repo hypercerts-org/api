@@ -49,6 +49,7 @@
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordView.lua",
+        "../../lua/shared/accountFollowFilter.lua",
         "../../lua/shared/actorFollow.lua",
         "../../lua/shared/actorFollowLookup.lua"
       ],
@@ -67,7 +68,9 @@
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordView.lua",
+        "../../lua/shared/accountFollowFilter.lua",
         "../../lua/shared/actorFollow.lua",
+        "../../lua/shared/batchRequestTarget.lua",
         "../../lua/shared/followBatch.lua"
       ],
       "config": {
@@ -90,6 +93,7 @@
         "../../lua/shared/listQuery.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",
+        "../../lua/shared/accountFollowFilter.lua",
         "../../lua/shared/actorFollow.lua",
         "../../lua/shared/actorFollowList.lua"
       ],
@@ -113,6 +117,7 @@
         "../../lua/shared/listQuery.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",
+        "../../lua/shared/accountFollowFilter.lua",
         "../../lua/shared/actorFollow.lua",
         "../../lua/shared/actorFollowList.lua"
       ],

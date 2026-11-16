@@ -91,6 +91,20 @@ end
   });
 });
 
+test("getFollowerCounts excludes legacy project follows from account counts only", () => {
+  runLua({
+    params: { subjects: [account, entity] },
+    assertions: `
+local sql = calls[1].sql
+local branches = {}
+for branch in (sql .. ' UNION ALL '):gmatch('(.-) UNION ALL ') do branches[#branches + 1] = branch end
+assert(#branches == 2)
+assert(branches[1]:find("starts_with(record::jsonb->'via'->>'uri'", 1, true), 'account branch filters legacy project follows')
+assert(not branches[2]:find('starts_with', 1, true), 'entity branch is unchanged')
+`,
+  });
+});
+
 test("getFollowerCounts queries only the collection a single-kind batch needs", () => {
   runLua({
     params: { subjects: [account] },
@@ -124,7 +138,7 @@ test("getFollowerCounts accepts 100 subjects and rejects invalid batches before 
     { subjects: ["at://alice.example/org.hypercerts.collection/project"] },
     { subjects: ["at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/invalid/key"] },
     { subjects: [`${entity}?query`] },
-    { subjects: Array(15).fill(longEntity) },
+    { subjects: Array(30).fill(longEntity) },
   ]) {
     runLua({ params, expectError: "InvalidRequest:", expectedCalls: 0 });
   }

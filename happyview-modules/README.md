@@ -8,7 +8,9 @@ Use the [`docs/` endpoint explorer](../docs/) and generated [OpenAPI reference](
 
 ## Graph follow capability
 
-`modules/actor-follow/manifest.json` provides `app.certified.graph.getFollows` for checking up to 100 subject DIDs against one actor. `modules/entity-follow/manifest.json` provides `app.certified.graph.getEntityFollows` for checking up to 100 entity AT-URIs against one actor. Supply targets as repeated query parameters; both queries preserve every input position and duplicate, return the original target beside its raw nullable representative, and reject the whole request when any target is invalid. The encoded GET request-target is bounded to 7,000 bytes. A null follow means no indexed relationship; database failures remain errors.
+`modules/actor-follow/manifest.json` provides `app.certified.graph.getFollows` for checking up to 100 subject DIDs against one actor. `modules/entity-follow/manifest.json` provides `app.certified.graph.getEntityFollows` for checking up to 100 entity AT-URIs against one actor. Supply targets as repeated query parameters; both queries preserve every input position and duplicate, return the original target beside its raw nullable representative, and reject the whole request when any target is invalid. The encoded GET request-target is bounded to 16,384 bytes. A null follow means no indexed relationship; database failures remain errors.
+
+Account-follow queries (`getFollow`, `getFollows`, `listActorFollowers`, `listActorFollowing`, `getFollowerCounts`, and the account records in `listRecentFollows`) share one filter, `lua/shared/accountFollowFilter.lua`, that skips legacy project follows: an `app.certified.graph.follow` whose `via` is a strongRef to an `org.hypercerts.collection` owned by the same DID as `subject`. Those clients used an account follow to follow a project; project follows belong in `app.certified.graph.entityFollow`. The records stay in the database and the filter runs at query time. A `via` that points to a starter pack, list, or a collection owned by another DID is kept. It runs before per-relationship deduplication, so a user who also has a genuine follow of the same account is still counted once. `entityFollow` queries are unchanged.
 
 `modules/follower-counts/manifest.json` provides `app.certified.graph.getFollowerCounts`, which counts followers for 1–100 subjects in one statement. Subjects mix account DIDs, counted from `app.certified.graph.follow`, and entity AT-URIs, counted from `app.certified.graph.entityFollow`. Each count is the number of distinct indexed publishers, which equals the `totalCount` of `listActorFollowers` or `listEntityFollowers` for that subject. Results keep input order and duplicates, and unfollowed subjects count zero.
 
@@ -18,7 +20,7 @@ Use the [`docs/` endpoint explorer](../docs/) and generated [OpenAPI reference](
 
 Subject queries match by AT-URI without requiring a subject CID match, return one earliest reaction per author, and include a distinct-actor total with nullable profile and organization sidecars. Actor list queries return raw reaction records without subject hydration. `getActorReactions` looks up one actor's like and repost across 1–100 subject AT-URIs, preserving input order and duplicates; each raw reaction view retains its record URI, and a missing indexed reaction is null. Query failures return errors, not nulls. The four list queries use bounded `createdAt`/URI cursor pagination; the batch lookup is not paginated.
 
-`getReactionCounts` accepts 1–100 repeated, unbracketed `subjects` values and returns one ordered count pair per input occurrence, counting distinct indexed publisher DIDs by subject URI across both reaction collections. Its counts do not require the subject record to be indexed and may change as reaction indexing changes.
+`getReactionCounts` and `getActorReactions` accept 1–100 repeated, unbracketed `subjects` values within the same 16,384-byte encoded request-target bound. `getReactionCounts` returns one ordered count pair per input occurrence, counting distinct indexed publisher DIDs by subject URI across both reaction collections. Its counts do not require the subject record to be indexed and may change as reaction indexing changes.
 
 ## Comment counts
 
@@ -69,5 +71,7 @@ Each environment must allow deployments from its branch and define its own value
 - variable `HAPPYVIEW_BASE_URL`: that environment's HappyView origin
 - secret `HAPPYVIEW_ADMIN_TOKEN`: a scoped admin token for that HappyView, including `script-variables:read`
 - variable `HYPERCERTS_HANDLE_RESOLVER_URL`: needed only if that HappyView does not already have this setting; the token then also needs `script-variables:create`
+
+Pushes that only change docs, tests or tooling skip the deploy (`paths-ignore` in `deploy.yml`). To deploy by hand, run the workflow with `workflow_dispatch`: choose the environment, run it from that environment's branch, and optionally give a rollback commit SHA, which must be on that branch. A smoke step runs after every install, in the same deploy job, and checks the live API.
 
 Deploys to each environment run one at a time and are never cancelled midway; deploys to different environments do not block each other.

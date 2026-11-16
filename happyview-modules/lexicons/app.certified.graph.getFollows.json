@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Returns the representative raw follow record, or null, for each requested actor-to-actor relationship. Authentication is not required. Supply 1–100 repeated subjects values; the encoded GET request-target must not exceed 7,000 bytes.",
+      "description": "Returns the representative raw follow record, or null, for each requested actor-to-actor relationship. Authentication is not required. Supply 1–100 repeated subjects values.",
       "parameters": {
         "type": "params",
         "required": ["actor", "subjects"],
@@ -29,7 +29,7 @@
         "schema": { "type": "ref", "ref": "#output" }
       },
       "errors": [
-        { "name": "InvalidRequest", "description": "The actor DID, subjects array, request-target length, or another query parameter is invalid." },
+        { "name": "InvalidRequest", "description": "The actor DID, subjects array, or another query parameter is invalid." },
         { "name": "ActorFollowQueryFailed", "description": "The indexed follow relationships could not be queried." }
       ]
     },

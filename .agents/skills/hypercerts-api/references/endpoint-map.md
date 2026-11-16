@@ -81,12 +81,12 @@ An `unanswered` award is a successful indexed award result, not a not-found resp
 | List an actor's followers | `app.certified.graph.listActorFollowers` | `actor` is the followed actor DID. |
 | List actors an actor follows | `app.certified.graph.listActorFollowing` | `actor` is the follower DID. |
 | Check one actor-to-entity follow | `app.certified.graph.getEntityFollow` | Supply actor DID and entity AT-URI; check its nullable/error contract. |
-| Check one actor against many entity AT-URIs | `app.certified.graph.getEntityFollows` | Supply 1–100 repeated `entities` values; matching is by URI, each `{entity, follow}` preserves input order and duplicates, and the encoded GET request-target is capped at 7,000 bytes. |
+| Check one actor against many entity AT-URIs | `app.certified.graph.getEntityFollows` | Supply 1–100 repeated `entities` values; matching is by URI, each `{entity, follow}` preserves input order and duplicates, and the encoded GET request-target is capped at 16,384 bytes. |
 | List actors following an entity | `app.certified.graph.listEntityFollowers` | `entity` is an entity AT-URI; `totalCount` reports distinct relationships before cursor and limit, including on empty pages. |
 | List entities an actor follows | `app.certified.graph.listEntityFollowing` | `actor` is an actor DID; targets are hydrated from indexed records. |
 | Browse recent raw follow records | `app.certified.graph.listRecentFollows` | Beta feed across publishers; `before` and pagination have distinct feed semantics. Not a per-actor relationship check. |
 
-Do not confuse actor follows with entity follows; their identifiers and list outputs differ. Recent raw follows preserve duplicates and are not a snapshot; consult that endpoint's description before using cursors.
+Account-follow endpoints (`getFollow`, `getFollows`, `listActorFollowers`, `listActorFollowing`, `getFollowerCounts`, and account records in `listRecentFollows`) skip legacy project follows: a `graph.follow` whose `via` points to an `org.hypercerts.collection` owned by the followed DID. Other `via` values (starter pack, list, another DID's collection) are kept, and `entityFollow` is unaffected. Expect lower org follower counts than older responses showed; the lists and counts agree. Do not confuse actor follows with entity follows; their identifiers and list outputs differ. Recent raw follows preserve duplicates and are not a snapshot; consult that endpoint's description before using cursors.
 
 ## Feed reactions (6)
 
@@ -96,8 +96,8 @@ Do not confuse actor follows with entity follows; their identifiers and list out
 | List actors who reposted a record | `app.certified.feed.getReposts` | `subject` is a full record AT-URI; matching ignores CID. The response includes a total distinct-actor count, paginated actor sidecars, and each actor's raw representative repost. |
 | List an actor's likes | `app.certified.feed.getActorLikes` | `actor` is a repository-owner DID. Returns raw like records, one per subject URI; subjects need not be indexed. |
 | List an actor's reposts | `app.certified.feed.getActorReposts` | `actor` is a repository-owner DID. Returns raw repost records, one per subject URI; subjects need not be indexed. |
-| Check an actor's reactions for known subjects | `app.certified.feed.getActorReactions` | Supply `actor` as a DID and `subjects` as 1–100 repeated full record AT-URIs. Returns one result per input occurrence in order, including duplicates; matching ignores CID, and missing indexed likes/reposts are null. Raw views retain reaction URIs. |
-| Get reaction counts for subjects | `app.certified.feed.getReactionCounts` | Pass 1–100 full subject record AT-URIs with DID authorities, not handle authorities, as repeated, unbracketed `subjects` parameters. Results preserve input order and duplicates; counts are distinct indexed publisher DIDs matching subject URI regardless of CID or subject-record indexing. |
+| Check an actor's reactions for known subjects | `app.certified.feed.getActorReactions` | Supply `actor` as a DID and `subjects` as 1–100 repeated full record AT-URIs. Returns one result per input occurrence in order, including duplicates; matching ignores CID, and missing indexed likes/reposts are null. Raw views retain reaction URIs. The encoded GET request-target is capped at 16,384 bytes. |
+| Get reaction counts for subjects | `app.certified.feed.getReactionCounts` | Pass 1–100 full subject record AT-URIs with DID authorities, not handle authorities, as repeated, unbracketed `subjects` parameters. Results preserve input order and duplicates; counts are distinct indexed publisher DIDs matching subject URI regardless of CID or subject-record indexing. The encoded GET request-target is capped at 16,384 bytes. |
 
 Paginated reaction-list queries use the earliest record per author/subject URI, with reaction URI ascending on ties, and sort pages by the representative's `createdAt` and URI. `getActorReactions` uses the same representative selection but preserves request order and has no pagination. Check each operation for exact cursor and response details.
 
@@ -110,7 +110,7 @@ Paginated reaction-list queries use the earliest record per author/subject URI, 
 | Load one attachment | `org.hypercerts.context.getAttachment` | Exact record AT-URI in `uri`. |
 | List attachments | `org.hypercerts.context.listAttachments` | Filter by publisher, record URI, subject, or content type. |
 | Count comments for subjects | `org.hypercerts.context.getCommentCounts` | Pass 1–100 full subject record AT-URIs as repeated, unbracketed `subjects`. Counts attachments with `contentType` `comment` whose `subjects` include the URI, ignoring CID. Each comment record counts, so several by one author each count. Results preserve input order and duplicates. |
-| Load one evaluation | `org.hypercerts.context.getEvaluation` | Exact record AT-URI in `uri`; includes publisher/evaluator projections and preserves raw records when malformed evaluator entries are omitted. |
+| Load one evaluation | `org.hypercerts.context.getEvaluation` | Exact record AT-URI in `uri`; includes publisher and evaluator views and preserves raw records when malformed evaluator entries are omitted. |
 | List evaluations | `org.hypercerts.context.listEvaluations` | Filter by publisher, evaluator, or subject; malformed evaluator entries do not hide otherwise valid records. |
 | Load one measurement | `org.hypercerts.context.getMeasurement` | Exact record AT-URI in `uri`. |
 | List measurements | `org.hypercerts.context.listMeasurements` | Filter by publisher or subject. |

@@ -70,6 +70,22 @@ local function parse_list_limit(params)
   return limit
 end
 
+-- Some clients wrote account follows whose `via` points at the followed
+-- account's own org.hypercerts.collection, using the account follow as a
+-- project follow. Those records stay indexed but are not account follows, so
+-- every account-follow query applies this predicate in its WHERE clause, before
+-- any per-relationship deduplication, so a user's genuine follow of the same
+-- account is still found.
+--
+-- The rule is deliberately narrow: only a collection owned by the subject
+-- matches. A starter pack, list, or collection owned by another DID is a real
+-- mediating record and is kept. COALESCE keeps records with no usable `via`.
+-- The expression only reads the row's own `record`, so it adds a per-row filter
+-- on rows already selected by collection, subject, or publisher.
+local function account_follow_filter_sql()
+  return "NOT COALESCE(starts_with(record::jsonb->'via'->>'uri', 'at://' || (record::jsonb->>'subject') || '/org.hypercerts.collection/'), FALSE)"
+end
+
 local ACCOUNT_FOLLOW = "app.certified.graph.follow"
 local ENTITY_FOLLOW = "app.certified.graph.entityFollow"
 local NULL = json.decode("null")
@@ -163,7 +179,7 @@ local function recent_follows_response()
 
   local sql = "WITH candidates AS (SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record, sorted.sort_at " ..
     "FROM happyview_records CROSS JOIN LATERAL (SELECT " .. recent_created_at_sort_key() .. " AS sort_at) AS sorted " ..
-    "WHERE collection IN ($1, $2) AND cid <> ''), page AS (SELECT uri, did, cid, indexed_at, record, sort_at FROM candidates WHERE " ..
+    "WHERE collection IN ($1, $2) AND cid <> '' AND (collection <> $1 OR " .. account_follow_filter_sql() .. ")), page AS (SELECT uri, did, cid, indexed_at, record, sort_at FROM candidates WHERE " ..
     table.concat(predicates, " AND ") .. " ORDER BY sort_at DESC, uri DESC LIMIT $" .. #values .. ") " ..
     "SELECT uri, did, cid, indexed_at, record, to_char(sort_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp " ..
     "FROM page ORDER BY sort_at DESC, uri DESC"

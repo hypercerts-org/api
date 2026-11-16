@@ -95,6 +95,7 @@ local handler = table.concat({
   source("lua/shared/recordIdentifier.lua"),
   source("lua/shared/datetimeValidation.lua"),
   source("lua/shared/listValidation.lua"),
+  source("lua/shared/accountFollowFilter.lua"),
   source("lua/shared/recentFollows.lua"),
   source("lua/src/listRecentFollows.lua"),
 }, "\n\n")
@@ -127,6 +128,8 @@ end
 local ok, result = invoke({})
 assert(ok, tostring(result))
 assert(calls[1].sql:find("cid <> ''", 1, true), "SQL excludes save_local rows with empty CIDs")
+assert(calls[1].sql:find("(collection <> $1 OR NOT COALESCE(starts_with(record::jsonb->'via'->>'uri'", 1, true),
+  "legacy project follows are excluded from the account-follow collection only")
 assert(type(result.follows) == "table" and #result.follows == 2, "both network follow records survive while the local-only fixture is excluded")
 assert(result.follows[1].indexedAt == json_null, "NULL indexed_at is emitted as explicit JSON null")
 assert(result.follows[1].uri == rows[1].uri and result.follows[2].uri == rows[2].uri,

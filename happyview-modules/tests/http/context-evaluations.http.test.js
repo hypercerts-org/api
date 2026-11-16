@@ -56,14 +56,10 @@ test("getEvaluation preserves the CBOR-addressed record and hydrates publisher a
   assert.equal(evaluation.author.profile.record.displayName, "Context evaluation publisher");
   assert.equal(evaluation.author.organization, null);
   assert.equal(evaluation.evaluators.length, 3);
-  assert.equal(evaluation.evaluators[0].hydrationStatus, "hydrated");
   assert.equal(evaluation.evaluators[0].profile.record.displayName, "Named context evaluator");
-  assert.equal(evaluation.evaluators[0].organization, null);
+  assert.equal(Object.hasOwn(evaluation.evaluators[0], "organization"), false);
   assert.equal(evaluation.evaluators[1].did, evaluatorA);
-  assert.equal(evaluation.evaluators[1].hydrationStatus, "hydrated");
-  assert.equal(evaluation.evaluators[2].hydrationStatus, "hydrated");
-  assert.equal(evaluation.evaluators[2].profile, null);
-  assert.equal(evaluation.evaluators[2].organization, null);
+  assert.deepEqual(Object.keys(evaluation.evaluators[2]), ["did"]);
 });
 
 test("getEvaluation preserves malformed raw evaluator entries and densely hydrates valid DID objects", async () => {
@@ -78,11 +74,8 @@ test("getEvaluation preserves malformed raw evaluator entries and densely hydrat
     { did: evaluatorD },
   ]);
   assert.deepEqual(
-    evaluation.evaluators.map(({ did, hydrationStatus }) => ({ did, hydrationStatus })),
-    [
-      { did: evaluatorD, hydrationStatus: "hydrated" },
-      { did: evaluatorD, hydrationStatus: "hydrated" },
-    ],
+    evaluation.evaluators.map(({ did }) => ({ did })),
+    [{ did: evaluatorD }, { did: evaluatorD }],
   );
   assert.equal(
     evaluation.evaluators[0].profile.record.displayName,
@@ -187,14 +180,8 @@ test("listEvaluations retains malformed evaluator records and paginates without 
     { did: evaluatorD },
   ]);
   assert.deepEqual(
-    first.body.evaluations[0].evaluators.map(({ did, hydrationStatus }) => ({
-      did,
-      hydrationStatus,
-    })),
-    [
-      { did: evaluatorD, hydrationStatus: "hydrated" },
-      { did: evaluatorD, hydrationStatus: "hydrated" },
-    ],
+    first.body.evaluations[0].evaluators.map(({ did }) => ({ did })),
+    [{ did: evaluatorD }, { did: evaluatorD }],
   );
   assert.equal(typeof first.body.cursor, "string");
 
@@ -205,7 +192,6 @@ test("listEvaluations retains malformed evaluator records and paginates without 
     [evaluationUris.f],
   );
   assert.equal(second.body.evaluations[0].evaluators[0].did, "did:web:context-evaluator-c.invalid");
-  assert.equal(second.body.evaluations[0].evaluators[0].hydrationStatus, "hydrated");
   assert.equal(Object.hasOwn(second.body, "cursor"), false);
 });
 
