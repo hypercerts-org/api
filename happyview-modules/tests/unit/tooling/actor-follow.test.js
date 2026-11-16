@@ -633,7 +633,7 @@ assert(calls[1].sql:find('ORDER BY requested.target, sorted.sort_at ASC, uri ASC
 
 test("getFollows rejects invalid or oversized target arrays before querying and surfaces database failures", () => {
   const oversizedUrlTargets = Array.from(
-    { length: 4 },
+    { length: 9 },
     (_, index) => `did:plc:${"a".repeat(2039)}${index}`,
   );
   for (const params of [
