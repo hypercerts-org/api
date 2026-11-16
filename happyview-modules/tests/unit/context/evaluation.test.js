@@ -159,12 +159,12 @@ assert(view.record.subject.uri == '${subjectUri}' and view.record.extension.pres
 assert(#view.record.evaluators == 101 and view.record.evaluators[1].did == '${evaluatorDid}' and view.record.evaluators[2].did == '${evaluatorDid}')
 assert(view.record.evaluators[1].hydrationStatus == nil)
 assert(#view.evaluators == 101 and view.evaluators[1].did == '${evaluatorDid}' and view.evaluators[2].did == '${evaluatorDid}')
-assert(view.evaluators[1].hydrationStatus == 'hydrated')
+assert(view.evaluators[1].hydrationStatus == nil)
 assert(view.evaluators[1].profile.record.displayName == 'Named evaluator')
 assert(view.evaluators[1].organization.record.organizationType[1] == 'nonprofit')
-assert(view.evaluators[2].did == '${evaluatorDid}' and view.evaluators[2].hydrationStatus == 'hydrated')
-assert(view.evaluators[3].did == '${missingDid}' and view.evaluators[3].profile == NULL and view.evaluators[3].organization == NULL)
-assert(view.evaluators[101].did == '${omittedDid}' and view.evaluators[101].hydrationStatus == 'omitted')
+assert(view.evaluators[2].did == '${evaluatorDid}')
+assert(view.evaluators[3].did == '${missingDid}' and view.evaluators[3].profile == nil and view.evaluators[3].organization == nil)
+assert(view.evaluators[101].did == '${omittedDid}')
 assert(view.evaluators[101].profile == nil and view.evaluators[101].organization == nil)
 assert(view.author.did == '${authorDid}' and view.author.profile.record.displayName == 'Evaluation publisher')
 assert(view.author.organization == NULL)
@@ -202,12 +202,12 @@ assert(view.record.evaluators[2] == '${legacyDid}' and view.record.evaluators[3]
 assert(view.record.evaluators[4].did == '${missingDid}' and view.record.evaluators[5].did == '${evaluatorDid}')
 assert(view.record.evaluators[1].hydrationStatus == nil)
 assert(#view.evaluators == 3, 'invalid entries are skipped and the projected array is dense')
-assert(view.evaluators[1].did == '${evaluatorDid}' and view.evaluators[1].hydrationStatus == 'hydrated')
+assert(view.evaluators[1].did == '${evaluatorDid}')
 assert(view.evaluators[1].profile.record.displayName == 'Named evaluator')
 assert(view.evaluators[1].organization.record.organizationType[1] == 'nonprofit')
-assert(view.evaluators[2].did == '${missingDid}' and view.evaluators[2].hydrationStatus == 'hydrated')
-assert(view.evaluators[2].profile == NULL and view.evaluators[2].organization == NULL)
-assert(view.evaluators[3].did == '${evaluatorDid}' and view.evaluators[3].hydrationStatus == 'hydrated')
+assert(view.evaluators[2].did == '${missingDid}')
+assert(view.evaluators[2].profile == nil and view.evaluators[2].organization == nil)
+assert(view.evaluators[3].did == '${evaluatorDid}')
 local profile_values = table.concat(calls[2].values, '|')
 assert(profile_values:find('${authorDid}', 1, true) and profile_values:find('${evaluatorDid}', 1, true))
 assert(profile_values:find('${missingDid}', 1, true))
@@ -218,7 +218,7 @@ assert(#calls == 3)
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
 });
 
-test("getEvaluation keeps the 100-entry hydration boundary tied to raw source positions", () => {
+test("getEvaluation counts the 100-entry hydration limit on response entries, not source positions", () => {
   const legacyDid = "did:plc:ffffffffffffffffffffffff";
   const row = {
     ...evaluationRow,
@@ -236,9 +236,8 @@ test("getEvaluation keeps the 100-entry hydration boundary tied to raw source po
 local view = result.evaluation
 assert(#view.record.evaluators == 101 and view.record.evaluators[1] == '${legacyDid}')
 assert(#view.evaluators == 1 and view.evaluators[1].did == '${omittedDid}')
-assert(view.evaluators[1].hydrationStatus == 'omitted')
-assert(view.evaluators[1].profile == nil and view.evaluators[1].organization == nil)
-assert(not table.concat(calls[2].values, '|'):find('${omittedDid}', 1, true))
+assert(view.evaluators[1].hydrationStatus == nil)
+assert(table.concat(calls[2].values, '|'):find('${omittedDid}', 1, true), 'the first response entries are hydrated even after skipped source entries')
 assert(#calls == 3)
 `,
   });
@@ -347,7 +346,7 @@ assert(#result.evaluations == 1 and result.evaluations[1].uri == '${malformed.ur
 local first = result.evaluations[1]
 assert(first.record.evaluators[1] == '${legacyDid}' and first.record.evaluators[2].did == 'reviewer.example')
 assert(#first.evaluators == 1 and first.evaluators[1].did == '${evaluatorDid}')
-assert(first.evaluators[1].hydrationStatus == 'hydrated' and first.evaluators[1].profile.record.displayName == 'Named evaluator')
+assert(first.evaluators[1].profile.record.displayName == 'Named evaluator')
 local cursor = json.decode(result.cursor:gsub('..', function(pair) return string.char(tonumber(pair, 16)) end))
 assert(cursor.u == '${malformed.uri}')
 params.cursor = result.cursor
@@ -466,7 +465,8 @@ test("listEvaluations combines OR-within/AND-across filters and matches evaluato
     assertions: `
 assert(#result.evaluations == 1 and result.evaluations[1].uri == '${evaluationUri}')
 assert(result.evaluations[1].record.evaluators[101].did == '${omittedDid}')
-assert(result.evaluations[1].evaluators[101].did == '${omittedDid}' and result.evaluations[1].evaluators[101].hydrationStatus == 'omitted')
+assert(result.evaluations[1].evaluators[101].did == '${omittedDid}')
+assert(result.evaluations[1].evaluators[101].profile == nil and result.evaluations[1].evaluators[101].organization == nil)
 local sql = calls[1].sql
 assert(sql:find('evaluation.did IN ($2, $3)', 1, true), 'authors use OR and duplicate input DIDs are removed')
 assert(sql:find('jsonb_array_elements(', 1, true) and sql:find("evaluator.value->>'did' IN ($4, $5)", 1, true),

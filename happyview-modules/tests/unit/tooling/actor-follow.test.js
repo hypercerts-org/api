@@ -633,7 +633,7 @@ assert(calls[1].sql:find('ORDER BY requested.target, sorted.sort_at ASC, uri ASC
 
 test("getFollows rejects invalid or oversized target arrays before querying and surfaces database failures", () => {
   const oversizedUrlTargets = Array.from(
-    { length: 4 },
+    { length: 9 },
     (_, index) => `did:plc:${"a".repeat(2039)}${index}`,
   );
   for (const params of [
@@ -678,4 +678,22 @@ test("actor-follow queries surface the beta PostgreSQL-only and operational fail
     expectError: "ActorFollowQueryFailed:",
     expectedCalls: 1,
   });
+});
+
+test("every account-follow lookup and list applies the legacy project-follow exclusion", () => {
+  const predicate =
+    "starts_with(record::jsonb->'via'->>'uri', 'at://' || (record::jsonb->>'subject') || '/org.hypercerts.collection/')";
+  const cases = [
+    ["getFollow", { actor, subject }],
+    ["getFollows", { actor, subjects: subject }],
+    ["listActorFollowers", { actor }],
+    ["listActorFollowing", { actor }],
+  ];
+  for (const [endpoint, params] of cases) {
+    runLua({
+      endpoint,
+      params,
+      assertions: `assert(calls[1].sql:find(${JSON.stringify(predicate)}, 1, true), '${endpoint} must filter legacy project follows')`,
+    });
+  }
 });

@@ -1,5 +1,23 @@
 # @hypercerts-org/api
 
+## 0.4.0
+
+### Minor Changes
+
+- [#73](https://github.com/hypercerts-org/api/pull/73) [`3090a34`](https://github.com/hypercerts-org/api/commit/3090a34da204a95917daee1cdd7f5b0d5abbad3b) Thanks [@Kzoeps](https://github.com/Kzoeps)! - Evaluation evaluators now have one simple shape: a `did`, plus `profile` and `organization` when they were found. The `hydrationStatus` field is gone and missing values are left out instead of `null`. Only the first 100 evaluators in a response are looked up; later ones carry just the `did`. This also fixes `listEvaluations` and `getEvaluation` failing response validation when evaluators were present.
+
+## 0.3.1
+
+### Patch Changes
+
+- [#69](https://github.com/hypercerts-org/api/pull/69) [`b4eedff`](https://github.com/hypercerts-org/api/commit/b4eedff0b6ffb3ce74edf460a39393497c1bd221) Thanks [@Kzoeps](https://github.com/Kzoeps)! - Batch queries now accept 100 typical record links in one request.
+
+  The limit on the encoded request URL path and query for `getFollows`, `getEntityFollows`, `getFollowerCounts` and `getCommentCounts` rises from 7,000 to 16,384 bytes. `getReactionCounts` and `getActorReactions` now enforce the same limit. Requests over the limit are still rejected with an `InvalidRequest` message, returned as HTTP 500 by the current HappyView release.
+
+- [#70](https://github.com/hypercerts-org/api/pull/70) [`2e8f9fc`](https://github.com/hypercerts-org/api/commit/2e8f9fc8d44997a9aecdb2cd3c671cdc1203599d) Thanks [@Kzoeps](https://github.com/Kzoeps)! - Follower counts and follow lists no longer include old project follows saved as account follows.
+
+  Some apps followed a project by saving an account follow whose `via` points to the followed organization's own collection. Those records are now ignored by `getFollow`, `getFollows`, `listActorFollowers`, `listActorFollowing`, `getFollowerCounts` and `listRecentFollows`, so organization follower counts may drop. Follows with any other `via` (a starter pack, a list, or another account's collection) are unchanged, and nothing is deleted.
+
 ## 0.3.0
 
 ### Minor Changes

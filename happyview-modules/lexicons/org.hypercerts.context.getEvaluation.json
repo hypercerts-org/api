@@ -25,30 +25,19 @@
         { "name": "RecordNotFound", "description": "No indexed evaluation was found at this AT-URI." }
       ]
     },
-    "hydratedEvaluationEvaluatorView": {
+    "evaluatorView": {
       "type": "object",
-      "description": "A valid original evaluator entry with its profile and organization sidecars looked up.",
-      "required": ["did", "hydrationStatus", "profile", "organization"],
-      "nullable": ["profile", "organization"],
+      "description": "An evaluator DID with its profile and organization when they were looked up and found. Absent keys mean not looked up or not found.",
+      "required": ["did"],
       "properties": {
         "did": { "type": "string", "format": "did" },
-        "hydrationStatus": { "type": "string", "const": "hydrated" },
         "profile": { "type": "ref", "ref": "org.hypercerts.api.defs#profileView" },
         "organization": { "type": "ref", "ref": "org.hypercerts.api.defs#organizationView" }
       }
     },
-    "omittedEvaluationEvaluatorView": {
-      "type": "object",
-      "description": "A valid original evaluator entry beyond the hydration position limit.",
-      "required": ["did", "hydrationStatus"],
-      "properties": {
-        "did": { "type": "string", "format": "did" },
-        "hydrationStatus": { "type": "string", "const": "omitted" }
-      }
-    },
     "evaluationView": {
       "type": "object",
-      "description": "Evaluation with the original record, hydrated publisher, and evaluator projections. The record is not rewritten when evaluator data is malformed. A missing or non-array evaluator container yields an empty hydrated array; malformed entries are omitted. For hydrated actors, missing profile or organization sidecars are null; query or hydration failures fail the request. Evaluator arrays over 1000 entries still fail exact lookup and are skipped by lists.",
+      "description": "Evaluation with the original record, hydrated publisher, and evaluator projections. The record is not rewritten when evaluator data is malformed. A missing or non-array evaluator container yields an empty hydrated array; malformed entries are omitted. Missing profile or organization sidecars are omitted from evaluators; query or hydration failures fail the request. Evaluator arrays over 1000 entries still fail exact lookup and are skipped by lists.",
       "required": ["uri", "cid", "indexedAt", "did", "author", "record", "evaluators"],
       "properties": {
         "uri": { "type": "string", "format": "at-uri" },
@@ -60,11 +49,8 @@
         "evaluators": {
           "type": "array",
           "maxLength": 1000,
-          "description": "Dense projection of valid record.evaluators object entries with valid DIDs, preserving their source order and duplicates. Entries with malformed shapes or invalid DIDs are omitted without changing the original record; a missing or non-array source yields an empty array. Valid entries at source positions after 100 remain present with hydrationStatus \"omitted\" and no profile or organization. The raw evaluator array is limited to 1000 entries; over-limit records fail exact lookup and are skipped by lists.",
-          "items": {
-            "type": "union",
-            "refs": ["#hydratedEvaluationEvaluatorView", "#omittedEvaluationEvaluatorView"]
-          }
+          "description": "Dense projection of valid record.evaluators object entries with valid DIDs, preserving their source order and duplicates. Entries with malformed shapes or invalid DIDs are omitted without changing the original record; a missing or non-array source yields an empty array. The first 100 response entries get their profile and organization looked up; later entries carry only the did. The raw evaluator array is limited to 1000 entries; over-limit records fail exact lookup and are skipped by lists.",
+          "items": { "type": "ref", "ref": "#evaluatorView" }
         }
       }
     },
