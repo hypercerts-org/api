@@ -118,9 +118,9 @@ flowchart LR
 - **E2E checks (`pnpm e2e`):** `e2e-nightly.yml` at 03:17 UTC, Test, then Staging, then Production. Pagination walks (at most 60 pages), 100-subject batches, and loosely compared cross-endpoint counts.
 - **Retries:** both runners' HTTP client retries a timeout or network error 3 times (1s, 2s, 4s); 4xx and 5xx responses fail at once.
 - **Telegram alert:** sent if the `TELEGRAM_*` secrets are set.
-  - A failed deploy (before the smoke test) and a failed e2e run alert every time.
-  - The smoke test alerts only when its result differs from the previous completed run: one failure message when it starts failing, one "recovered" message when it passes again, nothing in between. Cancelled and skipped runs are ignored.
-  - `smoke.yml` compares with the previous run of the same environment (matched by its run name, `Smoke <environment>`). The post-deploy smoke test compares with the previous deploy to the same branch whose smoke test finished. The two do not see each other's results.
+  - A failed deploy (before the smoke test), a `smoke.yml` run that fails before its smoke test finishes, and a failed e2e run alert every time.
+  - The smoke test alerts only when its result differs from the previous run whose smoke test finished: one failure message when it starts failing, one "recovered" message when it passes again, nothing in between. Cancelled and skipped runs are ignored.
+  - `smoke.yml` compares with the previous run of the same environment (matched by its run name, `Smoke <environment>`), by the result of its smoke step. The post-deploy smoke test compares with the previous deploy to the same branch whose smoke test finished. The two do not see each other's results.
   - With no previous result to compare (first run, no comparable recent run, GitHub API read fails), a failure alerts and a pass stays silent.
   - The previous runs are read with the job's `GITHUB_TOKEN` (`actions: read`); nothing else is stored. The logic is in `.github/actions/telegram-alert/status-change.mjs`.
   - Sending an alert never changes the job result.
