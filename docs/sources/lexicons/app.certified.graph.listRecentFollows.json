@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Beta query for raw account- and entity-follow records from any publisher. No authentication is required; duplicates are preserved, and before is an exclusive bound on publisher-declared createdAt. Pages are not a snapshot, so late indexing or concurrent changes may cause records to be missed. Legacy project follows are not listed: an account follow whose via points to an org.hypercerts.collection owned by the followed DID is skipped. Follows with any other via are listed.",
+      "description": "Beta query for raw account- and entity-follow records from any publisher. No authentication is required; duplicates are preserved, and before is an exclusive bound on publisher-declared createdAt. Pages are not a snapshot, so late indexing or concurrent changes may cause records to be missed.",
       "parameters": {
         "type": "params",
         "properties": {

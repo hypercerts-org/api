@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Returns the representative follow record for an actor-to-actor relationship, or null if none is indexed. No authentication is required. Legacy project follows are excluded: an account follow whose via points to an org.hypercerts.collection owned by the followed DID is not an account follow. Follows with any other via are kept.",
+      "description": "Returns the representative follow record for an actor-to-actor relationship, or null if none is indexed. No authentication is required.",
       "parameters": {
         "type": "params",
         "required": ["actor", "subject"],

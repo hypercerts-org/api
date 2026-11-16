@@ -19,7 +19,7 @@ export const $output = /*#__PURE__*/ l.payload("application/json", /*#__PURE__*/
 export type $Output<B = l.BinaryData> = l.InferPayload<typeof $output, B>;
 export type $OutputBody<B = l.BinaryData> = l.InferPayloadBody<typeof $output, B>;
 
-/** Returns current indexed follower counts for a mixed list of accounts and entities. No authentication is required. A DID subject counts distinct publishers of app.certified.graph.follow records naming that DID; an AT-URI subject counts distinct publishers of app.certified.graph.entityFollow records naming that URI. Counts match listActorFollowers and listEntityFollowers totalCount, and do not require the subject to be indexed. Legacy project follows are excluded: an account follow whose via points to an org.hypercerts.collection owned by the followed DID is not an account follow. Follows with any other via are kept. */
+/** Returns current indexed follower counts for a mixed list of accounts and entities. No authentication is required. A DID subject counts distinct publishers of app.certified.graph.follow records naming that DID; an AT-URI subject counts distinct publishers of app.certified.graph.entityFollow records naming that URI. Counts match listActorFollowers and listEntityFollowers totalCount, and do not require the subject to be indexed. */
 const main = /*#__PURE__*/ l.query($nsid, $params, $output, ["InvalidRequest","FollowerCountQueryFailed"]);
 
 export { main };
