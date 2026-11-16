@@ -26,7 +26,7 @@ Inspect the exact operation in the bundled OpenAPI contract before constructing 
 | Load one actor's organization sidecar | `app.certified.actor.getOrganization` | `actor` is a DID. If no indexed sidecar exists, this single lookup declares `RecordNotFound`; unlike `getOrganizations`, it does not return a nullable organization per actor. |
 | Load organization context for known actors | `app.certified.actor.getOrganizations` | `actors` is a repeated DID array; results preserve request order and an absent organization is null per result. |
 | Browse/filter organizations | `app.certified.actor.listOrganizations` | Use for organization-type/visibility filters and pagination. |
-| Find organizations by text | `app.certified.actor.searchOrganizations` | Searches associated profile text, with optional organization filters. |
+| Find organizations by text | `app.certified.actor.searchOrganizations` | Searches organization legal name and associated profile text, with optional organization filters. |
 
 Use `getProfiles`/`getOrganizations` for known DID sets; use `list` or `search` for discovery. A missing optional profile inside an organization view is not the same as a missing organization record. Organization actor views from these four endpoints include `location` (the resolved, raw indexed location record, or null; `organization.record.location` stays the strong reference); use it instead of a second `getLocation` call. Organization views nested in other endpoints' author or actor views do not include it.
 
