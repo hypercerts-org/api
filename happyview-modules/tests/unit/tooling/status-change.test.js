@@ -1,5 +1,10 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import {
   createApi,
   decideAlert,
@@ -9,6 +14,9 @@ import {
 } from "../../../../.github/actions/telegram-alert/status-change.mjs";
 
 const REPO = "hypercerts-org/api";
+const SCRIPT = fileURLToPath(
+  new URL("../../../../.github/actions/telegram-alert/status-change.mjs", import.meta.url),
+);
 
 const completed = (id, conclusion, extra = {}) => ({
   id,
@@ -90,13 +98,9 @@ test("previous result skips cancelled and skipped runs", async () => {
   );
 });
 
-test("previous result ignores the current run and other environments", async () => {
+test("previous result ignores other environments", async () => {
   const { api } = fakeApi({
-    runs: [
-      completed(100, "failure"),
-      completed(99, "failure", { display_title: "Smoke Staging" }),
-      completed(98, "success"),
-    ],
+    runs: [completed(99, "failure", { display_title: "Smoke Staging" }), completed(98, "success")],
   });
   assert.equal((await lookup(api))?.result, "pass");
 });
@@ -207,4 +211,23 @@ test("the GitHub token is sent as a bearer header and never put in the URL", asy
   assert.equal(seen[0].url, "https://api.example/repos/a/b/actions/runs/1");
   assert.equal(seen[0].headers.Authorization, "Bearer ghs_secret");
   assert.ok(!seen[0].url.includes("ghs_secret"));
+});
+
+// action.yml runs the script as a program and reads `send=` from GITHUB_OUTPUT. The entry-point
+// guard and the output write are not reachable through `run()`.
+test("run as a program, it writes its decision to GITHUB_OUTPUT", () => {
+  const dir = mkdtempSync(join(tmpdir(), "status-change-"));
+  const output = join(dir, "github-output");
+  try {
+    // Explicit env: nothing from a real CI run leaks in, and with no PREVIOUS_WORKFLOW it makes no
+    // network call.
+    const { status, stderr } = spawnSync(process.execPath, [SCRIPT], {
+      env: { PATH: process.env.PATH, RESULT: "failure", GITHUB_OUTPUT: output },
+      encoding: "utf8",
+    });
+    assert.equal(status, 0, stderr);
+    assert.equal(readFileSync(output, "utf8"), "send=failed\n");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

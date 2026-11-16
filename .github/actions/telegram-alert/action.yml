@@ -74,9 +74,10 @@ runs:
         PREVIOUS_STEP: ${{ inputs.previous-step }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
       run: |
-        # Writes send=failed|recovered|none to $GITHUB_OUTPUT. If the script itself breaks, fall
-        # back to the old behaviour (alert on failure) rather than lose a failure alert.
-        if ! node "$GITHUB_ACTION_PATH/status-change.mjs"; then
+        # Writes send=failed|recovered|none to $GITHUB_OUTPUT. If the script breaks, or exits without
+        # writing a decision (for example it was not run as the entry point), fall back to the old
+        # behaviour (alert on failure) rather than lose a failure alert.
+        if ! node "$GITHUB_ACTION_PATH/status-change.mjs" || ! grep -q '^send=' "$GITHUB_OUTPUT"; then
           echo "::warning::Could not decide whether the status changed; alerting on failures only."
           if [ "$RESULT" = failure ]; then echo "send=failed" >> "$GITHUB_OUTPUT"; fi
         fi
@@ -110,7 +111,7 @@ runs:
         text="$text
         $RUN_URL"
         printf 'url = "https://api.telegram.org/bot%s/sendMessage"\n' "$TELEGRAM_BOT_TOKEN" |
-          curl --silent --show-error --fail --max-time 15 --output /dev/null --config - \
+          curl --silent --show-error --fail --retry 2 --max-time 15 --output /dev/null --config - \
             --data-urlencode "chat_id=$TELEGRAM_CHAT_ID" \
             --data-urlencode "text=$text" \
             || echo "::warning::Telegram alert could not be sent."
