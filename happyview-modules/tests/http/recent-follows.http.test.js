@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { graphDids } from "./fixtures/graph-follows.fixture.js";
+import { graphDids, legacyFollowUris } from "./fixtures/graph-follows.fixture.js";
 import { contractUrl, requireContractTarget } from "./helpers.js";
 
 const baseUrl = requireContractTarget();
@@ -36,7 +36,11 @@ async function request(params = {}) {
 }
 
 test("listRecentFollows returns the exact global feed across tied-key pages, including baseline account follows", async () => {
+  // The two legacy project follows (legacyOnly, legacyEarlier) are indexed but never listed.
   const expectedUris = [
+    legacyFollowUris.legitStarterPack,
+    legacyFollowUris.legitCollection,
+    legacyFollowUris.plainLater,
     `at://${graphDids.secondPublisher}/${accountFollow}/3jzfcijpj2z2e`,
     `at://${graphDids.secondPublisher}/${entityFollow}/3jzfcijpj2z2e`,
     `at://${graphDids.publisher}/${accountFollow}/3jzfcijpj2z2d`,
@@ -67,8 +71,8 @@ test("listRecentFollows returns the exact global feed across tied-key pages, inc
     records.map(({ uri }) => uri),
     expectedUris,
   );
-  assert.equal(records[0].record.$type, accountFollow);
-  assert.equal(records[1].record.$type, entityFollow);
+  assert.equal(records[3].record.$type, accountFollow);
+  assert.equal(records[4].record.$type, entityFollow);
   assert.equal(
     records.filter(
       ({ uri }) => uri === `at://${graphDids.publisher}/${accountFollow}/3jzfcijpj2z2a`,

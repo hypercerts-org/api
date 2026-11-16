@@ -18,6 +18,12 @@ export const graphDids = {
   entityAuthor: "did:plc:rrrrrrrrrrrrrrrrrrrrrrrr",
   curator: "did:plc:ssssssssssssssssssssssss",
   thirdFollower: "did:plc:tttttttttttttttttttttttt",
+  // Legacy project-follow scenario: an org whose own collection was used as `via`.
+  legacyOrg: "did:plc:111111111111111111111111",
+  legacyOnly: "did:plc:222222222222222222222222",
+  legacyThenPlain: "did:plc:333333333333333333333333",
+  legitViaOtherCollection: "did:plc:444444444444444444444444",
+  legitViaStarterPack: "did:plc:555555555555555555555555",
 };
 
 export const graphUris = {
@@ -101,6 +107,52 @@ const entityFollows = [
   }),
 ];
 
+const legacyViaCollection = `at://${graphDids.legacyOrg}/org.hypercerts.collection/3jzfcijpj2z2a`;
+const cid = "bafkreigh2akiscaildcqabsyg3dfr6chu3fgpregiymsck7e7aqa4s52zy";
+
+export const legacyFollowUris = {
+  legacyOnly: `at://${graphDids.legacyOnly}/${accountFollow}/3jzfcijpj2z2a`,
+  legacyEarlier: `at://${graphDids.legacyThenPlain}/${accountFollow}/3jzfcijpj2z2a`,
+  plainLater: `at://${graphDids.legacyThenPlain}/${accountFollow}/3jzfcijpj2z2b`,
+  legitCollection: `at://${graphDids.legitViaOtherCollection}/${accountFollow}/3jzfcijpj2z2a`,
+  legitStarterPack: `at://${graphDids.legitViaStarterPack}/${accountFollow}/3jzfcijpj2z2a`,
+};
+
+// Rows 1-2 are legacy project follows (via is the followed org's own collection).
+// Row 3 is the same publisher's genuine follow. Rows 4-5 have a real mediating record.
+const legacyProjectFollows = [
+  seedRow(accountFollow, graphDids.legacyOnly, "3jzfcijpj2z2a", {
+    subject: graphDids.legacyOrg,
+    createdAt: "2025-02-13T00:00:00.000Z",
+    via: { uri: legacyViaCollection, cid },
+  }),
+  seedRow(accountFollow, graphDids.legacyThenPlain, "3jzfcijpj2z2a", {
+    subject: graphDids.legacyOrg,
+    createdAt: "2025-02-10T23:00:00.000Z",
+    via: { uri: legacyViaCollection, cid },
+  }),
+  seedRow(accountFollow, graphDids.legacyThenPlain, "3jzfcijpj2z2b", {
+    subject: graphDids.legacyOrg,
+    createdAt: "2025-02-11T00:00:00.000Z",
+  }),
+  seedRow(accountFollow, graphDids.legitViaOtherCollection, "3jzfcijpj2z2a", {
+    subject: graphDids.legacyOrg,
+    createdAt: "2025-02-12T00:00:00.000Z",
+    via: {
+      uri: `at://${graphDids.curator}/org.hypercerts.collection/3jzfcijpj2z2a`,
+      cid,
+    },
+  }),
+  seedRow(accountFollow, graphDids.legitViaStarterPack, "3jzfcijpj2z2a", {
+    subject: graphDids.legacyOrg,
+    createdAt: "2025-02-12T01:00:00.000Z",
+    via: {
+      uri: `at://${graphDids.legacyOrg}/app.bsky.graph.starterpack/3jzfcijpj2z2a`,
+      cid,
+    },
+  }),
+];
+
 const actorSidecars = [
   seedRow(profile, graphDids.publisher, "self", {
     displayName: "Graph Fixture Publisher",
@@ -149,6 +201,7 @@ const features = [
 
 export const seedRows = await Promise.all([
   ...accountFollows,
+  ...legacyProjectFollows,
   ...entityFollows,
   ...actorSidecars,
   ...features,

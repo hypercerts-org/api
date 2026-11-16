@@ -39,6 +39,22 @@ local function record_view(row)
   }
 end
 
+-- Some clients wrote account follows whose `via` points at the followed
+-- account's own org.hypercerts.collection, using the account follow as a
+-- project follow. Those records stay indexed but are not account follows, so
+-- every account-follow query applies this predicate in its WHERE clause, before
+-- any per-relationship deduplication, so a user's genuine follow of the same
+-- account is still found.
+--
+-- The rule is deliberately narrow: only a collection owned by the subject
+-- matches. A starter pack, list, or collection owned by another DID is a real
+-- mediating record and is kept. COALESCE keeps records with no usable `via`.
+-- The expression only reads the row's own `record`, so it adds a per-row filter
+-- on rows already selected by collection, subject, or publisher.
+local function account_follow_filter_sql()
+  return "NOT COALESCE(starts_with(record::jsonb->'via'->>'uri', 'at://' || (record::jsonb->>'subject') || '/org.hypercerts.collection/'), FALSE)"
+end
+
 local FOLLOW = "app.certified.graph.follow"
 
 -- Guard the cast inside CASE; a WHERE filter cannot protect it from planner reordering.
@@ -57,7 +73,7 @@ end
 
 local function query_follow(actor, subject)
   local rows = query(
-    "SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record FROM happyview_records CROSS JOIN LATERAL (SELECT " .. follow_sort_key() .. " AS sort_at) sorted WHERE collection = $1 AND did = $2 AND record::jsonb->>'subject' = $3 ORDER BY sorted.sort_at ASC, uri ASC LIMIT 1",
+    "SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record FROM happyview_records CROSS JOIN LATERAL (SELECT " .. follow_sort_key() .. " AS sort_at) sorted WHERE collection = $1 AND did = $2 AND record::jsonb->>'subject' = $3 AND " .. account_follow_filter_sql() .. " ORDER BY sorted.sort_at ASC, uri ASC LIMIT 1",
     { FOLLOW, actor, subject })
   if #rows == 0 then return NULL end
   return record_view(rows[1])

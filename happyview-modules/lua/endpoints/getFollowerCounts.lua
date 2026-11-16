@@ -77,6 +77,22 @@ local function valid_subject_record_uri(value)
   return valid and valid_did_percent_escapes(authority) and valid_nsid(collection)
 end
 
+-- Some clients wrote account follows whose `via` points at the followed
+-- account's own org.hypercerts.collection, using the account follow as a
+-- project follow. Those records stay indexed but are not account follows, so
+-- every account-follow query applies this predicate in its WHERE clause, before
+-- any per-relationship deduplication, so a user's genuine follow of the same
+-- account is still found.
+--
+-- The rule is deliberately narrow: only a collection owned by the subject
+-- matches. A starter pack, list, or collection owned by another DID is a real
+-- mediating record and is kept. COALESCE keeps records with no usable `via`.
+-- The expression only reads the row's own `record`, so it adds a per-row filter
+-- on rows already selected by collection, subject, or publisher.
+local function account_follow_filter_sql()
+  return "NOT COALESCE(starts_with(record::jsonb->'via'->>'uri', 'at://' || (record::jsonb->>'subject') || '/org.hypercerts.collection/'), FALSE)"
+end
+
 local FOLLOW_BATCH_MAX_TARGETS = 100
 local FOLLOW_BATCH_MAX_REQUEST_TARGET_BYTES = 7000
 
@@ -182,7 +198,7 @@ local function follower_count_query(dids, entity_uris)
     local subject = "record::jsonb->>'subject'"
     branches[#branches + 1] = "SELECT " .. subject .. " AS subject, COUNT(DISTINCT did) AS follower_count " ..
       "FROM happyview_records WHERE collection = " .. collection .. " AND " .. subject ..
-      " IN (" .. follower_count_placeholders(values, dids) .. ") GROUP BY " .. subject
+      " IN (" .. follower_count_placeholders(values, dids) .. ") AND " .. account_follow_filter_sql() .. " GROUP BY " .. subject
   end
   if #entity_uris > 0 then
     values[#values + 1] = ENTITY_FOLLOW
