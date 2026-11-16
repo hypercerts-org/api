@@ -32,7 +32,7 @@ local function follower_count_query(dids, entity_uris)
     local subject = "record::jsonb->>'subject'"
     branches[#branches + 1] = "SELECT " .. subject .. " AS subject, COUNT(DISTINCT did) AS follower_count " ..
       "FROM happyview_records WHERE collection = " .. collection .. " AND " .. subject ..
-      " IN (" .. follower_count_placeholders(values, dids) .. ") AND " .. not_legacy_project_follow_sql() .. " GROUP BY " .. subject
+      " IN (" .. follower_count_placeholders(values, dids) .. ") AND " .. account_follow_filter_sql() .. " GROUP BY " .. subject
   end
   if #entity_uris > 0 then
     values[#values + 1] = ENTITY_FOLLOW

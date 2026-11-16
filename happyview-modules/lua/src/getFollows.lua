@@ -15,7 +15,7 @@ local function get_follows()
     "WITH requested(target) AS (VALUES " .. table.concat(requested, ", ") .. ") "
       .. "SELECT DISTINCT ON (requested.target) requested.target AS target, uri, did, cid, "
       .. "indexed_at::text AS indexed_at, record::text AS record FROM requested "
-      .. "JOIN happyview_records ON collection = $1 AND did = $2 AND record::jsonb->>'subject' = requested.target AND " .. not_legacy_project_follow_sql() .. " "
+      .. "JOIN happyview_records ON collection = $1 AND did = $2 AND record::jsonb->>'subject' = requested.target AND " .. account_follow_filter_sql() .. " "
       .. "CROSS JOIN LATERAL (SELECT " .. follow_sort_key() .. " AS sort_at) sorted "
       .. "ORDER BY requested.target, sorted.sort_at ASC, uri ASC",
     values)

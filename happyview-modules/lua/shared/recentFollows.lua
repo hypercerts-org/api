@@ -91,7 +91,7 @@ local function recent_follows_response()
 
   local sql = "WITH candidates AS (SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record, sorted.sort_at " ..
     "FROM happyview_records CROSS JOIN LATERAL (SELECT " .. recent_created_at_sort_key() .. " AS sort_at) AS sorted " ..
-    "WHERE collection IN ($1, $2) AND cid <> '' AND (collection <> $1 OR " .. not_legacy_project_follow_sql() .. ")), page AS (SELECT uri, did, cid, indexed_at, record, sort_at FROM candidates WHERE " ..
+    "WHERE collection IN ($1, $2) AND cid <> '' AND (collection <> $1 OR " .. account_follow_filter_sql() .. ")), page AS (SELECT uri, did, cid, indexed_at, record, sort_at FROM candidates WHERE " ..
     table.concat(predicates, " AND ") .. " ORDER BY sort_at DESC, uri DESC LIMIT $" .. #values .. ") " ..
     "SELECT uri, did, cid, indexed_at, record, to_char(sort_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp " ..
     "FROM page ORDER BY sort_at DESC, uri DESC"

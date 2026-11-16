@@ -10,6 +10,6 @@
 -- mediating record and is kept. COALESCE keeps records with no usable `via`.
 -- The expression only reads the row's own `record`, so it adds a per-row filter
 -- on rows already selected by collection, subject, or publisher.
-local function not_legacy_project_follow_sql()
+local function account_follow_filter_sql()
   return "NOT COALESCE(starts_with(record::jsonb->'via'->>'uri', 'at://' || (record::jsonb->>'subject') || '/org.hypercerts.collection/'), FALSE)"
 end

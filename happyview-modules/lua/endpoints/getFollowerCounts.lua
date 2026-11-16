@@ -89,7 +89,7 @@ end
 -- mediating record and is kept. COALESCE keeps records with no usable `via`.
 -- The expression only reads the row's own `record`, so it adds a per-row filter
 -- on rows already selected by collection, subject, or publisher.
-local function not_legacy_project_follow_sql()
+local function account_follow_filter_sql()
   return "NOT COALESCE(starts_with(record::jsonb->'via'->>'uri', 'at://' || (record::jsonb->>'subject') || '/org.hypercerts.collection/'), FALSE)"
 end
 
@@ -198,7 +198,7 @@ local function follower_count_query(dids, entity_uris)
     local subject = "record::jsonb->>'subject'"
     branches[#branches + 1] = "SELECT " .. subject .. " AS subject, COUNT(DISTINCT did) AS follower_count " ..
       "FROM happyview_records WHERE collection = " .. collection .. " AND " .. subject ..
-      " IN (" .. follower_count_placeholders(values, dids) .. ") AND " .. not_legacy_project_follow_sql() .. " GROUP BY " .. subject
+      " IN (" .. follower_count_placeholders(values, dids) .. ") AND " .. account_follow_filter_sql() .. " GROUP BY " .. subject
   end
   if #entity_uris > 0 then
     values[#values + 1] = ENTITY_FOLLOW

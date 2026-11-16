@@ -20,7 +20,7 @@
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/nsidValidation.lua",
         "../../lua/shared/subjectRecordUri.lua",
-        "../../lua/shared/legacyProjectFollow.lua",
+        "../../lua/shared/accountFollowFilter.lua",
         "../../lua/shared/followBatch.lua"
       ],
       "config": {

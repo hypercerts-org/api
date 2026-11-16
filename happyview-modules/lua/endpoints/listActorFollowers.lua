@@ -135,7 +135,7 @@ end
 -- mediating record and is kept. COALESCE keeps records with no usable `via`.
 -- The expression only reads the row's own `record`, so it adds a per-row filter
 -- on rows already selected by collection, subject, or publisher.
-local function not_legacy_project_follow_sql()
+local function account_follow_filter_sql()
   return "NOT COALESCE(starts_with(record::jsonb->'via'->>'uri', 'at://' || (record::jsonb->>'subject') || '/org.hypercerts.collection/'), FALSE)"
 end
 
@@ -177,7 +177,7 @@ local function cursor_decode(token, direction)
 end
 
 local function build_actor_follow_query(mode, actor, limit, cursor, direction)
-  local filters, values = { "collection = $1", not_legacy_project_follow_sql() }, { FOLLOW }
+  local filters, values = { "collection = $1", account_follow_filter_sql() }, { FOLLOW }
   values[#values + 1] = actor
   if mode == "followers" then
     filters[#filters + 1] = "record::jsonb->>'subject' = $2"
