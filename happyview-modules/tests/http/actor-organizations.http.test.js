@@ -195,7 +195,7 @@ test("listOrganizations combines exact type and visibility filters and leaves om
   );
 });
 
-test("searchOrganizations matches full trimmed literal profile text and excludes organizations without profiles", async () => {
+test("searchOrganizations matches full trimmed literal profile text", async () => {
   const result = await get("app.certified.actor.searchOrganizations", {
     search: "  Forest %_ Commons  ",
     actors: [unlistedOrganization.did],
@@ -204,12 +204,35 @@ test("searchOrganizations matches full trimmed literal profile text and excludes
   assert.equal(result.actors[0].did, unlistedOrganization.did);
   assert.equal(result.actors[0].profile.record.displayName, "Forest %_ Commons");
   assert.deepEqual(result.actors[0].organization.record, unlistedOrganization.record);
+});
 
-  const absentProfile = await get("app.certified.actor.searchOrganizations", {
+test("searchOrganizations matches legalName case-insensitively, including organizations without a profile", async () => {
+  // legalName is absent from the river profile's displayName and description.
+  const legalNameOnly = await get("app.certified.actor.searchOrganizations", {
+    search: "CATCHMENT trust",
+    actors: [actorFixtureDids.river],
+  });
+  assert.deepEqual(
+    legalNameOnly.actors.map(({ did }) => did),
+    [actorFixtureDids.river],
+  );
+  assert.ok(legalNameOnly.actors[0].profile);
+
+  const profileless = await get("app.certified.actor.searchOrganizations", {
+    search: "weavers coop",
+    actors: [profilelessOrganization.did],
+  });
+  assert.deepEqual(
+    profileless.actors.map(({ did }) => did),
+    [profilelessOrganization.did],
+  );
+  assert.equal(profileless.actors[0].profile, null);
+
+  const noMatch = await get("app.certified.actor.searchOrganizations", {
     search: "community",
     actors: [profilelessOrganization.did],
   });
-  assert.deepEqual(absentProfile.actors, []);
+  assert.deepEqual(noMatch.actors, []);
 });
 
 test("listOrganizations paginates stably in both directions without skipping equal-timestamp records", async () => {
