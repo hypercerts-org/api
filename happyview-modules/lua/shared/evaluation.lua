@@ -1,5 +1,6 @@
 local EVALUATION = "org.hypercerts.context.evaluation"
 local EVALUATOR_HYDRATION_LIMIT = 100
+local EVALUATION_NULL = json.decode("null")
 
 local function evaluation_query(sql, values)
   if db.backend() ~= "postgres" then
@@ -47,20 +48,15 @@ local function hydrate_evaluation_views(views)
     actors[#actors + 1] = view.author
     local projections, hydrated_actors = {}, {}
     local sources = evaluation_evaluator_array(view.record.evaluators) or {}
-    for source_position, source in ipairs(sources) do
+    for _, source in ipairs(sources) do
       if type(source) == "table" and valid_did(source.did) then
         local projection_position = #projections + 1
-        local evaluator = {}
-        for key, value in pairs(source) do evaluator[key] = value end
-        if source_position <= EVALUATOR_HYDRATION_LIMIT then
-          evaluator.hydrationStatus = "hydrated"
+        local evaluator = { did = source.did }
+        -- Only the first 100 response entries are looked up; later ones carry just the DID.
+        if projection_position <= EVALUATOR_HYDRATION_LIMIT then
           local actor = { did = source.did }
           actors[#actors + 1] = actor
           hydrated_actors[projection_position] = actor
-        else
-          evaluator.hydrationStatus = "omitted"
-          evaluator.profile = nil
-          evaluator.organization = nil
         end
         projections[projection_position] = evaluator
       end
@@ -74,8 +70,8 @@ local function hydrate_evaluation_views(views)
   for view_index, view in ipairs(views) do
     local projections = evaluator_projections[view_index]
     for position, actor in pairs(evaluator_actors[view_index]) do
-      projections[position].profile = actor.profile
-      projections[position].organization = actor.organization
+      if actor.profile ~= EVALUATION_NULL then projections[position].profile = actor.profile end
+      if actor.organization ~= EVALUATION_NULL then projections[position].organization = actor.organization end
     end
     view.evaluators = toarray(projections)
   end
