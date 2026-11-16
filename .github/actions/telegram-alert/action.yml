@@ -1,0 +1,51 @@
+name: Telegram failure alert
+description: >
+  Sends a Telegram message for a failed run. Skips with a notice when the token or chat ID is
+  empty, and only warns if sending fails, so it never changes the job result.
+inputs:
+  bot-token:
+    description: Telegram bot token (pass secrets.TELEGRAM_BOT_TOKEN).
+    required: false
+    default: ""
+  chat-id:
+    description: Telegram chat ID (pass secrets.TELEGRAM_CHAT_ID).
+    required: false
+    default: ""
+  summary:
+    description: What failed and where, e.g. "smoke test failed (Production, main)".
+    required: true
+  failed-checks-file:
+    description: >
+      Optional path to a file with one line naming the failing checks (written by pnpm smoke / e2e
+      via FAILED_CHECKS_FILE). Ignored when missing.
+    required: false
+    default: ""
+runs:
+  using: composite
+  steps:
+    # The token goes to curl through stdin (-K -), so it never appears in argv or the log.
+    - shell: bash
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ inputs.bot-token }}
+        TELEGRAM_CHAT_ID: ${{ inputs.chat-id }}
+        SUMMARY: ${{ inputs.summary }}
+        FAILED_CHECKS_FILE: ${{ inputs.failed-checks-file }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
+          echo "::notice::Telegram alert skipped: TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID is not set."
+          exit 0
+        fi
+        # Short on purpose: what failed, which checks (already capped), and the run link.
+        text="❌ $SUMMARY"
+        if [ -n "$FAILED_CHECKS_FILE" ] && [ -s "$FAILED_CHECKS_FILE" ]; then
+          text="$text
+        Failing: $(head -c 800 "$FAILED_CHECKS_FILE" | head -n 1)"
+        fi
+        text="$text
+        $RUN_URL"
+        printf 'url = "https://api.telegram.org/bot%s/sendMessage"\n' "$TELEGRAM_BOT_TOKEN" |
+          curl --silent --show-error --fail --max-time 15 --output /dev/null --config - \
+            --data-urlencode "chat_id=$TELEGRAM_CHAT_ID" \
+            --data-urlencode "text=$text" \
+            || echo "::warning::Telegram alert could not be sent."
