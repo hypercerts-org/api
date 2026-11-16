@@ -32,38 +32,28 @@ type $lxm = typeof $lxm;
 
 export { $lxm };
 
-/** A valid original evaluator entry with its profile and organization sidecars looked up. */
-type HydratedEvaluationEvaluatorView = { $type?: "org.hypercerts.context.getEvaluation#hydratedEvaluationEvaluatorView";"did":l.DidString;"hydrationStatus":"hydrated";"profile":ApiDefs.ProfileView | null;"organization":ApiDefs.OrganizationView | null };
+/** An evaluator DID with its profile and organization when they were looked up and found. Absent keys mean not looked up or not found. */
+type EvaluatorView = { $type?: "org.hypercerts.context.getEvaluation#evaluatorView";"did":l.DidString;"profile"?:ApiDefs.ProfileView;"organization"?:ApiDefs.OrganizationView };
 
-export type { HydratedEvaluationEvaluatorView };
+export type { EvaluatorView };
 
-/** A valid original evaluator entry with its profile and organization sidecars looked up. */
-const hydratedEvaluationEvaluatorView = /*#__PURE__*/ l.typedObject<HydratedEvaluationEvaluatorView>($nsid, "hydratedEvaluationEvaluatorView", /*#__PURE__*/ l.object({"did":/*#__PURE__*/ l.string({"format":"did"}),"hydrationStatus":/*#__PURE__*/ l.literal("hydrated"),"profile":/*#__PURE__*/ l.nullable(/*#__PURE__*/ l.ref<ApiDefs.ProfileView>((() => ApiDefs.profileView) as any)),"organization":/*#__PURE__*/ l.nullable(/*#__PURE__*/ l.ref<ApiDefs.OrganizationView>((() => ApiDefs.organizationView) as any))}));
+/** An evaluator DID with its profile and organization when they were looked up and found. Absent keys mean not looked up or not found. */
+const evaluatorView = /*#__PURE__*/ l.typedObject<EvaluatorView>($nsid, "evaluatorView", /*#__PURE__*/ l.object({"did":/*#__PURE__*/ l.string({"format":"did"}),"profile":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.ref<ApiDefs.ProfileView>((() => ApiDefs.profileView) as any)),"organization":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.ref<ApiDefs.OrganizationView>((() => ApiDefs.organizationView) as any))}));
 
-export { hydratedEvaluationEvaluatorView };
+export { evaluatorView };
 
-/** A valid original evaluator entry beyond the hydration position limit. */
-type OmittedEvaluationEvaluatorView = { $type?: "org.hypercerts.context.getEvaluation#omittedEvaluationEvaluatorView";"did":l.DidString;"hydrationStatus":"omitted" };
-
-export type { OmittedEvaluationEvaluatorView };
-
-/** A valid original evaluator entry beyond the hydration position limit. */
-const omittedEvaluationEvaluatorView = /*#__PURE__*/ l.typedObject<OmittedEvaluationEvaluatorView>($nsid, "omittedEvaluationEvaluatorView", /*#__PURE__*/ l.object({"did":/*#__PURE__*/ l.string({"format":"did"}),"hydrationStatus":/*#__PURE__*/ l.literal("omitted")}));
-
-export { omittedEvaluationEvaluatorView };
-
-/** Evaluation with the original record, hydrated publisher, and evaluator projections. The record is not rewritten when evaluator data is malformed. A missing or non-array evaluator container yields an empty hydrated array; malformed entries are omitted. For hydrated actors, missing profile or organization sidecars are null; query or hydration failures fail the request. Evaluator arrays over 1000 entries still fail exact lookup and are skipped by lists. */
+/** Evaluation with the original record, hydrated publisher, and evaluator projections. The record is not rewritten when evaluator data is malformed. A missing or non-array evaluator container yields an empty hydrated array; malformed entries are omitted. Missing profile or organization sidecars are omitted from evaluators; query or hydration failures fail the request. Evaluator arrays over 1000 entries still fail exact lookup and are skipped by lists. */
 type EvaluationView = { $type?: "org.hypercerts.context.getEvaluation#evaluationView";"uri":l.AtUriString;"cid":l.CidString;"indexedAt":l.DatetimeString;"did":l.DidString;"author":ApiDefs.ActorView;"record":ContextEvaluation.Main;
 
   /**
-   * Dense projection of valid record.evaluators object entries with valid DIDs, preserving their source order and duplicates. Entries with malformed shapes or invalid DIDs are omitted without changing the original record; a missing or non-array source yields an empty array. Valid entries at source positions after 100 remain present with hydrationStatus "omitted" and no profile or organization. The raw evaluator array is limited to 1000 entries; over-limit records fail exact lookup and are skipped by lists.
+   * Dense projection of valid record.evaluators object entries with valid DIDs, preserving their source order and duplicates. Entries with malformed shapes or invalid DIDs are omitted without changing the original record; a missing or non-array source yields an empty array. The first 100 response entries get their profile and organization looked up; later entries carry only the did. The raw evaluator array is limited to 1000 entries; over-limit records fail exact lookup and are skipped by lists.
    */
-  "evaluators":(l.$Typed<HydratedEvaluationEvaluatorView> | l.$Typed<OmittedEvaluationEvaluatorView> | l.Unknown$TypedObject)[] };
+  "evaluators":(EvaluatorView)[] };
 
 export type { EvaluationView };
 
-/** Evaluation with the original record, hydrated publisher, and evaluator projections. The record is not rewritten when evaluator data is malformed. A missing or non-array evaluator container yields an empty hydrated array; malformed entries are omitted. For hydrated actors, missing profile or organization sidecars are null; query or hydration failures fail the request. Evaluator arrays over 1000 entries still fail exact lookup and are skipped by lists. */
-const evaluationView = /*#__PURE__*/ l.typedObject<EvaluationView>($nsid, "evaluationView", /*#__PURE__*/ l.object({"uri":/*#__PURE__*/ l.string({"format":"at-uri"}),"cid":/*#__PURE__*/ l.string({"format":"cid"}),"indexedAt":/*#__PURE__*/ l.string({"format":"datetime"}),"did":/*#__PURE__*/ l.string({"format":"did"}),"author":/*#__PURE__*/ l.ref<ApiDefs.ActorView>((() => ApiDefs.actorView) as any),"record":/*#__PURE__*/ l.ref<ContextEvaluation.Main>((() => ContextEvaluation.main) as any),"evaluators":/*#__PURE__*/ l.array(/*#__PURE__*/ l.typedUnion([/*#__PURE__*/ l.typedRef<HydratedEvaluationEvaluatorView>((() => hydratedEvaluationEvaluatorView) as any),/*#__PURE__*/ l.typedRef<OmittedEvaluationEvaluatorView>((() => omittedEvaluationEvaluatorView) as any)], false), {"maxLength":1000})}));
+/** Evaluation with the original record, hydrated publisher, and evaluator projections. The record is not rewritten when evaluator data is malformed. A missing or non-array evaluator container yields an empty hydrated array; malformed entries are omitted. Missing profile or organization sidecars are omitted from evaluators; query or hydration failures fail the request. Evaluator arrays over 1000 entries still fail exact lookup and are skipped by lists. */
+const evaluationView = /*#__PURE__*/ l.typedObject<EvaluationView>($nsid, "evaluationView", /*#__PURE__*/ l.object({"uri":/*#__PURE__*/ l.string({"format":"at-uri"}),"cid":/*#__PURE__*/ l.string({"format":"cid"}),"indexedAt":/*#__PURE__*/ l.string({"format":"datetime"}),"did":/*#__PURE__*/ l.string({"format":"did"}),"author":/*#__PURE__*/ l.ref<ApiDefs.ActorView>((() => ApiDefs.actorView) as any),"record":/*#__PURE__*/ l.ref<ContextEvaluation.Main>((() => ContextEvaluation.main) as any),"evaluators":/*#__PURE__*/ l.array(/*#__PURE__*/ l.ref<EvaluatorView>((() => evaluatorView) as any), {"maxLength":1000})}));
 
 export { evaluationView };
 

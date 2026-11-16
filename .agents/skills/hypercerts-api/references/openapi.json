@@ -5918,39 +5918,21 @@
           }
         }
       },
-      "org.hypercerts.context.getEvaluation.hydratedEvaluationEvaluatorView": {
+      "org.hypercerts.context.getEvaluation.evaluatorView": {
         "type": "object",
-        "description": "A valid original evaluator entry with its profile and organization sidecars looked up.",
-        "required": ["did", "hydrationStatus", "profile", "organization"],
+        "description": "An evaluator DID with its profile and organization when they were looked up and found. Absent keys mean not looked up or not found.",
+        "required": ["did"],
         "properties": {
           "did": { "type": "string", "format": "did" },
-          "hydrationStatus": { "type": "string", "const": "hydrated" },
-          "profile": {
-            "anyOf": [
-              { "$ref": "#/components/schemas/org.hypercerts.api.defs.profileView" },
-              { "type": "null" }
-            ]
-          },
+          "profile": { "$ref": "#/components/schemas/org.hypercerts.api.defs.profileView" },
           "organization": {
-            "anyOf": [
-              { "$ref": "#/components/schemas/org.hypercerts.api.defs.organizationView" },
-              { "type": "null" }
-            ]
+            "$ref": "#/components/schemas/org.hypercerts.api.defs.organizationView"
           }
-        }
-      },
-      "org.hypercerts.context.getEvaluation.omittedEvaluationEvaluatorView": {
-        "type": "object",
-        "description": "A valid original evaluator entry beyond the hydration position limit.",
-        "required": ["did", "hydrationStatus"],
-        "properties": {
-          "did": { "type": "string", "format": "did" },
-          "hydrationStatus": { "type": "string", "const": "omitted" }
         }
       },
       "org.hypercerts.context.getEvaluation.evaluationView": {
         "type": "object",
-        "description": "Evaluation with the original record, hydrated publisher, and evaluator projections. The record is not rewritten when evaluator data is malformed. A missing or non-array evaluator container yields an empty hydrated array; malformed entries are omitted. For hydrated actors, missing profile or organization sidecars are null; query or hydration failures fail the request. Evaluator arrays over 1000 entries still fail exact lookup and are skipped by lists.",
+        "description": "Evaluation with the original record, hydrated publisher, and evaluator projections. The record is not rewritten when evaluator data is malformed. A missing or non-array evaluator container yields an empty hydrated array; malformed entries are omitted. Missing profile or organization sidecars are omitted from evaluators; query or hydration failures fail the request. Evaluator arrays over 1000 entries still fail exact lookup and are skipped by lists.",
         "required": ["uri", "cid", "indexedAt", "did", "author", "record", "evaluators"],
         "properties": {
           "uri": { "type": "string", "format": "at-uri" },
@@ -5961,17 +5943,10 @@
           "record": { "$ref": "#/components/schemas/org.hypercerts.context.evaluation.main" },
           "evaluators": {
             "type": "array",
-            "description": "Dense projection of valid record.evaluators object entries with valid DIDs, preserving their source order and duplicates. Entries with malformed shapes or invalid DIDs are omitted without changing the original record; a missing or non-array source yields an empty array. Valid entries at source positions after 100 remain present with hydrationStatus \"omitted\" and no profile or organization. The raw evaluator array is limited to 1000 entries; over-limit records fail exact lookup and are skipped by lists.",
+            "description": "Dense projection of valid record.evaluators object entries with valid DIDs, preserving their source order and duplicates. Entries with malformed shapes or invalid DIDs are omitted without changing the original record; a missing or non-array source yields an empty array. The first 100 response entries get their profile and organization looked up; later entries carry only the did. The raw evaluator array is limited to 1000 entries; over-limit records fail exact lookup and are skipped by lists.",
             "maxItems": 1000,
             "items": {
-              "anyOf": [
-                {
-                  "$ref": "#/components/schemas/org.hypercerts.context.getEvaluation.hydratedEvaluationEvaluatorView"
-                },
-                {
-                  "$ref": "#/components/schemas/org.hypercerts.context.getEvaluation.omittedEvaluationEvaluatorView"
-                }
-              ]
+              "$ref": "#/components/schemas/org.hypercerts.context.getEvaluation.evaluatorView"
             }
           }
         }
