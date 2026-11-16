@@ -448,13 +448,13 @@
         "tags": [
           "app.certified.actor"
         ],
-        "description": "Searches organizations by associated profile text and optional filters. Filters combine with AND, and values within each array filter are ORed. Authentication is not required.",
+        "description": "Searches organizations by legal name, profile text and optional filters. Filters combine with AND, and values within each array filter are ORed. Authentication is not required.",
         "parameters": [
           {
             "name": "search",
             "in": "query",
             "required": true,
-            "description": "Trimmed text is matched literally and case-insensitively as a substring in either displayName or description. Blank text is unrestricted; nonblank text requires an associated profile.",
+            "description": "Trimmed text is matched literally and case-insensitively as a substring in the organization's legalName or in the associated profile's displayName or description. Organizations without a profile match on legalName alone. Blank text is unrestricted.",
             "schema": {
               "type": "string"
             }

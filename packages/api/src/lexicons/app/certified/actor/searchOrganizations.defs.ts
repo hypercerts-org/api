@@ -20,7 +20,7 @@ export const $output = /*#__PURE__*/ l.payload("application/json", /*#__PURE__*/
 export type $Output<B = l.BinaryData> = l.InferPayload<typeof $output, B>;
 export type $OutputBody<B = l.BinaryData> = l.InferPayloadBody<typeof $output, B>;
 
-/** Searches organizations by associated profile text and optional filters. Filters combine with AND, and values within each array filter are ORed. Authentication is not required. */
+/** Searches organizations by legal name, profile text and optional filters. Filters combine with AND, and values within each array filter are ORed. Authentication is not required. */
 const main = /*#__PURE__*/ l.query($nsid, $params, $output, ["InvalidRequest","OrganizationQueryFailed"]);
 
 export { main };
