@@ -1,5 +1,11 @@
 # @hypercerts-org/api
 
+## 0.4.1
+
+### Patch Changes
+
+- [#76](https://github.com/hypercerts-org/api/pull/76) [`619c9ee`](https://github.com/hypercerts-org/api/commit/619c9eeee336dc1d2c03294847298d3e27e9459b) Thanks [@Kzoeps](https://github.com/Kzoeps)! - `app.certified.actor.searchOrganizations` now also searches an organization's legal name. Organizations without a profile can now be found by legal name; before, they never appeared in search results.
+
 ## 0.4.0
 
 ### Minor Changes
