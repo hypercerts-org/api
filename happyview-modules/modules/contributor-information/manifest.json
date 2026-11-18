@@ -57,7 +57,10 @@
         "../../lua/shared/actorView.lua",
         "../../lua/shared/datetimeValidation.lua",
         "../../lua/shared/listValidation.lua",
-        "../../lua/shared/listQuery.lua"
+        "../../lua/shared/listQuery.lua",
+        "../../lua/shared/listCursor.lua",
+        "../../lua/shared/listWhere.lua",
+        "../../lua/shared/createdAtSort.lua"
       ],
       "config": {
         "script_type": "lua",

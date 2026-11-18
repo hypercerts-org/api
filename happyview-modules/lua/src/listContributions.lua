@@ -35,38 +35,10 @@ local function contribution_authors()
 end
 
 local function decode_contribution_cursor(token, direction)
-  if token == nil then return nil end
-  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
-    invalid("cursor is malformed")
-  end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
-  local ok, value = pcall(json.decode, decoded)
-  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
-    or type(value.t) ~= "string" or type(value.u) ~= "string" then
-    invalid("cursor is malformed or belongs to another sortDirection")
-  end
-  for key in pairs(value) do
-    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
-  end
-  local valid = valid_contribution_uri(value.u)
-  if not valid or not valid_datetime(value.t) then
-    invalid("cursor is malformed")
-  end
-  return value
-end
-
-local function add_contribution_authors(where, values, authors)
-  if authors == nil then return end
-  if #authors == 0 then
-    where[#where + 1] = "FALSE"
-    return
-  end
-  local placeholders = {}
-  for _, did in ipairs(authors) do
-    values[#values + 1] = did
-    placeholders[#placeholders + 1] = "$" .. #values
-  end
-  where[#where + 1] = "contribution.did IN (" .. table.concat(placeholders, ", ") .. ")"
+  return decode_cursor(token, direction, function(value)
+    local valid = valid_contribution_uri(value.u)
+    return valid and valid_datetime(value.t)
+  end)
 end
 
 local function contribution_sort_key()
@@ -79,7 +51,7 @@ end
 
 local function query_contributions(authors, limit, cursor, direction)
   local where, values = { "contribution.collection = $1" }, { CONTRIBUTION }
-  add_contribution_authors(where, values, authors)
+  if authors then add_in(where, values, "contribution.did", authors) end
   if cursor then
     values[#values + 1] = cursor.t
     local timestamp = "$" .. #values

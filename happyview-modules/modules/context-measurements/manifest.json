@@ -54,7 +54,10 @@
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",
         "../../lua/shared/measurementQuery.lua",
-        "../../lua/shared/nsidValidation.lua"
+        "../../lua/shared/nsidValidation.lua",
+        "../../lua/shared/listCursor.lua",
+        "../../lua/shared/listWhere.lua",
+        "../../lua/shared/createdAtSort.lua"
       ],
       "config": {
         "script_type": "lua"

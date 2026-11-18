@@ -42,50 +42,16 @@ local function rights_list_array(value)
 end
 
 local function rights_list_cursor_decode(token, direction)
-  if token == nil then return nil end
-  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
-    invalid("cursor is malformed")
-  end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
-  local ok, value = pcall(json.decode, decoded)
-  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
-    or type(value.t) ~= "string" or type(value.u) ~= "string" then
-    invalid("cursor is malformed or belongs to another sortDirection")
-  end
-  for key in pairs(value) do
-    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
-  end
-  local valid, collection = rights_valid_record_uri(value.u)
-  if not valid_datetime(value.t) or not valid or collection ~= RIGHTS then
-    invalid("cursor is malformed")
-  end
-  return value
-end
-
-local function rights_sort_expression()
-  local created = "rights.record::jsonb->>'createdAt'"
-  local zoned = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
-  return "CASE WHEN jsonb_typeof(rights.record::jsonb->'createdAt') = 'string' AND " .. created ..
-    " ~ '" .. zoned .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created ..
-    ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE " ..
-    "COALESCE(rights.indexed_at::timestamptz, rights.created_at::timestamptz) END"
+  return decode_cursor(token, direction, function(value)
+    local valid, collection = rights_valid_record_uri(value.u)
+    return valid_datetime(value.t) and valid and collection == RIGHTS
+  end)
 end
 
 local function rights_list_query(authors, limit, cursor, direction)
   local where, values = { "rights.collection = $1" }, { RIGHTS }
 
-  if authors then
-    if #authors == 0 then
-      where[#where + 1] = "FALSE"
-    else
-      local marks = {}
-      for _, did in ipairs(authors) do
-        values[#values + 1] = did
-        marks[#marks + 1] = "$" .. #values
-      end
-      where[#where + 1] = "rights.did IN (" .. table.concat(marks, ", ") .. ")"
-    end
-  end
+  if authors then add_in(where, values, "rights.did", authors) end
 
   if cursor then
     values[#values + 1] = cursor.t
@@ -101,7 +67,7 @@ local function rights_list_query(authors, limit, cursor, direction)
   local sql = "SELECT rights.uri, rights.did, rights.cid, rights.indexed_at::text AS indexed_at, " ..
     "rights.record::text AS record, to_char(sorted.sort_at AT TIME ZONE 'UTC', " ..
     "'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp " ..
-    "FROM happyview_records AS rights CROSS JOIN LATERAL (SELECT " .. rights_sort_expression() .. " AS sort_at) AS sorted " ..
+    "FROM happyview_records AS rights CROSS JOIN LATERAL (SELECT " .. created_at_sort("rights") .. " AS sort_at) AS sorted " ..
     "WHERE " .. table.concat(where, " AND ") .. " ORDER BY sorted.sort_at " .. ordering ..
     ", rights.uri " .. ordering .. " LIMIT $" .. #values
   local rows = rights_list_run_query(sql, values)

@@ -148,6 +148,53 @@ local function valid_nsid(value)
   return #name <= 63 and name:match("^[A-Za-z][A-Za-z0-9]*$") ~= nil
 end
 
+local function parse_sort_direction(params)
+  local direction = scalar(params, "sortDirection") or "desc"
+  if direction ~= "asc" and direction ~= "desc" then invalid("sortDirection must be 'asc' or 'desc'") end
+  return direction
+end
+
+local function cursor_encode(value)
+  local encoded = json.encode(value)
+  return (encoded:gsub(".", function(char) return string.format("%02x", string.byte(char)) end))
+end
+
+-- Decodes a hex-encoded {v, d, t, u} list cursor. Rejects malformed tokens, other
+-- sort directions and unknown keys; validate_value(value) -> boolean runs the
+-- endpoint-specific check on t and u. Not for endpoints that skip the 8192-character
+-- cap or accept extra keys.
+local function decode_cursor(token, direction, validate_value)
+  if token == nil then return nil end
+  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
+    invalid("cursor is malformed")
+  end
+  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
+  local ok, value = pcall(json.decode, decoded)
+  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
+    or type(value.t) ~= "string" or type(value.u) ~= "string" then
+    invalid("cursor is malformed or belongs to another sortDirection")
+  end
+  for key in pairs(value) do
+    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
+  end
+  if not validate_value(value) then invalid("cursor is malformed") end
+  return value
+end
+
+-- Adds `column IN ($n, ...)` to where, binding items; an empty list matches nothing.
+local function add_in(where, binds, column, items)
+  if #items == 0 then
+    where[#where + 1] = "FALSE"
+    return
+  end
+  local marks = {}
+  for _, item in ipairs(items) do
+    binds[#binds + 1] = item
+    marks[#marks + 1] = "$" .. #binds
+  end
+  where[#where + 1] = column .. " IN (" .. table.concat(marks, ", ") .. ")"
+end
+
 local function valid_cursor_timestamp(value)
   if type(value) ~= "string" or #value ~= 27
     or not value:match("^%d%d%d%d%-%d%d%-%d%dT%d%d:%d%d:%d%d%.%d%d%d%d%d%dZ$") then
@@ -198,39 +245,11 @@ local function acknowledgement_array(key, format)
   return unique
 end
 
-local function bind_acknowledgement_values(values, items)
-  local placeholders = {}
-  for _, item in ipairs(items) do
-    values[#values + 1] = item
-    placeholders[#placeholders + 1] = "$" .. #values
-  end
-  return placeholders
-end
-
-local function cursor_encode(value)
-  local encoded = json.encode(value)
-  return (encoded:gsub(".", function(char) return string.format("%02x", string.byte(char)) end))
-end
-
 local function decode_acknowledgement_cursor(token, direction)
-  if token == nil then return nil end
-  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
-    invalid("cursor is malformed")
-  end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
-  local ok, value = pcall(json.decode, decoded)
-  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
-    or type(value.t) ~= "string" or type(value.u) ~= "string" then
-    invalid("cursor is malformed or belongs to another sortDirection")
-  end
-  for key in pairs(value) do
-    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
-  end
-  local valid, collection = valid_record_uri(value.u)
-  if not valid_cursor_timestamp(value.t) or not valid or collection ~= ACKNOWLEDGEMENT then
-    invalid("cursor is malformed")
-  end
-  return value
+  return decode_cursor(token, direction, function(value)
+    local valid, collection = valid_record_uri(value.u)
+    return valid_cursor_timestamp(value.t) and valid and collection == ACKNOWLEDGEMENT
+  end)
 end
 
 local function acknowledgement_sort_expression()
@@ -245,22 +264,8 @@ end
 
 local function acknowledgement_list_query(authors, subjects, limit, cursor, direction)
   local where, values = { "acknowledgement.collection = $1" }, { ACKNOWLEDGEMENT }
-  if authors then
-    if #authors == 0 then
-      where[#where + 1] = "FALSE"
-    else
-      where[#where + 1] = "acknowledgement.did IN (" ..
-        table.concat(bind_acknowledgement_values(values, authors), ", ") .. ")"
-    end
-  end
-  if subjects then
-    if #subjects == 0 then
-      where[#where + 1] = "FALSE"
-    else
-      where[#where + 1] = "acknowledgement.record::jsonb->'subject'->>'uri' IN (" ..
-        table.concat(bind_acknowledgement_values(values, subjects), ", ") .. ")"
-    end
-  end
+  if authors then add_in(where, values, "acknowledgement.did", authors) end
+  if subjects then add_in(where, values, "acknowledgement.record::jsonb->'subject'->>'uri'", subjects) end
 
   local page_values, page_where = {}, {}
   for _, value in ipairs(values) do page_values[#page_values + 1] = value end
@@ -296,8 +301,7 @@ local function list_acknowledgements()
   })
   local authors = acknowledgement_array("authors", "did")
   local subjects = acknowledgement_array("subjects", "at-uri")
-  local direction = scalar(params, "sortDirection") or "desc"
-  if direction ~= "asc" and direction ~= "desc" then invalid("sortDirection must be 'asc' or 'desc'") end
+  local direction = parse_sort_direction(params)
   local limit = parse_list_limit(params)
   local cursor = decode_acknowledgement_cursor(scalar(params, "cursor"), direction)
   local rows = acknowledgement_list_query(authors, subjects, limit, cursor, direction)

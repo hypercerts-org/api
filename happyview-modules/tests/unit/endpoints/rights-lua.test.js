@@ -106,6 +106,9 @@ async function listRightsSources() {
     read("lua/shared/datetimeValidation.lua"),
     read("lua/shared/listValidation.lua"),
     read("lua/shared/listQuery.lua"),
+    read("lua/shared/listCursor.lua"),
+    read("lua/shared/listWhere.lua"),
+    read("lua/shared/createdAtSort.lua"),
     read("lua/src/listRights.lua"),
   ]);
 }

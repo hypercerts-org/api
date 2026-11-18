@@ -44,7 +44,9 @@
         "../../lua/shared/listQuery.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",
-        "../../lua/shared/contribution.lua"
+        "../../lua/shared/contribution.lua",
+        "../../lua/shared/listCursor.lua",
+        "../../lua/shared/listWhere.lua"
       ],
       "config": { "script_type": "lua" },
       "dependsOn": ["org.hypercerts.claim.listContributions"]

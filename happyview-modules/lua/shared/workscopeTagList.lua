@@ -37,24 +37,10 @@ local function workscope_tag_array(key)
 end
 
 local function workscope_tag_decode_cursor(token, direction)
-  if token == nil then return nil end
-  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
-    invalid("cursor is malformed")
-  end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
-  local ok, value = pcall(json.decode, decoded)
-  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
-    or type(value.t) ~= "string" or type(value.u) ~= "string" then
-    invalid("cursor is malformed or belongs to another sortDirection")
-  end
-  for key in pairs(value) do
-    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
-  end
-  local valid, collection = workscope_tag_valid_record_uri(value.u)
-  if not valid_datetime(value.t) or not valid or collection ~= WORKSCOPE_TAG then
-    invalid("cursor is malformed")
-  end
-  return value
+  return decode_cursor(token, direction, function(value)
+    local valid, collection = workscope_tag_valid_record_uri(value.u)
+    return valid_datetime(value.t) and valid and collection == WORKSCOPE_TAG
+  end)
 end
 
 local function workscope_tag_list()
@@ -65,18 +51,7 @@ local function workscope_tag_list()
   local cursor = workscope_tag_decode_cursor(scalar(params, "cursor"), direction)
 
   local where, values = { "workscope_tag.collection = $1" }, { WORKSCOPE_TAG }
-  if authors then
-    if #authors == 0 then
-      where[#where + 1] = "FALSE"
-    else
-      local placeholders = {}
-      for _, did in ipairs(authors) do
-        values[#values + 1] = did
-        placeholders[#placeholders + 1] = "$" .. #values
-      end
-      where[#where + 1] = "workscope_tag.did IN (" .. table.concat(placeholders, ", ") .. ")"
-    end
-  end
+  if authors then add_in(where, values, "workscope_tag.did", authors) end
   if cursor then
     values[#values + 1] = cursor.t
     local timestamp = "$" .. #values
