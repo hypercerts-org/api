@@ -161,7 +161,8 @@
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/nsidValidation.lua",
         "../../lua/shared/subjectRecordUri.lua",
-        "../../lua/shared/batchRequestTarget.lua"
+        "../../lua/shared/batchRequestTarget.lua",
+        "../../lua/shared/reactionCounts.lua"
       ],
       "config": {
         "script_type": "lua",

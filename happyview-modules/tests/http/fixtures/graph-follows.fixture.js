@@ -97,6 +97,16 @@ const entityFollows = [
     subject: { $type: "app.certified.defs#recordSubject", uri: graphUris.secondFeature },
     createdAt: tiedCreatedAt,
   }),
+  // The unresolved feature appears only in `via` here: it must not count as a follow of it.
+  // Uses a DID that does not otherwise follow it, so COUNT(DISTINCT did) cannot mask a wrong count.
+  seedRow(entityFollow, graphDids.secondPublisher, "3jzfcijpj2z2g", {
+    subject: { $type: "app.certified.defs#recordSubject", uri: graphUris.followedFeature },
+    createdAt: tiedCreatedAt,
+    via: {
+      uri: graphUris.unresolvedFeature,
+      cid: "bafkreigh2akiscaildcqabsyg3dfr6chu3fgpregiymsck7e7aqa4s52zy",
+    },
+  }),
   seedRow(entityFollow, graphDids.secondPublisher, "3jzfcijpj2z2e", {
     subject: { $type: "app.certified.defs#recordSubject", uri: graphUris.followedFeature },
     createdAt: tiedCreatedAt,

@@ -266,6 +266,20 @@ assert(#calls == 1, 'one batched database query must serve all requested subject
   });
 });
 
+test("getReactionCounts looks subjects up in record_refs and re-checks subject.uri so a via URI is not a like", () => {
+  runLua({
+    endpoint: "getReactionCounts",
+    params: { subjects: [subject] },
+    assertions: `
+local sql = calls[1].sql
+assert(sql:find('happyview_record_refs', 1, true), 'subjects are found through the refs index')
+assert(sql:find('ref.target_uri IN', 1, true), 'lookup is by target URI')
+assert(sql:find("source.record::jsonb->'subject'->>'uri' = ref.target_uri", 1, true), 'a like found via a repost must not count on the repost')
+assert(sql:find('COUNT(DISTINCT source.did)', 1, true), 'likes and reposts count distinct publishers')
+`,
+  });
+});
+
 test("getReactionCounts accepts 100 repeated values but rejects empty, oversized, malformed, and unknown inputs before querying", () => {
   runLua({
     endpoint: "getReactionCounts",

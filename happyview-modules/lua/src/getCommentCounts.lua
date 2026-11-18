@@ -1,33 +1,10 @@
-local COMMENT_ATTACHMENT = "org.hypercerts.context.attachment"
-local COMMENT_CONTENT_TYPE = "comment"
-
--- Counts comment records, not distinct authors. COUNT(DISTINCT uri) keeps a comment
--- that lists the same subject twice from counting twice. A non-array subjects value
--- expands to no rows, matching listAttachments.
 local function comment_count_query(subjects)
-  local backend_ok, backend = pcall(db.backend)
-  if not backend_ok or backend ~= "postgres" then
-    error("CommentCountQueryFailed: comment counts require PostgreSQL", 0)
-  end
-
-  local values, placeholders = { COMMENT_ATTACHMENT, COMMENT_CONTENT_TYPE }, {}
-  for _, subject in ipairs(subjects) do
-    values[#values + 1] = subject
-    placeholders[#placeholders + 1] = "$" .. #values
-  end
-
-  local sql = "SELECT subject.value->>'uri' AS subject, COUNT(DISTINCT comment.uri) AS comment_count " ..
-    "FROM happyview_records AS comment CROSS JOIN LATERAL jsonb_array_elements(" ..
-    "CASE WHEN jsonb_typeof(comment.record::jsonb->'subjects') = 'array' " ..
-    "THEN comment.record::jsonb->'subjects' ELSE '[]'::jsonb END) AS subject(value) " ..
-    "WHERE comment.collection = $1 AND comment.record::jsonb->>'contentType' = $2 " ..
-    "AND subject.value->>'uri' IN (" .. table.concat(placeholders, ", ") .. ") " ..
-    "GROUP BY subject.value->>'uri'"
-  local ok, rows = pcall(db.raw, sql, values)
-  if not ok or type(rows) ~= "table" then
-    error("CommentCountQueryFailed: indexed comment count query failed", 0)
-  end
-  return rows
+  local values = {}
+  local sql = ref_counts.comment_sql(values, subjects)
+  return ref_counts.run({
+    backend = "CommentCountQueryFailed: comment counts require PostgreSQL",
+    query = "CommentCountQueryFailed: indexed comment count query failed",
+  }, sql, values)
 end
 
 local function comment_count_number(value)

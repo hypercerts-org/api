@@ -42,6 +42,7 @@ test("listRecentFollows returns the exact global feed across tied-key pages, inc
     legacyFollowUris.legitCollection,
     legacyFollowUris.plainLater,
     `at://${graphDids.secondPublisher}/${accountFollow}/3jzfcijpj2z2e`,
+    `at://${graphDids.secondPublisher}/${entityFollow}/3jzfcijpj2z2g`,
     `at://${graphDids.secondPublisher}/${entityFollow}/3jzfcijpj2z2e`,
     `at://${graphDids.publisher}/${accountFollow}/3jzfcijpj2z2d`,
     `at://${graphDids.publisher}/${accountFollow}/3jzfcijpj2z2c`,

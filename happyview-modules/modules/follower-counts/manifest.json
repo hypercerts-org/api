@@ -22,6 +22,7 @@
         "../../lua/shared/subjectRecordUri.lua",
         "../../lua/shared/accountFollowFilter.lua",
         "../../lua/shared/batchRequestTarget.lua",
+        "../../lua/shared/reactionCounts.lua",
         "../../lua/shared/followBatch.lua"
       ],
       "config": {

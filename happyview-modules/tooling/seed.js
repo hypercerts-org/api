@@ -58,18 +58,45 @@ function quote(value) {
   return `E'${value.replaceAll("\\", escapedBackslash).replaceAll("'", "''")}'`;
 }
 
-/** @param {{ sql: string; params: unknown[] }[]} statements @param {string} [types] @returns {string} */
-function sqlInput(statements, types = "text, text, text, text, jsonb, text, text") {
+/** @param {unknown} value @param {Set<string>} [found] @returns {Set<string>} */
+function collectAtUris(value, found = new Set()) {
+  if (typeof value === "string") {
+    if (value.startsWith("at://")) found.add(value);
+  } else if (Array.isArray(value)) {
+    for (const item of value) collectAtUris(item, found);
+  } else if (value && typeof value === "object") {
+    for (const item of Object.values(value)) collectAtUris(item, found);
+  }
+  return found;
+}
+
+// HappyView writes one happyview_record_refs row per `at://` string anywhere in a
+// record when it indexes it. Fixtures are inserted directly, so the count queries that
+// read refs (getReactionCounts, getCommentCounts, getFollowerCounts) need the same rows.
+/** @param {SeedRow[]} rows @returns {{ sql: string; params: unknown[] }[]} */
+function refSeedSql(rows) {
+  return rows.flatMap((row) =>
+    [...collectAtUris(row.record)].map((target) => ({
+      sql: "INSERT INTO happyview_record_refs (source_uri, target_uri, collection) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
+      params: [row.uri, target, row.collection],
+    })),
+  );
+}
+
+/** @param {{ sql: string; params: unknown[] }[]} statements @param {string} [types] @param {string} [name] @returns {string} */
+function sqlInput(
+  statements,
+  types = "text, text, text, text, jsonb, text, text",
+  name = "happyview_fixture",
+) {
   const [firstStatement] = statements;
   if (!firstStatement)
     throw new Error("Seed SQL requires at least one statement; provide a nonempty fixture row set");
   return [
     String.raw`\set ON_ERROR_STOP on`,
-    `PREPARE happyview_fixture (${types}) AS ${firstStatement.sql};`,
-    ...statements.map(
-      ({ params }) => `EXECUTE happyview_fixture(${params.map(quote).join(", ")});`,
-    ),
-    "DEALLOCATE happyview_fixture;",
+    `PREPARE ${name} (${types}) AS ${firstStatement.sql};`,
+    ...statements.map(({ params }) => `EXECUTE ${name}(${params.map(quote).join(", ")});`),
+    `DEALLOCATE ${name};`,
   ].join("\n");
 }
 
@@ -87,7 +114,10 @@ export function buildSeedInput(
   ],
 ) {
   disposableTarget(env);
-  return sqlInput(seedSql(rows, { disposableTestTarget: true }));
+  const records = sqlInput(seedSql(rows, { disposableTestTarget: true }));
+  const refs = refSeedSql(rows);
+  if (refs.length === 0) return records;
+  return `${records}\n${sqlInput(refs, "text, text, text", "happyview_fixture_ref")}`;
 }
 
 /** @param {NodeJS.ProcessEnv} [env] @param {DateFixtureRow[]} [rows] @returns {string} */
