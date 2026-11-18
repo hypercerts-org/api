@@ -178,3 +178,16 @@ test("getFollowerCounts Lexicon accepts DIDs and AT-URIs in one subjects list", 
   assert.equal(main.parameters.properties.subjects.items.format, "uri");
   assert.equal(main.parameters.properties.subjects.maxLength, 100);
 });
+
+test("getFollowerCounts uses record_refs for entity URIs and keeps the collection scan for DIDs", () => {
+  runLua({
+    params: { subjects: [account, entity] },
+    assertions: `
+local sql = calls[1].sql
+local account_branch, entity_branch = sql:match('^(.-) UNION ALL (.*)$')
+assert(not account_branch:find('happyview_record_refs', 1, true), 'a DID is not an at:// string, so refs cannot find it')
+assert(entity_branch:find('happyview_record_refs', 1, true), 'entity URIs are found through the refs index')
+assert(entity_branch:find("source.record::jsonb->'subject'->>'uri' = ref.target_uri", 1, true), 'a ref in another field must not count')
+`,
+  });
+});

@@ -1,5 +1,4 @@
 local FOLLOW = "app.certified.graph.follow"
-local ENTITY_FOLLOW = "app.certified.graph.entityFollow"
 
 -- DIDs are account follows; anything else must be an entity-follow AT-URI.
 local function valid_follower_count_subject(value)
@@ -7,24 +6,11 @@ local function valid_follower_count_subject(value)
   return valid_subject_record_uri(value)
 end
 
-local function follower_count_placeholders(values, subjects)
-  local placeholders = {}
-  for _, subject in ipairs(subjects) do
-    values[#values + 1] = subject
-    placeholders[#placeholders + 1] = "$" .. #values
-  end
-  return table.concat(placeholders, ", ")
-end
-
--- One statement for both collections. Each branch counts distinct publishers per
--- subject, which equals the deduplicated relationship totalCount of
--- listActorFollowers and listEntityFollowers.
+-- One statement for both kinds. Each branch counts distinct publishers per subject,
+-- which equals the deduplicated relationship totalCount of listActorFollowers and
+-- listEntityFollowers. Account follows store a bare DID, which happyview_record_refs
+-- does not hold, so DIDs scan the follow collection; entity URIs use the refs index.
 local function follower_count_query(dids, entity_uris)
-  local backend_ok, backend = pcall(db.backend)
-  if not backend_ok or backend ~= "postgres" then
-    error("FollowerCountQueryFailed: follower counts require PostgreSQL", 0)
-  end
-
   local values, branches = {}, {}
   if #dids > 0 then
     values[#values + 1] = FOLLOW
@@ -32,22 +18,16 @@ local function follower_count_query(dids, entity_uris)
     local subject = "record::jsonb->>'subject'"
     branches[#branches + 1] = "SELECT " .. subject .. " AS subject, COUNT(DISTINCT did) AS follower_count " ..
       "FROM happyview_records WHERE collection = " .. collection .. " AND " .. subject ..
-      " IN (" .. follower_count_placeholders(values, dids) .. ") AND " .. account_follow_filter_sql() .. " GROUP BY " .. subject
+      " IN (" .. ref_counts.in_list(values, dids) .. ") AND " .. account_follow_filter_sql() .. " GROUP BY " .. subject
   end
   if #entity_uris > 0 then
-    values[#values + 1] = ENTITY_FOLLOW
-    local collection = "$" .. #values
-    local subject = "record::jsonb->'subject'->>'uri'"
-    branches[#branches + 1] = "SELECT " .. subject .. " AS subject, COUNT(DISTINCT did) AS follower_count " ..
-      "FROM happyview_records WHERE collection = " .. collection .. " AND " .. subject ..
-      " IN (" .. follower_count_placeholders(values, entity_uris) .. ") GROUP BY " .. subject
+    branches[#branches + 1] = ref_counts.entity_follower_sql(values, entity_uris)
   end
 
-  local ok, rows = pcall(db.raw, table.concat(branches, " UNION ALL "), values)
-  if not ok or type(rows) ~= "table" then
-    error("FollowerCountQueryFailed: indexed follower count query failed", 0)
-  end
-  return rows
+  return ref_counts.run({
+    backend = "FollowerCountQueryFailed: follower counts require PostgreSQL",
+    query = "FollowerCountQueryFailed: indexed follower count query failed",
+  }, table.concat(branches, " UNION ALL "), values)
 end
 
 local function follower_count_number(value)
