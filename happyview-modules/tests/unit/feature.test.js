@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { lua } from "./helpers/lua.js";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const FEATURE = "org.hypercerts.entity.feature";
@@ -31,19 +32,6 @@ const FEATURE_RECORD = {
   ],
   sameAs: ["https://example.org/features/wang-chhu"],
 };
-
-function lua(value) {
-  if (value === null) return "nil";
-  if (typeof value === "string") return JSON.stringify(value);
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
-  if (Array.isArray(value)) return `{${value.map(lua).join(",")}}`;
-  if (value && typeof value === "object") {
-    return `{${Object.entries(value)
-      .map(([key, item]) => `[${JSON.stringify(key)}]=${lua(item)}`)
-      .join(",")}}`;
-  }
-  throw new TypeError(`Cannot encode ${typeof value} as a Lua fixture`);
-}
 
 async function runGetFeature({
   params = { uri: FEATURE_URI },

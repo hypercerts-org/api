@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { lua } from "../helpers/lua.js";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const actor = "did:plc:aaaaaaaaaaaaaaaaaaaaaaaa";
@@ -15,20 +16,6 @@ const entityFollow = "app.certified.graph.entityFollow";
 const featureCollection = "org.hypercerts.entity.feature";
 const profileCollection = "app.certified.actor.profile";
 const organizationCollection = "app.certified.actor.organization";
-
-function lua(value) {
-  if (value === null) return "nil";
-  if (typeof value === "string") return JSON.stringify(value);
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
-  if (Array.isArray(value)) return `{${value.map(lua).join(",")}}`;
-  if (value && typeof value === "object") {
-    return `{${Object.entries(value)
-      .filter(([, item]) => item !== null)
-      .map(([key, item]) => `[${JSON.stringify(key)}]=${lua(item)}`)
-      .join(",")}}`;
-  }
-  throw new TypeError(`Cannot encode ${typeof value} as a Lua fixture`);
-}
 
 function runLua(endpoint, source) {
   const endpointPath = `${root}/lua/endpoints/${endpoint}.lua`;
