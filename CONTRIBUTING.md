@@ -2,7 +2,7 @@
 
 ## Set up and validate
 
-Use Node 24 (pinned in `.nvmrc`, which CI also reads) and the repository-pinned pnpm version. Unit tests and `pnpm check` also need Lua 5.4 (`lua` on `PATH`; unit tests run `lua`) and `luacheck` 1.2.0 (`luarocks --lua-version=5.4 --local install luacheck 1.2.0`). CI also provides a `lua5.4` alias. From the repository root:
+Use Node 24 (pinned in `.nvmrc`, which CI also reads) and the repository-pinned pnpm version. Unit tests and `pnpm check` also need Lua 5.4 with both `lua5.4` and `lua` on `PATH` (unit tests call each by name; if you only have one, symlink the other to it, as CI does) and `luacheck` 1.2.0 (`luarocks --lua-version=5.4 --local install luacheck 1.2.0`). From the repository root:
 
 ```sh
 pnpm install --frozen-lockfile
