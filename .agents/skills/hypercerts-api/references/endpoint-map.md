@@ -110,7 +110,7 @@ Paginated reaction-list queries use the earliest record per author/subject URI, 
 | Load one attachment | `org.hypercerts.context.getAttachment` | Exact record AT-URI in `uri`. |
 | List attachments | `org.hypercerts.context.listAttachments` | Filter by publisher, record URI, subject, or content type. |
 | Count comments for subjects | `org.hypercerts.context.getCommentCounts` | Pass 1–100 full subject record AT-URIs as repeated, unbracketed `subjects`. Counts attachments with `contentType` `comment` whose `subjects` include the URI, ignoring CID. Each comment record counts, so several by one author each count. Results preserve input order and duplicates. |
-| Load one evaluation | `org.hypercerts.context.getEvaluation` | Exact record AT-URI in `uri`; includes publisher and evaluator views and preserves raw records when malformed evaluator entries are omitted. |
+| Load one evaluation | `org.hypercerts.context.getEvaluation` | Exact record AT-URI in `uri`; includes publisher and evaluator views and preserves raw records when malformed evaluator entries are omitted. `indexedAt` can be null. |
 | List evaluations | `org.hypercerts.context.listEvaluations` | Filter by publisher, evaluator, or subject; malformed evaluator entries do not hide otherwise valid records. |
 | Load one measurement | `org.hypercerts.context.getMeasurement` | Exact record AT-URI in `uri`. |
 | List measurements | `org.hypercerts.context.listMeasurements` | Filter by publisher or subject. |
@@ -121,7 +121,7 @@ These records are context related to other Hypercert records, not alternate acti
 
 | User task | Query NSID | Practical choice |
 |---|---|---|
-| Load one location | `app.certified.location.getLocation` | Exact location AT-URI in `uri`. |
+| Load one location | `app.certified.location.getLocation` | Exact location AT-URI in `uri`. `indexedAt` can be null. |
 | List/filter locations | `app.certified.location.listLocations` | Filter by publisher, URI, or location type. |
 | Load one feature | `org.hypercerts.entity.getFeature` | Exact feature AT-URI in `uri`; includes author hydration. |
 | List/filter features | `org.hypercerts.entity.listFeatures` | Use publisher, organization-record, or type filters. |

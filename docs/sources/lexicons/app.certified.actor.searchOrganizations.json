@@ -39,6 +39,7 @@
           },
           "sortDirection": {
             "type": "string",
+            "default": "desc",
             "enum": [
               "asc",
               "desc"
@@ -47,6 +48,7 @@
           },
           "limit": {
             "type": "integer",
+            "default": 25,
             "minimum": 1,
             "maximum": 100,
             "description": "Page size; default 25."

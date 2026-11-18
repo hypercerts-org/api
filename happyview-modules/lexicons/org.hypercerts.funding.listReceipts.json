@@ -46,11 +46,13 @@
           },
           "sortDirection": {
             "type": "string",
+            "default": "desc",
             "enum": ["asc", "desc"],
             "description": "Direction for ordering by createdAt then URI; defaults to desc."
           },
           "limit": {
             "type": "integer",
+            "default": 25,
             "minimum": 1,
             "maximum": 100,
             "description": "Maximum receipts per page; default 25."

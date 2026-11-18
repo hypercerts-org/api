@@ -10,7 +10,7 @@
         "required": ["collection"],
         "properties": {
           "collection": { "type": "string", "format": "at-uri", "description": "Full collection record AT-URI using a DID authority." },
-          "limit": { "type": "integer", "minimum": 1, "maximum": 100, "description": "Maximum embedded items in the page; default 25." },
+          "limit": { "type": "integer", "default": 25, "minimum": 1, "maximum": 100, "description": "Maximum embedded items in the page; default 25." },
           "cursor": { "type": "string", "description": "Opaque item-pagination cursor. Continue with the same collection URI; it is not bound to a collection version." }
         }
       },

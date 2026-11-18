@@ -22,6 +22,7 @@
           },
           "sortDirection": {
             "type": "string",
+            "default": "desc",
             "enum": ["asc", "desc"],
             "description": "Sort direction for createdAt and URI; default desc."
           },

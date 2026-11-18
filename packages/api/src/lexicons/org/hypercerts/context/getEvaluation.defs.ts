@@ -43,7 +43,7 @@ const evaluatorView = /*#__PURE__*/ l.typedObject<EvaluatorView>($nsid, "evaluat
 export { evaluatorView };
 
 /** Evaluation with the original record, hydrated publisher, and evaluator projections. The record is not rewritten when evaluator data is malformed. A missing or non-array evaluator container yields an empty hydrated array; malformed entries are omitted. Missing profile or organization sidecars are omitted from evaluators; query or hydration failures fail the request. Evaluator arrays over 1000 entries still fail exact lookup and are skipped by lists. */
-type EvaluationView = { $type?: "org.hypercerts.context.getEvaluation#evaluationView";"uri":l.AtUriString;"cid":l.CidString;"indexedAt":l.DatetimeString;"did":l.DidString;"author":ApiDefs.ActorView;"record":ContextEvaluation.Main;
+type EvaluationView = { $type?: "org.hypercerts.context.getEvaluation#evaluationView";"uri":l.AtUriString;"cid":l.CidString;"indexedAt":l.DatetimeString | null;"did":l.DidString;"author":ApiDefs.ActorView;"record":ContextEvaluation.Main;
 
   /**
    * Dense projection of valid record.evaluators object entries with valid DIDs, preserving their source order and duplicates. Entries with malformed shapes or invalid DIDs are omitted without changing the original record; a missing or non-array source yields an empty array. The first 100 response entries get their profile and organization looked up; later entries carry only the did. The raw evaluator array is limited to 1000 entries; over-limit records fail exact lookup and are skipped by lists.
@@ -53,7 +53,7 @@ type EvaluationView = { $type?: "org.hypercerts.context.getEvaluation#evaluation
 export type { EvaluationView };
 
 /** Evaluation with the original record, hydrated publisher, and evaluator projections. The record is not rewritten when evaluator data is malformed. A missing or non-array evaluator container yields an empty hydrated array; malformed entries are omitted. Missing profile or organization sidecars are omitted from evaluators; query or hydration failures fail the request. Evaluator arrays over 1000 entries still fail exact lookup and are skipped by lists. */
-const evaluationView = /*#__PURE__*/ l.typedObject<EvaluationView>($nsid, "evaluationView", /*#__PURE__*/ l.object({"uri":/*#__PURE__*/ l.string({"format":"at-uri"}),"cid":/*#__PURE__*/ l.string({"format":"cid"}),"indexedAt":/*#__PURE__*/ l.string({"format":"datetime"}),"did":/*#__PURE__*/ l.string({"format":"did"}),"author":/*#__PURE__*/ l.ref<ApiDefs.ActorView>((() => ApiDefs.actorView) as any),"record":/*#__PURE__*/ l.ref<ContextEvaluation.Main>((() => ContextEvaluation.main) as any),"evaluators":/*#__PURE__*/ l.array(/*#__PURE__*/ l.ref<EvaluatorView>((() => evaluatorView) as any), {"maxLength":1000})}));
+const evaluationView = /*#__PURE__*/ l.typedObject<EvaluationView>($nsid, "evaluationView", /*#__PURE__*/ l.object({"uri":/*#__PURE__*/ l.string({"format":"at-uri"}),"cid":/*#__PURE__*/ l.string({"format":"cid"}),"indexedAt":/*#__PURE__*/ l.nullable(/*#__PURE__*/ l.string({"format":"datetime"})),"did":/*#__PURE__*/ l.string({"format":"did"}),"author":/*#__PURE__*/ l.ref<ApiDefs.ActorView>((() => ApiDefs.actorView) as any),"record":/*#__PURE__*/ l.ref<ContextEvaluation.Main>((() => ContextEvaluation.main) as any),"evaluators":/*#__PURE__*/ l.array(/*#__PURE__*/ l.ref<EvaluatorView>((() => evaluatorView) as any), {"maxLength":1000})}));
 
 export { evaluationView };
 
