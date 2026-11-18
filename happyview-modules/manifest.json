@@ -517,8 +517,5 @@
     "modules/context-measurements/manifest.json",
     "modules/evm-links/manifest.json",
     "modules/rights/manifest.json"
-  ],
-  "luaBuild": {
-    "endpointSources": ["lua/src/getFeature.lua", "lua/src/listFeatures.lua"]
-  }
+  ]
 }
