@@ -238,6 +238,8 @@ const DATETIME_CURSORS = {
   "lowercase-z": "2025-01-01T00:00:00z",
   "lowercase-t": "2025-01-01t00:00:00Z",
   "trailing-junk": "2025-01-01T00:00:00Zjunk",
+  "zone-offset-trailing-junk": "2025-01-01T00:00:00+05:30junk",
+  "fraction-offset-trailing-junk": "2025-01-01T00:00:00.5+05:30junk",
   "year-5-digit": "12025-01-01T00:00:00Z",
   "end-of-year-valid": "2025-12-31T23:59:59Z",
   "zone-plus-23-59-valid": "2025-01-01T00:00:00+23:59",
@@ -394,30 +396,40 @@ const COUNT_ROW_ENDPOINTS = new Set([
 ]);
 
 /** Follow records name their target; entity-following scans decode it from the row. */
-function followSubject(collection) {
+function followSubject(collection, n) {
   if (collection === "app.certified.graph.entityFollow") {
-    return { subject: { uri: ACTIVITY_URI, cid: "bafyactivity" } };
+    return {
+      subject: {
+        uri: `at://${rowDid(n)}/org.hypercerts.claim.activity/3kabcdefghijk`,
+        cid: `bafyactivity${n}`,
+      },
+    };
   }
-  if (collection === "app.certified.graph.follow") return { subject: DID };
+  if (collection === "app.certified.graph.follow") return { subject: rowDid(n) };
   return {};
+}
+
+/** Distinct DID per page row, so hydration `IN (...)` lists bind several values. */
+function rowDid(n) {
+  return `did:plc:abcdefghijklmnopqrstuvw${"xyz"[n]}`;
 }
 
 /** One generic row carrying every column any list query selects. */
 function pageRow(endpoint, n) {
   const spec = CURSORS[endpoint.id] ?? {};
   const collection = spec.collection ?? "org.hypercerts.claim.activity";
-  const uri = `at://${DID}/${collection}/${spec.rkey ?? rkey(n)}`;
+  const uri = `at://${rowDid(n)}/${collection}/${spec.rkey ?? rkey(n)}`;
   const createdAt = `2025-01-0${n + 1}T00:00:00Z`;
   return {
     uri,
-    did: DID,
+    did: rowDid(n),
     cid: `bafyfixture${n}`,
     indexed_at: createdAt,
     created_at: createdAt,
-    record: JSON.stringify({ $type: collection, createdAt, ...followSubject(collection) }),
+    record: JSON.stringify({ $type: collection, createdAt, ...followSubject(collection, n) }),
     sort_timestamp: `2025-01-0${n + 1}T00:00:00.000000Z`,
-    actor_did: DID,
-    subject_did: DID,
+    actor_did: rowDid(n),
+    subject_did: rowDid(n),
     total_count: String(PAGE_ROWS),
   };
 }
