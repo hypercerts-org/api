@@ -37,7 +37,7 @@ Do not use `authors[]=` or comma-joined values unless that exact endpoint contra
 
 A useful starting distinction: arrays often mean “any of these” for a filter, while separate filters may combine with AND, but this is **not a universal rule**. For example, the bundled collection contract says `tagUris` requires every supplied tag URI, while `itemUris` matches URI without CID. Confirm the exact operation before relying on filter logic.
 
-The batch relationship checks `app.certified.graph.getFollows` and `app.certified.graph.getEntityFollows` each take one `actor` and 1–100 repeated, unbracketed `subjects` or `entities` values. Keep duplicates if the caller supplied them: each output `results` entry echoes its target and preserves its position. The encoded GET request-target must stay within 16,384 bytes. Over-limit requests are currently rejected with HTTP 500 `script_error` whose message begins `InvalidRequest:`, not 400. A null `follow` means only that no indexed relationship was found; database failures are errors, not nulls.
+The batch relationship checks `app.certified.graph.getFollows` and `app.certified.graph.getEntityFollows` each take one `actor` and 1–100 repeated, unbracketed `subjects` or `entities` values. Keep duplicates if the caller supplied them: each output `results` entry echoes its target and preserves its position. The encoded GET request-target must stay within 16,384 bytes. Over-limit requests are currently rejected with HTTP 500 `script_error` whose message contains `InvalidRequest:` after a `runtime error: ` prefix, not 400. A null `follow` means only that no indexed relationship was found; database failures are errors, not nulls.
 
 `app.certified.graph.getFollowerCounts` takes no `actor`: append 1–100 account DIDs and full DID-authority entity AT-URIs under the same unbracketed `subjects` key, in any mix. A value starting with `did:` is counted as an account; any other value must be an entity AT-URI. The response has one `{subject, followerCount}` entry per input occurrence in the same order, including duplicates. The same 16,384-byte request-target limit applies, and a zero count means no indexed followers were found at query time.
 
@@ -123,12 +123,16 @@ if (!response.ok) {
     : {};
   const code = typeof body.error === "string" ? body.error : "XrpcError";
   const message = typeof body.message === "string" ? body.message : "";
-  throw new Error(
-    `GET ${url.pathname} failed: HTTP ${response.status}, ${code}${message ? `: ${message}` : ""}`,
+  // Keep the parsed fields so callers can match the declared error name.
+  throw Object.assign(
+    new Error(
+      `GET ${url.pathname} failed: HTTP ${response.status}, ${code}${message ? `: ${message}` : ""}`,
+    ),
+    { status: response.status, code, xrpcMessage: message },
   );
 }
 ```
 
-Currently, HappyView returns every error raised by an endpoint script as HTTP 500 with a body like `{"error":"script_error","message":"InvalidRequest: limit must be an integer from 1 through 100"}`, not the declared error name as `error` and not a 4xx status. Match the declared error name (`InvalidRequest`, `RecordNotFound`, and so on) as the prefix of `message` before the first colon, not the `error` field or the HTTP status. This depends on the HappyView version in use and may change; accept both forms (`error` equal to the name, or `message` starting with `Name:`).
+Currently, HappyView returns every error raised by an endpoint script as HTTP 500 with a body like `{"error":"script_error","message":"runtime error: InvalidRequest: limit must be an integer from 1 through 100"}`, not the declared error name as `error` and not a 4xx status. The declared error name (`InvalidRequest`, `RecordNotFound`, and so on) appears in `message`, after a `runtime error: ` prefix in the pinned HappyView; match it there (for example with `/^(?:runtime error: )?Name:/` on the thrown error's `xrpcMessage` property), not the HTTP status. This depends on the HappyView version in use and may change; accept both forms (`error` equal to the name, or `message` containing `Name:` after an optional `runtime error: ` prefix).
 
 On failure, use that endpoint's declared errors in the bundled OpenAPI operation to decide whether the request is invalid, a record is absent from the index, handle resolution failed, or an indexed query/hydration failed. Do not map a query failure to “no results.” For null and not-found distinctions, see [reliability.md](reliability.md).

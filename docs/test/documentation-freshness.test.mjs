@@ -131,6 +131,14 @@ test("freshness gate rejects endpoint and pinned support-schema drift without wr
   );
   assert.equal(await readFile(path.join(fixtureDocs, "openapi.json"), "utf8"), baselineOpenApi);
 
+  supportSchema.defs.view.properties.value.type = "string";
+  await writeJson(schemaPath, supportSchema);
+  await assertDocumentationFresh({
+    apiRoot,
+    docsRoot: fixtureDocs,
+    lexiconPackageRoot: packageRoot,
+  });
+
   const skillCopy = path.join(fixtureDocs, "..", SKILL_OPENAPI_PATH);
   await writeJson(skillCopy, { ...baseline.openapi });
   await assert.rejects(
