@@ -98,7 +98,8 @@ const entityFollows = [
     createdAt: tiedCreatedAt,
   }),
   // The unresolved feature appears only in `via` here: it must not count as a follow of it.
-  seedRow(entityFollow, graphDids.publisher, "3jzfcijpj2z2g", {
+  // Uses a DID that does not otherwise follow it, so COUNT(DISTINCT did) cannot mask a wrong count.
+  seedRow(entityFollow, graphDids.secondPublisher, "3jzfcijpj2z2g", {
     subject: { $type: "app.certified.defs#recordSubject", uri: graphUris.followedFeature },
     createdAt: tiedCreatedAt,
     via: {

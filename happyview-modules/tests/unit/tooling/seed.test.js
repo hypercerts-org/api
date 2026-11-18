@@ -160,10 +160,16 @@ test("seed input writes one record_refs row per at:// string, as HappyView does 
     },
   ]);
   const refs = sql.split("\n").filter((line) => line.startsWith("EXECUTE happyview_fixture_ref("));
-  assert.equal(refs.length, 2, "a repeated URI yields one row; non-URI strings yield none");
-  assert.ok(refs.some((line) => line.includes(target)));
-  assert.ok(refs.some((line) => line.includes(via)));
-  assert.ok(refs.every((line) => line.includes("app.certified.feed.like'")));
+  const source = "at://did:web:liker.example/app.certified.feed.like/c";
+  const collection = "app.certified.feed.like";
+  assert.deepEqual(
+    refs,
+    [target, via].map(
+      (uri) =>
+        `EXECUTE happyview_fixture_ref(${[source, uri, collection].map((v) => `E'${v}'`).join(", ")});`,
+    ),
+    "a repeated URI yields one row; non-URI strings yield none; rows keep record order",
+  );
   assert.match(sql, /ON CONFLICT DO NOTHING/);
 });
 
