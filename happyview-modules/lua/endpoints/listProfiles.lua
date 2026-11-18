@@ -106,6 +106,20 @@ local function created_at_sort(alias)
     "::timestamptz, " .. created_at .. "::timestamptz) END"
 end
 
+-- Adds `column IN ($n, ...)` to where, binding items; an empty list matches nothing.
+local function add_in(where, binds, column, items)
+  if #items == 0 then
+    where[#where + 1] = "FALSE"
+    return
+  end
+  local marks = {}
+  for _, item in ipairs(items) do
+    binds[#binds + 1] = item
+    marks[#marks + 1] = "$" .. #binds
+  end
+  where[#where + 1] = column .. " IN (" .. table.concat(marks, ", ") .. ")"
+end
+
 local function valid_profile_uri(value)
   if type(value) ~= "string" or value:find("[?#]") then return false end
   local authority, collection, rkey = value:match("^at://([^/]+)/([^/]+)/([^/]+)$")
@@ -134,17 +148,6 @@ local function array(params, key)
   return unique
 end
 
-local function add_actors(where, values, actors)
-  if not actors then return end
-  if #actors == 0 then where[#where + 1] = "FALSE"; return end
-  local placeholders = {}
-  for _, did in ipairs(actors) do
-    values[#values + 1] = did
-    placeholders[#placeholders + 1] = "$" .. #values
-  end
-  where[#where + 1] = "did IN (" .. table.concat(placeholders, ", ") .. ")"
-end
-
 local function cursor_decode(token, direction)
   if not token then return nil end
   if #token % 2 ~= 0 or token:find("[^0-9a-f]") then invalid("cursor is malformed") end
@@ -163,7 +166,7 @@ end
 
 local function query_profiles(actors, search, limit, cursor, direction)
   local where, values = { "collection = $1", "rkey = 'self'" }, { PROFILE }
-  add_actors(where, values, actors)
+  if actors then add_in(where, values, "did", actors) end
   if search then
     values[#values + 1] = search
     local term = "$" .. #values

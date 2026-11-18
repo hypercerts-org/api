@@ -61,14 +61,6 @@ local function decode_badge_definition_cursor(token, direction)
   return value
 end
 
-local function badge_definition_sort_expression()
-  local created = "record::jsonb->>'createdAt'"
-  local zoned = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
-  return "CASE WHEN jsonb_typeof(record::jsonb->'createdAt') = 'string' AND " .. created ..
-    " ~ '" .. zoned .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created ..
-    ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE COALESCE(indexed_at::timestamptz, created_at::timestamptz) END"
-end
-
 local function query_badge_definitions(authors, badge_types, search, limit, cursor, direction)
   local where, values = { "collection = $1" }, { COLLECTION }
   add_badge_definition_filter(where, values, "did", authors)
@@ -89,7 +81,7 @@ local function query_badge_definitions(authors, badge_types, search, limit, curs
   end
   values[#values + 1] = limit + 1
   local ordering = direction == "asc" and "ASC" or "DESC"
-  local sort_expression = badge_definition_sort_expression()
+  local sort_expression = created_at_sort()
   local sql = "SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record, " ..
     "to_char(sorted.sort_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp " ..
     "FROM happyview_records CROSS JOIN LATERAL (SELECT " .. sort_expression .. " AS sort_at) sorted WHERE " ..

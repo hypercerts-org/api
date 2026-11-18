@@ -41,17 +41,6 @@ local function array(params, key)
   return unique
 end
 
-local function add_actors(where, values, actors)
-  if not actors then return end
-  if #actors == 0 then where[#where + 1] = "FALSE"; return end
-  local placeholders = {}
-  for _, did in ipairs(actors) do
-    values[#values + 1] = did
-    placeholders[#placeholders + 1] = "$" .. #values
-  end
-  where[#where + 1] = "organization.did IN (" .. table.concat(placeholders, ", ") .. ")"
-end
-
 local function add_organization_types(where, values, organization_types)
   if not organization_types then return end
   if #organization_types == 0 then where[#where + 1] = "FALSE"; return end
@@ -84,7 +73,7 @@ end
 
 local function query_organizations(actors, organization_types, visibility, search, limit, cursor, direction)
   local where, values = { "organization.collection = $1", "organization.rkey = 'self'" }, { ORGANIZATION }
-  add_actors(where, values, actors)
+  if actors then add_in(where, values, "organization.did", actors) end
   add_organization_types(where, values, organization_types)
   if visibility ~= nil then
     values[#values + 1] = visibility

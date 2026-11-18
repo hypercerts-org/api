@@ -139,6 +139,7 @@ async function runListFeatures(
       "lua/shared/datetimeValidation.lua",
       "lua/shared/listValidation.lua",
       "lua/shared/listQuery.lua",
+      "lua/shared/listWhere.lua",
       "lua/shared/featureValidation.lua",
       "lua/shared/recordView.lua",
       "lua/shared/featureProjection.lua",

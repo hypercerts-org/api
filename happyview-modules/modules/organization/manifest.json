@@ -96,6 +96,7 @@
         "../../lua/shared/recordView.lua",
         "../../lua/shared/organization.lua",
         "../../lua/shared/createdAtSort.lua",
+        "../../lua/shared/listWhere.lua",
         "../../lua/shared/organizationList.lua"
       ],
       "config": {
@@ -119,6 +120,7 @@
         "../../lua/shared/recordView.lua",
         "../../lua/shared/organization.lua",
         "../../lua/shared/createdAtSort.lua",
+        "../../lua/shared/listWhere.lua",
         "../../lua/shared/organizationList.lua"
       ],
       "config": {
