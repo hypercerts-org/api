@@ -39,6 +39,11 @@
         "../../lua/shared/collection.lua",
         "../../lua/shared/datetimeValidation.lua",
         "../../lua/shared/createdAtSort.lua",
+        "../../lua/shared/query.lua",
+        "../../lua/shared/listValidation.lua",
+        "../../lua/shared/listQuery.lua",
+        "../../lua/shared/listCursor.lua",
+        "../../lua/shared/listWhere.lua",
         "../../lua/shared/collectionList.lua"
       ],
       "config": {
@@ -69,6 +74,11 @@
         "../../lua/shared/collection.lua",
         "../../lua/shared/datetimeValidation.lua",
         "../../lua/shared/createdAtSort.lua",
+        "../../lua/shared/query.lua",
+        "../../lua/shared/listValidation.lua",
+        "../../lua/shared/listQuery.lua",
+        "../../lua/shared/listCursor.lua",
+        "../../lua/shared/listWhere.lua",
         "../../lua/shared/collectionList.lua"
       ],
       "config": {
@@ -88,6 +98,7 @@
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/activityProjection.lua",
         "../../lua/shared/featureProjection.lua",
+        "../../lua/shared/listValidation.lua",
         "../../lua/shared/collectionItems.lua"
       ],
       "config": {

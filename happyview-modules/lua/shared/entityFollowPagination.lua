@@ -1,22 +1,8 @@
 local function entity_follow_decode_cursor(token, direction)
-  if token == nil then return nil end
-  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
-    invalid("cursor is malformed")
-  end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
-  local ok, value = pcall(json.decode, decoded)
-  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
-    or type(value.t) ~= "string" or type(value.u) ~= "string" then
-    invalid("cursor is malformed or belongs to another sortDirection")
-  end
-  for key in pairs(value) do
-    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
-  end
-  local valid, collection = valid_record_uri(value.u)
-  if not valid or collection ~= ENTITY_FOLLOW or not valid_datetime(value.t) then
-    invalid("cursor is malformed")
-  end
-  return value
+  return decode_cursor(token, direction, function(value)
+    local valid, collection = valid_record_uri(value.u)
+    return valid and collection == ENTITY_FOLLOW and valid_datetime(value.t)
+  end)
 end
 
 local function entity_follow_query_page(mode, identity, limit, cursor, direction)
@@ -40,7 +26,7 @@ local function entity_follow_query_page(mode, identity, limit, cursor, direction
   values[#values + 1] = limit + 1
   local ordering = direction == "asc" and "ASC" or "DESC"
   local subject_uri = "record::jsonb->'subject'->>'uri'"
-  local ranked_follows = "ranked_follows AS (SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record, sorted.sort_at, ROW_NUMBER() OVER (PARTITION BY did, " .. subject_uri .. " ORDER BY sorted.sort_at ASC, uri ASC) AS relationship_rank FROM happyview_records CROSS JOIN LATERAL (SELECT " .. entity_follow_sort_key() .. " AS sort_at) sorted WHERE " .. table.concat(filters, " AND ") .. ")"
+  local ranked_follows = "ranked_follows AS (SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record, sorted.sort_at, ROW_NUMBER() OVER (PARTITION BY did, " .. subject_uri .. " ORDER BY sorted.sort_at ASC, uri ASC) AS relationship_rank FROM happyview_records CROSS JOIN LATERAL (SELECT " .. created_at_sort() .. " AS sort_at) sorted WHERE " .. table.concat(filters, " AND ") .. ")"
   local representatives = "representatives AS (SELECT uri, did, cid, indexed_at, record, sort_at FROM ranked_follows WHERE relationship_rank = 1)"
   local page = "page AS (SELECT uri, did, cid, indexed_at, record, sort_at FROM representatives" .. cursor_filter .. " ORDER BY sort_at " .. ordering .. ", uri " .. ordering .. " LIMIT $" .. #values .. ")"
   local sql

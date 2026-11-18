@@ -55,6 +55,7 @@
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/entityFollow.lua",
+        "../../lua/shared/createdAtSort.lua",
         "../../lua/shared/entityFollowLookup.lua"
       ],
       "config": {
@@ -97,6 +98,8 @@
         "../../lua/shared/listValidation.lua",
         "../../lua/shared/listQuery.lua",
         "../../lua/shared/entityFollow.lua",
+        "../../lua/shared/listCursor.lua",
+        "../../lua/shared/createdAtSort.lua",
         "../../lua/shared/entityFollowPagination.lua",
         "../../lua/shared/entityFollowFollowers.lua"
       ],
@@ -122,6 +125,8 @@
         "../../lua/shared/collectionProjection.lua",
         "../../lua/shared/featureProjection.lua",
         "../../lua/shared/entityFollow.lua",
+        "../../lua/shared/listCursor.lua",
+        "../../lua/shared/createdAtSort.lua",
         "../../lua/shared/entityFollowPagination.lua",
         "../../lua/shared/entityFollowEntities.lua"
       ],

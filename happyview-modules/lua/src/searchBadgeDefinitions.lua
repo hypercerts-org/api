@@ -1,10 +1,5 @@
 local COLLECTION = "app.certified.badge.definition"
 
-local function valid_badge_definition_uri(value)
-  local valid, collection = valid_record_uri(value)
-  return valid and collection == COLLECTION
-end
-
 local function query(sql, values)
   if db.backend() ~= "postgres" then
     error("BadgeDefinitionQueryFailed: badge definition API requires PostgreSQL", 0)

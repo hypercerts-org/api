@@ -12,13 +12,6 @@ local function entity_follow_query(sql, values)
   return result
 end
 
--- Keep malformed publisher timestamps out of casts; preserve the actor-follow fallback order.
-local function entity_follow_sort_key()
-  local created = "record::jsonb->>'createdAt'"
-  local zoned = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
-  return "CASE WHEN jsonb_typeof(record::jsonb->'createdAt') = 'string' AND " .. created .. " ~ '" .. zoned .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created .. ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE COALESCE(indexed_at::timestamptz, created_at::timestamptz) END"
-end
-
 local function entity_follow_indexed_record_view(row)
   return {
     uri = row.uri,

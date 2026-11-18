@@ -33,20 +33,6 @@ local function attachment_array(params, key, validate, description)
   return unique
 end
 
-local function attachment_bind_in(where, values, expression, items)
-  if not items then return end
-  if #items == 0 then
-    where[#where + 1] = "FALSE"
-    return
-  end
-  local placeholders = {}
-  for _, item in ipairs(items) do
-    values[#values + 1] = item
-    placeholders[#placeholders + 1] = "$" .. #values
-  end
-  where[#where + 1] = expression .. " IN (" .. table.concat(placeholders, ", ") .. ")"
-end
-
 local function attachment_subject_filter(where, values, subjects)
   if not subjects then return end
   if #subjects == 0 then
@@ -64,39 +50,20 @@ local function attachment_subject_filter(where, values, subjects)
     "WHERE subject.value->>'uri' IN (" .. table.concat(placeholders, ", ") .. "))"
 end
 
-local function attachment_sort_expression()
-  local created = "attachment.record::jsonb->>'createdAt'"
-  local zoned = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
-  return "CASE WHEN jsonb_typeof(attachment.record::jsonb->'createdAt') = 'string' AND " .. created ..
-    " ~ '" .. zoned .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created ..
-    ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE " ..
-    "COALESCE(attachment.indexed_at::timestamptz, attachment.created_at::timestamptz) END"
-end
-
 local function attachment_cursor_decode(token, direction)
-  if token == nil then return nil end
-  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
-    invalid("cursor is malformed")
-  end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
-  local ok, value = pcall(json.decode, decoded)
-  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
-    or type(value.t) ~= "string" or type(value.u) ~= "string" then
-    invalid("cursor is malformed or belongs to another sortDirection")
-  end
-  for key in pairs(value) do
-    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
-  end
-  if not valid_datetime(value.t) or not valid_attachment_uri(value.u) then invalid("cursor is malformed") end
-  return value
+  return decode_cursor(token, direction, function(value)
+    return valid_datetime(value.t) and valid_attachment_uri(value.u)
+  end)
 end
 
 local function query_attachments(filters, limit, cursor, direction)
   local where, values = { "attachment.collection = $1" }, { ATTACHMENT_COLLECTION }
-  attachment_bind_in(where, values, "attachment.did", filters.authors)
-  attachment_bind_in(where, values, "attachment.uri", filters.uris)
+  if filters.authors then add_in(where, values, "attachment.did", filters.authors) end
+  if filters.uris then add_in(where, values, "attachment.uri", filters.uris) end
   attachment_subject_filter(where, values, filters.subjects)
-  attachment_bind_in(where, values, "attachment.record::jsonb->>'contentType'", filters.content_types)
+  if filters.content_types then
+    add_in(where, values, "attachment.record::jsonb->>'contentType'", filters.content_types)
+  end
 
   if cursor then
     values[#values + 1] = cursor.t
@@ -110,7 +77,7 @@ local function query_attachments(filters, limit, cursor, direction)
 
   values[#values + 1] = limit + 1
   local ordering = direction == "asc" and "ASC" or "DESC"
-  local sort_key = attachment_sort_expression()
+  local sort_key = created_at_sort("attachment")
   local sql = "SELECT attachment.uri, attachment.did, attachment.cid, attachment.indexed_at::text AS indexed_at, " ..
     "attachment.record::text AS record, to_char(sorted.sort_at AT TIME ZONE 'UTC', " ..
     "'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp " ..

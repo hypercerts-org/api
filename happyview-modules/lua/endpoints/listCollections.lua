@@ -291,6 +291,82 @@ local function created_at_sort(alias)
     "::timestamptz, " .. created_at .. "::timestamptz) END"
 end
 
+local function invalid(message)
+  error("InvalidRequest: " .. message, 0)
+end
+
+local function keys_only(values, allowed, unknown_message_prefix)
+  for key in pairs(values) do
+    if not allowed[key] then
+      invalid(unknown_message_prefix and (unknown_message_prefix .. key) or "unknown query parameter")
+    end
+  end
+end
+
+local function scalar(params, key)
+  local value = params[key]
+  if value == nil then return nil end
+  if type(value) ~= "string" and type(value) ~= "number" then
+    invalid(key .. " must occur once")
+  end
+  return tostring(value)
+end
+
+local function parse_list_limit(params)
+  local limit_value = scalar(params, "limit")
+  if limit_value and not limit_value:match("^%d+$") then invalid("limit must be an integer from 1 through 100") end
+  local limit = limit_value and tonumber(limit_value) or 25
+  if not limit or limit % 1 ~= 0 or limit < 1 or limit > 100 then invalid("limit must be an integer from 1 through 100") end
+  return limit
+end
+
+local function parse_sort_direction(params)
+  local direction = scalar(params, "sortDirection") or "desc"
+  if direction ~= "asc" and direction ~= "desc" then invalid("sortDirection must be 'asc' or 'desc'") end
+  return direction
+end
+
+local function cursor_encode(value)
+  local encoded = json.encode(value)
+  return (encoded:gsub(".", function(char) return string.format("%02x", string.byte(char)) end))
+end
+
+-- Decodes a hex-encoded {v, d, t, u} list cursor. Rejects malformed tokens, other
+-- sort directions and unknown keys; validate_value(value) -> boolean runs the
+-- endpoint-specific check on t and u. Not for endpoints that skip the 8192-character
+-- cap or accept extra keys.
+local function decode_cursor(token, direction, validate_value)
+  if token == nil then return nil end
+  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
+    invalid("cursor is malformed")
+  end
+  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
+  local ok, value = pcall(json.decode, decoded)
+  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
+    or type(value.t) ~= "string" or type(value.u) ~= "string" then
+    invalid("cursor is malformed or belongs to another sortDirection")
+  end
+  for key in pairs(value) do
+    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
+  end
+  if not validate_value(value) then invalid("cursor is malformed") end
+  return value
+end
+
+-- Adds `column IN ($n, ...)` to where, binding items; an empty list matches nothing.
+local function add_in(where, binds, column, items)
+  if #items == 0 then
+    where[#where + 1] = "FALSE"
+    return
+  end
+  local marks = {}
+  for _, item in ipairs(items) do
+    binds[#binds + 1] = item
+    marks[#marks + 1] = "$" .. #binds
+  end
+  where[#where + 1] = column .. " IN (" .. table.concat(marks, ", ") .. ")"
+end
+
 local function collection_array(key, kind)
   local value = params[key]
   if value == nil then return nil end
@@ -345,44 +421,11 @@ local function collection_array(key, kind)
   return unique
 end
 
-local function collection_list_limit()
-  local value = collection_scalar(params, "limit")
-  if value == nil then return 25 end
-  if not value:match("^%d+$") then collection_invalid("limit must be an integer from 1 through 100") end
-  local limit = tonumber(value)
-  if not limit or limit < 1 or limit > 100 then
-    collection_invalid("limit must be an integer from 1 through 100")
-  end
-  return limit
-end
-
 local function collection_list_cursor_decode(token, direction)
-  if token == nil then return nil end
-  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
-    collection_invalid("cursor is malformed")
-  end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
-  local ok, value = pcall(json.decode, decoded)
-  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
-    or type(value.t) ~= "string" or type(value.u) ~= "string" then
-    collection_invalid("cursor is malformed or belongs to another sortDirection")
-  end
-  for key in pairs(value) do
-    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then
-      collection_invalid("cursor is malformed")
-    end
-  end
-  local valid, collection = collection_valid_record_uri(value.u)
-  if not valid_datetime(value.t) or not valid or collection ~= COLLECTION then
-    collection_invalid("cursor is malformed")
-  end
-  return value
-end
-
-local function collection_cursor_encode(value)
-  return (json.encode(value):gsub(".", function(char)
-    return string.format("%02x", string.byte(char))
-  end))
+  return decode_cursor(token, direction, function(value)
+    local valid, collection = collection_valid_record_uri(value.u)
+    return valid_datetime(value.t) and valid and collection == COLLECTION
+  end)
 end
 
 local function collection_bind_values(values, items)
@@ -397,34 +440,15 @@ end
 local function collection_list_filters(filters, search)
   local where, values = { "collection.collection = $1" }, { COLLECTION }
 
-  if filters.authors then
-    if #filters.authors == 0 then
-      where[#where + 1] = "FALSE"
-    else
-      where[#where + 1] = "collection.did IN (" .. table.concat(collection_bind_values(values, filters.authors), ", ") .. ")"
-    end
-  end
+  if filters.authors then add_in(where, values, "collection.did", filters.authors) end
   if filters.hasOrganizationRecord ~= nil then
     local predicate = filters.hasOrganizationRecord and "EXISTS" or "NOT EXISTS"
     where[#where + 1] = predicate .. " (SELECT 1 FROM happyview_records AS organization " ..
       "WHERE organization.collection = 'app.certified.actor.organization' AND organization.rkey = 'self' " ..
       "AND organization.did = collection.did)"
   end
-  if filters.types then
-    if #filters.types == 0 then
-      where[#where + 1] = "FALSE"
-    else
-      where[#where + 1] = "collection.record::jsonb->>'type' IN (" ..
-        table.concat(collection_bind_values(values, filters.types), ", ") .. ")"
-    end
-  end
-  if filters.uris then
-    if #filters.uris == 0 then
-      where[#where + 1] = "FALSE"
-    else
-      where[#where + 1] = "collection.uri IN (" .. table.concat(collection_bind_values(values, filters.uris), ", ") .. ")"
-    end
-  end
+  if filters.types then add_in(where, values, "collection.record::jsonb->>'type'", filters.types) end
+  if filters.uris then add_in(where, values, "collection.uri", filters.uris) end
   if filters.itemUris then
     if #filters.itemUris == 0 then
       where[#where + 1] = "FALSE"
@@ -491,7 +515,7 @@ local function collection_list_page(rows, limit, direction)
   local next_cursor
   if more then
     local last = rows[#rows]
-    next_cursor = collection_cursor_encode({ v = 1, d = direction, t = last.sort_timestamp, u = last.uri })
+    next_cursor = cursor_encode({ v = 1, d = direction, t = last.sort_timestamp, u = last.uri })
   end
   return views, next_cursor
 end
@@ -540,11 +564,8 @@ local function collection_list_response(search_enabled)
     search = search:match("^%s*(.-)%s*$")
     if search == "" then search = nil end
   end
-  local direction = collection_scalar(params, "sortDirection") or "desc"
-  if direction ~= "asc" and direction ~= "desc" then
-    collection_invalid("sortDirection must be 'asc' or 'desc'")
-  end
-  local limit = collection_list_limit()
+  local direction = parse_sort_direction(params)
+  local limit = parse_list_limit(params)
   local cursor = collection_list_cursor_decode(collection_scalar(params, "cursor"), direction)
   local collections, next_cursor = collection_list_query({
     authors = authors,
