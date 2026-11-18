@@ -45,6 +45,7 @@ local function valid_datetime(value)
     "^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)(.*)$")
   if not year then return false end
   year, month, day = tonumber(year), tonumber(month), tonumber(day)
+  if year < 1 then return false end
   hour, minute, second = tonumber(hour), tonumber(minute), tonumber(second)
   if month < 1 or month > 12 or hour > 23 or minute > 59 or second > 59 then return false end
   local leap = year % 4 == 0 and (year % 100 ~= 0 or year % 400 == 0)

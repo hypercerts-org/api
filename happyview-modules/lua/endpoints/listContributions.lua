@@ -45,6 +45,7 @@ local function valid_datetime(value)
     "^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)(.*)$")
   if not year then return false end
   year, month, day = tonumber(year), tonumber(month), tonumber(day)
+  if year < 1 then return false end
   hour, minute, second = tonumber(hour), tonumber(minute), tonumber(second)
   if month < 1 or month > 12 or hour > 23 or minute > 59 or second > 59 then return false end
   local leap = year % 4 == 0 and (year % 100 ~= 0 or year % 400 == 0)
@@ -150,6 +151,42 @@ local function contribution_view(row)
   return view
 end
 
+-- Decodes a hex-encoded {v, d, t, u} list cursor. Rejects malformed tokens, other
+-- sort directions and unknown keys; validate_value(value) -> boolean runs the
+-- endpoint-specific check on t and u. Not for endpoints that skip the 8192-character
+-- cap or accept extra keys.
+local function decode_cursor(token, direction, validate_value)
+  if token == nil then return nil end
+  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
+    invalid("cursor is malformed")
+  end
+  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
+  local ok, value = pcall(json.decode, decoded)
+  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
+    or type(value.t) ~= "string" or type(value.u) ~= "string" then
+    invalid("cursor is malformed or belongs to another sortDirection")
+  end
+  for key in pairs(value) do
+    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
+  end
+  if not validate_value(value) then invalid("cursor is malformed") end
+  return value
+end
+
+-- Adds `column IN ($n, ...)` to where, binding items; an empty list matches nothing.
+local function add_in(where, binds, column, items)
+  if #items == 0 then
+    where[#where + 1] = "FALSE"
+    return
+  end
+  local marks = {}
+  for _, item in ipairs(items) do
+    binds[#binds + 1] = item
+    marks[#marks + 1] = "$" .. #binds
+  end
+  where[#where + 1] = column .. " IN (" .. table.concat(marks, ", ") .. ")"
+end
+
 local function contribution_authors()
   local value = params.authors
   if value == nil then return nil end
@@ -186,44 +223,11 @@ local function contribution_authors()
   return authors
 end
 
-local function valid_contribution_cursor_datetime(value)
-  if type(value) ~= "string" or not valid_datetime(value) then return false end
-  return value:sub(1, 4) ~= "0000"
-end
-
 local function decode_contribution_cursor(token, direction)
-  if token == nil then return nil end
-  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
-    invalid("cursor is malformed")
-  end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
-  local ok, value = pcall(json.decode, decoded)
-  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
-    or type(value.t) ~= "string" or type(value.u) ~= "string" then
-    invalid("cursor is malformed or belongs to another sortDirection")
-  end
-  for key in pairs(value) do
-    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
-  end
-  local valid = valid_contribution_uri(value.u)
-  if not valid or not valid_contribution_cursor_datetime(value.t) then
-    invalid("cursor is malformed")
-  end
-  return value
-end
-
-local function add_contribution_authors(where, values, authors)
-  if authors == nil then return end
-  if #authors == 0 then
-    where[#where + 1] = "FALSE"
-    return
-  end
-  local placeholders = {}
-  for _, did in ipairs(authors) do
-    values[#values + 1] = did
-    placeholders[#placeholders + 1] = "$" .. #values
-  end
-  where[#where + 1] = "contribution.did IN (" .. table.concat(placeholders, ", ") .. ")"
+  return decode_cursor(token, direction, function(value)
+    local valid = valid_contribution_uri(value.u)
+    return valid and valid_datetime(value.t)
+  end)
 end
 
 local function contribution_sort_key()
@@ -236,7 +240,7 @@ end
 
 local function query_contributions(authors, limit, cursor, direction)
   local where, values = { "contribution.collection = $1" }, { CONTRIBUTION }
-  add_contribution_authors(where, values, authors)
+  if authors then add_in(where, values, "contribution.did", authors) end
   if cursor then
     values[#values + 1] = cursor.t
     local timestamp = "$" .. #values

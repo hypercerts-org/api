@@ -153,7 +153,7 @@ local function activity_query(authors, has_organization_record, contributors, in
   local sql = "SELECT activity.uri, activity.did, activity.cid, activity.indexed_at::text AS indexed_at, " ..
     "activity.record::text AS record, to_char(sorted.sort_at AT TIME ZONE 'UTC', " ..
     "'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp " ..
-    "FROM happyview_records AS activity CROSS JOIN LATERAL (SELECT " .. created_at_sort_expression("activity") .. " AS sort_at) AS sorted " ..
+    "FROM happyview_records AS activity CROSS JOIN LATERAL (SELECT " .. created_at_sort("activity") .. " AS sort_at) AS sorted " ..
     "WHERE " .. table.concat(where, " AND ") .. " ORDER BY sorted.sort_at " .. ordering ..
     ", activity.uri " .. ordering .. " LIMIT $" .. #values
   local rows = query(sql, values)
