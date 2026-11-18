@@ -61,6 +61,7 @@ function compareIds(a, b) {
 // `case.rows`, else no rows. Output is one JSON line per case.
 const RUNNER = String.raw`
 local NULL = setmetatable({}, { __tostring = function() return "null" end })
+local ARRAYS = setmetatable({}, { __mode = "k" })
 local function enc(v)
   local t = type(v)
   if t == "string" then
@@ -74,7 +75,7 @@ local function enc(v)
     local n = 0
     for _ in pairs(v) do n = n + 1 end
     local out = {}
-    if n > 0 and n == #v then
+    if ARRAYS[v] or (n > 0 and n == #v) then
       for _, x in ipairs(v) do out[#out + 1] = enc(x) end
       return "[" .. table.concat(out, ",") .. "]"
     end
@@ -146,12 +147,19 @@ for _, case in ipairs(CASES) do
   local calls = {}
   local env = setmetatable({}, { __index = _G })
   env.json = { encode = enc, decode = dec }
-  env.toarray = function(t) return t end
+  -- HappyView serializes toarray(t) as a JSON array even when t is empty.
+  env.toarray = function(t) ARRAYS[t] = true; return t end
   env.params = case.params
   env.db = {
     backend = function() return "postgres" end,
     raw = function(sql, values)
-      calls[#calls + 1] = { sql = sql, binds = values }
+      -- Snapshot: a handler may reuse and mutate its bind table between calls.
+      local binds
+      if values ~= nil then
+        binds = {}
+        for k, x in pairs(values) do binds[k] = x end
+      end
+      calls[#calls + 1] = { sql = sql, binds = binds }
       local by_call = case.rowsByCall and case.rowsByCall[#calls]
       return by_call or case.rows or {}
     end,
@@ -161,7 +169,7 @@ for _, case in ipairs(CASES) do
   local ok, res = pcall(env.handle)
   local outcome
   if ok then outcome = { result = res }
-  else outcome = { error = (tostring(res):gsub("^bundle:%d+: ", "")) } end
+  else outcome = { error = tostring(res) } end
   print(enc({ name = case.name, calls = calls, outcome = outcome }))
 end
 `;
@@ -180,7 +188,7 @@ export function runCases(source, cases) {
 
 function execute(bundle, cases) {
   const program = `BUNDLE=${JSON.stringify(bundle)}\nCASES=${lua(cases.map(({ name, params, rows, rowsByCall }) => ({ name, params, rows, rowsByCall })))}\n${RUNNER}`;
-  const run = spawnSync("lua5.4", ["-"], {
+  const run = spawnSync("lua5.4", ["-E", "-"], {
     input: program,
     encoding: "utf8",
     maxBuffer: 64 << 20,
@@ -196,7 +204,8 @@ function execute(bundle, cases) {
   return records;
 }
 
-// Handler rejections are `Name: message` (level-0 error). Anything else is a
+// Handler rejections are `Name: message` (level-0 error, no source location).
+// A located error (`bundle:12: ...`) is kept unstripped so it fails here. Anything else is a
 // Lua runtime error, i.e. the harness or fixture rows are wrong, and a golden
 // that recorded it would pin a crash instead of behavior.
 function assertHandlerOutcome(name, { error }) {
