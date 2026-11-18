@@ -19,11 +19,13 @@
           },
           "sortDirection": {
             "type": "string",
+            "default": "desc",
             "enum": ["asc", "desc"],
             "description": "Direction for the (createdAt, uri) order; defaults to desc."
           },
           "limit": {
             "type": "integer",
+            "default": 25,
             "minimum": 1,
             "maximum": 100,
             "description": "Maximum records in the page; defaults to 25."

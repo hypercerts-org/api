@@ -22,7 +22,7 @@ export type $Output<B = l.BinaryData> = l.InferPayload<typeof $output, B>;
 export type $OutputBody<B = l.BinaryData> = l.InferPayloadBody<typeof $output, B>;
 
 /** Returns one indexed location by AT-URI; authentication is not required. */
-const main = /*#__PURE__*/ l.query($nsid, $params, $output, ["RecordNotFound"]);
+const main = /*#__PURE__*/ l.query($nsid, $params, $output, ["InvalidRequest","RecordNotFound"]);
 
 export { main };
 
@@ -46,7 +46,7 @@ const output = /*#__PURE__*/ l.typedObject<Output>($nsid, "output", /*#__PURE__*
 export { output };
 
 /** Indexed location with its original record and hydrated author. */
-type LocationView = { $type?: "app.certified.location.getLocation#locationView";"uri":l.AtUriString;"cid":l.CidString;"indexedAt":l.DatetimeString;"did":l.DidString;
+type LocationView = { $type?: "app.certified.location.getLocation#locationView";"uri":l.AtUriString;"cid":l.CidString;"indexedAt":l.DatetimeString | null;"did":l.DidString;
 
   /**
    * Author DID with indexed profile and organization views; missing records are null, while lookup failures fail the query.
@@ -56,6 +56,6 @@ type LocationView = { $type?: "app.certified.location.getLocation#locationView";
 export type { LocationView };
 
 /** Indexed location with its original record and hydrated author. */
-const locationView = /*#__PURE__*/ l.typedObject<LocationView>($nsid, "locationView", /*#__PURE__*/ l.object({"uri":/*#__PURE__*/ l.string({"format":"at-uri"}),"cid":/*#__PURE__*/ l.string({"format":"cid"}),"indexedAt":/*#__PURE__*/ l.string({"format":"datetime"}),"did":/*#__PURE__*/ l.string({"format":"did"}),"author":/*#__PURE__*/ l.ref<ApiDefs.ActorView>((() => ApiDefs.actorView) as any),"record":/*#__PURE__*/ l.ref<CertifiedLocation.Main>((() => CertifiedLocation.main) as any)}));
+const locationView = /*#__PURE__*/ l.typedObject<LocationView>($nsid, "locationView", /*#__PURE__*/ l.object({"uri":/*#__PURE__*/ l.string({"format":"at-uri"}),"cid":/*#__PURE__*/ l.string({"format":"cid"}),"indexedAt":/*#__PURE__*/ l.nullable(/*#__PURE__*/ l.string({"format":"datetime"})),"did":/*#__PURE__*/ l.string({"format":"did"}),"author":/*#__PURE__*/ l.ref<ApiDefs.ActorView>((() => ApiDefs.actorView) as any),"record":/*#__PURE__*/ l.ref<CertifiedLocation.Main>((() => CertifiedLocation.main) as any)}));
 
 export { locationView };

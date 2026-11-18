@@ -17,6 +17,7 @@
           },
           "sortDirection": {
             "type": "string",
+            "default": "desc",
             "description": "Sort by a valid zoned createdAt, otherwise indexedAt, falling back to row creation time; URI breaks ties. Default desc.",
             "enum": [
               "asc",
@@ -34,6 +35,7 @@
           },
           "limit": {
             "type": "integer",
+            "default": 25,
             "description": "Page size; default 25.",
             "minimum": 1,
             "maximum": 100

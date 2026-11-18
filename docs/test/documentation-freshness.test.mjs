@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { assertDocumentationFresh } from "../scripts/check-sources.mjs";
-import { buildDocumentationArtifacts } from "../scripts/openapi-artifacts.mjs";
+import { buildDocumentationArtifacts, SKILL_OPENAPI_PATH } from "../scripts/openapi-artifacts.mjs";
 import { collectDocumentationSources } from "../scripts/refresh-sources.mjs";
 
 async function writeJson(file, value) {
@@ -20,14 +20,15 @@ async function writeBaselineArtifacts(apiRoot, fixtureDocs, packageRoot) {
     lexiconPackageRoot: packageRoot,
   });
   for (const snapshot of snapshots) await writeFile(snapshot.file, snapshot.content);
-  const { openapi, coverage } = buildDocumentationArtifacts(
+  const { openapi, skillOpenapi, coverage } = buildDocumentationArtifacts(
     index,
     snapshots.map(({ content }) => JSON.parse(content)),
   );
   await writeJson(path.join(fixtureDocs, "sources/index.json"), index);
   await writeJson(path.join(fixtureDocs, "openapi.json"), openapi);
   await writeJson(path.join(fixtureDocs, "coverage.json"), coverage);
-  return { index, openapi, coverage };
+  await writeJson(path.join(fixtureDocs, "..", SKILL_OPENAPI_PATH), skillOpenapi);
+  return { index, openapi, skillOpenapi, coverage };
 }
 
 test("committed snapshots, index metadata, OpenAPI, and coverage match fresh manifest sources", async () => {
@@ -129,6 +130,14 @@ test("freshness gate rejects endpoint and pinned support-schema drift without wr
     },
   );
   assert.equal(await readFile(path.join(fixtureDocs, "openapi.json"), "utf8"), baselineOpenApi);
+
+  const skillCopy = path.join(fixtureDocs, "..", SKILL_OPENAPI_PATH);
+  await writeJson(skillCopy, { ...baseline.openapi });
+  await assert.rejects(
+    assertDocumentationFresh({ apiRoot, docsRoot: fixtureDocs, lexiconPackageRoot: packageRoot }),
+    /hypercerts-api\/references\/openapi\.json/,
+  );
+  await writeJson(skillCopy, baseline.skillOpenapi);
 
   const staleCoverage = structuredClone(baseline.coverage);
   staleCoverage.runtimeValidation = "runtime-validated";

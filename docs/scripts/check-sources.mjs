@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildDocumentationArtifacts } from "./openapi-artifacts.mjs";
+import { buildDocumentationArtifacts, SKILL_OPENAPI_PATH } from "./openapi-artifacts.mjs";
 import { collectDocumentationSources } from "./refresh-sources.mjs";
 
 const docsRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -24,7 +24,7 @@ export async function assertDocumentationFresh(options = {}) {
 
   async function compare(relativePath, expected) {
     try {
-      const actual = await readFile(path.join(currentDocsRoot, relativePath), "utf8");
+      const actual = await readFile(path.resolve(currentDocsRoot, relativePath), "utf8");
       if (actual !== expected) staleFiles.push(relativePath);
     } catch (error) {
       if (error?.code === "ENOENT") staleFiles.push(relativePath);
@@ -37,12 +37,13 @@ export async function assertDocumentationFresh(options = {}) {
     await compare(index.lexicons[indexInList].file, snapshot.content);
   }
   await compare("openapi.json", jsonText(artifacts.openapi));
+  await compare(path.join("..", SKILL_OPENAPI_PATH), jsonText(artifacts.skillOpenapi));
   await compare("coverage.json", jsonText(artifacts.coverage));
 
   if (staleFiles.length > 0) {
     const paths = [...new Set(staleFiles)]
       .sort((left, right) => left.localeCompare(right))
-      .map((file) => `  - ${file}`)
+      .map((file) => `  - ${path.normalize(file)}`)
       .join("\n");
     throw new Error(
       `Documentation artifacts are stale:\n${paths}\nRun pnpm docs:sync to refresh them.`,

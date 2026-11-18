@@ -129,4 +129,6 @@ if (!response.ok) {
 }
 ```
 
+Currently, HappyView returns every error raised by an endpoint script as HTTP 500 with a body like `{"error":"script_error","message":"InvalidRequest: limit must be an integer from 1 through 100"}`, not the declared error name as `error` and not a 4xx status. Match the declared error name (`InvalidRequest`, `RecordNotFound`, and so on) as the prefix of `message` before the first colon, not the `error` field or the HTTP status. This depends on the HappyView version in use and may change; accept both forms (`error` equal to the name, or `message` starting with `Name:`).
+
 On failure, use that endpoint's declared errors in the bundled OpenAPI operation to decide whether the request is invalid, a record is absent from the index, handle resolution failed, or an indexed query/hydration failed. Do not map a query failure to “no results.” For null and not-found distinctions, see [reliability.md](reliability.md).
