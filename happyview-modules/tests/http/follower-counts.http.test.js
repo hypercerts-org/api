@@ -48,8 +48,8 @@ test("getFollowerCounts batches DIDs and entity URIs and matches the list endpoi
   );
 
   const counts = body.counts.map(({ followerCount }) => followerCount);
-  // Duplicate follows by one publisher count once: primarySubject and followedFeature
-  // each have four follow records from three publishers.
+  // Duplicate follows by one publisher count once: primarySubject has four follow
+  // records and followedFeature five, each from three publishers.
   assert.deepEqual(counts, [3, 3, 0, 1, 1, 3, 0]);
 
   assert.equal(
