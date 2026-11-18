@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { lua } from "../helpers/lua.js";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const EVALUATION = "org.hypercerts.context.evaluation";
@@ -31,19 +32,6 @@ const evaluationRecord = {
   score: { min: "0", max: "5", value: "3.75" },
   extension: { preserve: true },
 };
-
-function lua(value) {
-  if (value === null) return "nil";
-  if (typeof value === "string") return JSON.stringify(value);
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
-  if (Array.isArray(value)) return `{${value.map(lua).join(",")}}`;
-  if (value && typeof value === "object") {
-    return `{${Object.entries(value)
-      .map(([key, item]) => `[${JSON.stringify(key)}]=${lua(item)}`)
-      .join(",")}}`;
-  }
-  throw new TypeError(`Cannot encode ${typeof value} as a Lua fixture`);
-}
 
 function databaseRow(row) {
   const result = { ...row };

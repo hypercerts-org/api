@@ -1,7 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildDocumentationArtifacts } from "./openapi-artifacts.mjs";
+import { buildDocumentationArtifacts, SKILL_OPENAPI_PATH } from "./openapi-artifacts.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -36,6 +36,10 @@ async function main() {
   await writeFile(
     path.join(root, "openapi.json"),
     `${JSON.stringify(artifacts.openapi, null, 2)}\n`,
+  );
+  await writeFile(
+    path.join(root, "..", SKILL_OPENAPI_PATH),
+    `${JSON.stringify(artifacts.skillOpenapi, null, 2)}\n`,
   );
   await writeFile(
     path.join(root, "coverage.json"),

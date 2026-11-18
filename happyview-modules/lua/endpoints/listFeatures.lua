@@ -45,6 +45,7 @@ local function valid_datetime(value)
     "^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)(.*)$")
   if not year then return false end
   year, month, day = tonumber(year), tonumber(month), tonumber(day)
+  if year < 1 then return false end
   hour, minute, second = tonumber(hour), tonumber(minute), tonumber(second)
   if month < 1 or month > 12 or hour > 23 or minute > 59 or second > 59 then return false end
   local leap = year % 4 == 0 and (year % 100 ~= 0 or year % 400 == 0)
@@ -79,6 +80,20 @@ end
 local function cursor_encode(value)
   local encoded = json.encode(value)
   return (encoded:gsub(".", function(char) return string.format("%02x", string.byte(char)) end))
+end
+
+-- Adds `column IN ($n, ...)` to where, binding items; an empty list matches nothing.
+local function add_in(where, binds, column, items)
+  if #items == 0 then
+    where[#where + 1] = "FALSE"
+    return
+  end
+  local marks = {}
+  for _, item in ipairs(items) do
+    binds[#binds + 1] = item
+    marks[#marks + 1] = "$" .. #binds
+  end
+  where[#where + 1] = column .. " IN (" .. table.concat(marks, ", ") .. ")"
 end
 
 local FEATURE_COLLECTION = "org.hypercerts.entity.feature"
@@ -200,20 +215,6 @@ local function feature_array(params, key, validate, description, max_bytes)
   return unique
 end
 
-local function feature_add_in(where, values, column, binds)
-  if values == nil then return end
-  if #values == 0 then
-    where[#where + 1] = "FALSE"
-    return
-  end
-  local placeholders = {}
-  for _, value in ipairs(values) do
-    binds[#binds + 1] = value
-    placeholders[#placeholders + 1] = "$" .. #binds
-  end
-  where[#where + 1] = column .. " IN (" .. table.concat(placeholders, ", ") .. ")"
-end
-
 local function feature_add_types(where, values, binds)
   if values == nil then return end
   if #values == 0 then
@@ -253,7 +254,7 @@ local function feature_cursor_decode(token, direction)
   for key in pairs(value) do
     if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
   end
-  if not feature_valid_uri(value.u) or value.t:sub(1, 4) == "0000" or not valid_datetime(value.t) then
+  if not feature_valid_uri(value.u) or not valid_datetime(value.t) then
     invalid("cursor is malformed")
   end
   return value
@@ -279,7 +280,7 @@ end
 
 local function feature_list_rows(filters, limit, cursor, direction)
   local where, binds = { "feature.collection = $1" }, { FEATURE_COLLECTION }
-  feature_add_in(where, filters.authors, "feature.did", binds)
+  if filters.authors then add_in(where, binds, "feature.did", filters.authors) end
   feature_add_types(where, filters.types, binds)
   if filters.hasOrganizationRecord ~= nil then
     local predicate = filters.hasOrganizationRecord and "EXISTS" or "NOT EXISTS"

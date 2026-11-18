@@ -89,6 +89,7 @@
         "../../lua/shared/recordView.lua",
         "../../lua/shared/profile.lua",
         "../../lua/shared/createdAtSort.lua",
+        "../../lua/shared/listWhere.lua",
         "../../lua/shared/profileList.lua"
       ],
       "config": {
@@ -111,6 +112,7 @@
         "../../lua/shared/recordView.lua",
         "../../lua/shared/profile.lua",
         "../../lua/shared/createdAtSort.lua",
+        "../../lua/shared/listWhere.lua",
         "../../lua/shared/profileList.lua"
       ],
       "config": {

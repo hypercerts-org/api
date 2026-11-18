@@ -10,9 +10,9 @@
         "required": ["search"],
         "properties": {
           "search": { "type": "string", "description": "Trimmed text is matched literally and case-insensitively as a substring in displayName or description. Blank text is unrestricted." },
-          "sortDirection": { "type": "string", "description": "Sort by a valid zoned createdAt, otherwise indexedAt, falling back to row creation time; URI breaks ties. Default desc.", "enum": ["asc", "desc"] },
+          "sortDirection": { "type": "string", "default": "desc", "description": "Sort by a valid zoned createdAt, otherwise indexedAt, falling back to row creation time; URI breaks ties. Default desc.", "enum": ["asc", "desc"] },
           "actors": { "type": "array", "description": "Actor DIDs to include; values are ORed and handles are not resolved.", "maxLength": 100, "items": { "type": "string", "format": "did" } },
-          "limit": { "type": "integer", "description": "Page size; default 25.", "minimum": 1, "maximum": 100 },
+          "limit": { "type": "integer", "default": 25, "description": "Page size; default 25.", "minimum": 1, "maximum": 100 },
           "cursor": { "type": "string", "description": "Opaque cursor bound to sortDirection; keep parameters unchanged between pages. Pages are not a snapshot." }
         }
       },

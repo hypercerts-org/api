@@ -38,11 +38,13 @@
           },
           "sortDirection": {
             "type": "string",
+            "default": "desc",
             "enum": ["asc", "desc"],
             "description": "Sort by activity createdAt, then URI; defaults to desc."
           },
           "limit": {
             "type": "integer",
+            "default": 25,
             "minimum": 1,
             "maximum": 100,
             "description": "Maximum activities per page; defaults to 25."

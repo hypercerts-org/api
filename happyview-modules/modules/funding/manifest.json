@@ -54,6 +54,10 @@
         "../../lua/shared/actorView.lua",
         "../../lua/shared/fundingReceipt.lua",
         "../../lua/shared/nsidValidation.lua",
+        "../../lua/shared/listQuery.lua",
+        "../../lua/shared/listCursor.lua",
+        "../../lua/shared/listWhere.lua",
+        "../../lua/shared/createdAtSort.lua",
         "../../lua/shared/fundingReceiptList.lua"
       ],
       "config": {

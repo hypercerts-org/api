@@ -13,7 +13,10 @@
         }
       },
       "output": { "encoding": "application/json", "schema": { "type": "ref", "ref": "#output" } },
-      "errors": [{ "name": "RecordNotFound", "description": "No indexed location exists at this AT-URI." }]
+      "errors": [
+        { "name": "InvalidRequest", "description": "The URI is missing, repeated, invalid, or not a location record AT-URI, or an unsupported parameter was supplied." },
+        { "name": "RecordNotFound", "description": "No indexed location exists at this AT-URI." }
+      ]
     },
     "output": {
       "type": "object",
@@ -24,6 +27,7 @@
       "type": "object",
       "description": "Indexed location with its original record and hydrated author.",
       "required": ["uri", "cid", "indexedAt", "did", "author", "record"],
+      "nullable": ["indexedAt"],
       "properties": {
         "uri": { "type": "string", "format": "at-uri" },
         "cid": { "type": "string", "format": "cid" },

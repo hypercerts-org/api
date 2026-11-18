@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { lua } from "../helpers/lua.js";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const uri = "at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.vocab.tag/3jzfcijpj2z2z";
@@ -19,18 +20,6 @@ const sharedSources = [
   "lua/shared/actorView.lua",
   "lua/shared/vocabTagValidation.lua",
 ];
-
-function lua(value) {
-  if (typeof value === "string") return JSON.stringify(value);
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
-  if (Array.isArray(value)) return `{${value.map(lua).join(",")}}`;
-  if (value && typeof value === "object") {
-    return `{${Object.entries(value)
-      .map(([key, item]) => `[${JSON.stringify(key)}]=${lua(item)}`)
-      .join(",")}}`;
-  }
-  throw new TypeError(`Cannot encode ${typeof value} as a Lua fixture`);
-}
 
 async function runLua({
   endpoint = "getVocabTag",
@@ -457,7 +446,7 @@ test("listVocabTags rejects a year-zero cursor timestamp before querying", async
   await runLua({
     endpoint: "listVocabTags",
     params: { sortDirection: "asc", cursor: cursor({ timestamp: "0000-01-01T00:00:00Z" }) },
-    expectError: "InvalidRequest: cursor timestamp year must be greater than 0000",
+    expectError: "InvalidRequest: cursor is malformed",
     assertions: "assert(#calls == 0)",
   });
 });

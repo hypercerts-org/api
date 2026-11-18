@@ -1,6 +1,6 @@
 local function query_follow(actor, subject)
   local rows = query(
-    "SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record FROM happyview_records CROSS JOIN LATERAL (SELECT " .. follow_sort_key() .. " AS sort_at) sorted WHERE collection = $1 AND did = $2 AND record::jsonb->>'subject' = $3 AND " .. account_follow_filter_sql() .. " ORDER BY sorted.sort_at ASC, uri ASC LIMIT 1",
+    "SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record FROM happyview_records CROSS JOIN LATERAL (SELECT " .. created_at_sort() .. " AS sort_at) sorted WHERE collection = $1 AND did = $2 AND record::jsonb->>'subject' = $3 AND " .. account_follow_filter_sql() .. " ORDER BY sorted.sort_at ASC, uri ASC LIMIT 1",
     { FOLLOW, actor, subject })
   if #rows == 0 then return NULL end
   return record_view(rows[1])

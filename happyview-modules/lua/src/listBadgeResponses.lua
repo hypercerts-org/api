@@ -36,15 +36,6 @@ local function decode_badge_response_cursor(token, direction)
   return value
 end
 
-local function response_sort_expression()
-  local created = "response.record::jsonb->>'createdAt'"
-  local zoned = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
-  return "CASE WHEN jsonb_typeof(response.record::jsonb->'createdAt') = 'string' AND " .. created ..
-    " ~ '" .. zoned .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created ..
-    ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE " ..
-    "COALESCE(response.indexed_at::timestamptz, response.created_at::timestamptz) END"
-end
-
 local function list_badge_responses(badge_award, limit, cursor, direction)
   local where, values = { "response.collection = $1" }, { RESPONSE }
   if badge_award then
@@ -65,7 +56,7 @@ local function list_badge_responses(badge_award, limit, cursor, direction)
   local sql = "SELECT response.uri, response.did, response.cid, response.indexed_at::text AS indexed_at, " ..
     "response.record::text AS record, to_char(sorted.sort_at AT TIME ZONE 'UTC', " ..
     "'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp " ..
-    "FROM happyview_records AS response CROSS JOIN LATERAL (SELECT " .. response_sort_expression() .. " AS sort_at) sorted " ..
+    "FROM happyview_records AS response CROSS JOIN LATERAL (SELECT " .. created_at_sort("response") .. " AS sort_at) sorted " ..
     "WHERE " .. table.concat(where, " AND ") .. " ORDER BY sorted.sort_at " .. ordering ..
     ", response.uri " .. ordering .. " LIMIT $" .. #values
   local rows = query(sql, values)

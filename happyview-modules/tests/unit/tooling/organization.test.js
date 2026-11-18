@@ -4,6 +4,7 @@ import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { lua } from "../helpers/lua.js";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const organizationCollection = "app.certified.actor.organization";
@@ -14,18 +15,6 @@ const secondActor = "did:plc:bbbbbbbbbbbbbbbbbbbbbbbb";
 const thirdActor = "did:plc:cccccccccccccccccccccccc";
 const fourthActor = "did:plc:dddddddddddddddddddddddd";
 const indexedAt = "2025-01-02T03:04:05.000Z";
-
-function lua(value) {
-  if (typeof value === "string") return JSON.stringify(value);
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
-  if (Array.isArray(value)) return `{${value.map(lua).join(",")}}`;
-  if (value && typeof value === "object") {
-    return `{${Object.entries(value)
-      .map(([key, item]) => `[${JSON.stringify(key)}]=${lua(item)}`)
-      .join(",")}}`;
-  }
-  throw new TypeError(`Cannot encode ${typeof value} as a Lua fixture`);
-}
 
 function organizationRow(did, id, record, sortTimestamp = "2025-01-01T00:00:00.000000Z") {
   return {

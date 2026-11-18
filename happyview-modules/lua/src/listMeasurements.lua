@@ -51,45 +51,15 @@ local function bind_values(values, items)
 end
 
 local function decode_measurement_cursor(token, direction)
-  if token == nil then return nil end
-  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
-    invalid("cursor is malformed")
-  end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
-  local ok, value = pcall(json.decode, decoded)
-  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
-    or type(value.t) ~= "string" or type(value.u) ~= "string" then
-    invalid("cursor is malformed or belongs to another sortDirection")
-  end
-  for key in pairs(value) do
-    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
-  end
-  local valid, collection = measurement_valid_record_uri(value.u)
-  -- PostgreSQL timestamptz has no year zero, so reject it before binding the cursor.
-  if value.t:sub(1, 4) == "0000" or not valid_datetime(value.t) or not valid or collection ~= MEASUREMENT then
-    invalid("cursor is malformed")
-  end
-  return value
-end
-
-local function measurement_sort_expression()
-  local created = "measurement.record::jsonb->>'createdAt'"
-  local zoned = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
-  return "CASE WHEN jsonb_typeof(measurement.record::jsonb->'createdAt') = 'string' AND " .. created ..
-    " ~ '" .. zoned .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created ..
-    ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE " ..
-    "COALESCE(measurement.indexed_at::timestamptz, measurement.created_at::timestamptz) END"
+  return decode_cursor(token, direction, function(value)
+    local valid, collection = measurement_valid_record_uri(value.u)
+    return valid_datetime(value.t) and valid and collection == MEASUREMENT
+  end)
 end
 
 local function measurement_list_query(authors, subjects, limit, cursor, direction)
   local where, values = { "measurement.collection = $1" }, { MEASUREMENT }
-  if authors then
-    if #authors == 0 then
-      where[#where + 1] = "FALSE"
-    else
-      where[#where + 1] = "measurement.did IN (" .. table.concat(bind_values(values, authors), ", ") .. ")"
-    end
-  end
+  if authors then add_in(where, values, "measurement.did", authors) end
   if subjects then
     if #subjects == 0 then
       where[#where + 1] = "FALSE"
@@ -121,7 +91,7 @@ local function measurement_list_query(authors, subjects, limit, cursor, directio
     "measurement.indexed_at::text AS indexed_at, measurement.record::text AS record, " ..
     "to_char(sorted.sort_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp " ..
     "FROM happyview_records AS measurement CROSS JOIN LATERAL (SELECT " ..
-    measurement_sort_expression() .. " AS sort_at) AS sorted WHERE " .. table.concat(page_where, " AND ") ..
+    created_at_sort("measurement") .. " AS sort_at) AS sorted WHERE " .. table.concat(page_where, " AND ") ..
     " ORDER BY sorted.sort_at " .. ordering .. ", measurement.uri " .. ordering .. " LIMIT $" .. #page_values
   local rows = measurement_query(sql, page_values)
 
