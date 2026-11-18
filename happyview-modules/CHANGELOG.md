@@ -1,5 +1,11 @@
 # @hypercerts-org/happyview-modules
 
+## 0.7.1
+
+### Patch Changes
+
+- [#82](https://github.com/hypercerts-org/api/pull/82) [`410d2cf`](https://github.com/hypercerts-org/api/commit/410d2cf577fef2335065bb1b33cfb737767ab570) Thanks [@Kzoeps](https://github.com/Kzoeps)! - `getReactionCounts`, `getCommentCounts` and `getFollowerCounts` (for entity subjects) now look counts up in HappyView's record-reference table instead of scanning every like, repost, comment or follow, so they stay fast as those collections grow. Responses and errors are unchanged. Counts are only as complete as that table: a record whose references were never written is not counted, so check the table is complete before deploying.
+
 ## 0.7.0
 
 ### Minor Changes
