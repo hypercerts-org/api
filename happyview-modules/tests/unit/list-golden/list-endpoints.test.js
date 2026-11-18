@@ -1,13 +1,26 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { CURSOR_FIXTURE_IDS, casesFor, hasTimestampCursor } from "./fixtures.js";
+import { CURSOR_FIXTURE_IDS, casesFor } from "./fixtures.js";
 import { listCursorEndpoints, runCases } from "./harness.js";
 
 // Safety net for shared Lua list-helper refactors. Every manifest query that
-// takes `cursor` runs against its generated bundle with a fake db; captured SQL,
-// binds and outcomes must match the committed golden byte for byte.
+// takes `cursor` runs against its *generated bundle* (happyview-modules/lua/
+// endpoints/.., built by `pnpm --filter @hypercerts-org/happyview-modules run build:lua`; edits to lua/shared or lua/src are
+// invisible here until you rebuild) with a fake db. Captured SQL, binds and
+// outcomes must match the committed golden byte for byte.
+//
+// Inputs per endpoint: paging/limit/cursor cases, every lexicon filter parameter
+// (arrays with many/one/scalar/duplicate/empty values, booleans, scalars), a
+// combined all-filters case, and table-driven rejection cases for bad
+// sortDirection, limit and cursor shapes. `paged:*` cases return limit+1 rows
+// so nextCursor encoding is captured; endpoints answer only their first query
+// with rows, later hydration queries see none.
+//
+// To keep the file reviewable, each distinct SQL text is stored once in a
+// leading `{"sql":id,"text":..}` line and calls refer to it by id.
 // Regenerate after an intended behaviour change: UPDATE_GOLDEN=1 pnpm test:unit
 const goldenPath = fileURLToPath(new URL("./list-endpoints.golden.jsonl", import.meta.url));
 
@@ -20,7 +33,25 @@ const records = endpoints.flatMap((endpoint) =>
     outcome,
   })),
 );
-const actual = `${records.map((record) => JSON.stringify(record)).join("\n")}\n`;
+const actual = serialize(records);
+
+/** One line per distinct SQL text (sorted by id), then one line per case. */
+function serialize(cases) {
+  const texts = new Map();
+  const compact = cases.map((record) => ({
+    ...record,
+    // The runner encodes an empty Lua table as {}, so an empty call list is not an array.
+    calls: (Array.isArray(record.calls) ? record.calls : []).map(({ sql, binds }) => {
+      const id = createHash("sha1").update(sql).digest("hex").slice(0, 10);
+      texts.set(id, sql);
+      return { binds, sql: id };
+    }),
+  }));
+  const sqlLines = [...texts]
+    .sort(([a], [b]) => (a < b ? -1 : 1))
+    .map(([sql, text]) => ({ sql, text }));
+  return `${[...sqlLines, ...compact].map((line) => JSON.stringify(line)).join("\n")}\n`;
+}
 
 if (process.env.UPDATE_GOLDEN === "1") writeFileSync(goldenPath, actual);
 
@@ -33,21 +64,26 @@ test("every cursor-taking manifest query has a cursor fixture", () => {
   );
 });
 
-test("a valid cursor reaches SQL binds for every endpoint", () => {
+// Fixture guard, not a behavior test: the golden would happily record a rejected
+// or empty case as "expected", silently pinning nothing. These fail loudly if a
+// fixture stops reaching the code paths the golden is meant to cover.
+test("fixtures reach real handler paths for every endpoint", () => {
   for (const endpoint of endpoints) {
-    const record = records.find(
-      (r) => r.endpoint === endpoint.id && r.case.startsWith("cursor:valid:"),
-    );
-    assert.ok(record, `${endpoint.id}: no valid-cursor case`);
+    const mine = records.filter((r) => r.endpoint === endpoint.id);
+    const validCursor = mine.find((r) => r.case.startsWith("cursor:valid:"));
     assert.ok(
-      record.calls.length > 0,
-      `${endpoint.id}: valid cursor did not reach SQL: ${JSON.stringify(record.outcome)}`,
+      validCursor?.calls.length,
+      `${endpoint.id}: fixture cursor was rejected before SQL (${JSON.stringify(validCursor?.outcome)}); fix cursorFor in fixtures.js`,
     );
-    if (hasTimestampCursor(endpoint)) {
-      const binds = JSON.stringify(record.calls.map((call) => call.binds));
+    const paged = mine.find((r) => r.case.startsWith("paged:"));
+    assert.ok(
+      paged?.outcome.result?.cursor,
+      `${endpoint.id}: paged case produced no nextCursor (${JSON.stringify(paged?.outcome).slice(0, 200)}); fix pageRow in fixtures.js`,
+    );
+    for (const filter of mine.filter((r) => r.case.startsWith("filter:"))) {
       assert.ok(
-        binds.includes("2025-01-01T00:00:00"),
-        `${endpoint.id}: cursor timestamp absent from binds`,
+        filter.calls.length && !/^InvalidRequest/.test(filter.outcome.error ?? ""),
+        `${endpoint.id} [${filter.case}]: filter fixture was rejected (${filter.outcome.error}); use a valid value in fixtures.js`,
       );
     }
   }
@@ -61,12 +97,13 @@ test("list endpoint SQL, binds and outcomes match the golden snapshot", () => {
   const changed = [];
   for (let i = 0; i < Math.max(want.length, got.length); i++) {
     if (want[i] !== got[i]) {
-      const source = JSON.parse(got[i] ?? want[i] ?? "null");
-      changed.push(source ? `${source.endpoint} [${source.case}]` : `line ${i + 1}`);
+      const source = JSON.parse(got[i] || want[i] || "null");
+      changed.push(source?.case ? `${source.endpoint} [${source.case}]` : `sql line ${i + 1}`);
     }
   }
+  changed.sort((a, b) => Number(a.startsWith("sql")) - Number(b.startsWith("sql")));
   assert.fail(
-    `${changed.length} case(s) differ from list-endpoints.golden.jsonl: ${changed.slice(0, 10).join("; ")}. ` +
+    `${changed.length} line(s) differ from list-endpoints.golden.jsonl: ${changed.slice(0, 10).join("; ")}. ` +
       "If intended, regenerate with UPDATE_GOLDEN=1 pnpm test:unit and review the diff.",
   );
 });

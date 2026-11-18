@@ -52,7 +52,8 @@ export async function listCursorEndpoints() {
 }
 
 // Runs each case against a fresh copy of the bundle with a fake db that
-// records every db.raw call and answers each with `case.rows` (default: none). Output is one JSON line per case.
+// records every db.raw call and answers call N with `case.rowsByCall[N]`, else
+// `case.rows`, else no rows. Output is one JSON line per case.
 const RUNNER = String.raw`
 local NULL = setmetatable({}, { __tostring = function() return "null" end })
 local function enc(v)
@@ -146,7 +147,8 @@ for _, case in ipairs(CASES) do
     backend = function() return "postgres" end,
     raw = function(sql, values)
       calls[#calls + 1] = { sql = sql, binds = values }
-      return case.rows or {}
+      local by_call = case.rowsByCall and case.rowsByCall[#calls]
+      return by_call or case.rows or {}
     end,
   }
   local chunk = assert(load(source, "=bundle", "t", env))
@@ -172,13 +174,25 @@ export function runCases(source, cases) {
 }
 
 function execute(bundle, cases) {
-  const program = `BUNDLE=${JSON.stringify(bundle)}\nCASES=${lua(cases.map(({ name, params, rows }) => ({ name, params, rows })))}\n${RUNNER}`;
+  const program = `BUNDLE=${JSON.stringify(bundle)}\nCASES=${lua(cases.map(({ name, params, rows, rowsByCall }) => ({ name, params, rows, rowsByCall })))}\n${RUNNER}`;
   const run = spawnSync("lua5.4", ["-"], { input: program, encoding: "utf8", maxBuffer: 64 << 20 });
   if (run.error || run.status !== 0) {
     throw new Error(`lua5.4 failed for ${bundle}: ${run.error ?? run.stderr}`);
   }
-  return run.stdout
+  const records = run.stdout
     .trim()
     .split("\n")
     .map((line) => JSON.parse(line));
+  for (const { name, outcome } of records) assertHandlerOutcome(name, outcome);
+  return records;
+}
+
+// Handler rejections are `Name: message` (level-0 error). Anything else is a
+// Lua runtime error, i.e. the harness or fixture rows are wrong, and a golden
+// that recorded it would pin a crash instead of behavior.
+function assertHandlerOutcome(name, { error }) {
+  if (error === undefined) return;
+  if (error.startsWith("stdin:") || !/^[A-Z][A-Za-z]+: /.test(error)) {
+    throw new Error(`case "${name}" hit a Lua runtime error, not a handler outcome: ${error}`);
+  }
 }
