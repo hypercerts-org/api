@@ -48,7 +48,12 @@ export async function listCursorEndpoints() {
       properties,
     });
   }
-  return endpoints.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  return endpoints.sort(compareIds);
+}
+
+function compareIds(a, b) {
+  if (a.id < b.id) return -1;
+  return a.id > b.id ? 1 : 0;
 }
 
 // Runs each case against a fresh copy of the bundle with a fake db that
@@ -175,7 +180,11 @@ export function runCases(source, cases) {
 
 function execute(bundle, cases) {
   const program = `BUNDLE=${JSON.stringify(bundle)}\nCASES=${lua(cases.map(({ name, params, rows, rowsByCall }) => ({ name, params, rows, rowsByCall })))}\n${RUNNER}`;
-  const run = spawnSync("lua5.4", ["-"], { input: program, encoding: "utf8", maxBuffer: 64 << 20 });
+  const run = spawnSync("lua5.4", ["-"], {
+    input: program,
+    encoding: "utf8",
+    maxBuffer: 64 << 20,
+  });
   if (run.error || run.status !== 0) {
     throw new Error(`lua5.4 failed for ${bundle}: ${run.error ?? run.stderr}`);
   }

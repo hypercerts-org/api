@@ -17,51 +17,104 @@ const CURSORS = {
     collection: "app.certified.actor.organization",
     rkey: "self",
   },
-  "app.certified.actor.listProfiles": { collection: "app.certified.actor.profile", rkey: "self" },
+  "app.certified.actor.listProfiles": {
+    collection: "app.certified.actor.profile",
+    rkey: "self",
+  },
   "app.certified.actor.searchOrganizations": {
     collection: "app.certified.actor.organization",
     rkey: "self",
   },
-  "app.certified.actor.searchProfiles": { collection: "app.certified.actor.profile", rkey: "self" },
-  "app.certified.badge.listBadgeAwards": { collection: "app.certified.badge.award" },
-  "app.certified.badge.listBadgeDefinitions": { collection: "app.certified.badge.definition" },
-  "app.certified.badge.listBadgeResponses": { collection: "app.certified.badge.response" },
-  "app.certified.badge.searchBadgeDefinitions": { collection: "app.certified.badge.definition" },
+  "app.certified.actor.searchProfiles": {
+    collection: "app.certified.actor.profile",
+    rkey: "self",
+  },
+  "app.certified.badge.listBadgeAwards": {
+    collection: "app.certified.badge.award",
+  },
+  "app.certified.badge.listBadgeDefinitions": {
+    collection: "app.certified.badge.definition",
+  },
+  "app.certified.badge.listBadgeResponses": {
+    collection: "app.certified.badge.response",
+  },
+  "app.certified.badge.searchBadgeDefinitions": {
+    collection: "app.certified.badge.definition",
+  },
   "app.certified.feed.getActorLikes": { collection: "app.certified.feed.like" },
-  "app.certified.feed.getActorReposts": { collection: "app.certified.feed.repost" },
+  "app.certified.feed.getActorReposts": {
+    collection: "app.certified.feed.repost",
+  },
   "app.certified.feed.getLikes": { collection: "app.certified.feed.like" },
   "app.certified.feed.getReposts": { collection: "app.certified.feed.repost" },
-  "app.certified.graph.listActorFollowers": { collection: "app.certified.graph.follow" },
-  "app.certified.graph.listActorFollowing": { collection: "app.certified.graph.follow" },
-  "app.certified.graph.listEntityFollowers": { collection: "app.certified.graph.entityFollow" },
-  "app.certified.graph.listEntityFollowing": { collection: "app.certified.graph.entityFollow" },
+  "app.certified.graph.listActorFollowers": {
+    collection: "app.certified.graph.follow",
+  },
+  "app.certified.graph.listActorFollowing": {
+    collection: "app.certified.graph.follow",
+  },
+  "app.certified.graph.listEntityFollowers": {
+    collection: "app.certified.graph.entityFollow",
+  },
+  "app.certified.graph.listEntityFollowing": {
+    collection: "app.certified.graph.entityFollow",
+  },
   "app.certified.graph.listRecentFollows": {
     collection: "app.certified.graph.entityFollow",
     shape: "before",
   },
   "app.certified.link.listEvmLinks": { collection: "app.certified.link.evm" },
-  "app.certified.location.listLocations": { collection: "app.certified.location" },
-  "org.hypercerts.claim.listActivities": { collection: "org.hypercerts.claim.activity" },
-  "org.hypercerts.claim.listContributions": { collection: "org.hypercerts.claim.contribution" },
+  "app.certified.location.listLocations": {
+    collection: "app.certified.location",
+  },
+  "org.hypercerts.claim.listActivities": {
+    collection: "org.hypercerts.claim.activity",
+  },
+  "org.hypercerts.claim.listContributions": {
+    collection: "org.hypercerts.claim.contribution",
+  },
   "org.hypercerts.claim.listContributorInformation": {
     collection: "org.hypercerts.claim.contributorInformation",
   },
-  "org.hypercerts.claim.listRights": { collection: "org.hypercerts.claim.rights" },
-  "org.hypercerts.claim.searchActivities": { collection: "org.hypercerts.claim.activity" },
+  "org.hypercerts.claim.listRights": {
+    collection: "org.hypercerts.claim.rights",
+  },
+  "org.hypercerts.claim.searchActivities": {
+    collection: "org.hypercerts.claim.activity",
+  },
   "org.hypercerts.collection.listCollectionItems": { shape: "item" },
-  "org.hypercerts.collection.listCollections": { collection: "org.hypercerts.collection" },
-  "org.hypercerts.collection.searchCollections": { collection: "org.hypercerts.collection" },
+  "org.hypercerts.collection.listCollections": {
+    collection: "org.hypercerts.collection",
+  },
+  "org.hypercerts.collection.searchCollections": {
+    collection: "org.hypercerts.collection",
+  },
   "org.hypercerts.context.listAcknowledgements": {
     collection: "org.hypercerts.context.acknowledgement",
     timestamp: "2025-01-01T00:00:00.000000Z",
   },
-  "org.hypercerts.context.listAttachments": { collection: "org.hypercerts.context.attachment" },
-  "org.hypercerts.context.listEvaluations": { collection: "org.hypercerts.context.evaluation" },
-  "org.hypercerts.context.listMeasurements": { collection: "org.hypercerts.context.measurement" },
-  "org.hypercerts.entity.listFeatures": { collection: "org.hypercerts.entity.feature" },
-  "org.hypercerts.funding.listReceipts": { collection: "org.hypercerts.funding.receipt" },
-  "org.hypercerts.vocab.listVocabTags": { collection: "org.hypercerts.vocab.tag", shape: "filter" },
-  "org.hypercerts.workscope.listWorkscopeTags": { collection: "org.hypercerts.workscope.tag" },
+  "org.hypercerts.context.listAttachments": {
+    collection: "org.hypercerts.context.attachment",
+  },
+  "org.hypercerts.context.listEvaluations": {
+    collection: "org.hypercerts.context.evaluation",
+  },
+  "org.hypercerts.context.listMeasurements": {
+    collection: "org.hypercerts.context.measurement",
+  },
+  "org.hypercerts.entity.listFeatures": {
+    collection: "org.hypercerts.entity.feature",
+  },
+  "org.hypercerts.funding.listReceipts": {
+    collection: "org.hypercerts.funding.receipt",
+  },
+  "org.hypercerts.vocab.listVocabTags": {
+    collection: "org.hypercerts.vocab.tag",
+    shape: "filter",
+  },
+  "org.hypercerts.workscope.listWorkscopeTags": {
+    collection: "org.hypercerts.workscope.tag",
+  },
 };
 
 /** Required request parameters, chosen by lexicon name/format. */
@@ -156,45 +209,74 @@ function filterParams(endpoint) {
   );
 }
 
+/** Mixed DID and AT-URI identifiers: pins the separator of the DID IN-list. */
+function mixedIdentifierCase(name, base) {
+  const mixed = [0, 1, 2, 3].map((n) =>
+    n % 2 === 1
+      ? variant(DID, n >> 1)
+      : `at://${DID}/org.hypercerts.claim.activity/${rkey(n >> 1)}`,
+  );
+  return {
+    name: `filter:${name}:mixed-many`,
+    params: { ...base, [name]: mixed },
+  };
+}
+
+function arrayFilterCases(endpoint, name, property, base) {
+  const values = [0, 1, 2].map((n) => filterValue(endpoint, name, property, n));
+  const cases = [
+    { name: `filter:${name}:many`, params: { ...base, [name]: values } },
+    {
+      name: `filter:${name}:one`,
+      params: { ...base, [name]: values.slice(0, 1) },
+    },
+    {
+      name: `filter:${name}:one-scalar`,
+      params: { ...base, [name]: values[0] },
+    },
+    {
+      name: `filter:${name}:duplicate`,
+      params: { ...base, [name]: [values[0], values[0]] },
+    },
+    { name: `filter:${name}:empty`, params: { ...base, [name]: [] } },
+  ];
+  if (MIXED_IDENTIFIERS.has(name) && MIXED_LIST_ENDPOINTS.has(endpoint.id)) {
+    cases.push(mixedIdentifierCase(name, base));
+  }
+  return { cases, combined: values.slice(0, 2) };
+}
+
+function booleanFilterCases(name, base) {
+  const cases = [true, false, "true", "false"].map((value) => ({
+    name: `filter:${name}=${typeof value}:${value}`,
+    params: { ...base, [name]: value },
+  }));
+  return { cases, combined: true };
+}
+
+function scalarFilterCases(endpoint, name, property, base) {
+  const values = [0, 1, 2].map((n) => filterValue(endpoint, name, property, n));
+  const cases = values.map((value) => ({
+    name: `filter:${name}=${value}`,
+    params: { ...base, [name]: value },
+  }));
+  return { cases, combined: values[0] };
+}
+
+function filterCasesFor(endpoint, name, property, base) {
+  if (property.type === "array") return arrayFilterCases(endpoint, name, property, base);
+  if (property.type === "boolean") return booleanFilterCases(name, base);
+  return scalarFilterCases(endpoint, name, property, base);
+}
+
 /** Required parameters that are themselves arrays are not supported by any current endpoint. */
 function filterCases(endpoint, base) {
   const cases = [];
   const combined = {};
   for (const [name, property] of filterParams(endpoint)) {
-    if (property.type === "array") {
-      const values = [0, 1, 2].map((n) => filterValue(endpoint, name, property, n));
-      cases.push(
-        { name: `filter:${name}:many`, params: { ...base, [name]: values } },
-        { name: `filter:${name}:one`, params: { ...base, [name]: values.slice(0, 1) } },
-        { name: `filter:${name}:one-scalar`, params: { ...base, [name]: values[0] } },
-        { name: `filter:${name}:duplicate`, params: { ...base, [name]: [values[0], values[0]] } },
-        { name: `filter:${name}:empty`, params: { ...base, [name]: [] } },
-      );
-      combined[name] = values.slice(0, 2);
-      if (MIXED_IDENTIFIERS.has(name) && MIXED_LIST_ENDPOINTS.has(endpoint.id)) {
-        // Two DIDs and two AT-URIs together: pins the separator of the DID IN-list.
-        const mixed = [0, 1, 2, 3].map((n) =>
-          n % 2 === 1
-            ? variant(DID, n >> 1)
-            : `at://${DID}/org.hypercerts.claim.activity/${rkey(n >> 1)}`,
-        );
-        cases.push({ name: `filter:${name}:mixed-many`, params: { ...base, [name]: mixed } });
-      }
-    } else if (property.type === "boolean") {
-      for (const value of [true, false, "true", "false"]) {
-        cases.push({
-          name: `filter:${name}=${typeof value}:${value}`,
-          params: { ...base, [name]: value },
-        });
-      }
-      combined[name] = true;
-    } else {
-      const values = [0, 1, 2].map((n) => filterValue(endpoint, name, property, n));
-      for (const value of values) {
-        cases.push({ name: `filter:${name}=${value}`, params: { ...base, [name]: value } });
-      }
-      combined[name] = values[0];
-    }
+    const result = filterCasesFor(endpoint, name, property, base);
+    cases.push(...result.cases);
+    combined[name] = result.combined;
   }
   if (Object.keys(combined).length > 1) {
     cases.push({ name: "filter:all", params: { ...base, ...combined } });
@@ -274,13 +356,24 @@ function paddedCursor(cursor, hexLength) {
   return Buffer.from(json.padEnd(hexLength / 2, " "), "utf8").toString("hex");
 }
 
-/** Input-validation cases that must be rejected before (or without) reaching SQL. */
-function errorCases(endpoint, base, directions) {
+/** Sort, limit and malformed-cursor cases that need no valid cursor for the endpoint. */
+function basicErrorCases(endpoint, base) {
   const cases = [];
   if (endpoint.properties.sortDirection) {
-    cases.push({ name: "error:sortDirection=bad", params: { ...base, sortDirection: "bad" } });
-    cases.push({ name: "error:sortDirection=ASC", params: { ...base, sortDirection: "ASC" } });
-    cases.push({ name: "error:sortDirection=empty", params: { ...base, sortDirection: "" } });
+    cases.push(
+      {
+        name: "error:sortDirection=bad",
+        params: { ...base, sortDirection: "bad" },
+      },
+      {
+        name: "error:sortDirection=ASC",
+        params: { ...base, sortDirection: "ASC" },
+      },
+      {
+        name: "error:sortDirection=empty",
+        params: { ...base, sortDirection: "" },
+      },
+    );
   }
   for (const [label, limit] of [
     ["abc", "abc"],
@@ -293,7 +386,10 @@ function errorCases(endpoint, base, directions) {
     cases.push({ name: `error:limit=${label}`, params: { ...base, limit } });
   }
   // A query parameter repeated in the request arrives as an array; scalar() must reject it.
-  cases.push({ name: "error:limit=array", params: { ...base, limit: ["5", "6"] } });
+  cases.push({
+    name: "error:limit=array",
+    params: { ...base, limit: ["5", "6"] },
+  });
   if (endpoint.properties.sortDirection) {
     cases.push({
       name: "error:sortDirection=array",
@@ -303,50 +399,16 @@ function errorCases(endpoint, base, directions) {
   cases.push(
     { name: "error:cursor:non-hex", params: { ...base, cursor: "zz" } },
     { name: "error:cursor:empty", params: { ...base, cursor: "" } },
-    { name: "error:cursor:hex-non-json", params: { ...base, cursor: hexCursor("not json") } },
+    {
+      name: "error:cursor:hex-non-json",
+      params: { ...base, cursor: hexCursor("not json") },
+    },
   );
-  const direction = directions[0];
-  const good = cursorFor(endpoint, direction ?? "desc", "2025");
-  if (!good) return cases;
-  const at = (mutate, finish = (params) => params) => {
-    const cursor = { ...good };
-    mutate(cursor);
-    return finish({
-      ...base,
-      ...(direction ? { sortDirection: direction } : {}),
-      cursor: hexCursor(cursor),
-    });
-  };
-  cases.push({
-    name: "error:cursor:array",
-    params: at(
-      () => {},
-      (params) => ({ ...params, cursor: [params.cursor, params.cursor] }),
-    ),
-  });
-  cases.push({
-    name: "error:cursor:uppercase-hex",
-    params: at(
-      () => {},
-      (params) => ({ ...params, cursor: params.cursor.toUpperCase() }),
-    ),
-  });
-  // Shared decoders cap the token at CURSOR_MAX_HEX characters (even length, so
-  // +/-2 is the nearest accepted/rejected neighbour). Padding with trailing
-  // JSON whitespace keeps the payload valid, so only the length varies.
-  for (const [label, hexLength] of [
-    ["at-cap", CURSOR_MAX_HEX],
-    ["below-cap", CURSOR_MAX_HEX - 2],
-    ["above-cap", CURSOR_MAX_HEX + 2],
-  ]) {
-    cases.push({
-      name: `error:cursor:length-${label}`,
-      params: at(
-        () => {},
-        (params) => ({ ...params, cursor: paddedCursor(good, hexLength) }),
-      ),
-    });
-  }
+  return cases;
+}
+
+/** Ways to corrupt a valid decoded cursor, keyed by case label. */
+function cursorMutations(endpoint, good) {
   const mutations = {
     "wrong-v": (c) => (c.v = 2),
     "wrong-collection": (c) => (c.u = `at://${DID}/app.bsky.feed.post/3kabcdefghijk`),
@@ -380,24 +442,66 @@ function errorCases(endpoint, base, directions) {
     mutations["i-negative"] = (c) => (c.i = -1);
     mutations["i-fractional"] = (c) => (c.i = 1.5);
   }
+  if ("b" in good) mutations["bad-b"] = (c) => (c.b = "no");
+  return mutations;
+}
+
+/** Cursor cases built from a valid cursor (`good`) that is then corrupted or resized. */
+function cursorErrorCases(endpoint, base, direction, good) {
+  const withCursor = (cursor, extra = {}) => ({
+    ...base,
+    ...(direction ? { sortDirection: direction } : {}),
+    ...extra,
+    cursor,
+  });
+  const validHex = hexCursor(good);
+  const cases = [
+    { name: "error:cursor:array", params: withCursor([validHex, validHex]) },
+    {
+      name: "error:cursor:uppercase-hex",
+      params: withCursor(validHex.toUpperCase()),
+    },
+  ];
+  // Shared decoders cap the token at CURSOR_MAX_HEX characters (even length, so
+  // +/-2 is the nearest accepted/rejected neighbour). Padding with trailing
+  // JSON whitespace keeps the payload valid, so only the length varies.
+  for (const [label, hexLength] of [
+    ["at-cap", CURSOR_MAX_HEX],
+    ["below-cap", CURSOR_MAX_HEX - 2],
+    ["above-cap", CURSOR_MAX_HEX + 2],
+  ]) {
+    cases.push({
+      name: `error:cursor:length-${label}`,
+      params: withCursor(paddedCursor(good, hexLength)),
+    });
+  }
   if ("t" in good) {
     for (const [label, t] of Object.entries(DATETIME_CURSORS)) {
       const cursor = cursorFor(endpoint, direction ?? "desc", "2025", t);
       cases.push({
         name: `datetime:cursor-t:${label}`,
-        params: {
-          ...base,
-          ...(direction ? { sortDirection: direction } : {}),
-          cursor: hexCursor(cursor),
-        },
+        params: withCursor(hexCursor(cursor)),
       });
     }
   }
-  if ("b" in good) mutations["bad-b"] = (c) => (c.b = "no");
-  for (const [label, mutate] of Object.entries(mutations)) {
-    cases.push({ name: `error:cursor:${label}`, params: at(mutate) });
+  for (const [label, mutate] of Object.entries(cursorMutations(endpoint, good))) {
+    const cursor = { ...good };
+    mutate(cursor);
+    cases.push({
+      name: `error:cursor:${label}`,
+      params: withCursor(hexCursor(cursor)),
+    });
   }
   return cases;
+}
+
+/** Input-validation cases that must be rejected before (or without) reaching SQL. */
+function errorCases(endpoint, base, directions) {
+  const cases = basicErrorCases(endpoint, base);
+  const direction = directions[0];
+  const good = cursorFor(endpoint, direction ?? "desc", "2025");
+  if (!good) return cases;
+  return [...cases, ...cursorErrorCases(endpoint, base, direction, good)];
 }
 
 /**
@@ -500,7 +604,7 @@ function pagedRowsByCall(endpoint) {
   if (endpoint.id === "org.hypercerts.collection.listCollectionItems") {
     return [[collectionRow(COLLECTION_ITEMS)]];
   }
-  return [[...Array(PAGE_ROWS).keys()].map((n) => pageRow(endpoint, n))];
+  return [Array.from({ length: PAGE_ROWS }, (_, n) => pageRow(endpoint, n))];
 }
 
 function defaultRows(endpoint, paged) {
@@ -535,20 +639,31 @@ export function casesFor(endpoint) {
   for (const direction of directions) {
     const label = direction ?? "default";
     if (direction) {
-      cases.push({ name: `sort=${label}`, params: { ...base, ...withDirection(direction) } });
+      cases.push({
+        name: `sort=${label}`,
+        params: { ...base, ...withDirection(direction) },
+      });
     }
-    cases.push({
-      name: `paged:${label}`,
-      params: { ...base, ...withDirection(direction), limit: PAGE_ROWS - 1 },
-      rowsByCall: paged,
-    });
-    cases.push({ name: `cursor:valid:${label}`, params: cursorParams(direction, "2025") });
-    cases.push({
-      name: `cursor:valid+limit=7:${label}`,
-      params: { ...cursorParams(direction, "2025"), limit: 7 },
-    });
+    cases.push(
+      {
+        name: `paged:${label}`,
+        params: { ...base, ...withDirection(direction), limit: PAGE_ROWS - 1 },
+        rowsByCall: paged,
+      },
+      {
+        name: `cursor:valid:${label}`,
+        params: cursorParams(direction, "2025"),
+      },
+      {
+        name: `cursor:valid+limit=7:${label}`,
+        params: { ...cursorParams(direction, "2025"), limit: 7 },
+      },
+    );
     if (hasTimestampCursor(endpoint)) {
-      cases.push({ name: `year0000:cursor:${label}`, params: cursorParams(direction, "0000") });
+      cases.push({
+        name: `year0000:cursor:${label}`,
+        params: cursorParams(direction, "0000"),
+      });
     }
   }
   if (endpoint.properties.includeTotal) {
