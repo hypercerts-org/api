@@ -34,11 +34,6 @@ local function contribution_authors()
   return authors
 end
 
-local function valid_contribution_cursor_datetime(value)
-  if type(value) ~= "string" or not valid_datetime(value) then return false end
-  return value:sub(1, 4) ~= "0000"
-end
-
 local function decode_contribution_cursor(token, direction)
   if token == nil then return nil end
   if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
@@ -54,7 +49,7 @@ local function decode_contribution_cursor(token, direction)
     if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
   end
   local valid = valid_contribution_uri(value.u)
-  if not valid or not valid_contribution_cursor_datetime(value.t) then
+  if not valid or not valid_datetime(value.t) then
     invalid("cursor is malformed")
   end
   return value

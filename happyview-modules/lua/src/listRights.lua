@@ -56,8 +56,7 @@ local function rights_list_cursor_decode(token, direction)
     if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
   end
   local valid, collection = rights_valid_record_uri(value.u)
-  local year = tonumber(value.t:sub(1, 4))
-  if not valid_datetime(value.t) or not year or year < 1 or not valid or collection ~= RIGHTS then
+  if not valid_datetime(value.t) or not valid or collection ~= RIGHTS then
     invalid("cursor is malformed")
   end
   return value

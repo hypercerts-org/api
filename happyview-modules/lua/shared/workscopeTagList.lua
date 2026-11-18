@@ -51,7 +51,7 @@ local function workscope_tag_decode_cursor(token, direction)
     if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
   end
   local valid, collection = workscope_tag_valid_record_uri(value.u)
-  if not valid_datetime(value.t) or value.t:sub(1, 4) == "0000" or not valid or collection ~= WORKSCOPE_TAG then
+  if not valid_datetime(value.t) or not valid or collection ~= WORKSCOPE_TAG then
     invalid("cursor is malformed")
   end
   return value

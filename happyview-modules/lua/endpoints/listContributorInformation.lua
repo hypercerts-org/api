@@ -95,6 +95,7 @@ local function valid_datetime(value)
     "^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)(.*)$")
   if not year then return false end
   year, month, day = tonumber(year), tonumber(month), tonumber(day)
+  if year < 1 then return false end
   hour, minute, second = tonumber(hour), tonumber(minute), tonumber(second)
   if month < 1 or month > 12 or hour > 23 or minute > 59 or second > 59 then return false end
   local leap = year % 4 == 0 and (year % 100 ~= 0 or year % 400 == 0)
@@ -129,10 +130,6 @@ end
 local function cursor_encode(value)
   local encoded = json.encode(value)
   return (encoded:gsub(".", function(char) return string.format("%02x", string.byte(char)) end))
-end
-
-local function contributor_information_datetime(value)
-  return valid_datetime(value) and tonumber(value:sub(1, 4)) > 0
 end
 
 local function contributor_information_query(sql, values)
@@ -213,7 +210,7 @@ local function contributor_information_cursor_decode(token, direction)
   for key in pairs(value) do
     if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
   end
-  if not contributor_information_uri(value.u) or not contributor_information_datetime(value.t) then
+  if not contributor_information_uri(value.u) or not valid_datetime(value.t) then
     invalid("cursor is malformed")
   end
   return value

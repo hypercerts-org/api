@@ -66,7 +66,7 @@ local function decode_measurement_cursor(token, direction)
   end
   local valid, collection = measurement_valid_record_uri(value.u)
   -- PostgreSQL timestamptz has no year zero, so reject it before binding the cursor.
-  if value.t:sub(1, 4) == "0000" or not valid_datetime(value.t) or not valid or collection ~= MEASUREMENT then
+  if not valid_datetime(value.t) or not valid or collection ~= MEASUREMENT then
     invalid("cursor is malformed")
   end
   return value

@@ -446,7 +446,7 @@ test("listVocabTags rejects a year-zero cursor timestamp before querying", async
   await runLua({
     endpoint: "listVocabTags",
     params: { sortDirection: "asc", cursor: cursor({ timestamp: "0000-01-01T00:00:00Z" }) },
-    expectError: "InvalidRequest: cursor timestamp year must be greater than 0000",
+    expectError: "InvalidRequest: cursor is malformed",
     assertions: "assert(#calls == 0)",
   });
 });

@@ -1,17 +1,9 @@
-local generic_valid_datetime = valid_datetime
-
-local function acknowledgement_valid_datetime(value)
-  if type(value) ~= "string" then return false end
-  if value:match("^(%d%d%d%d)") == "0000" then return false end
-  return generic_valid_datetime(value)
-end
-
 local function valid_cursor_timestamp(value)
   if type(value) ~= "string" or #value ~= 27
     or not value:match("^%d%d%d%d%-%d%d%-%d%dT%d%d:%d%d:%d%d%.%d%d%d%d%d%dZ$") then
     return false
   end
-  return acknowledgement_valid_datetime(value)
+  return valid_datetime(value)
 end
 
 local function acknowledgement_array(key, format)

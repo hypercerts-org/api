@@ -1,7 +1,3 @@
-local function contributor_information_datetime(value)
-  return valid_datetime(value) and tonumber(value:sub(1, 4)) > 0
-end
-
 local function contributor_information_query(sql, values)
   local backend_ok, backend = pcall(db.backend)
   if not backend_ok or backend ~= "postgres" then
@@ -80,7 +76,7 @@ local function contributor_information_cursor_decode(token, direction)
   for key in pairs(value) do
     if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
   end
-  if not contributor_information_uri(value.u) or not contributor_information_datetime(value.t) then
+  if not contributor_information_uri(value.u) or not valid_datetime(value.t) then
     invalid("cursor is malformed")
   end
   return value

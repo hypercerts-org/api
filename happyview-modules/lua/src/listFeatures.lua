@@ -91,7 +91,7 @@ local function feature_cursor_decode(token, direction)
   for key in pairs(value) do
     if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
   end
-  if not feature_valid_uri(value.u) or value.t:sub(1, 4) == "0000" or not valid_datetime(value.t) then
+  if not feature_valid_uri(value.u) or not valid_datetime(value.t) then
     invalid("cursor is malformed")
   end
   return value

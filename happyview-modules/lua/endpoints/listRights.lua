@@ -110,6 +110,7 @@ local function valid_datetime(value)
     "^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)(.*)$")
   if not year then return false end
   year, month, day = tonumber(year), tonumber(month), tonumber(day)
+  if year < 1 then return false end
   hour, minute, second = tonumber(hour), tonumber(minute), tonumber(second)
   if month < 1 or month > 12 or hour > 23 or minute > 59 or second > 59 then return false end
   local leap = year % 4 == 0 and (year % 100 ~= 0 or year % 400 == 0)
@@ -204,8 +205,7 @@ local function rights_list_cursor_decode(token, direction)
     if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
   end
   local valid, collection = rights_valid_record_uri(value.u)
-  local year = tonumber(value.t:sub(1, 4))
-  if not valid_datetime(value.t) or not year or year < 1 or not valid or collection ~= RIGHTS then
+  if not valid_datetime(value.t) or not valid or collection ~= RIGHTS then
     invalid("cursor is malformed")
   end
   return value
