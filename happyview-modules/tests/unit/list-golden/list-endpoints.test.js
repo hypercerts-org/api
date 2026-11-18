@@ -62,41 +62,69 @@ function serialize(cases) {
   return `${[...sqlLines, ...compact].map((line) => JSON.stringify(line)).join("\n")}\n`;
 }
 
-if (process.env.UPDATE_GOLDEN === "1") writeFileSync(goldenPath, actual);
-
-test("every cursor-taking manifest query has a cursor fixture", () => {
+function assertEndpointCoverage() {
   const ids = endpoints.map((endpoint) => endpoint.id).sort();
   assert.deepEqual(
     ids,
     [...CURSOR_FIXTURE_IDS].sort(),
     "manifest query set and tests/unit/list-golden/fixtures.js CURSORS differ; add or remove the endpoint there",
   );
-});
+}
 
-// Fixture guard, not a behavior test: the golden would happily record a rejected
-// or empty case as "expected", silently pinning nothing. These fail loudly if a
-// fixture stops reaching the code paths the golden is meant to cover.
-test("fixtures reach real handler paths for every endpoint", () => {
+const succeeded = (record) => record.calls.length > 0 && record.outcome.error === undefined;
+const describe = (record) => JSON.stringify(record.outcome).slice(0, 200);
+
+/** Every case in `group` must reach SQL and succeed; an empty group is a fixture bug. */
+function assertAllSucceed(endpoint, group, hint) {
+  assert.ok(group.length > 0, `${endpoint.id}: no matching fixture cases; ${hint}`);
+  for (const record of group) {
+    assert.ok(
+      succeeded(record),
+      `${endpoint.id} [${record.case}]: fixture did not succeed (${describe(record)}); ${hint}`,
+    );
+  }
+}
+
+// Fixture guard, not a behavior test: the golden would happily record a rejected,
+// crashed or empty case as "expected", silently pinning nothing. These fail loudly
+// if a fixture stops reaching the code paths the golden is meant to cover. Checked
+// per sort direction, so a working descending case cannot mask a broken ascending one.
+function assertFixturesReachHandlerPaths() {
   for (const endpoint of endpoints) {
     const mine = records.filter((r) => r.endpoint === endpoint.id);
-    const validCursor = mine.find((r) => r.case.startsWith("cursor:valid:"));
-    assert.ok(
-      validCursor?.calls.length,
-      `${endpoint.id}: fixture cursor was rejected before SQL (${JSON.stringify(validCursor?.outcome)}); fix cursorFor in fixtures.js`,
+    const named = (...prefixes) => mine.filter((r) => prefixes.some((p) => r.case.startsWith(p)));
+    assertAllSucceed(
+      endpoint,
+      named("cursor:valid:", "cursor:valid+limit=7:"),
+      "fix cursorFor in fixtures.js",
     );
-    const paged = mine.find((r) => r.case.startsWith("paged:"));
-    assert.ok(
-      paged?.outcome.result?.cursor,
-      `${endpoint.id}: paged case produced no nextCursor (${JSON.stringify(paged?.outcome).slice(0, 200)}); fix pageRow in fixtures.js`,
-    );
-    for (const filter of mine.filter((r) => r.case.startsWith("filter:"))) {
+    const paged = named("paged:");
+    assert.ok(paged.length > 0, `${endpoint.id}: no paged cases`);
+    for (const record of paged) {
       assert.ok(
-        filter.calls.length && !/^InvalidRequest/.test(filter.outcome.error ?? ""),
-        `${endpoint.id} [${filter.case}]: filter fixture was rejected (${filter.outcome.error}); use a valid value in fixtures.js`,
+        record.outcome.result?.cursor,
+        `${endpoint.id} [${record.case}]: paged case produced no nextCursor (${describe(record)}); fix pageRow in fixtures.js`,
+      );
+    }
+    for (const filter of named("filter:")) {
+      assert.ok(
+        succeeded(filter),
+        `${endpoint.id} [${filter.case}]: filter fixture did not succeed (${describe(filter)}); use a valid value in fixtures.js`,
       );
     }
   }
-});
+}
+
+// A failed check leaves the previous golden untouched.
+if (process.env.UPDATE_GOLDEN === "1") {
+  assertEndpointCoverage();
+  assertFixturesReachHandlerPaths();
+  writeFileSync(goldenPath, actual);
+}
+
+test("every cursor-taking manifest query has a cursor fixture", assertEndpointCoverage);
+
+test("fixtures reach real handler paths for every endpoint", assertFixturesReachHandlerPaths);
 
 test("list endpoint SQL, binds and outcomes match the golden snapshot", () => {
   const expected = readFileSync(goldenPath, "utf8");

@@ -222,7 +222,7 @@ function mixedIdentifierCase(name, base) {
   };
 }
 
-function arrayFilterCases(endpoint, name, property, base) {
+function arrayFilterCases(endpoint, name, property, base, index) {
   const values = [0, 1, 2].map((n) => filterValue(endpoint, name, property, n));
   const cases = [
     { name: `filter:${name}:many`, params: { ...base, [name]: values } },
@@ -243,7 +243,10 @@ function arrayFilterCases(endpoint, name, property, base) {
   if (MIXED_IDENTIFIERS.has(name) && MIXED_LIST_ENDPOINTS.has(endpoint.id)) {
     cases.push(mixedIdentifierCase(name, base));
   }
-  return { cases, combined: values.slice(0, 2) };
+  // Alternate the window so adjacent array filters get different value sets in
+  // filter:all and a swap of their inputs changes the recorded binds.
+  const start = index % 2;
+  return { cases, combined: values.slice(start, start + 2) };
 }
 
 function booleanFilterCases(name, base) {
@@ -263,8 +266,8 @@ function scalarFilterCases(endpoint, name, property, base) {
   return { cases, combined: values[0] };
 }
 
-function filterCasesFor(endpoint, name, property, base) {
-  if (property.type === "array") return arrayFilterCases(endpoint, name, property, base);
+function filterCasesFor(endpoint, name, property, base, index) {
+  if (property.type === "array") return arrayFilterCases(endpoint, name, property, base, index);
   if (property.type === "boolean") return booleanFilterCases(name, base);
   return scalarFilterCases(endpoint, name, property, base);
 }
@@ -273,8 +276,8 @@ function filterCasesFor(endpoint, name, property, base) {
 function filterCases(endpoint, base) {
   const cases = [];
   const combined = {};
-  for (const [name, property] of filterParams(endpoint)) {
-    const result = filterCasesFor(endpoint, name, property, base);
+  for (const [index, [name, property]] of filterParams(endpoint).entries()) {
+    const result = filterCasesFor(endpoint, name, property, base, index);
     cases.push(...result.cases);
     combined[name] = result.combined;
   }
@@ -340,14 +343,25 @@ const DATETIME_CURSORS = {
   "year-0001-valid": "0001-01-01T00:00:00Z",
   "year-5-digit": "12025-01-01T00:00:00Z",
   "end-of-year-valid": "2025-12-31T23:59:59Z",
-  "zone-plus-23-59-valid": "2025-01-01T00:00:00+23:59",
-  "zone-minus-23-59-valid": "2025-01-01T00:00:00-23:59",
+  "zone-plus-15-59": "2025-01-01T00:00:00+15:59",
+  "zone-minus-15-59": "2025-01-01T00:00:00-15:59",
+  "zone-plus-16-00": "2025-01-01T00:00:00+16:00",
+  "zone-minus-16-00": "2025-01-01T00:00:00-16:00",
+  "zone-plus-23-59-lua-accepted": "2025-01-01T00:00:00+23:59",
+  "zone-minus-23-59-lua-accepted": "2025-01-01T00:00:00-23:59",
   "feb-29-2026": "2026-02-29T00:00:00Z",
   "feb-29-2200": "2200-02-29T00:00:00Z",
   ...monthBoundaryCursors(),
 };
 
-/** Cursor token length cap (hex characters) enforced by the shared decoders. */
+const WHOLE_SECOND_UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
+
+/** Endpoints whose cursor timestamp must carry fractional seconds. */
+function needsFraction(endpoint) {
+  return CURSORS[endpoint.id]?.timestamp?.includes(".") ?? false;
+}
+
+/** Cursor token length cap (hex characters) enforced by most shared decoders. */
 const CURSOR_MAX_HEX = 8192;
 
 /** Hex cursor of exactly `hexLength` characters, padded with trailing JSON whitespace. */
@@ -401,7 +415,7 @@ function basicErrorCases(endpoint, base) {
     { name: "error:cursor:empty", params: { ...base, cursor: "" } },
     {
       name: "error:cursor:hex-non-json",
-      params: { ...base, cursor: hexCursor("not json") },
+      params: { ...base, cursor: Buffer.from("not json", "utf8").toString("hex") },
     },
   );
   return cases;
@@ -462,16 +476,18 @@ function cursorErrorCases(endpoint, base, direction, good) {
       params: withCursor(validHex.toUpperCase()),
     },
   ];
-  // Shared decoders cap the token at CURSOR_MAX_HEX characters (even length, so
-  // +/-2 is the nearest accepted/rejected neighbour). Padding with trailing
-  // JSON whitespace keeps the payload valid, so only the length varies.
+  // Most shared decoders cap the token at CURSOR_MAX_HEX characters (even
+  // length, so +/-2 is the nearest accepted/rejected neighbour); the organization
+  // decoders do not. These are characterization cases, so the golden records
+  // whichever outcome each endpoint has. Padding with trailing JSON whitespace
+  // keeps the payload valid, so only the length varies.
   for (const [label, hexLength] of [
     ["at-cap", CURSOR_MAX_HEX],
     ["below-cap", CURSOR_MAX_HEX - 2],
     ["above-cap", CURSOR_MAX_HEX + 2],
   ]) {
     cases.push({
-      name: `error:cursor:length-${label}`,
+      name: `cursor:length-${label}`,
       params: withCursor(paddedCursor(good, hexLength)),
     });
   }
@@ -482,6 +498,20 @@ function cursorErrorCases(endpoint, base, direction, good) {
         name: `datetime:cursor-t:${label}`,
         params: withCursor(hexCursor(cursor)),
       });
+      // Fractional-only endpoints reject whole-second values on format alone,
+      // so also exercise the same calendar/clock value in the accepted format.
+      if (needsFraction(endpoint) && WHOLE_SECOND_UTC.test(t)) {
+        const fractional = cursorFor(
+          endpoint,
+          direction ?? "desc",
+          "2025",
+          t.replace("Z", ".000000Z"),
+        );
+        cases.push({
+          name: `datetime:cursor-t:${label}:fractional`,
+          params: withCursor(hexCursor(fractional)),
+        });
+      }
     }
   }
   for (const [label, mutate] of Object.entries(cursorMutations(endpoint, good))) {
@@ -569,11 +599,13 @@ function pageRow(endpoint, n) {
     sort_timestamp: `2025-01-0${n + 1}T00:00:00.000000Z`,
     actor_did: rowDid(n),
     subject_did: rowDid(n),
-    total_count: String(PAGE_ROWS),
+    total_count: String(TOTAL_COUNT),
   };
 }
 
 const PAGE_ROWS = 3;
+/** Database total, deliberately different from PAGE_ROWS so totals are not confused with page size. */
+const TOTAL_COUNT = 12;
 
 const collectionItems = (count) =>
   Array.from({ length: count }, (_, index) => index + 1).map((n) => ({
@@ -600,16 +632,19 @@ function collectionRow(items) {
   };
 }
 
-function pagedRowsByCall(endpoint) {
+/** Rows come back in SQL order: newest first unless the request sorts ascending. */
+function pagedRowsByCall(endpoint, direction) {
   if (endpoint.id === "org.hypercerts.collection.listCollectionItems") {
     return [[collectionRow(COLLECTION_ITEMS)]];
   }
-  return [Array.from({ length: PAGE_ROWS }, (_, n) => pageRow(endpoint, n))];
+  const rows = Array.from({ length: PAGE_ROWS }, (_, n) => pageRow(endpoint, n));
+  return [direction === "asc" ? rows : rows.reverse()];
 }
 
-function defaultRows(endpoint, paged) {
-  if (endpoint.id === "org.hypercerts.collection.listCollectionItems") return paged[0];
-  return null;
+/** Only the collection lookup returns the collection row; later queries see no rows. */
+function defaultRowsByCall(endpoint) {
+  if (endpoint.id !== "org.hypercerts.collection.listCollectionItems") return null;
+  return pagedRowsByCall(endpoint);
 }
 
 export const CURSOR_FIXTURE_IDS = Object.keys(CURSORS);
@@ -635,8 +670,8 @@ export function casesFor(endpoint) {
     { name: "limit=101", params: { ...base, limit: 101 } },
     { name: "cursor:malformed", params: { ...base, cursor: "abc" } },
   ];
-  const paged = pagedRowsByCall(endpoint);
   for (const direction of directions) {
+    const paged = pagedRowsByCall(endpoint, direction);
     const label = direction ?? "default";
     if (direction) {
       cases.push({
@@ -670,7 +705,7 @@ export function casesFor(endpoint) {
     cases.push({
       name: "paged:includeTotal",
       params: { ...base, limit: PAGE_ROWS - 1, includeTotal: true },
-      rowsByCall: paged,
+      rowsByCall: pagedRowsByCall(endpoint, directions[0]),
     });
   }
   if (endpoint.id === "org.hypercerts.collection.listCollectionItems") {
@@ -678,19 +713,19 @@ export function casesFor(endpoint) {
     cases.push({
       name: "default-limit:30-items",
       params: base,
-      rows: [collectionRow(collectionItems(30))],
+      rowsByCall: [[collectionRow(collectionItems(30))]],
     });
   }
   cases.push(...filterCases(endpoint, base), ...errorCases(endpoint, base, directions));
   // Unpaged cases answer every query with the same minimal rows (if any is
   // needed to get past a count check); paged cases bring their own.
-  const rows = defaultRows(endpoint, paged);
+  const rowsByCall = defaultRowsByCall(endpoint);
   const countCall = COUNT_ROW_ENDPOINTS.has(endpoint.id) ? [[{ total_count: "0" }]] : null;
   return cases.map((c) => {
-    if (c.rowsByCall || c.rows) return c;
+    if (c.rowsByCall) return c;
     if (String(c.params.includeTotal) === "true")
       return { ...c, rowsByCall: [[{ total_count: "0" }]] };
     if (countCall) return { ...c, rowsByCall: countCall };
-    return rows ? { ...c, rows } : c;
+    return rowsByCall ? { ...c, rowsByCall } : c;
   });
 }
