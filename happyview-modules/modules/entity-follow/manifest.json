@@ -73,6 +73,7 @@
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/createdAtSort.lua",
         "../../lua/shared/entityFollow.lua",
         "../../lua/shared/batchRequestTarget.lua",
         "../../lua/shared/followBatch.lua",

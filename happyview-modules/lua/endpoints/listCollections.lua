@@ -208,26 +208,6 @@ end
 
 local COLLECTION = "org.hypercerts.collection"
 
-local function collection_invalid(message)
-  error("InvalidRequest: " .. message, 0)
-end
-
-local function collection_keys_only(values, allowed)
-  for key in pairs(values) do
-    if not allowed[key] then collection_invalid("unknown query parameter: " .. key) end
-  end
-end
-
-local function collection_scalar(values, key)
-  local value = values[key]
-  if value == nil then return nil end
-  if key == "hasOrganizationRecord" and type(value) == "boolean" then return tostring(value) end
-  if type(value) ~= "string" and type(value) ~= "number" then
-    collection_invalid(key .. " must occur once")
-  end
-  return tostring(value)
-end
-
 local function collection_valid_record_uri(value)
   if type(value) ~= "string" or #value > 8192 then return false end
   return valid_record_uri(value)
@@ -367,6 +347,11 @@ local function add_in(where, binds, column, items)
   where[#where + 1] = column .. " IN (" .. table.concat(marks, ", ") .. ")"
 end
 
+local function collection_scalar(values, key)
+  if key == "hasOrganizationRecord" and type(values[key]) == "boolean" then return tostring(values[key]) end
+  return scalar(values, key)
+end
+
 local function collection_array(key, kind)
   local value = params[key]
   if value == nil then return nil end
@@ -378,40 +363,40 @@ local function collection_array(key, kind)
     local count = 0
     for index in pairs(value) do
       if type(index) ~= "number" or index < 1 or index % 1 ~= 0 then
-        collection_invalid(key .. " must use repeated query values")
+        invalid(key .. " must use repeated query values")
       end
       count = count + 1
     end
-    if count ~= #value then collection_invalid(key .. " must use repeated query values") end
+    if count ~= #value then invalid(key .. " must use repeated query values") end
     for index = 1, count do
-      if type(value[index]) ~= "string" then collection_invalid(key .. " entries must be strings") end
+      if type(value[index]) ~= "string" then invalid(key .. " entries must be strings") end
       supplied[#supplied + 1] = value[index]
     end
   else
-    collection_invalid(key .. " must be a string or repeated string parameter")
+    invalid(key .. " must be a string or repeated string parameter")
   end
-  if #supplied > 100 then collection_invalid(key .. " accepts at most 100 values") end
+  if #supplied > 100 then invalid(key .. " accepts at most 100 values") end
 
   local unique, seen = {}, {}
   for _, item in ipairs(supplied) do
     if kind == "did" and not valid_did(item) then
-      collection_invalid("each authors value must be a valid DID; resolve handles to DIDs first")
+      invalid("each authors value must be a valid DID; resolve handles to DIDs first")
     elseif kind == "collectionUri" then
       local valid, collection = collection_valid_record_uri(item)
       if not valid or collection ~= COLLECTION then
-        collection_invalid("each uris value must be a full org.hypercerts.collection AT-URI with a DID authority")
+        invalid("each uris value must be a full org.hypercerts.collection AT-URI with a DID authority")
       end
     elseif kind == "recordUri" then
       if not collection_valid_record_uri(item) then
-        collection_invalid("each " .. key .. " value must be a full AT-URI with a DID authority")
+        invalid("each " .. key .. " value must be a full AT-URI with a DID authority")
       end
     elseif kind == "tagUri" then
       local valid, collection = collection_valid_record_uri(item)
       if not valid or collection ~= "org.hypercerts.vocab.tag" then
-        collection_invalid("each tagUris value must be a full org.hypercerts.vocab.tag AT-URI with a DID authority")
+        invalid("each tagUris value must be a full org.hypercerts.vocab.tag AT-URI with a DID authority")
       end
     elseif kind == "type" and #item > 64 then
-      collection_invalid("types entries must be at most 64 UTF-8 bytes")
+      invalid("types entries must be at most 64 UTF-8 bytes")
     end
     if not seen[item] then
       seen[item] = true
@@ -540,7 +525,7 @@ local function collection_list_response(search_enabled)
     cursor = true,
   }
   if search_enabled then allowed.search = true end
-  collection_keys_only(params, allowed)
+  keys_only(params, allowed, "unknown query parameter: ")
 
   local authors = collection_array("authors", "did")
   local has_organization_record = collection_scalar(params, "hasOrganizationRecord")
@@ -550,7 +535,7 @@ local function collection_list_response(search_enabled)
     elseif has_organization_record == "false" then
       has_organization_record = false
     else
-      collection_invalid("hasOrganizationRecord must be true or false")
+      invalid("hasOrganizationRecord must be true or false")
     end
   end
   local types = collection_array("types", "type")
@@ -559,14 +544,14 @@ local function collection_list_response(search_enabled)
   local tag_uris = collection_array("tagUris", "tagUri")
   local search
   if search_enabled then
-    search = collection_scalar(params, "search")
-    if search == nil then collection_invalid("search is required") end
+    search = scalar(params, "search")
+    if search == nil then invalid("search is required") end
     search = search:match("^%s*(.-)%s*$")
     if search == "" then search = nil end
   end
   local direction = parse_sort_direction(params)
   local limit = parse_list_limit(params)
-  local cursor = collection_list_cursor_decode(collection_scalar(params, "cursor"), direction)
+  local cursor = collection_list_cursor_decode(scalar(params, "cursor"), direction)
   local collections, next_cursor = collection_list_query({
     authors = authors,
     hasOrganizationRecord = has_organization_record,

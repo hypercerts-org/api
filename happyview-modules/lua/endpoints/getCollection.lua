@@ -6,6 +6,27 @@ local function valid_did(value)
   return true
 end
 
+local function invalid(message)
+  error("InvalidRequest: " .. message, 0)
+end
+
+local function keys_only(values, allowed, unknown_message_prefix)
+  for key in pairs(values) do
+    if not allowed[key] then
+      invalid(unknown_message_prefix and (unknown_message_prefix .. key) or "unknown query parameter")
+    end
+  end
+end
+
+local function scalar(params, key)
+  local value = params[key]
+  if value == nil then return nil end
+  if type(value) ~= "string" and type(value) ~= "number" then
+    invalid(key .. " must occur once")
+  end
+  return tostring(value)
+end
+
 local function valid_record_key(value)
   return #value >= 1 and #value <= 512 and value ~= "." and value ~= ".."
     and not value:find("[^%w_~%.:%-]")
@@ -208,26 +229,6 @@ end
 
 local COLLECTION = "org.hypercerts.collection"
 
-local function collection_invalid(message)
-  error("InvalidRequest: " .. message, 0)
-end
-
-local function collection_keys_only(values, allowed)
-  for key in pairs(values) do
-    if not allowed[key] then collection_invalid("unknown query parameter: " .. key) end
-  end
-end
-
-local function collection_scalar(values, key)
-  local value = values[key]
-  if value == nil then return nil end
-  if key == "hasOrganizationRecord" and type(value) == "boolean" then return tostring(value) end
-  if type(value) ~= "string" and type(value) ~= "number" then
-    collection_invalid(key .. " must occur once")
-  end
-  return tostring(value)
-end
-
 local function collection_valid_record_uri(value)
   if type(value) ~= "string" or #value > 8192 then return false end
   return valid_record_uri(value)
@@ -253,11 +254,11 @@ local function collection_hydrate(views, omit_invalid)
 end
 
 function handle()
-  collection_keys_only(params, { uri = true })
-  local uri = collection_scalar(params, "uri")
+  keys_only(params, { uri = true }, "unknown query parameter: ")
+  local uri = scalar(params, "uri")
   local valid, collection = collection_valid_record_uri(uri)
   if not uri or not valid or collection ~= COLLECTION then
-    collection_invalid("uri must be a full org.hypercerts.collection AT-URI with a DID authority")
+    invalid("uri must be a full org.hypercerts.collection AT-URI with a DID authority")
   end
 
   local rows = collection_query(
