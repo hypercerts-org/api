@@ -287,6 +287,14 @@ local function feature_projection_hydrate(views)
   end
 end
 
+local function parse_list_limit(params)
+  local limit_value = scalar(params, "limit")
+  if limit_value and not limit_value:match("^%d+$") then invalid("limit must be an integer from 1 through 100") end
+  local limit = limit_value and tonumber(limit_value) or 25
+  if not limit or limit % 1 ~= 0 or limit < 1 or limit > 100 then invalid("limit must be an integer from 1 through 100") end
+  return limit
+end
+
 local ITEM_COLLECTION = "org.hypercerts.collection"
 local ITEM_ACTIVITY = "org.hypercerts.claim.activity"
 local ITEM_FEATURE = "org.hypercerts.entity.feature"
@@ -298,17 +306,6 @@ end
 
 local function collection_items_keys_only(values, allowed)
   keys_only(values, allowed, "unknown query parameter: ")
-end
-
-local function collection_items_limit()
-  local value = scalar(params, "limit")
-  if value == nil then return 25 end
-  if not value:match("^%d+$") then collection_items_invalid("limit must be an integer from 1 through 100") end
-  local limit = tonumber(value)
-  if not limit or limit < 1 or limit > 100 then
-    collection_items_invalid("limit must be an integer from 1 through 100")
-  end
-  return limit
 end
 
 local function collection_items_cursor_decode(token, collection_uri)
@@ -454,7 +451,7 @@ local function collection_items_response()
   if not collection_uri or not valid or collection ~= ITEM_COLLECTION then
     collection_items_invalid("collection must be a full org.hypercerts.collection AT-URI with a DID authority")
   end
-  local limit = collection_items_limit()
+  local limit = parse_list_limit(params)
   local cursor = collection_items_cursor_decode(scalar(params, "cursor"), collection_uri)
 
   local collection_rows = collection_items_query(

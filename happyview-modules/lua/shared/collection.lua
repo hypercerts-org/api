@@ -1,25 +1,5 @@
 local COLLECTION = "org.hypercerts.collection"
 
-local function collection_invalid(message)
-  error("InvalidRequest: " .. message, 0)
-end
-
-local function collection_keys_only(values, allowed)
-  for key in pairs(values) do
-    if not allowed[key] then collection_invalid("unknown query parameter: " .. key) end
-  end
-end
-
-local function collection_scalar(values, key)
-  local value = values[key]
-  if value == nil then return nil end
-  if key == "hasOrganizationRecord" and type(value) == "boolean" then return tostring(value) end
-  if type(value) ~= "string" and type(value) ~= "number" then
-    collection_invalid(key .. " must occur once")
-  end
-  return tostring(value)
-end
-
 local function collection_valid_record_uri(value)
   if type(value) ~= "string" or #value > 8192 then return false end
   return valid_record_uri(value)

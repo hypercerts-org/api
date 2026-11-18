@@ -70,6 +70,8 @@
         "../../lua/shared/listQuery.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",
+        "../../lua/shared/listCursor.lua",
+        "../../lua/shared/createdAtSort.lua",
         "../../lua/shared/feedReaction.lua"
       ],
       "config": { "script_type": "lua", "description": "Feed reaction API handler" },
@@ -89,6 +91,8 @@
         "../../lua/shared/listQuery.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",
+        "../../lua/shared/listCursor.lua",
+        "../../lua/shared/createdAtSort.lua",
         "../../lua/shared/feedReaction.lua"
       ],
       "config": { "script_type": "lua", "description": "Feed reaction API handler" },
@@ -108,6 +112,8 @@
         "../../lua/shared/listQuery.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",
+        "../../lua/shared/listCursor.lua",
+        "../../lua/shared/createdAtSort.lua",
         "../../lua/shared/feedReaction.lua"
       ],
       "config": { "script_type": "lua", "description": "Feed reaction API handler" },
@@ -127,6 +133,8 @@
         "../../lua/shared/listQuery.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",
+        "../../lua/shared/listCursor.lua",
+        "../../lua/shared/createdAtSort.lua",
         "../../lua/shared/feedReaction.lua"
       ],
       "config": { "script_type": "lua", "description": "Feed reaction API handler" },

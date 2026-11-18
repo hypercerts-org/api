@@ -13,12 +13,6 @@ local FEED_REACTIONS = {
   },
 }
 
-local function feed_reaction_sort_key()
-  local created = "record::jsonb->>'createdAt'"
-  local zoned = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
-  return "CASE WHEN jsonb_typeof(record::jsonb->'createdAt') = 'string' AND " .. created .. " ~ '" .. zoned .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created .. ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE COALESCE(indexed_at::timestamptz, created_at::timestamptz) END"
-end
-
 local function feed_reaction_query(reaction, sql, values)
   if db.backend() ~= "postgres" then error(reaction.failure .. ": reaction queries require PostgreSQL", 0) end
   local ok, result = pcall(db.raw, sql, values)
@@ -27,24 +21,10 @@ local function feed_reaction_query(reaction, sql, values)
 end
 
 local function feed_reaction_decode_cursor(token, direction, collection)
-  if token == nil then return nil end
-  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
-    invalid("cursor is malformed")
-  end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
-  local ok, value = pcall(json.decode, decoded)
-  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
-    or type(value.t) ~= "string" or type(value.u) ~= "string" then
-    invalid("cursor is malformed or belongs to another sortDirection")
-  end
-  for key in pairs(value) do
-    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
-  end
-  local valid, cursor_collection = valid_record_uri(value.u)
-  if not valid or cursor_collection ~= collection or not valid_datetime(value.t) then
-    invalid("cursor is malformed")
-  end
-  return value
+  return decode_cursor(token, direction, function(value)
+    local valid, cursor_collection = valid_record_uri(value.u)
+    return valid and cursor_collection == collection and valid_datetime(value.t)
+  end)
 end
 
 local function feed_reaction_query_page(reaction, mode, identity, limit, cursor, direction)
@@ -70,7 +50,7 @@ local function feed_reaction_query_page(reaction, mode, identity, limit, cursor,
   local ordering = direction == "asc" and "ASC" or "DESC"
   local subject_uri = "record::jsonb->'subject'->>'uri'"
   -- Select the earliest representative before applying the caller's independent page direction.
-  local sql = "WITH ranked_reactions AS (SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record, sorted.sort_at, ROW_NUMBER() OVER (PARTITION BY did, " .. subject_uri .. " ORDER BY sorted.sort_at ASC, uri ASC) AS relationship_rank FROM happyview_records CROSS JOIN LATERAL (SELECT " .. feed_reaction_sort_key() .. " AS sort_at) sorted WHERE " .. table.concat(filters, " AND ") .. "), " ..
+  local sql = "WITH ranked_reactions AS (SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record, sorted.sort_at, ROW_NUMBER() OVER (PARTITION BY did, " .. subject_uri .. " ORDER BY sorted.sort_at ASC, uri ASC) AS relationship_rank FROM happyview_records CROSS JOIN LATERAL (SELECT " .. created_at_sort() .. " AS sort_at) sorted WHERE " .. table.concat(filters, " AND ") .. "), " ..
     "representatives AS (SELECT uri, did, cid, indexed_at, record, sort_at FROM ranked_reactions WHERE relationship_rank = 1), "
 
   local page = "page AS (SELECT uri, did, cid, indexed_at, record, sort_at FROM representatives" .. cursor_filter .. " ORDER BY sort_at " .. ordering .. ", uri " .. ordering .. " LIMIT $" .. #values .. ") "
