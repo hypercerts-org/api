@@ -218,6 +218,20 @@ test("getReactionCounts batches repeated subjects and counts distinct publishers
   assert.deepEqual(Object.keys(body), ["counts"]);
 });
 
+test("getReactionCounts does not count a like or repost on the repost it was found via", async () => {
+  // Fixture like A and repost A name this repost in `via`, so record_refs holds a row
+  // pointing at it. Neither is a reaction to it.
+  const viaRepost = `at://${reactionDids.source}/app.certified.feed.repost/3jzfcijpj2z2a`;
+  const { response, body } = await request(reactionCountsEndpoint, {
+    subjects: [viaRepost, reactionUris.subject],
+  });
+  assert.equal(response.status, 200, JSON.stringify(body));
+  assert.deepEqual(body.counts, [
+    { subject: viaRepost, likeCount: 0, repostCount: 0 },
+    { subject: reactionUris.subject, likeCount: 3, repostCount: 2 },
+  ]);
+});
+
 test("actor reaction queries deduplicate subject URIs and return raw records without hydration or counts", async () => {
   for (const { endpoint, collection, outputKey, relationKey } of [
     {

@@ -128,3 +128,16 @@ test("getCommentCounts reports named errors for database and count failures", ()
     });
   }
 });
+
+test("getCommentCounts looks subjects up in record_refs and re-checks subjects[].uri on the comment", () => {
+  runLua({
+    params: { subjects: [post] },
+    assertions: `
+local sql = calls[1].sql
+assert(sql:find('happyview_record_refs', 1, true), 'subjects are found through the refs index')
+assert(sql:find('ref.target_uri IN', 1, true), 'lookup is by target URI')
+assert(sql:find("subject.value->>'uri' = ref.target_uri", 1, true), 'a ref anywhere else in the record must not count')
+assert(not sql:find('FROM happyview_records AS comment', 1, true), 'the collection is no longer scanned')
+`,
+  });
+});
