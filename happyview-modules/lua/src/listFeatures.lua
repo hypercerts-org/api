@@ -38,20 +38,6 @@ local function feature_array(params, key, validate, description, max_bytes)
   return unique
 end
 
-local function feature_add_in(where, values, column, binds)
-  if values == nil then return end
-  if #values == 0 then
-    where[#where + 1] = "FALSE"
-    return
-  end
-  local placeholders = {}
-  for _, value in ipairs(values) do
-    binds[#binds + 1] = value
-    placeholders[#placeholders + 1] = "$" .. #binds
-  end
-  where[#where + 1] = column .. " IN (" .. table.concat(placeholders, ", ") .. ")"
-end
-
 local function feature_add_types(where, values, binds)
   if values == nil then return end
   if #values == 0 then
@@ -117,7 +103,7 @@ end
 
 local function feature_list_rows(filters, limit, cursor, direction)
   local where, binds = { "feature.collection = $1" }, { FEATURE_COLLECTION }
-  feature_add_in(where, filters.authors, "feature.did", binds)
+  if filters.authors then add_in(where, binds, "feature.did", filters.authors) end
   feature_add_types(where, filters.types, binds)
   if filters.hasOrganizationRecord ~= nil then
     local predicate = filters.hasOrganizationRecord and "EXISTS" or "NOT EXISTS"

@@ -26,17 +26,6 @@ local function array(params, key)
   return unique
 end
 
-local function add_actors(where, values, actors)
-  if not actors then return end
-  if #actors == 0 then where[#where + 1] = "FALSE"; return end
-  local placeholders = {}
-  for _, did in ipairs(actors) do
-    values[#values + 1] = did
-    placeholders[#placeholders + 1] = "$" .. #values
-  end
-  where[#where + 1] = "did IN (" .. table.concat(placeholders, ", ") .. ")"
-end
-
 local function cursor_decode(token, direction)
   if not token then return nil end
   if #token % 2 ~= 0 or token:find("[^0-9a-f]") then invalid("cursor is malformed") end
@@ -55,7 +44,7 @@ end
 
 local function query_profiles(actors, search, limit, cursor, direction)
   local where, values = { "collection = $1", "rkey = 'self'" }, { PROFILE }
-  add_actors(where, values, actors)
+  if actors then add_in(where, values, "did", actors) end
   if search then
     values[#values + 1] = search
     local term = "$" .. #values

@@ -68,6 +68,7 @@
         "../../lua/shared/datetimeValidation.lua",
         "../../lua/shared/listValidation.lua",
         "../../lua/shared/listQuery.lua",
+        "../../lua/shared/createdAtSort.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua"
       ],
@@ -107,6 +108,7 @@
         "../../lua/shared/datetimeValidation.lua",
         "../../lua/shared/listValidation.lua",
         "../../lua/shared/listQuery.lua",
+        "../../lua/shared/createdAtSort.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",
         "../../lua/shared/nsidValidation.lua"
@@ -147,6 +149,7 @@
         "../../lua/shared/datetimeValidation.lua",
         "../../lua/shared/listValidation.lua",
         "../../lua/shared/listQuery.lua",
+        "../../lua/shared/createdAtSort.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua"
       ],
