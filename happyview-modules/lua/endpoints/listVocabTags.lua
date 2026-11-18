@@ -215,7 +215,6 @@ local function decode_cursor(token, direction, authors)
     end
   end
   if not valid_datetime(value.t) then invalid("cursor is malformed") end
-  if value.t:sub(1, 4) == "0000" then invalid("cursor timestamp year must be greater than 0000") end
   if not valid_vocab_tag_uri(value.u) then invalid("cursor is malformed") end
   return value
 end
