@@ -187,6 +187,26 @@ function filterCases(endpoint, base) {
   return cases;
 }
 
+/** Days per month in a non-leap year, mirroring valid_datetime's month_days table. */
+const MONTH_DAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+/** Last valid day and the day after it, for every month (February also in a leap year). */
+function monthBoundaryCursors() {
+  const pad = (n) => String(n).padStart(2, "0");
+  const cases = {};
+  const add = (year, month, day, verdict) => {
+    cases[`day-${year}-${pad(month)}-${pad(day)}-${verdict}`] =
+      `${year}-${pad(month)}-${pad(day)}T00:00:00Z`;
+  };
+  MONTH_DAYS.forEach((max, index) => {
+    add(2025, index + 1, max, "valid");
+    add(2025, index + 1, max + 1, "invalid");
+  });
+  add(2024, 2, 29, "valid");
+  add(2024, 2, 30, "invalid");
+  return cases;
+}
+
 /**
  * Cursor `t` values that pin lua/shared/datetimeValidation.lua valid_datetime
  * (calendar, clock and zone-offset boundaries). Run against every timestamp-
@@ -219,7 +239,22 @@ const DATETIME_CURSORS = {
   "lowercase-t": "2025-01-01t00:00:00Z",
   "trailing-junk": "2025-01-01T00:00:00Zjunk",
   "year-5-digit": "12025-01-01T00:00:00Z",
+  "end-of-year-valid": "2025-12-31T23:59:59Z",
+  "zone-plus-23-59-valid": "2025-01-01T00:00:00+23:59",
+  "zone-minus-23-59-valid": "2025-01-01T00:00:00-23:59",
+  "feb-29-2026": "2026-02-29T00:00:00Z",
+  "feb-29-2200": "2200-02-29T00:00:00Z",
+  ...monthBoundaryCursors(),
 };
+
+/** Cursor token length cap (hex characters) enforced by the shared decoders. */
+const CURSOR_MAX_HEX = 8192;
+
+/** Hex cursor of exactly `hexLength` characters, padded with trailing JSON whitespace. */
+function paddedCursor(cursor, hexLength) {
+  const json = JSON.stringify(cursor);
+  return Buffer.from(json.padEnd(hexLength / 2, " "), "utf8").toString("hex");
+}
 
 /** Input-validation cases that must be rejected before (or without) reaching SQL. */
 function errorCases(endpoint, base, directions) {
@@ -236,26 +271,66 @@ function errorCases(endpoint, base, directions) {
   ]) {
     cases.push({ name: `error:limit=${label}`, params: { ...base, limit } });
   }
+  // A query parameter repeated in the request arrives as an array; scalar() must reject it.
+  cases.push({ name: "error:limit=array", params: { ...base, limit: ["5", "6"] } });
+  if (endpoint.properties.sortDirection) {
+    cases.push({
+      name: "error:sortDirection=array",
+      params: { ...base, sortDirection: ["asc", "desc"] },
+    });
+  }
   cases.push(
     { name: "error:cursor:non-hex", params: { ...base, cursor: "zz" } },
+    { name: "error:cursor:empty", params: { ...base, cursor: "" } },
     { name: "error:cursor:hex-non-json", params: { ...base, cursor: hexCursor("not json") } },
   );
   const direction = directions[0];
   const good = cursorFor(endpoint, direction ?? "desc", "2025");
   if (!good) return cases;
-  const at = (mutate) => {
+  const at = (mutate, finish = (params) => params) => {
     const cursor = { ...good };
     mutate(cursor);
-    return {
+    return finish({
       ...base,
       ...(direction ? { sortDirection: direction } : {}),
       cursor: hexCursor(cursor),
-    };
+    });
   };
+  cases.push({
+    name: "error:cursor:array",
+    params: at(
+      () => {},
+      (params) => ({ ...params, cursor: [params.cursor, params.cursor] }),
+    ),
+  });
+  cases.push({
+    name: "error:cursor:uppercase-hex",
+    params: at(
+      () => {},
+      (params) => ({ ...params, cursor: params.cursor.toUpperCase() }),
+    ),
+  });
+  // Shared decoders cap the token at CURSOR_MAX_HEX characters (even length, so
+  // +/-2 is the nearest accepted/rejected neighbour). Padding with trailing
+  // JSON whitespace keeps the payload valid, so only the length varies.
+  for (const [label, hexLength] of [
+    ["at-cap", CURSOR_MAX_HEX],
+    ["below-cap", CURSOR_MAX_HEX - 2],
+    ["above-cap", CURSOR_MAX_HEX + 2],
+  ]) {
+    cases.push({
+      name: `error:cursor:length-${label}`,
+      params: at(
+        () => {},
+        (params) => ({ ...params, cursor: paddedCursor(good, hexLength) }),
+      ),
+    });
+  }
   const mutations = {
     "wrong-v": (c) => (c.v = 2),
     "wrong-collection": (c) => (c.u = `at://${DID}/app.bsky.feed.post/3kabcdefghijk`),
     "missing-u": (c) => delete c.u,
+    "u-number": (c) => (c.u = 123),
     "extra-key": (c) => (c.x = 1),
   };
   if ("d" in good) {
@@ -264,6 +339,7 @@ function errorCases(endpoint, base, directions) {
   }
   if ("t" in good) {
     mutations["bad-t"] = (c) => (c.t = "not-a-datetime");
+    mutations["t-number"] = (c) => (c.t = 123);
     mutations["missing-t"] = (c) => delete c.t;
   }
   if ("i" in good) {
@@ -386,6 +462,7 @@ export function casesFor(endpoint) {
     { name: "default", params: base },
     { name: "limit=1", params: { ...base, limit: 1 } },
     { name: "limit=7", params: { ...base, limit: 7 } },
+    { name: "limit=99", params: { ...base, limit: 99 } },
     { name: "limit=100", params: { ...base, limit: 100 } },
     { name: "limit=0", params: { ...base, limit: 0 } },
     { name: "limit=101", params: { ...base, limit: 101 } },

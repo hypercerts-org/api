@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { checkLuaBundles } from "../../../tooling/lua-bundles.js";
 import { CURSOR_FIXTURE_IDS, casesFor } from "./fixtures.js";
 import { listCursorEndpoints, runCases } from "./harness.js";
 
@@ -22,6 +23,14 @@ import { listCursorEndpoints, runCases } from "./harness.js";
 // To keep the file reviewable, each distinct SQL text is stored once in a
 // leading `{"sql":id,"text":..}` line and calls refer to it by id.
 // Regenerate after an intended behaviour change: UPDATE_GOLDEN=1 pnpm test:unit
+// The golden runs generated bundles, so stale ones would pass or fail for the wrong reason.
+const staleBundles = await checkLuaBundles(fileURLToPath(new URL("../../../", import.meta.url)));
+if (staleBundles.length > 0) {
+  throw new Error(
+    `Generated Lua bundles are stale (${staleBundles.join(", ")}); run \`pnpm build:lua\` before the list golden test.`,
+  );
+}
+
 const goldenPath = fileURLToPath(new URL("./list-endpoints.golden.jsonl", import.meta.url));
 
 const endpoints = await listCursorEndpoints();
