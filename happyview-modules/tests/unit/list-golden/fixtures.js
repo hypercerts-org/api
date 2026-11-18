@@ -80,11 +80,11 @@ export function baseParams(endpoint) {
 }
 
 /** A decodable cursor for the endpoint, or null if it has no fixture. */
-export function cursorFor(endpoint, direction, year = "2025") {
+export function cursorFor(endpoint, direction, year = "2025", tOverride = undefined) {
   const spec = CURSORS[endpoint.id];
   if (!spec) return null;
   const timestamp = spec.timestamp ?? TIMESTAMP;
-  const t = `${year}${timestamp.slice(4)}`;
+  const t = tOverride ?? `${year}${timestamp.slice(4)}`;
   const u = `at://${DID}/${spec.collection}/${spec.rkey ?? "3kabcdefghijk"}`;
   if (spec.shape === "item") return { v: 1, u: COLLECTION_URI, i: 1 };
   if (spec.shape === "before") return { v: 1, t, u, b: false };
@@ -187,6 +187,32 @@ function filterCases(endpoint, base) {
   return cases;
 }
 
+/**
+ * Cursor `t` values that pin lua/shared/datetimeValidation.lua valid_datetime
+ * (calendar, clock and zone-offset boundaries). Run against every timestamp-
+ * cursor endpoint rather than one per code path: bundles inline their own copy
+ * of the helper, so each endpoint is its own code path and a refactor could
+ * break any one. Acknowledgements accept only fractional-second cursors, so
+ * their "valid" cases are rejected there; the other endpoints pin acceptance.
+ */
+const DATETIME_CURSORS = {
+  "month-13": "2025-13-01T00:00:00Z",
+  "feb-30": "2025-02-30T00:00:00Z",
+  "leap-2024-valid": "2024-02-29T00:00:00Z",
+  "feb-29-2100": "2100-02-29T00:00:00Z",
+  "leap-2000-valid": "2000-02-29T00:00:00Z",
+  "second-60": "2025-01-01T00:00:60Z",
+  "hour-24": "2025-01-01T24:00:00Z",
+  "zone-minus-00-00": "2025-01-01T00:00:00-00:00",
+  "zone-plus-24-00": "2025-01-01T00:00:00+24:00",
+  "zone-minute-60": "2025-01-01T00:00:00+05:60",
+  "zone-plus-05-30-valid": "2025-01-01T00:00:00+05:30",
+  "fraction-valid": "2025-01-01T00:00:00.123456Z",
+  "fraction-offset-valid": "2025-01-01T00:00:00.5+05:30",
+  "no-zone": "2025-01-01T00:00:00",
+  "day-00": "2025-01-00T00:00:00Z",
+};
+
 /** Input-validation cases that must be rejected before (or without) reaching SQL. */
 function errorCases(endpoint, base, directions) {
   const cases = [];
@@ -235,6 +261,19 @@ function errorCases(endpoint, base, directions) {
   if ("i" in good) {
     mutations["bad-i"] = (c) => (c.i = "one");
     mutations["missing-i"] = (c) => delete c.i;
+  }
+  if ("t" in good) {
+    for (const [label, t] of Object.entries(DATETIME_CURSORS)) {
+      const cursor = cursorFor(endpoint, direction ?? "desc", "2025", t);
+      cases.push({
+        name: `datetime:cursor-t:${label}`,
+        params: {
+          ...base,
+          ...(direction ? { sortDirection: direction } : {}),
+          cursor: hexCursor(cursor),
+        },
+      });
+    }
   }
   if ("b" in good) mutations["bad-b"] = (c) => (c.b = "no");
   for (const [label, mutate] of Object.entries(mutations)) {

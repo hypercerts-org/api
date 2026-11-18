@@ -7,8 +7,8 @@ import { CURSOR_FIXTURE_IDS, casesFor } from "./fixtures.js";
 import { listCursorEndpoints, runCases } from "./harness.js";
 
 // Safety net for shared Lua list-helper refactors. Every manifest query that
-// takes `cursor` runs against its *generated bundle* (happyview-modules/lua/
-// endpoints/.., built by `pnpm --filter @hypercerts-org/happyview-modules run build:lua`; edits to lua/shared or lua/src are
+// takes `cursor` runs against its *generated bundle* (lua/endpoints/*.lua, generated;
+// rebuild with `pnpm --filter @hypercerts-org/happyview-modules run build:lua`; edits to lua/shared or lua/src are
 // invisible here until you rebuild) with a fake db. Captured SQL, binds and
 // outcomes must match the committed golden byte for byte.
 //
