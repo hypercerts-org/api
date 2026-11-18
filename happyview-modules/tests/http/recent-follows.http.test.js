@@ -47,6 +47,7 @@ test("listRecentFollows returns the exact global feed across tied-key pages, inc
     `at://${graphDids.publisher}/${accountFollow}/3jzfcijpj2z2c`,
     `at://${graphDids.publisher}/${accountFollow}/3jzfcijpj2z2b`,
     `at://${graphDids.publisher}/${accountFollow}/3jzfcijpj2z2a`,
+    `at://${graphDids.publisher}/${entityFollow}/3jzfcijpj2z2g`,
     `at://${graphDids.publisher}/${entityFollow}/3jzfcijpj2z2d`,
     `at://${graphDids.publisher}/${entityFollow}/3jzfcijpj2z2c`,
     `at://${graphDids.publisher}/${entityFollow}/3jzfcijpj2z2b`,

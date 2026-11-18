@@ -52,6 +52,15 @@ const specs = [
     "3jzfcijpj2z2e",
     comment([{ uri: commentSubjects.post, cid: firstCid }], "update"),
   ],
+  // The post appears only in another field, not in subjects[]: must not count.
+  [
+    commentDids.secondCommenter,
+    "3jzfcijpj2z2f",
+    {
+      ...comment([{ uri: commentSubjects.secondPost.replace("2b", "2y"), cid: firstCid }]),
+      description: commentSubjects.post,
+    },
+  ],
   // Malformed comments must neither count nor make the query fail.
   [commentDids.malformedCommenter, "3jzfcijpj2z2a", comment("not-an-array")],
   [
