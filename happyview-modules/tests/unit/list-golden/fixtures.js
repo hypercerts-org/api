@@ -261,6 +261,8 @@ function errorCases(endpoint, base, directions) {
   const cases = [];
   if (endpoint.properties.sortDirection) {
     cases.push({ name: "error:sortDirection=bad", params: { ...base, sortDirection: "bad" } });
+    cases.push({ name: "error:sortDirection=ASC", params: { ...base, sortDirection: "ASC" } });
+    cases.push({ name: "error:sortDirection=empty", params: { ...base, sortDirection: "" } });
   }
   for (const [label, limit] of [
     ["abc", "abc"],
@@ -268,6 +270,7 @@ function errorCases(endpoint, base, directions) {
     ["-1", "-1"],
     ["0-string", "0"],
     ["7-string", "7"],
+    ["empty", ""],
   ]) {
     cases.push({ name: `error:limit=${label}`, params: { ...base, limit } });
   }
@@ -333,6 +336,16 @@ function errorCases(endpoint, base, directions) {
     "u-number": (c) => (c.u = 123),
     "extra-key": (c) => (c.x = 1),
   };
+  // Fixed-rkey collections (profile/organization "self") must reject any other rkey.
+  if (CURSORS[endpoint.id]?.rkey) {
+    mutations["wrong-rkey"] = (c) =>
+      (c.u = `at://${DID}/${CURSORS[endpoint.id].collection}/3kabcdefghijk`);
+  }
+  // A sibling collection sharing the "app.certified.badge." prefix must not pass a prefix check.
+  if (endpoint.id === "app.certified.badge.searchBadgeDefinitions") {
+    mutations["sibling-collection"] = (c) =>
+      (c.u = `at://${DID}/app.certified.badge.award/3kabcdefghijk`);
+  }
   if ("d" in good) {
     mutations["wrong-d"] = (c) => (c.d = "sideways");
     mutations["opposite-d"] = (c) => (c.d = good.d === "asc" ? "desc" : "asc");

@@ -319,11 +319,14 @@
 {"endpoint":"app.certified.actor.listOrganizations","case":"filter:visibility=private","calls":[{"binds":["app.certified.actor.organization","private",26],"sql":"4698c54ba8"}],"outcome":{"result":{"actors":{}}}}
 {"endpoint":"app.certified.actor.listOrganizations","case":"filter:all","calls":[{"binds":["app.certified.actor.organization","nonprofit","company","public",26],"sql":"ca6910e2cf"}],"outcome":{"result":{"actors":{}}}}
 {"endpoint":"app.certified.actor.listOrganizations","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.actor.listOrganizations","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.actor.listOrganizations","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"app.certified.actor.listOrganizations","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.actor.listOrganizations","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.actor.listOrganizations","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.actor.listOrganizations","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.actor.listOrganizations","case":"error:limit=7-string","calls":[{"binds":["app.certified.actor.organization",8],"sql":"22e0220699"}],"outcome":{"result":{"actors":{}}}}
+{"endpoint":"app.certified.actor.listOrganizations","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.actor.listOrganizations","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"app.certified.actor.listOrganizations","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"app.certified.actor.listOrganizations","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -393,6 +396,7 @@
 {"endpoint":"app.certified.actor.listOrganizations","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.actor.listOrganizations","case":"error:cursor:u-number","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.actor.listOrganizations","case":"error:cursor:extra-key","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.listOrganizations","case":"error:cursor:wrong-rkey","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.actor.listOrganizations","case":"error:cursor:wrong-d","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.actor.listOrganizations","case":"error:cursor:opposite-d","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.actor.listOrganizations","case":"error:cursor:bad-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -417,11 +421,14 @@
 {"endpoint":"app.certified.actor.listProfiles","case":"cursor:valid+limit=7:asc","calls":[{"binds":["app.certified.actor.profile","2025-01-01T00:00:00Z","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.actor.profile/self",8],"sql":"536c6066fd"}],"outcome":{"result":{"profiles":{}}}}
 {"endpoint":"app.certified.actor.listProfiles","case":"year0000:cursor:asc","calls":[{"binds":["app.certified.actor.profile","0000-01-01T00:00:00Z","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.actor.profile/self",26],"sql":"536c6066fd"}],"outcome":{"result":{"profiles":{}}}}
 {"endpoint":"app.certified.actor.listProfiles","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.actor.listProfiles","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.actor.listProfiles","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"app.certified.actor.listProfiles","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.actor.listProfiles","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.actor.listProfiles","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.actor.listProfiles","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.actor.listProfiles","case":"error:limit=7-string","calls":[{"binds":["app.certified.actor.profile",8],"sql":"259d5b6011"}],"outcome":{"result":{"profiles":{}}}}
+{"endpoint":"app.certified.actor.listProfiles","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.actor.listProfiles","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"app.certified.actor.listProfiles","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"app.certified.actor.listProfiles","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -491,6 +498,7 @@
 {"endpoint":"app.certified.actor.listProfiles","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.actor.listProfiles","case":"error:cursor:u-number","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.actor.listProfiles","case":"error:cursor:extra-key","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.listProfiles","case":"error:cursor:wrong-rkey","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.actor.listProfiles","case":"error:cursor:wrong-d","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.actor.listProfiles","case":"error:cursor:opposite-d","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.actor.listProfiles","case":"error:cursor:bad-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -529,11 +537,14 @@
 {"endpoint":"app.certified.actor.searchOrganizations","case":"filter:visibility=private","calls":[{"binds":["app.certified.actor.organization","private","test","app.certified.actor.profile",26],"sql":"c57e6b1416"}],"outcome":{"result":{"actors":{}}}}
 {"endpoint":"app.certified.actor.searchOrganizations","case":"filter:all","calls":[{"binds":["app.certified.actor.organization","did:plc:abcdefghijklmnopqrstuvwx","did:plc:abcdefghijklmnopqrstuvwy","nonprofit","company","public","test","app.certified.actor.profile",26],"sql":"01313d9fc1"}],"outcome":{"result":{"actors":{}}}}
 {"endpoint":"app.certified.actor.searchOrganizations","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.actor.searchOrganizations","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.actor.searchOrganizations","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"app.certified.actor.searchOrganizations","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.actor.searchOrganizations","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.actor.searchOrganizations","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.actor.searchOrganizations","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.actor.searchOrganizations","case":"error:limit=7-string","calls":[{"binds":["app.certified.actor.organization","test","app.certified.actor.profile",8],"sql":"0af04d2949"}],"outcome":{"result":{"actors":{}}}}
+{"endpoint":"app.certified.actor.searchOrganizations","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.actor.searchOrganizations","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"app.certified.actor.searchOrganizations","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"app.certified.actor.searchOrganizations","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -603,6 +614,7 @@
 {"endpoint":"app.certified.actor.searchOrganizations","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.actor.searchOrganizations","case":"error:cursor:u-number","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.actor.searchOrganizations","case":"error:cursor:extra-key","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.searchOrganizations","case":"error:cursor:wrong-rkey","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.actor.searchOrganizations","case":"error:cursor:wrong-d","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.actor.searchOrganizations","case":"error:cursor:opposite-d","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.actor.searchOrganizations","case":"error:cursor:bad-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -632,11 +644,14 @@
 {"endpoint":"app.certified.actor.searchProfiles","case":"filter:actors:duplicate","calls":[{"binds":["app.certified.actor.profile","did:plc:abcdefghijklmnopqrstuvwx","test",26],"sql":"a4a6ef4bdf"}],"outcome":{"result":{"profiles":{}}}}
 {"endpoint":"app.certified.actor.searchProfiles","case":"filter:actors:empty","calls":[{"binds":["app.certified.actor.profile","test",26],"sql":"d62f1fff4b"}],"outcome":{"result":{"profiles":{}}}}
 {"endpoint":"app.certified.actor.searchProfiles","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.actor.searchProfiles","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.actor.searchProfiles","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"app.certified.actor.searchProfiles","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.actor.searchProfiles","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.actor.searchProfiles","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.actor.searchProfiles","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.actor.searchProfiles","case":"error:limit=7-string","calls":[{"binds":["app.certified.actor.profile","test",8],"sql":"238b55a03a"}],"outcome":{"result":{"profiles":{}}}}
+{"endpoint":"app.certified.actor.searchProfiles","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.actor.searchProfiles","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"app.certified.actor.searchProfiles","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"app.certified.actor.searchProfiles","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -706,6 +721,7 @@
 {"endpoint":"app.certified.actor.searchProfiles","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.actor.searchProfiles","case":"error:cursor:u-number","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.actor.searchProfiles","case":"error:cursor:extra-key","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.searchProfiles","case":"error:cursor:wrong-rkey","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.actor.searchProfiles","case":"error:cursor:wrong-d","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.actor.searchProfiles","case":"error:cursor:opposite-d","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.actor.searchProfiles","case":"error:cursor:bad-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -761,11 +777,14 @@
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"filter:includeTotal=string:false","calls":[{"binds":["app.certified.badge.award",26],"sql":"eb4293ef0a"}],"outcome":{"result":{"badgeAwards":{}}}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"filter:all","calls":[{"binds":["app.certified.badge.award","did:plc:abcdefghijklmnopqrstuvwx","did:plc:abcdefghijklmnopqrstuvwy","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.badge.definition/3kabcdefghija","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.badge.definition/3kabcdefghijb","did:plc:abcdefghijklmnopqrstuvwy","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghija","volunteer","contributor","accepted","rejected",26],"sql":"39b32463ae"}],"outcome":{"result":{"badgeAwards":{},"totalCount":0}}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.badge.listBadgeAwards","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.badge.listBadgeAwards","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"error:limit=7-string","calls":[{"binds":["app.certified.badge.award",8],"sql":"eb4293ef0a"}],"outcome":{"result":{"badgeAwards":{}}}}
+{"endpoint":"app.certified.badge.listBadgeAwards","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -870,11 +889,14 @@
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"filter:badgeTypes:empty","calls":[{"binds":["app.certified.badge.definition",26],"sql":"089df365a0"}],"outcome":{"result":{"badgeDefinitions":{}}}}
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"filter:all","calls":[{"binds":["app.certified.badge.definition","did:plc:abcdefghijklmnopqrstuvwx","did:plc:abcdefghijklmnopqrstuvwy","volunteer","contributor",26],"sql":"39e951d2e6"}],"outcome":{"result":{"badgeDefinitions":{}}}}
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.badge.listBadgeDefinitions","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.badge.listBadgeDefinitions","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"error:limit=7-string","calls":[{"binds":["app.certified.badge.definition",8],"sql":"fdd374e87e"}],"outcome":{"result":{"badgeDefinitions":{}}}}
+{"endpoint":"app.certified.badge.listBadgeDefinitions","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -971,11 +993,14 @@
 {"endpoint":"app.certified.badge.listBadgeResponses","case":"filter:badgeAward=at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.badge.award/3kabcdefghijb","calls":[{"binds":["app.certified.badge.response","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.badge.award/3kabcdefghijb",26],"sql":"dd9a4311b1"}],"outcome":{"result":{"badgeResponses":{}}}}
 {"endpoint":"app.certified.badge.listBadgeResponses","case":"filter:badgeAward=at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.badge.award/3kabcdefghijc","calls":[{"binds":["app.certified.badge.response","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.badge.award/3kabcdefghijc",26],"sql":"dd9a4311b1"}],"outcome":{"result":{"badgeResponses":{}}}}
 {"endpoint":"app.certified.badge.listBadgeResponses","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.badge.listBadgeResponses","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.badge.listBadgeResponses","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"app.certified.badge.listBadgeResponses","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.badge.listBadgeResponses","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.badge.listBadgeResponses","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.badge.listBadgeResponses","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.badge.listBadgeResponses","case":"error:limit=7-string","calls":[{"binds":["app.certified.badge.response",8],"sql":"c165186104"}],"outcome":{"result":{"badgeResponses":{}}}}
+{"endpoint":"app.certified.badge.listBadgeResponses","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.badge.listBadgeResponses","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"app.certified.badge.listBadgeResponses","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"app.certified.badge.listBadgeResponses","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -1080,11 +1105,14 @@
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"filter:badgeTypes:empty","calls":[{"binds":["app.certified.badge.definition","test",26],"sql":"bf198ae94a"}],"outcome":{"result":{"badgeDefinitions":{}}}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"filter:all","calls":[{"binds":["app.certified.badge.definition","did:plc:abcdefghijklmnopqrstuvwx","did:plc:abcdefghijklmnopqrstuvwy","volunteer","contributor","test",26],"sql":"8e6d1e6347"}],"outcome":{"result":{"badgeDefinitions":{}}}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"error:limit=7-string","calls":[{"binds":["app.certified.badge.definition","test",8],"sql":"4ce821995f"}],"outcome":{"result":{"badgeDefinitions":{}}}}
+{"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -1154,6 +1182,7 @@
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"error:cursor:u-number","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"error:cursor:extra-key","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"error:cursor:sibling-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"error:cursor:wrong-d","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"error:cursor:opposite-d","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"error:cursor:bad-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -1178,11 +1207,14 @@
 {"endpoint":"app.certified.feed.getActorLikes","case":"cursor:valid+limit=7:asc","calls":[{"binds":["app.certified.feed.like","did:plc:abcdefghijklmnopqrstuvwx","2025-01-01T00:00:00Z","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.feed.like/3kabcdefghijk",8],"sql":"060c0aac20"}],"outcome":{"result":{"likes":{}}}}
 {"endpoint":"app.certified.feed.getActorLikes","case":"year0000:cursor:asc","calls":[{"binds":["app.certified.feed.like","did:plc:abcdefghijklmnopqrstuvwx","0000-01-01T00:00:00Z","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.feed.like/3kabcdefghijk",26],"sql":"060c0aac20"}],"outcome":{"result":{"likes":{}}}}
 {"endpoint":"app.certified.feed.getActorLikes","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.feed.getActorLikes","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.feed.getActorLikes","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"app.certified.feed.getActorLikes","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.feed.getActorLikes","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.feed.getActorLikes","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.feed.getActorLikes","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.feed.getActorLikes","case":"error:limit=7-string","calls":[{"binds":["app.certified.feed.like","did:plc:abcdefghijklmnopqrstuvwx",8],"sql":"958119e969"}],"outcome":{"result":{"likes":{}}}}
+{"endpoint":"app.certified.feed.getActorLikes","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.feed.getActorLikes","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"app.certified.feed.getActorLikes","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"app.certified.feed.getActorLikes","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -1276,11 +1308,14 @@
 {"endpoint":"app.certified.feed.getActorReposts","case":"cursor:valid+limit=7:asc","calls":[{"binds":["app.certified.feed.repost","did:plc:abcdefghijklmnopqrstuvwx","2025-01-01T00:00:00Z","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.feed.repost/3kabcdefghijk",8],"sql":"060c0aac20"}],"outcome":{"result":{"reposts":{}}}}
 {"endpoint":"app.certified.feed.getActorReposts","case":"year0000:cursor:asc","calls":[{"binds":["app.certified.feed.repost","did:plc:abcdefghijklmnopqrstuvwx","0000-01-01T00:00:00Z","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.feed.repost/3kabcdefghijk",26],"sql":"060c0aac20"}],"outcome":{"result":{"reposts":{}}}}
 {"endpoint":"app.certified.feed.getActorReposts","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.feed.getActorReposts","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.feed.getActorReposts","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"app.certified.feed.getActorReposts","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.feed.getActorReposts","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.feed.getActorReposts","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.feed.getActorReposts","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.feed.getActorReposts","case":"error:limit=7-string","calls":[{"binds":["app.certified.feed.repost","did:plc:abcdefghijklmnopqrstuvwx",8],"sql":"958119e969"}],"outcome":{"result":{"reposts":{}}}}
+{"endpoint":"app.certified.feed.getActorReposts","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.feed.getActorReposts","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"app.certified.feed.getActorReposts","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"app.certified.feed.getActorReposts","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -1374,11 +1409,14 @@
 {"endpoint":"app.certified.feed.getLikes","case":"cursor:valid+limit=7:asc","calls":[{"binds":["app.certified.feed.like","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghijk","2025-01-01T00:00:00Z","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.feed.like/3kabcdefghijk",8],"sql":"9d26dac464"}],"outcome":{"result":{"likeCount":0,"likes":{}}}}
 {"endpoint":"app.certified.feed.getLikes","case":"year0000:cursor:asc","calls":[{"binds":["app.certified.feed.like","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghijk","0000-01-01T00:00:00Z","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.feed.like/3kabcdefghijk",26],"sql":"9d26dac464"}],"outcome":{"result":{"likeCount":0,"likes":{}}}}
 {"endpoint":"app.certified.feed.getLikes","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.feed.getLikes","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.feed.getLikes","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"app.certified.feed.getLikes","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.feed.getLikes","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.feed.getLikes","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.feed.getLikes","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.feed.getLikes","case":"error:limit=7-string","calls":[{"binds":["app.certified.feed.like","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghijk",8],"sql":"235652cf2d"}],"outcome":{"result":{"likeCount":0,"likes":{}}}}
+{"endpoint":"app.certified.feed.getLikes","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.feed.getLikes","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"app.certified.feed.getLikes","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"app.certified.feed.getLikes","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -1472,11 +1510,14 @@
 {"endpoint":"app.certified.feed.getReposts","case":"cursor:valid+limit=7:asc","calls":[{"binds":["app.certified.feed.repost","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghijk","2025-01-01T00:00:00Z","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.feed.repost/3kabcdefghijk",8],"sql":"9d26dac464"}],"outcome":{"result":{"repostCount":0,"reposts":{}}}}
 {"endpoint":"app.certified.feed.getReposts","case":"year0000:cursor:asc","calls":[{"binds":["app.certified.feed.repost","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghijk","0000-01-01T00:00:00Z","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.feed.repost/3kabcdefghijk",26],"sql":"9d26dac464"}],"outcome":{"result":{"repostCount":0,"reposts":{}}}}
 {"endpoint":"app.certified.feed.getReposts","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.feed.getReposts","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.feed.getReposts","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"app.certified.feed.getReposts","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.feed.getReposts","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.feed.getReposts","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.feed.getReposts","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.feed.getReposts","case":"error:limit=7-string","calls":[{"binds":["app.certified.feed.repost","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghijk",8],"sql":"235652cf2d"}],"outcome":{"result":{"repostCount":0,"reposts":{}}}}
+{"endpoint":"app.certified.feed.getReposts","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.feed.getReposts","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"app.certified.feed.getReposts","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"app.certified.feed.getReposts","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -1570,11 +1611,14 @@
 {"endpoint":"app.certified.graph.listActorFollowers","case":"cursor:valid+limit=7:asc","calls":[{"binds":["app.certified.graph.follow","did:plc:abcdefghijklmnopqrstuvwx","2025-01-01T00:00:00Z","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.graph.follow/3kabcdefghijk",8],"sql":"81d1f27eb3"}],"outcome":{"result":{"followers":{},"totalCount":0}}}
 {"endpoint":"app.certified.graph.listActorFollowers","case":"year0000:cursor:asc","calls":[{"binds":["app.certified.graph.follow","did:plc:abcdefghijklmnopqrstuvwx","0000-01-01T00:00:00Z","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.graph.follow/3kabcdefghijk",26],"sql":"81d1f27eb3"}],"outcome":{"result":{"followers":{},"totalCount":0}}}
 {"endpoint":"app.certified.graph.listActorFollowers","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.graph.listActorFollowers","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.graph.listActorFollowers","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"app.certified.graph.listActorFollowers","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.graph.listActorFollowers","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.graph.listActorFollowers","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.graph.listActorFollowers","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.graph.listActorFollowers","case":"error:limit=7-string","calls":[{"binds":["app.certified.graph.follow","did:plc:abcdefghijklmnopqrstuvwx",8],"sql":"107d3663f6"}],"outcome":{"result":{"followers":{},"totalCount":0}}}
+{"endpoint":"app.certified.graph.listActorFollowers","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.graph.listActorFollowers","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"app.certified.graph.listActorFollowers","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"app.certified.graph.listActorFollowers","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -1668,11 +1712,14 @@
 {"endpoint":"app.certified.graph.listActorFollowing","case":"cursor:valid+limit=7:asc","calls":[{"binds":["app.certified.graph.follow","did:plc:abcdefghijklmnopqrstuvwx","2025-01-01T00:00:00Z","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.graph.follow/3kabcdefghijk",8],"sql":"ceeb1a63af"}],"outcome":{"result":{"following":{},"totalCount":0}}}
 {"endpoint":"app.certified.graph.listActorFollowing","case":"year0000:cursor:asc","calls":[{"binds":["app.certified.graph.follow","did:plc:abcdefghijklmnopqrstuvwx","0000-01-01T00:00:00Z","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.graph.follow/3kabcdefghijk",26],"sql":"ceeb1a63af"}],"outcome":{"result":{"following":{},"totalCount":0}}}
 {"endpoint":"app.certified.graph.listActorFollowing","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.graph.listActorFollowing","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.graph.listActorFollowing","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"app.certified.graph.listActorFollowing","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.graph.listActorFollowing","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.graph.listActorFollowing","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.graph.listActorFollowing","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.graph.listActorFollowing","case":"error:limit=7-string","calls":[{"binds":["app.certified.graph.follow","did:plc:abcdefghijklmnopqrstuvwx",8],"sql":"f3857e8ed7"}],"outcome":{"result":{"following":{},"totalCount":0}}}
+{"endpoint":"app.certified.graph.listActorFollowing","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.graph.listActorFollowing","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"app.certified.graph.listActorFollowing","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"app.certified.graph.listActorFollowing","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -1766,11 +1813,14 @@
 {"endpoint":"app.certified.graph.listEntityFollowers","case":"cursor:valid+limit=7:asc","calls":[{"binds":["app.certified.graph.entityFollow","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghijk","2025-01-01T00:00:00Z","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.graph.entityFollow/3kabcdefghijk",8],"sql":"ca6fa49a9a"}],"outcome":{"result":{"followers":{},"totalCount":0}}}
 {"endpoint":"app.certified.graph.listEntityFollowers","case":"year0000:cursor:asc","calls":[{"binds":["app.certified.graph.entityFollow","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghijk","0000-01-01T00:00:00Z","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.graph.entityFollow/3kabcdefghijk",26],"sql":"ca6fa49a9a"}],"outcome":{"result":{"followers":{},"totalCount":0}}}
 {"endpoint":"app.certified.graph.listEntityFollowers","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.graph.listEntityFollowers","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.graph.listEntityFollowers","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"app.certified.graph.listEntityFollowers","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.graph.listEntityFollowers","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.graph.listEntityFollowers","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.graph.listEntityFollowers","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.graph.listEntityFollowers","case":"error:limit=7-string","calls":[{"binds":["app.certified.graph.entityFollow","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghijk",8],"sql":"dc37a02dda"}],"outcome":{"result":{"followers":{},"totalCount":0}}}
+{"endpoint":"app.certified.graph.listEntityFollowers","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.graph.listEntityFollowers","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"app.certified.graph.listEntityFollowers","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"app.certified.graph.listEntityFollowers","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -1864,11 +1914,14 @@
 {"endpoint":"app.certified.graph.listEntityFollowing","case":"cursor:valid+limit=7:asc","calls":[{"binds":["app.certified.graph.entityFollow","did:plc:abcdefghijklmnopqrstuvwx","2025-01-01T00:00:00Z","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.graph.entityFollow/3kabcdefghijk",9],"sql":"935a7082cc"}],"outcome":{"result":{"entities":{}}}}
 {"endpoint":"app.certified.graph.listEntityFollowing","case":"year0000:cursor:asc","calls":[{"binds":["app.certified.graph.entityFollow","did:plc:abcdefghijklmnopqrstuvwx","0000-01-01T00:00:00Z","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.graph.entityFollow/3kabcdefghijk",27],"sql":"935a7082cc"}],"outcome":{"result":{"entities":{}}}}
 {"endpoint":"app.certified.graph.listEntityFollowing","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.graph.listEntityFollowing","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.graph.listEntityFollowing","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"app.certified.graph.listEntityFollowing","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.graph.listEntityFollowing","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.graph.listEntityFollowing","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.graph.listEntityFollowing","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.graph.listEntityFollowing","case":"error:limit=7-string","calls":[{"binds":["app.certified.graph.entityFollow","did:plc:abcdefghijklmnopqrstuvwx",9],"sql":"47811ad6f2"}],"outcome":{"result":{"entities":{}}}}
+{"endpoint":"app.certified.graph.listEntityFollowing","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.graph.listEntityFollowing","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"app.certified.graph.listEntityFollowing","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"app.certified.graph.listEntityFollowing","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -1963,6 +2016,7 @@
 {"endpoint":"app.certified.graph.listRecentFollows","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.graph.listRecentFollows","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.graph.listRecentFollows","case":"error:limit=7-string","calls":[{"binds":["app.certified.graph.follow","app.certified.graph.entityFollow",8],"sql":"04564cc9e7"}],"outcome":{"result":{"follows":{}}}}
+{"endpoint":"app.certified.graph.listRecentFollows","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.graph.listRecentFollows","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"app.certified.graph.listRecentFollows","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.graph.listRecentFollows","case":"error:cursor:empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -2065,11 +2119,14 @@
 {"endpoint":"app.certified.link.listEvmLinks","case":"filter:addresses:empty","calls":[{"binds":["app.certified.link.evm",26],"sql":"1d0659e810"}],"outcome":{"result":{"evmLinks":{}}}}
 {"endpoint":"app.certified.link.listEvmLinks","case":"filter:all","calls":[{"binds":["app.certified.link.evm","did:plc:abcdefghijklmnopqrstuvwx","did:plc:abcdefghijklmnopqrstuvwy","0x1111111111111111111111111111111111111111","0x2222222222222222222222222222222222222222",26],"sql":"c9e349830f"}],"outcome":{"result":{"evmLinks":{}}}}
 {"endpoint":"app.certified.link.listEvmLinks","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.link.listEvmLinks","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.link.listEvmLinks","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"app.certified.link.listEvmLinks","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.link.listEvmLinks","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.link.listEvmLinks","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.link.listEvmLinks","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.link.listEvmLinks","case":"error:limit=7-string","calls":[{"binds":["app.certified.link.evm",8],"sql":"7054b0a493"}],"outcome":{"result":{"evmLinks":{}}}}
+{"endpoint":"app.certified.link.listEvmLinks","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.link.listEvmLinks","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"app.certified.link.listEvmLinks","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"app.certified.link.listEvmLinks","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -2179,11 +2236,14 @@
 {"endpoint":"app.certified.location.listLocations","case":"filter:locationTypes:empty","calls":[{"binds":["app.certified.location",26],"sql":"089df365a0"}],"outcome":{"result":{"locations":{}}}}
 {"endpoint":"app.certified.location.listLocations","case":"filter:all","calls":[{"binds":["app.certified.location","did:plc:abcdefghijklmnopqrstuvwx","did:plc:abcdefghijklmnopqrstuvwy","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.location/3kabcdefghija","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.location/3kabcdefghijb","coordinate-decimal","geojson",26],"sql":"39d1ecf7da"}],"outcome":{"result":{"locations":{}}}}
 {"endpoint":"app.certified.location.listLocations","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.location.listLocations","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"app.certified.location.listLocations","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"app.certified.location.listLocations","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.location.listLocations","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.location.listLocations","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.location.listLocations","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.location.listLocations","case":"error:limit=7-string","calls":[{"binds":["app.certified.location",8],"sql":"fdd374e87e"}],"outcome":{"result":{"locations":{}}}}
+{"endpoint":"app.certified.location.listLocations","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"app.certified.location.listLocations","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"app.certified.location.listLocations","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"app.certified.location.listLocations","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -2302,11 +2362,14 @@
 {"endpoint":"org.hypercerts.claim.listActivities","case":"filter:uris:empty","calls":[{"binds":["org.hypercerts.claim.activity",26],"sql":"cea068549c"}],"outcome":{"result":{"activities":{}}}}
 {"endpoint":"org.hypercerts.claim.listActivities","case":"filter:all","calls":[{"binds":["org.hypercerts.claim.activity","did:plc:abcdefghijklmnopqrstuvwx","did:plc:abcdefghijklmnopqrstuvwy","did:plc:abcdefghijklmnopqrstuvwx","did:plc:abcdefghijklmnopqrstuvwy","did:plc:abcdefghijklmnopqrstuvwx","did:plc:abcdefghijklmnopqrstuvwy","did:plc:abcdefghijklmnopqrstuvwx","did:plc:abcdefghijklmnopqrstuvwy","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghija","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghijb",26],"sql":"af0b53881c"}],"outcome":{"result":{"activities":{}}}}
 {"endpoint":"org.hypercerts.claim.listActivities","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.claim.listActivities","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.claim.listActivities","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"org.hypercerts.claim.listActivities","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.claim.listActivities","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.claim.listActivities","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.claim.listActivities","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.claim.listActivities","case":"error:limit=7-string","calls":[{"binds":["org.hypercerts.claim.activity",8],"sql":"d1229757a9"}],"outcome":{"result":{"activities":{}}}}
+{"endpoint":"org.hypercerts.claim.listActivities","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.claim.listActivities","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"org.hypercerts.claim.listActivities","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"org.hypercerts.claim.listActivities","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -2405,11 +2468,14 @@
 {"endpoint":"org.hypercerts.claim.listContributions","case":"filter:authors:duplicate","calls":[{"binds":["org.hypercerts.claim.contribution","did:plc:abcdefghijklmnopqrstuvwx",26],"sql":"5c2951cb59"}],"outcome":{"result":{"contributions":{}}}}
 {"endpoint":"org.hypercerts.claim.listContributions","case":"filter:authors:empty","calls":[{"binds":["org.hypercerts.claim.contribution",26],"sql":"6f939d06b4"}],"outcome":{"result":{"contributions":{}}}}
 {"endpoint":"org.hypercerts.claim.listContributions","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.claim.listContributions","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.claim.listContributions","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"org.hypercerts.claim.listContributions","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.claim.listContributions","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.claim.listContributions","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.claim.listContributions","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.claim.listContributions","case":"error:limit=7-string","calls":[{"binds":["org.hypercerts.claim.contribution",8],"sql":"6a0e1152da"}],"outcome":{"result":{"contributions":{}}}}
+{"endpoint":"org.hypercerts.claim.listContributions","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.claim.listContributions","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"org.hypercerts.claim.listContributions","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"org.hypercerts.claim.listContributions","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -2508,11 +2574,14 @@
 {"endpoint":"org.hypercerts.claim.listContributorInformation","case":"filter:authors:duplicate","calls":[{"binds":["org.hypercerts.claim.contributorInformation","did:plc:abcdefghijklmnopqrstuvwx",26],"sql":"75c0e1f2f8"}],"outcome":{"result":{"contributorInformation":{}}}}
 {"endpoint":"org.hypercerts.claim.listContributorInformation","case":"filter:authors:empty","calls":[{"binds":["org.hypercerts.claim.contributorInformation",26],"sql":"93d47a9512"}],"outcome":{"result":{"contributorInformation":{}}}}
 {"endpoint":"org.hypercerts.claim.listContributorInformation","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.claim.listContributorInformation","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.claim.listContributorInformation","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"org.hypercerts.claim.listContributorInformation","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.claim.listContributorInformation","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.claim.listContributorInformation","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.claim.listContributorInformation","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.claim.listContributorInformation","case":"error:limit=7-string","calls":[{"binds":["org.hypercerts.claim.contributorInformation",8],"sql":"988c9b344e"}],"outcome":{"result":{"contributorInformation":{}}}}
+{"endpoint":"org.hypercerts.claim.listContributorInformation","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.claim.listContributorInformation","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"org.hypercerts.claim.listContributorInformation","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"org.hypercerts.claim.listContributorInformation","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -2611,11 +2680,14 @@
 {"endpoint":"org.hypercerts.claim.listRights","case":"filter:authors:duplicate","calls":[{"binds":["org.hypercerts.claim.rights","did:plc:abcdefghijklmnopqrstuvwx",26],"sql":"09d6d1b616"}],"outcome":{"result":{"rights":{}}}}
 {"endpoint":"org.hypercerts.claim.listRights","case":"filter:authors:empty","calls":[{"binds":["org.hypercerts.claim.rights",26],"sql":"81914bd684"}],"outcome":{"result":{"rights":{}}}}
 {"endpoint":"org.hypercerts.claim.listRights","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.claim.listRights","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.claim.listRights","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"org.hypercerts.claim.listRights","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.claim.listRights","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.claim.listRights","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.claim.listRights","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.claim.listRights","case":"error:limit=7-string","calls":[{"binds":["org.hypercerts.claim.rights",8],"sql":"deb35c0d37"}],"outcome":{"result":{"rights":{}}}}
+{"endpoint":"org.hypercerts.claim.listRights","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.claim.listRights","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"org.hypercerts.claim.listRights","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"org.hypercerts.claim.listRights","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -2734,11 +2806,14 @@
 {"endpoint":"org.hypercerts.claim.searchActivities","case":"filter:uris:empty","calls":[{"binds":["org.hypercerts.claim.activity","test",26],"sql":"a899f0d903"}],"outcome":{"result":{"activities":{}}}}
 {"endpoint":"org.hypercerts.claim.searchActivities","case":"filter:all","calls":[{"binds":["org.hypercerts.claim.activity","did:plc:abcdefghijklmnopqrstuvwx","did:plc:abcdefghijklmnopqrstuvwy","did:plc:abcdefghijklmnopqrstuvwx","did:plc:abcdefghijklmnopqrstuvwy","did:plc:abcdefghijklmnopqrstuvwx","did:plc:abcdefghijklmnopqrstuvwy","did:plc:abcdefghijklmnopqrstuvwx","did:plc:abcdefghijklmnopqrstuvwy","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghija","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghijb","test",26],"sql":"b16ebab61c"}],"outcome":{"result":{"activities":{}}}}
 {"endpoint":"org.hypercerts.claim.searchActivities","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.claim.searchActivities","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.claim.searchActivities","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"org.hypercerts.claim.searchActivities","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.claim.searchActivities","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.claim.searchActivities","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.claim.searchActivities","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.claim.searchActivities","case":"error:limit=7-string","calls":[{"binds":["org.hypercerts.claim.activity","test",8],"sql":"69fc88161b"}],"outcome":{"result":{"activities":{}}}}
+{"endpoint":"org.hypercerts.claim.searchActivities","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.claim.searchActivities","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"org.hypercerts.claim.searchActivities","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"org.hypercerts.claim.searchActivities","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -2829,6 +2904,7 @@
 {"endpoint":"org.hypercerts.collection.listCollectionItems","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.collection.listCollectionItems","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.collection.listCollectionItems","case":"error:limit=7-string","calls":[{"binds":["org.hypercerts.collection","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.collection/3kabcdefghijk"],"sql":"4a06ffe530"},{"binds":["org.hypercerts.claim.activity","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kitem1","bafyitem1","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kitem2","bafyitem2","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kitem3","bafyitem3"],"sql":"0a164221a8"},{"binds":["app.certified.actor.profile","did:plc:abcdefghijklmnopqrstuvwx"],"sql":"d4529026b3"},{"binds":["app.certified.actor.organization","did:plc:abcdefghijklmnopqrstuvwx"],"sql":"d4529026b3"}],"outcome":{"result":{"items":[{"itemIdentifier":{"cid":"bafyitem1","uri":"at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kitem1"},"record":null},{"itemIdentifier":{"cid":"bafyitem2","uri":"at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kitem2"},"record":null},{"itemIdentifier":{"cid":"bafyitem3","uri":"at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kitem3"},"record":null}]}}}
+{"endpoint":"org.hypercerts.collection.listCollectionItems","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.collection.listCollectionItems","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"org.hypercerts.collection.listCollectionItems","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.collection.listCollectionItems","case":"error:cursor:empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -2894,11 +2970,14 @@
 {"endpoint":"org.hypercerts.collection.listCollections","case":"filter:tagUris:empty","calls":[{"binds":["org.hypercerts.collection",26],"sql":"3f156e9653"}],"outcome":{"result":{"collections":{}}}}
 {"endpoint":"org.hypercerts.collection.listCollections","case":"filter:all","calls":[{"binds":["org.hypercerts.collection","did:plc:abcdefghijklmnopqrstuvwx","did:plc:abcdefghijklmnopqrstuvwy","project","portfolio","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.collection/3kabcdefghija","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.collection/3kabcdefghijb","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghija","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghijb","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.vocab.tag/3kabcdefghija","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.vocab.tag/3kabcdefghijb",26],"sql":"35974e51d7"}],"outcome":{"result":{"collections":{}}}}
 {"endpoint":"org.hypercerts.collection.listCollections","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.collection.listCollections","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.collection.listCollections","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"org.hypercerts.collection.listCollections","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.collection.listCollections","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.collection.listCollections","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.collection.listCollections","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.collection.listCollections","case":"error:limit=7-string","calls":[{"binds":["org.hypercerts.collection",8],"sql":"3f156e9653"}],"outcome":{"result":{"collections":{}}}}
+{"endpoint":"org.hypercerts.collection.listCollections","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.collection.listCollections","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"org.hypercerts.collection.listCollections","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"org.hypercerts.collection.listCollections","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -3022,11 +3101,14 @@
 {"endpoint":"org.hypercerts.collection.searchCollections","case":"filter:tagUris:empty","calls":[{"binds":["org.hypercerts.collection","test",26],"sql":"b69842f8a9"}],"outcome":{"result":{"collections":{}}}}
 {"endpoint":"org.hypercerts.collection.searchCollections","case":"filter:all","calls":[{"binds":["org.hypercerts.collection","did:plc:abcdefghijklmnopqrstuvwx","did:plc:abcdefghijklmnopqrstuvwy","project","portfolio","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.collection/3kabcdefghija","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.collection/3kabcdefghijb","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghija","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghijb","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.vocab.tag/3kabcdefghija","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.vocab.tag/3kabcdefghijb","test",26],"sql":"c97cffbea7"}],"outcome":{"result":{"collections":{}}}}
 {"endpoint":"org.hypercerts.collection.searchCollections","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.collection.searchCollections","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.collection.searchCollections","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"org.hypercerts.collection.searchCollections","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.collection.searchCollections","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.collection.searchCollections","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.collection.searchCollections","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.collection.searchCollections","case":"error:limit=7-string","calls":[{"binds":["org.hypercerts.collection","test",8],"sql":"b69842f8a9"}],"outcome":{"result":{"collections":{}}}}
+{"endpoint":"org.hypercerts.collection.searchCollections","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.collection.searchCollections","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"org.hypercerts.collection.searchCollections","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"org.hypercerts.collection.searchCollections","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -3131,11 +3213,14 @@
 {"endpoint":"org.hypercerts.context.listAcknowledgements","case":"filter:subjects:empty","calls":[{"binds":["org.hypercerts.context.acknowledgement",26],"sql":"2078d19ad6"}],"outcome":{"result":{"acknowledgements":{}}}}
 {"endpoint":"org.hypercerts.context.listAcknowledgements","case":"filter:all","calls":[{"binds":["org.hypercerts.context.acknowledgement","did:plc:abcdefghijklmnopqrstuvwx","did:plc:abcdefghijklmnopqrstuvwy","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghija","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghijb",26],"sql":"60f03b42b4"}],"outcome":{"result":{"acknowledgements":{}}}}
 {"endpoint":"org.hypercerts.context.listAcknowledgements","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.context.listAcknowledgements","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.context.listAcknowledgements","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"org.hypercerts.context.listAcknowledgements","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.context.listAcknowledgements","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.context.listAcknowledgements","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.context.listAcknowledgements","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.context.listAcknowledgements","case":"error:limit=7-string","calls":[{"binds":["org.hypercerts.context.acknowledgement",8],"sql":"06606f4591"}],"outcome":{"result":{"acknowledgements":{}}}}
+{"endpoint":"org.hypercerts.context.listAcknowledgements","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.context.listAcknowledgements","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"org.hypercerts.context.listAcknowledgements","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"org.hypercerts.context.listAcknowledgements","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -3250,11 +3335,14 @@
 {"endpoint":"org.hypercerts.context.listAttachments","case":"filter:contentTypes:empty","calls":[{"binds":["org.hypercerts.context.attachment",26],"sql":"9a71769be1"}],"outcome":{"result":{"attachments":{}}}}
 {"endpoint":"org.hypercerts.context.listAttachments","case":"filter:all","calls":[{"binds":["org.hypercerts.context.attachment","did:plc:abcdefghijklmnopqrstuvwx","did:plc:abcdefghijklmnopqrstuvwy","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.context.attachment/3kabcdefghija","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.context.attachment/3kabcdefghijb","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghija","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghijb","image/png","application/pdf",26],"sql":"7e9ede407d"}],"outcome":{"result":{"attachments":{}}}}
 {"endpoint":"org.hypercerts.context.listAttachments","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.context.listAttachments","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.context.listAttachments","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"org.hypercerts.context.listAttachments","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.context.listAttachments","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.context.listAttachments","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.context.listAttachments","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.context.listAttachments","case":"error:limit=7-string","calls":[{"binds":["org.hypercerts.context.attachment",8],"sql":"7d4bb27bf2"}],"outcome":{"result":{"attachments":{}}}}
+{"endpoint":"org.hypercerts.context.listAttachments","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.context.listAttachments","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"org.hypercerts.context.listAttachments","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"org.hypercerts.context.listAttachments","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -3364,11 +3452,14 @@
 {"endpoint":"org.hypercerts.context.listEvaluations","case":"filter:subjects:empty","calls":[{"binds":["org.hypercerts.context.evaluation",26],"sql":"75a34c60e8"}],"outcome":{"result":{"evaluations":{}}}}
 {"endpoint":"org.hypercerts.context.listEvaluations","case":"filter:all","calls":[{"binds":["org.hypercerts.context.evaluation","did:plc:abcdefghijklmnopqrstuvwx","did:plc:abcdefghijklmnopqrstuvwy","did:plc:abcdefghijklmnopqrstuvwx","did:plc:abcdefghijklmnopqrstuvwy","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghija","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghijb",26],"sql":"fd62cfd14e"}],"outcome":{"result":{"evaluations":{}}}}
 {"endpoint":"org.hypercerts.context.listEvaluations","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.context.listEvaluations","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.context.listEvaluations","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"org.hypercerts.context.listEvaluations","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.context.listEvaluations","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.context.listEvaluations","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.context.listEvaluations","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.context.listEvaluations","case":"error:limit=7-string","calls":[{"binds":["org.hypercerts.context.evaluation",8],"sql":"6d8c64ef3d"}],"outcome":{"result":{"evaluations":{}}}}
+{"endpoint":"org.hypercerts.context.listEvaluations","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.context.listEvaluations","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"org.hypercerts.context.listEvaluations","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"org.hypercerts.context.listEvaluations","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -3473,11 +3564,14 @@
 {"endpoint":"org.hypercerts.context.listMeasurements","case":"filter:subjects:empty","calls":[{"binds":["org.hypercerts.context.measurement",26],"sql":"d7232ab4cf"}],"outcome":{"result":{"measurements":{}}}}
 {"endpoint":"org.hypercerts.context.listMeasurements","case":"filter:all","calls":[{"binds":["org.hypercerts.context.measurement","did:plc:abcdefghijklmnopqrstuvwx","did:plc:abcdefghijklmnopqrstuvwy","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghija","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghijb",26],"sql":"a8fc854d42"}],"outcome":{"result":{"measurements":{}}}}
 {"endpoint":"org.hypercerts.context.listMeasurements","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.context.listMeasurements","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.context.listMeasurements","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"org.hypercerts.context.listMeasurements","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.context.listMeasurements","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.context.listMeasurements","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.context.listMeasurements","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.context.listMeasurements","case":"error:limit=7-string","calls":[{"binds":["org.hypercerts.context.measurement",8],"sql":"de2f5ba134"}],"outcome":{"result":{"measurements":{}}}}
+{"endpoint":"org.hypercerts.context.listMeasurements","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.context.listMeasurements","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"org.hypercerts.context.listMeasurements","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"org.hypercerts.context.listMeasurements","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -3586,11 +3680,14 @@
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"filter:types:empty","calls":[{"binds":["org.hypercerts.entity.feature",26],"sql":"fe4a9479a5"}],"outcome":{"result":{"features":{}}}}
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"filter:all","calls":[{"binds":["org.hypercerts.entity.feature","did:plc:abcdefghijklmnopqrstuvwx","did:plc:abcdefghijklmnopqrstuvwy","project","portfolio",26],"sql":"1a4336693f"}],"outcome":{"result":{"features":{}}}}
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.entity.listFeatures","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.entity.listFeatures","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"error:limit=7-string","calls":[{"binds":["org.hypercerts.entity.feature",8],"sql":"5f1a04a6f6"}],"outcome":{"result":{"features":{}}}}
+{"endpoint":"org.hypercerts.entity.listFeatures","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -3715,11 +3812,14 @@
 {"endpoint":"org.hypercerts.funding.listReceipts","case":"filter:transactionIds:empty","calls":[{"binds":["org.hypercerts.funding.receipt",26],"sql":"1179b6a5dd"}],"outcome":{"result":{"receipts":{}}}}
 {"endpoint":"org.hypercerts.funding.listReceipts","case":"filter:all","calls":[{"binds":["org.hypercerts.funding.receipt","did:plc:abcdefghijklmnopqrstuvwx","did:plc:abcdefghijklmnopqrstuvwy","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.funding.receipt/3kabcdefghija","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.funding.receipt/3kabcdefghijb","did:plc:abcdefghijklmnopqrstuvwy","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghija","did:plc:abcdefghijklmnopqrstuvwy","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghija","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghija","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghijb","0x1111111111111111111111111111111111111111111111111111111111111111","0x2222222222222222222222222222222222222222222222222222222222222222",26],"sql":"305c607ef5"}],"outcome":{"result":{"receipts":{}}}}
 {"endpoint":"org.hypercerts.funding.listReceipts","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.funding.listReceipts","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.funding.listReceipts","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"org.hypercerts.funding.listReceipts","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.funding.listReceipts","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.funding.listReceipts","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.funding.listReceipts","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.funding.listReceipts","case":"error:limit=7-string","calls":[{"binds":["org.hypercerts.funding.receipt",8],"sql":"7a3a9df1b7"}],"outcome":{"result":{"receipts":{}}}}
+{"endpoint":"org.hypercerts.funding.listReceipts","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.funding.listReceipts","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"org.hypercerts.funding.listReceipts","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"org.hypercerts.funding.listReceipts","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -3818,11 +3918,14 @@
 {"endpoint":"org.hypercerts.vocab.listVocabTags","case":"filter:authors:duplicate","calls":[{"binds":["org.hypercerts.vocab.tag","did:plc:abcdefghijklmnopqrstuvwx",26],"sql":"cf715d2ab7"}],"outcome":{"result":{"vocabTags":{}}}}
 {"endpoint":"org.hypercerts.vocab.listVocabTags","case":"filter:authors:empty","calls":[{"binds":["org.hypercerts.vocab.tag",26],"sql":"fdd374e87e"}],"outcome":{"result":{"vocabTags":{}}}}
 {"endpoint":"org.hypercerts.vocab.listVocabTags","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.vocab.listVocabTags","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.vocab.listVocabTags","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"org.hypercerts.vocab.listVocabTags","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.vocab.listVocabTags","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.vocab.listVocabTags","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.vocab.listVocabTags","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.vocab.listVocabTags","case":"error:limit=7-string","calls":[{"binds":["org.hypercerts.vocab.tag",8],"sql":"fdd374e87e"}],"outcome":{"result":{"vocabTags":{}}}}
+{"endpoint":"org.hypercerts.vocab.listVocabTags","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.vocab.listVocabTags","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"org.hypercerts.vocab.listVocabTags","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"org.hypercerts.vocab.listVocabTags","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -3921,11 +4024,14 @@
 {"endpoint":"org.hypercerts.workscope.listWorkscopeTags","case":"filter:authors:duplicate","calls":[{"binds":["org.hypercerts.workscope.tag","did:plc:abcdefghijklmnopqrstuvwx",26],"sql":"a0200581e8"}],"outcome":{"result":{"workscopeTags":{}}}}
 {"endpoint":"org.hypercerts.workscope.listWorkscopeTags","case":"filter:authors:empty","calls":[{"binds":["org.hypercerts.workscope.tag",26],"sql":"e04b3f0ec2"}],"outcome":{"result":{"workscopeTags":{}}}}
 {"endpoint":"org.hypercerts.workscope.listWorkscopeTags","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.workscope.listWorkscopeTags","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
+{"endpoint":"org.hypercerts.workscope.listWorkscopeTags","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"org.hypercerts.workscope.listWorkscopeTags","case":"error:limit=abc","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.workscope.listWorkscopeTags","case":"error:limit=1.5","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.workscope.listWorkscopeTags","case":"error:limit=-1","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.workscope.listWorkscopeTags","case":"error:limit=0-string","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.workscope.listWorkscopeTags","case":"error:limit=7-string","calls":[{"binds":["org.hypercerts.workscope.tag",8],"sql":"e710ed7137"}],"outcome":{"result":{"workscopeTags":{}}}}
+{"endpoint":"org.hypercerts.workscope.listWorkscopeTags","case":"error:limit=empty","calls":[],"outcome":{"error":"InvalidRequest: limit must be an integer from 1 through 100"}}
 {"endpoint":"org.hypercerts.workscope.listWorkscopeTags","case":"error:limit=array","calls":[],"outcome":{"error":"InvalidRequest: limit must occur once"}}
 {"endpoint":"org.hypercerts.workscope.listWorkscopeTags","case":"error:sortDirection=array","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must occur once"}}
 {"endpoint":"org.hypercerts.workscope.listWorkscopeTags","case":"error:cursor:non-hex","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
