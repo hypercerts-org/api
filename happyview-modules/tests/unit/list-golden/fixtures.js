@@ -211,6 +211,14 @@ const DATETIME_CURSORS = {
   "fraction-offset-valid": "2025-01-01T00:00:00.5+05:30",
   "no-zone": "2025-01-01T00:00:00",
   "day-00": "2025-01-00T00:00:00Z",
+  "minute-60": "2025-01-01T00:60:00Z",
+  "fraction-empty": "2025-01-01T00:00:00.Z",
+  "fraction-empty-offset": "2025-01-01T00:00:00.+05:30",
+  "month-00": "2025-00-01T00:00:00Z",
+  "lowercase-z": "2025-01-01T00:00:00z",
+  "lowercase-t": "2025-01-01t00:00:00Z",
+  "trailing-junk": "2025-01-01T00:00:00Zjunk",
+  "year-5-digit": "12025-01-01T00:00:00Z",
 };
 
 /** Input-validation cases that must be rejected before (or without) reaching SQL. */

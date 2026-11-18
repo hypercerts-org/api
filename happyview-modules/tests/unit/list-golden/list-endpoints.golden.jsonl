@@ -340,6 +340,14 @@
 {"endpoint":"app.certified.actor.listOrganizations","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["app.certified.actor.organization","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.actor.organization/self",26],"sql":"46a96a9b3e"}],"outcome":{"result":{"actors":{}}}}
 {"endpoint":"app.certified.actor.listOrganizations","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.actor.listOrganizations","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.listOrganizations","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.listOrganizations","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.listOrganizations","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.listOrganizations","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.listOrganizations","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.listOrganizations","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.listOrganizations","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.listOrganizations","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.actor.listOrganizations","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.actor.listOrganizations","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.actor.listOrganizations","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -388,6 +396,14 @@
 {"endpoint":"app.certified.actor.listProfiles","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["app.certified.actor.profile","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.actor.profile/self",26],"sql":"9e6090d8e4"}],"outcome":{"result":{"profiles":{}}}}
 {"endpoint":"app.certified.actor.listProfiles","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.actor.listProfiles","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.listProfiles","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.listProfiles","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.listProfiles","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.listProfiles","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.listProfiles","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.listProfiles","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.listProfiles","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.listProfiles","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.actor.listProfiles","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.actor.listProfiles","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.actor.listProfiles","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -450,6 +466,14 @@
 {"endpoint":"app.certified.actor.searchOrganizations","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["app.certified.actor.organization","test","app.certified.actor.profile","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.actor.organization/self",26],"sql":"ba980873dd"}],"outcome":{"result":{"actors":{}}}}
 {"endpoint":"app.certified.actor.searchOrganizations","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.actor.searchOrganizations","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.searchOrganizations","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.searchOrganizations","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.searchOrganizations","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.searchOrganizations","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.searchOrganizations","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.searchOrganizations","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.searchOrganizations","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.searchOrganizations","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.actor.searchOrganizations","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.actor.searchOrganizations","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.actor.searchOrganizations","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -503,6 +527,14 @@
 {"endpoint":"app.certified.actor.searchProfiles","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["app.certified.actor.profile","test","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.actor.profile/self",26],"sql":"142fb30cf8"}],"outcome":{"result":{"profiles":{}}}}
 {"endpoint":"app.certified.actor.searchProfiles","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.actor.searchProfiles","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.searchProfiles","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.searchProfiles","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.searchProfiles","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.searchProfiles","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.searchProfiles","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.searchProfiles","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.searchProfiles","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.actor.searchProfiles","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.actor.searchProfiles","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.actor.searchProfiles","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.actor.searchProfiles","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -582,6 +614,14 @@
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["app.certified.badge.award","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.badge.award/3kabcdefghijk",26],"sql":"5c69857418"}],"outcome":{"result":{"badgeAwards":{}}}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.listBadgeAwards","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.listBadgeAwards","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.listBadgeAwards","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.listBadgeAwards","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.listBadgeAwards","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.listBadgeAwards","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.listBadgeAwards","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.listBadgeAwards","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -641,6 +681,14 @@
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["app.certified.badge.definition","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.badge.definition/3kabcdefghijk",26],"sql":"2712d7dd78"}],"outcome":{"result":{"badgeDefinitions":{}}}}
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.listBadgeDefinitions","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.listBadgeDefinitions","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.listBadgeDefinitions","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.listBadgeDefinitions","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.listBadgeDefinitions","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.listBadgeDefinitions","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.listBadgeDefinitions","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.listBadgeDefinitions","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -692,6 +740,14 @@
 {"endpoint":"app.certified.badge.listBadgeResponses","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["app.certified.badge.response","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.badge.response/3kabcdefghijk",26],"sql":"bf4fe3b608"}],"outcome":{"result":{"badgeResponses":{}}}}
 {"endpoint":"app.certified.badge.listBadgeResponses","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.badge.listBadgeResponses","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.listBadgeResponses","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.listBadgeResponses","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.listBadgeResponses","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.listBadgeResponses","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.listBadgeResponses","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.listBadgeResponses","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.listBadgeResponses","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.listBadgeResponses","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.badge.listBadgeResponses","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.badge.listBadgeResponses","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.badge.listBadgeResponses","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -751,6 +807,14 @@
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["app.certified.badge.definition","test","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.badge.definition/3kabcdefghijk",26],"sql":"9a5987f560"}],"outcome":{"result":{"badgeDefinitions":{}}}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -799,6 +863,14 @@
 {"endpoint":"app.certified.feed.getActorLikes","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["app.certified.feed.like","did:plc:abcdefghijklmnopqrstuvwx","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.feed.like/3kabcdefghijk",26],"sql":"4cd8918f5f"}],"outcome":{"result":{"likes":{}}}}
 {"endpoint":"app.certified.feed.getActorLikes","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.feed.getActorLikes","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getActorLikes","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getActorLikes","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getActorLikes","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getActorLikes","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getActorLikes","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getActorLikes","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getActorLikes","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getActorLikes","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.feed.getActorLikes","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.feed.getActorLikes","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.feed.getActorLikes","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -847,6 +919,14 @@
 {"endpoint":"app.certified.feed.getActorReposts","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["app.certified.feed.repost","did:plc:abcdefghijklmnopqrstuvwx","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.feed.repost/3kabcdefghijk",26],"sql":"4cd8918f5f"}],"outcome":{"result":{"reposts":{}}}}
 {"endpoint":"app.certified.feed.getActorReposts","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.feed.getActorReposts","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getActorReposts","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getActorReposts","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getActorReposts","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getActorReposts","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getActorReposts","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getActorReposts","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getActorReposts","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getActorReposts","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.feed.getActorReposts","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.feed.getActorReposts","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.feed.getActorReposts","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -895,6 +975,14 @@
 {"endpoint":"app.certified.feed.getLikes","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["app.certified.feed.like","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghijk","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.feed.like/3kabcdefghijk",26],"sql":"9820dcd288"}],"outcome":{"result":{"likeCount":0,"likes":{}}}}
 {"endpoint":"app.certified.feed.getLikes","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.feed.getLikes","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getLikes","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getLikes","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getLikes","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getLikes","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getLikes","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getLikes","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getLikes","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getLikes","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.feed.getLikes","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.feed.getLikes","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.feed.getLikes","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -943,6 +1031,14 @@
 {"endpoint":"app.certified.feed.getReposts","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["app.certified.feed.repost","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghijk","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.feed.repost/3kabcdefghijk",26],"sql":"9820dcd288"}],"outcome":{"result":{"repostCount":0,"reposts":{}}}}
 {"endpoint":"app.certified.feed.getReposts","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.feed.getReposts","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getReposts","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getReposts","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getReposts","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getReposts","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getReposts","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getReposts","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getReposts","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.feed.getReposts","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.feed.getReposts","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.feed.getReposts","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.feed.getReposts","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -991,6 +1087,14 @@
 {"endpoint":"app.certified.graph.listActorFollowers","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["app.certified.graph.follow","did:plc:abcdefghijklmnopqrstuvwx","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.graph.follow/3kabcdefghijk",26],"sql":"a4f35cd109"}],"outcome":{"result":{"followers":{},"totalCount":0}}}
 {"endpoint":"app.certified.graph.listActorFollowers","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.graph.listActorFollowers","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listActorFollowers","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listActorFollowers","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listActorFollowers","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listActorFollowers","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listActorFollowers","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listActorFollowers","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listActorFollowers","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listActorFollowers","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.graph.listActorFollowers","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.graph.listActorFollowers","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.graph.listActorFollowers","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -1039,6 +1143,14 @@
 {"endpoint":"app.certified.graph.listActorFollowing","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["app.certified.graph.follow","did:plc:abcdefghijklmnopqrstuvwx","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.graph.follow/3kabcdefghijk",26],"sql":"b224c5782a"}],"outcome":{"result":{"following":{},"totalCount":0}}}
 {"endpoint":"app.certified.graph.listActorFollowing","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.graph.listActorFollowing","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listActorFollowing","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listActorFollowing","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listActorFollowing","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listActorFollowing","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listActorFollowing","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listActorFollowing","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listActorFollowing","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listActorFollowing","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.graph.listActorFollowing","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.graph.listActorFollowing","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.graph.listActorFollowing","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -1087,6 +1199,14 @@
 {"endpoint":"app.certified.graph.listEntityFollowers","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["app.certified.graph.entityFollow","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghijk","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.graph.entityFollow/3kabcdefghijk",26],"sql":"3e0ec9791e"}],"outcome":{"result":{"followers":{},"totalCount":0}}}
 {"endpoint":"app.certified.graph.listEntityFollowers","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.graph.listEntityFollowers","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listEntityFollowers","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listEntityFollowers","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listEntityFollowers","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listEntityFollowers","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listEntityFollowers","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listEntityFollowers","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listEntityFollowers","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listEntityFollowers","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.graph.listEntityFollowers","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.graph.listEntityFollowers","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.graph.listEntityFollowers","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -1135,6 +1255,14 @@
 {"endpoint":"app.certified.graph.listEntityFollowing","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["app.certified.graph.entityFollow","did:plc:abcdefghijklmnopqrstuvwx","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.graph.entityFollow/3kabcdefghijk",27],"sql":"f87bb726ad"}],"outcome":{"result":{"entities":{}}}}
 {"endpoint":"app.certified.graph.listEntityFollowing","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.graph.listEntityFollowing","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listEntityFollowing","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listEntityFollowing","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listEntityFollowing","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listEntityFollowing","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listEntityFollowing","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listEntityFollowing","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listEntityFollowing","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.graph.listEntityFollowing","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.graph.listEntityFollowing","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.graph.listEntityFollowing","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.graph.listEntityFollowing","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -1179,6 +1307,14 @@
 {"endpoint":"app.certified.graph.listRecentFollows","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["app.certified.graph.follow","app.certified.graph.entityFollow","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.graph.entityFollow/3kabcdefghijk",26],"sql":"a97172131c"}],"outcome":{"result":{"follows":{}}}}
 {"endpoint":"app.certified.graph.listRecentFollows","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another before value"}}
 {"endpoint":"app.certified.graph.listRecentFollows","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another before value"}}
+{"endpoint":"app.certified.graph.listRecentFollows","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another before value"}}
+{"endpoint":"app.certified.graph.listRecentFollows","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another before value"}}
+{"endpoint":"app.certified.graph.listRecentFollows","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another before value"}}
+{"endpoint":"app.certified.graph.listRecentFollows","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another before value"}}
+{"endpoint":"app.certified.graph.listRecentFollows","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another before value"}}
+{"endpoint":"app.certified.graph.listRecentFollows","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another before value"}}
+{"endpoint":"app.certified.graph.listRecentFollows","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another before value"}}
+{"endpoint":"app.certified.graph.listRecentFollows","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another before value"}}
 {"endpoint":"app.certified.graph.listRecentFollows","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.graph.listRecentFollows","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another before value"}}
 {"endpoint":"app.certified.graph.listRecentFollows","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
@@ -1237,6 +1373,14 @@
 {"endpoint":"app.certified.link.listEvmLinks","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["app.certified.link.evm","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.link.evm/3kabcdefghijk",26],"sql":"9d1064a743"}],"outcome":{"result":{"evmLinks":{}}}}
 {"endpoint":"app.certified.link.listEvmLinks","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.link.listEvmLinks","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.link.listEvmLinks","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.link.listEvmLinks","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.link.listEvmLinks","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.link.listEvmLinks","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.link.listEvmLinks","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.link.listEvmLinks","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.link.listEvmLinks","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.link.listEvmLinks","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.link.listEvmLinks","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.link.listEvmLinks","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.link.listEvmLinks","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -1301,6 +1445,14 @@
 {"endpoint":"app.certified.location.listLocations","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["app.certified.location","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.location/3kabcdefghijk",26],"sql":"2712d7dd78"}],"outcome":{"result":{"locations":{}}}}
 {"endpoint":"app.certified.location.listLocations","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.location.listLocations","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.location.listLocations","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.location.listLocations","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.location.listLocations","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.location.listLocations","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.location.listLocations","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.location.listLocations","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.location.listLocations","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"app.certified.location.listLocations","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.location.listLocations","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"app.certified.location.listLocations","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"app.certified.location.listLocations","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -1374,6 +1526,14 @@
 {"endpoint":"org.hypercerts.claim.listActivities","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["org.hypercerts.claim.activity","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghijk",26],"sql":"1df3d14bb5"}],"outcome":{"result":{"activities":{}}}}
 {"endpoint":"org.hypercerts.claim.listActivities","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.claim.listActivities","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listActivities","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listActivities","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listActivities","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listActivities","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listActivities","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listActivities","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listActivities","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listActivities","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.claim.listActivities","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"org.hypercerts.claim.listActivities","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.claim.listActivities","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -1427,6 +1587,14 @@
 {"endpoint":"org.hypercerts.claim.listContributions","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["org.hypercerts.claim.contribution","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.contribution/3kabcdefghijk",26],"sql":"cd635ae52f"}],"outcome":{"result":{"contributions":{}}}}
 {"endpoint":"org.hypercerts.claim.listContributions","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.claim.listContributions","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listContributions","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listContributions","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listContributions","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listContributions","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listContributions","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listContributions","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listContributions","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listContributions","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.claim.listContributions","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"org.hypercerts.claim.listContributions","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.claim.listContributions","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -1480,6 +1648,14 @@
 {"endpoint":"org.hypercerts.claim.listContributorInformation","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["org.hypercerts.claim.contributorInformation","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.contributorInformation/3kabcdefghijk",26],"sql":"878d8c6e03"}],"outcome":{"result":{"contributorInformation":{}}}}
 {"endpoint":"org.hypercerts.claim.listContributorInformation","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.claim.listContributorInformation","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listContributorInformation","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listContributorInformation","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listContributorInformation","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listContributorInformation","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listContributorInformation","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listContributorInformation","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listContributorInformation","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listContributorInformation","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.claim.listContributorInformation","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"org.hypercerts.claim.listContributorInformation","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.claim.listContributorInformation","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -1533,6 +1709,14 @@
 {"endpoint":"org.hypercerts.claim.listRights","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["org.hypercerts.claim.rights","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.rights/3kabcdefghijk",26],"sql":"f64bb87616"}],"outcome":{"result":{"rights":{}}}}
 {"endpoint":"org.hypercerts.claim.listRights","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.claim.listRights","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listRights","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listRights","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listRights","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listRights","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listRights","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listRights","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listRights","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.listRights","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.claim.listRights","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"org.hypercerts.claim.listRights","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.claim.listRights","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -1606,6 +1790,14 @@
 {"endpoint":"org.hypercerts.claim.searchActivities","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["org.hypercerts.claim.activity","test","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghijk",26],"sql":"bc0b02e384"}],"outcome":{"result":{"activities":{}}}}
 {"endpoint":"org.hypercerts.claim.searchActivities","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.claim.searchActivities","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.searchActivities","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.searchActivities","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.searchActivities","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.searchActivities","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.searchActivities","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.searchActivities","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.searchActivities","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.claim.searchActivities","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.claim.searchActivities","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"org.hypercerts.claim.searchActivities","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.claim.searchActivities","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -1707,6 +1899,14 @@
 {"endpoint":"org.hypercerts.collection.listCollections","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["org.hypercerts.collection","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.collection/3kabcdefghijk",26],"sql":"926179a34c"}],"outcome":{"result":{"collections":{}}}}
 {"endpoint":"org.hypercerts.collection.listCollections","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.collection.listCollections","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.collection.listCollections","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.collection.listCollections","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.collection.listCollections","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.collection.listCollections","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.collection.listCollections","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.collection.listCollections","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.collection.listCollections","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.collection.listCollections","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.collection.listCollections","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"org.hypercerts.collection.listCollections","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.collection.listCollections","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -1785,6 +1985,14 @@
 {"endpoint":"org.hypercerts.collection.searchCollections","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["org.hypercerts.collection","test","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.collection/3kabcdefghijk",26],"sql":"6ae42317e4"}],"outcome":{"result":{"collections":{}}}}
 {"endpoint":"org.hypercerts.collection.searchCollections","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.collection.searchCollections","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.collection.searchCollections","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.collection.searchCollections","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.collection.searchCollections","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.collection.searchCollections","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.collection.searchCollections","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.collection.searchCollections","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.collection.searchCollections","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.collection.searchCollections","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.collection.searchCollections","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"org.hypercerts.collection.searchCollections","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.collection.searchCollections","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -1844,6 +2052,14 @@
 {"endpoint":"org.hypercerts.context.listAcknowledgements","case":"datetime:cursor-t:fraction-offset-valid","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.context.listAcknowledgements","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.context.listAcknowledgements","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listAcknowledgements","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listAcknowledgements","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listAcknowledgements","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listAcknowledgements","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listAcknowledgements","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listAcknowledgements","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listAcknowledgements","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listAcknowledgements","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.context.listAcknowledgements","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"org.hypercerts.context.listAcknowledgements","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.context.listAcknowledgements","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -1913,6 +2129,14 @@
 {"endpoint":"org.hypercerts.context.listAttachments","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["org.hypercerts.context.attachment","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.context.attachment/3kabcdefghijk",26],"sql":"165b82cc8c"}],"outcome":{"result":{"attachments":{}}}}
 {"endpoint":"org.hypercerts.context.listAttachments","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.context.listAttachments","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listAttachments","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listAttachments","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listAttachments","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listAttachments","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listAttachments","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listAttachments","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listAttachments","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listAttachments","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.context.listAttachments","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"org.hypercerts.context.listAttachments","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.context.listAttachments","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -1977,6 +2201,14 @@
 {"endpoint":"org.hypercerts.context.listEvaluations","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["org.hypercerts.context.evaluation","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.context.evaluation/3kabcdefghijk",26],"sql":"4348a3a8ae"}],"outcome":{"result":{"evaluations":{}}}}
 {"endpoint":"org.hypercerts.context.listEvaluations","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.context.listEvaluations","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listEvaluations","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listEvaluations","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listEvaluations","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listEvaluations","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listEvaluations","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listEvaluations","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listEvaluations","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listEvaluations","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.context.listEvaluations","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"org.hypercerts.context.listEvaluations","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.context.listEvaluations","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -2036,6 +2268,14 @@
 {"endpoint":"org.hypercerts.context.listMeasurements","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["org.hypercerts.context.measurement","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.context.measurement/3kabcdefghijk",26],"sql":"2c2e211709"}],"outcome":{"result":{"measurements":{}}}}
 {"endpoint":"org.hypercerts.context.listMeasurements","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.context.listMeasurements","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listMeasurements","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listMeasurements","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listMeasurements","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listMeasurements","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listMeasurements","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listMeasurements","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listMeasurements","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.context.listMeasurements","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.context.listMeasurements","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"org.hypercerts.context.listMeasurements","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.context.listMeasurements","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -2099,6 +2339,14 @@
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["org.hypercerts.entity.feature","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.entity.feature/3kabcdefghijk",26],"sql":"d8dea693a3"}],"outcome":{"result":{"features":{}}}}
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.entity.listFeatures","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.entity.listFeatures","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.entity.listFeatures","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.entity.listFeatures","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.entity.listFeatures","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.entity.listFeatures","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.entity.listFeatures","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.entity.listFeatures","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -2178,6 +2426,14 @@
 {"endpoint":"org.hypercerts.funding.listReceipts","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["org.hypercerts.funding.receipt","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.funding.receipt/3kabcdefghijk",26],"sql":"47dcb081c6"}],"outcome":{"result":{"receipts":{}}}}
 {"endpoint":"org.hypercerts.funding.listReceipts","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.funding.listReceipts","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.funding.listReceipts","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.funding.listReceipts","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.funding.listReceipts","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.funding.listReceipts","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.funding.listReceipts","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.funding.listReceipts","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.funding.listReceipts","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.funding.listReceipts","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.funding.listReceipts","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"org.hypercerts.funding.listReceipts","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.funding.listReceipts","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
@@ -2231,6 +2487,14 @@
 {"endpoint":"org.hypercerts.vocab.listVocabTags","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["org.hypercerts.vocab.tag","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.vocab.tag/3kabcdefghijk",26],"sql":"2712d7dd78"}],"outcome":{"result":{"vocabTags":{}}}}
 {"endpoint":"org.hypercerts.vocab.listVocabTags","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.vocab.listVocabTags","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.vocab.listVocabTags","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.vocab.listVocabTags","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.vocab.listVocabTags","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.vocab.listVocabTags","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.vocab.listVocabTags","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.vocab.listVocabTags","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.vocab.listVocabTags","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.vocab.listVocabTags","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.vocab.listVocabTags","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to different query parameters"}}
 {"endpoint":"org.hypercerts.vocab.listVocabTags","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.vocab.listVocabTags","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to different query parameters"}}
@@ -2284,6 +2548,14 @@
 {"endpoint":"org.hypercerts.workscope.listWorkscopeTags","case":"datetime:cursor-t:fraction-offset-valid","calls":[{"binds":["org.hypercerts.workscope.tag","2025-01-01T00:00:00.5+05:30","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.workscope.tag/3kabcdefghijk",26],"sql":"8db0d45b6b"}],"outcome":{"result":{"workscopeTags":{}}}}
 {"endpoint":"org.hypercerts.workscope.listWorkscopeTags","case":"datetime:cursor-t:no-zone","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.workscope.listWorkscopeTags","case":"datetime:cursor-t:day-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.workscope.listWorkscopeTags","case":"datetime:cursor-t:minute-60","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.workscope.listWorkscopeTags","case":"datetime:cursor-t:fraction-empty","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.workscope.listWorkscopeTags","case":"datetime:cursor-t:fraction-empty-offset","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.workscope.listWorkscopeTags","case":"datetime:cursor-t:month-00","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.workscope.listWorkscopeTags","case":"datetime:cursor-t:lowercase-z","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.workscope.listWorkscopeTags","case":"datetime:cursor-t:lowercase-t","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.workscope.listWorkscopeTags","case":"datetime:cursor-t:trailing-junk","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
+{"endpoint":"org.hypercerts.workscope.listWorkscopeTags","case":"datetime:cursor-t:year-5-digit","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.workscope.listWorkscopeTags","case":"error:cursor:wrong-v","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
 {"endpoint":"org.hypercerts.workscope.listWorkscopeTags","case":"error:cursor:wrong-collection","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed"}}
 {"endpoint":"org.hypercerts.workscope.listWorkscopeTags","case":"error:cursor:missing-u","calls":[],"outcome":{"error":"InvalidRequest: cursor is malformed or belongs to another sortDirection"}}
