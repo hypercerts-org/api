@@ -122,6 +122,12 @@ const URI_COLLECTIONS = {
 /** Unformatted string filters that accept either a DID or a record AT-URI. */
 const MIXED_IDENTIFIERS = new Set(["subjects", "from", "to"]);
 
+/** Endpoints whose mixed-identifier filters accept DIDs; the others take AT-URIs only. */
+const MIXED_LIST_ENDPOINTS = new Set([
+  "app.certified.badge.listBadgeAwards",
+  "org.hypercerts.funding.listReceipts",
+]);
+
 const variant = (value, n) => `${value.slice(0, -1)}${"xyz"[n % 3]}`;
 const rkey = (n) => `3kabcdefghij${"abc"[n % 3]}`;
 
@@ -165,6 +171,15 @@ function filterCases(endpoint, base) {
         { name: `filter:${name}:empty`, params: { ...base, [name]: [] } },
       );
       combined[name] = values.slice(0, 2);
+      if (MIXED_IDENTIFIERS.has(name) && MIXED_LIST_ENDPOINTS.has(endpoint.id)) {
+        // Two DIDs and two AT-URIs together: pins the separator of the DID IN-list.
+        const mixed = [0, 1, 2, 3].map((n) =>
+          n % 2 === 1
+            ? variant(DID, n >> 1)
+            : `at://${DID}/org.hypercerts.claim.activity/${rkey(n >> 1)}`,
+        );
+        cases.push({ name: `filter:${name}:mixed-many`, params: { ...base, [name]: mixed } });
+      }
     } else if (property.type === "boolean") {
       for (const value of [true, false, "true", "false"]) {
         cases.push({
@@ -240,6 +255,7 @@ const DATETIME_CURSORS = {
   "trailing-junk": "2025-01-01T00:00:00Zjunk",
   "zone-offset-trailing-junk": "2025-01-01T00:00:00+05:30junk",
   "fraction-offset-trailing-junk": "2025-01-01T00:00:00.5+05:30junk",
+  "year-0001-valid": "0001-01-01T00:00:00Z",
   "year-5-digit": "12025-01-01T00:00:00Z",
   "end-of-year-valid": "2025-12-31T23:59:59Z",
   "zone-plus-23-59-valid": "2025-01-01T00:00:00+23:59",
@@ -360,6 +376,9 @@ function errorCases(endpoint, base, directions) {
   if ("i" in good) {
     mutations["bad-i"] = (c) => (c.i = "one");
     mutations["missing-i"] = (c) => delete c.i;
+    mutations["i-zero"] = (c) => (c.i = 0);
+    mutations["i-negative"] = (c) => (c.i = -1);
+    mutations["i-fractional"] = (c) => (c.i = 1.5);
   }
   if ("t" in good) {
     for (const [label, t] of Object.entries(DATETIME_CURSORS)) {
@@ -414,6 +433,17 @@ function rowDid(n) {
   return `did:plc:abcdefghijklmnopqrstuvw${"xyz"[n]}`;
 }
 
+/** Organization records point at a location; distinct URIs make the location IN-list bind several. */
+function locationRef(collection, n) {
+  if (collection !== "app.certified.actor.organization") return {};
+  return {
+    location: {
+      uri: `at://${rowDid(n)}/app.certified.location/3klocation${n}`,
+      cid: `bafylocation${n}`,
+    },
+  };
+}
+
 /** One generic row carrying every column any list query selects. */
 function pageRow(endpoint, n) {
   const spec = CURSORS[endpoint.id] ?? {};
@@ -426,7 +456,12 @@ function pageRow(endpoint, n) {
     cid: `bafyfixture${n}`,
     indexed_at: createdAt,
     created_at: createdAt,
-    record: JSON.stringify({ $type: collection, createdAt, ...followSubject(collection, n) }),
+    record: JSON.stringify({
+      $type: collection,
+      createdAt,
+      ...followSubject(collection, n),
+      ...locationRef(collection, n),
+    }),
     sort_timestamp: `2025-01-0${n + 1}T00:00:00.000000Z`,
     actor_did: rowDid(n),
     subject_did: rowDid(n),
@@ -436,31 +471,34 @@ function pageRow(endpoint, n) {
 
 const PAGE_ROWS = 3;
 
-const COLLECTION_ITEMS = [1, 2, 3].map((n) => ({
-  itemIdentifier: {
-    uri: `at://${DID}/org.hypercerts.claim.activity/3kitem${n}`,
-    cid: `bafyitem${n}`,
-  },
-}));
+const collectionItems = (count) =>
+  Array.from({ length: count }, (_, index) => index + 1).map((n) => ({
+    itemIdentifier: {
+      uri: `at://${DID}/org.hypercerts.claim.activity/3kitem${n}`,
+      cid: `bafyitem${n}`,
+    },
+  }));
+
+const COLLECTION_ITEMS = collectionItems(3);
 
 /**
  * Rows for a page of `limit` = PAGE_ROWS - 1, so the handler sees limit+1 rows
  * on its main (first) query and must encode a nextCursor. Later queries
  * (hydration, counts) get no rows.
  */
+function collectionRow(items) {
+  return {
+    uri: COLLECTION_URI,
+    did: DID,
+    cid: "bafyfixture",
+    indexed_at: TIMESTAMP,
+    record: JSON.stringify({ $type: "org.hypercerts.collection", items }),
+  };
+}
+
 function pagedRowsByCall(endpoint) {
   if (endpoint.id === "org.hypercerts.collection.listCollectionItems") {
-    return [
-      [
-        {
-          uri: COLLECTION_URI,
-          did: DID,
-          cid: "bafyfixture",
-          indexed_at: TIMESTAMP,
-          record: JSON.stringify({ $type: "org.hypercerts.collection", items: COLLECTION_ITEMS }),
-        },
-      ],
-    ];
+    return [[collectionRow(COLLECTION_ITEMS)]];
   }
   return [[...Array(PAGE_ROWS).keys()].map((n) => pageRow(endpoint, n))];
 }
@@ -520,13 +558,21 @@ export function casesFor(endpoint) {
       rowsByCall: paged,
     });
   }
+  if (endpoint.id === "org.hypercerts.collection.listCollectionItems") {
+    // More items than the default page size, no limit: pins the default limit (25) and its cursor.
+    cases.push({
+      name: "default-limit:30-items",
+      params: base,
+      rows: [collectionRow(collectionItems(30))],
+    });
+  }
   cases.push(...filterCases(endpoint, base), ...errorCases(endpoint, base, directions));
   // Unpaged cases answer every query with the same minimal rows (if any is
   // needed to get past a count check); paged cases bring their own.
   const rows = defaultRows(endpoint, paged);
   const countCall = COUNT_ROW_ENDPOINTS.has(endpoint.id) ? [[{ total_count: "0" }]] : null;
   return cases.map((c) => {
-    if (c.rowsByCall) return c;
+    if (c.rowsByCall || c.rows) return c;
     if (String(c.params.includeTotal) === "true")
       return { ...c, rowsByCall: [[{ total_count: "0" }]] };
     if (countCall) return { ...c, rowsByCall: countCall };

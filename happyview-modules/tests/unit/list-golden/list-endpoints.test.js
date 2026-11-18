@@ -27,7 +27,7 @@ import { listCursorEndpoints, runCases } from "./harness.js";
 const staleBundles = await checkLuaBundles(fileURLToPath(new URL("../../../", import.meta.url)));
 if (staleBundles.length > 0) {
   throw new Error(
-    `Generated Lua bundles are stale (${staleBundles.join(", ")}); run \`pnpm build:lua\` before the list golden test.`,
+    `Generated Lua bundles are stale (${staleBundles.join(", ")}); run \`pnpm --filter @hypercerts-org/happyview-modules run build:lua\` before the list golden test.`,
   );
 }
 
