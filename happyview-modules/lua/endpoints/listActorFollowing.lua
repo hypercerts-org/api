@@ -45,6 +45,7 @@ local function valid_datetime(value)
     "^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)(.*)$")
   if not year then return false end
   year, month, day = tonumber(year), tonumber(month), tonumber(day)
+  if year < 1 then return false end
   hour, minute, second = tonumber(hour), tonumber(minute), tonumber(second)
   if month < 1 or month > 12 or hour > 23 or minute > 59 or second > 59 then return false end
   local leap = year % 4 == 0 and (year % 100 ~= 0 or year % 400 == 0)
@@ -139,14 +140,22 @@ local function account_follow_filter_sql()
   return "NOT COALESCE(starts_with(record::jsonb->'via'->>'uri', 'at://' || (record::jsonb->>'subject') || '/org.hypercerts.collection/'), FALSE)"
 end
 
-local FOLLOW = "app.certified.graph.follow"
+local CREATED_AT_SORT_PATTERN = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
 
--- Guard the cast inside CASE; a WHERE filter cannot protect it from planner reordering.
-local function follow_sort_key()
-  local created = "record::jsonb->>'createdAt'"
-  local zoned = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
-  return "CASE WHEN jsonb_typeof(record::jsonb->'createdAt') = 'string' AND " .. created .. " ~ '" .. zoned .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created .. ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE COALESCE(indexed_at::timestamptz, created_at::timestamptz) END"
+-- Sort key for a happyview_records row: the record's own createdAt when it is a
+-- valid timestamp, otherwise COALESCE(indexed_at, created_at). `alias` is the
+-- table alias; nil selects unqualified columns.
+local function created_at_sort(alias)
+  local prefix = alias and (alias .. ".") or ""
+  local record, indexed_at, created_at = prefix .. "record", prefix .. "indexed_at", prefix .. "created_at"
+  local created = record .. "::jsonb->>'createdAt'"
+  return "CASE WHEN jsonb_typeof(" .. record .. "::jsonb->'createdAt') = 'string' AND " .. created ..
+    " ~ '" .. CREATED_AT_SORT_PATTERN .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created ..
+    ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE COALESCE(" .. indexed_at ..
+    "::timestamptz, " .. created_at .. "::timestamptz) END"
 end
+
+local FOLLOW = "app.certified.graph.follow"
 
 local function query(sql, values)
   if db.backend() ~= "postgres" then error("ActorFollowQueryFailed: actor-follow queries require PostgreSQL", 0) end
@@ -198,7 +207,7 @@ local function build_actor_follow_query(mode, actor, limit, cursor, direction)
   values[#values + 1] = limit + 1
   local ordering = direction == "asc" and "ASC" or "DESC"
   local displayed_did = mode == "followers" and "did" or "subject_did"
-  local sql = "WITH ranked_follows AS (SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record, record::jsonb->>'subject' AS subject_did, sorted.sort_at, ROW_NUMBER() OVER (PARTITION BY did, record::jsonb->>'subject' ORDER BY sorted.sort_at ASC, uri ASC) AS relationship_rank FROM happyview_records CROSS JOIN LATERAL (SELECT " .. follow_sort_key() .. " AS sort_at) sorted WHERE " .. table.concat(filters, " AND ") .. "), representatives AS (SELECT uri, did, cid, indexed_at, record, sort_at, " .. displayed_did .. " AS actor_did FROM ranked_follows WHERE relationship_rank = 1), " ..
+  local sql = "WITH ranked_follows AS (SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record, record::jsonb->>'subject' AS subject_did, sorted.sort_at, ROW_NUMBER() OVER (PARTITION BY did, record::jsonb->>'subject' ORDER BY sorted.sort_at ASC, uri ASC) AS relationship_rank FROM happyview_records CROSS JOIN LATERAL (SELECT " .. created_at_sort() .. " AS sort_at) sorted WHERE " .. table.concat(filters, " AND ") .. "), representatives AS (SELECT uri, did, cid, indexed_at, record, sort_at, " .. displayed_did .. " AS actor_did FROM ranked_follows WHERE relationship_rank = 1), " ..
     "total AS (SELECT COUNT(*) AS total_count FROM representatives), " ..
     "page AS (SELECT uri, did, cid, indexed_at, record, sort_at, actor_did FROM representatives" .. cursor_filter .. " ORDER BY sort_at " .. ordering .. ", uri " .. ordering .. " LIMIT $" .. #values .. ") " ..
     "SELECT page.uri, page.did, page.cid, page.indexed_at, page.record, page.actor_did, total.total_count, to_char(page.sort_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp FROM total LEFT JOIN page ON TRUE ORDER BY page.sort_at " .. ordering .. ", page.uri " .. ordering

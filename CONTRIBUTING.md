@@ -2,7 +2,7 @@
 
 ## Set up and validate
 
-Use Node 24 (pinned in `.nvmrc`, which CI also reads) and the repository-pinned pnpm version. From the repository root:
+Use Node 24 (pinned in `.nvmrc`, which CI also reads) and the repository-pinned pnpm version. Unit tests and `pnpm check` also need Lua 5.4 with both `lua5.4` and `lua` on `PATH` (unit tests call each by name; if you only have one, symlink the other to it, as CI does) and `luacheck` 1.2.0 (`luarocks --lua-version=5.4 --local install luacheck 1.2.0`). From the repository root:
 
 ```sh
 pnpm install --frozen-lockfile
@@ -12,6 +12,8 @@ pnpm build
 ```
 
 `pnpm test:unit` runs the discovered tests under `happyview-modules/tests/unit`; unit tests use local fixtures and fake process/network adapters, and do not seed a database or contact HappyView. `pnpm check` also checks generated-source freshness, JavaScript and Lua lint, types, endpoint tests, and the `@hypercerts-org/api` package in `packages/api/`. `pnpm build` emits Lua handlers declared by the root and module manifests, builds the endpoint explorer, and builds `@hypercerts-org/api`. Shared Lua files are bundled into capability handlers rather than installed independently.
+
+The list-endpoint golden (`happyview-modules/tests/unit/list-golden/`) pins the SQL, binds and outcomes of every cursor-taking query. It reads the _generated_ Lua bundles, not `lua/shared` or `lua/src`, so run `pnpm --filter @hypercerts-org/happyview-modules run build:lua` after editing those before running `pnpm test:unit`. After an intended behavior change, rebuild, then regenerate with `UPDATE_GOLDEN=1 pnpm test:unit` and review the diff.
 
 ## API reference snapshots
 

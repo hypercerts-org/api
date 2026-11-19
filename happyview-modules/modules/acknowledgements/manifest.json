@@ -68,6 +68,9 @@
         "../../lua/shared/listValidation.lua",
         "../../lua/shared/acknowledgement.lua",
         "../../lua/shared/nsidValidation.lua",
+        "../../lua/shared/listQuery.lua",
+        "../../lua/shared/listCursor.lua",
+        "../../lua/shared/listWhere.lua",
         "../../lua/shared/acknowledgementList.lua"
       ],
       "config": {

@@ -45,6 +45,7 @@ local function valid_datetime(value)
     "^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)(.*)$")
   if not year then return false end
   year, month, day = tonumber(year), tonumber(month), tonumber(day)
+  if year < 1 then return false end
   hour, minute, second = tonumber(hour), tonumber(minute), tonumber(second)
   if month < 1 or month > 12 or hour > 23 or minute > 59 or second > 59 then return false end
   local leap = year % 4 == 0 and (year % 100 ~= 0 or year % 400 == 0)
@@ -184,37 +185,33 @@ local function hydrate_organization_actors(actors)
   hydrate_locations(actors)
 end
 
-local CREATED_AT_SORT_COLUMNS = {
-  profile = { record = "record", indexed_at = "indexed_at", created_at = "created_at" },
-  organization = {
-    record = "organization.record",
-    indexed_at = "organization.indexed_at",
-    created_at = "organization.created_at",
-  },
-  activity = {
-    record = "activity.record",
-    indexed_at = "activity.indexed_at",
-    created_at = "activity.created_at",
-  },
-  collection = {
-    record = "collection.record",
-    indexed_at = "collection.indexed_at",
-    created_at = "collection.created_at",
-  },
-}
 local CREATED_AT_SORT_PATTERN = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
 
-local function created_at_sort_expression(source)
-  local columns = CREATED_AT_SORT_COLUMNS[source]
-  if not columns then
-    error("CreatedAtSortExpressionError: source must be 'profile', 'organization', 'activity', or 'collection'", 0)
-  end
-
-  local created = columns.record .. "::jsonb->>'createdAt'"
-  return "CASE WHEN jsonb_typeof(" .. columns.record .. "::jsonb->'createdAt') = 'string' AND " .. created ..
+-- Sort key for a happyview_records row: the record's own createdAt when it is a
+-- valid timestamp, otherwise COALESCE(indexed_at, created_at). `alias` is the
+-- table alias; nil selects unqualified columns.
+local function created_at_sort(alias)
+  local prefix = alias and (alias .. ".") or ""
+  local record, indexed_at, created_at = prefix .. "record", prefix .. "indexed_at", prefix .. "created_at"
+  local created = record .. "::jsonb->>'createdAt'"
+  return "CASE WHEN jsonb_typeof(" .. record .. "::jsonb->'createdAt') = 'string' AND " .. created ..
     " ~ '" .. CREATED_AT_SORT_PATTERN .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created ..
-    ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE COALESCE(" .. columns.indexed_at ..
-    "::timestamptz, " .. columns.created_at .. "::timestamptz) END"
+    ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE COALESCE(" .. indexed_at ..
+    "::timestamptz, " .. created_at .. "::timestamptz) END"
+end
+
+-- Adds `column IN ($n, ...)` to where, binding items; an empty list matches nothing.
+local function add_in(where, binds, column, items)
+  if #items == 0 then
+    where[#where + 1] = "FALSE"
+    return
+  end
+  local marks = {}
+  for _, item in ipairs(items) do
+    binds[#binds + 1] = item
+    marks[#marks + 1] = "$" .. #binds
+  end
+  where[#where + 1] = column .. " IN (" .. table.concat(marks, ", ") .. ")"
 end
 
 local function valid_organization_uri(value)
@@ -260,17 +257,6 @@ local function array(params, key)
   return unique
 end
 
-local function add_actors(where, values, actors)
-  if not actors then return end
-  if #actors == 0 then where[#where + 1] = "FALSE"; return end
-  local placeholders = {}
-  for _, did in ipairs(actors) do
-    values[#values + 1] = did
-    placeholders[#placeholders + 1] = "$" .. #values
-  end
-  where[#where + 1] = "organization.did IN (" .. table.concat(placeholders, ", ") .. ")"
-end
-
 local function add_organization_types(where, values, organization_types)
   if not organization_types then return end
   if #organization_types == 0 then where[#where + 1] = "FALSE"; return end
@@ -303,7 +289,7 @@ end
 
 local function query_organizations(actors, organization_types, visibility, search, limit, cursor, direction)
   local where, values = { "organization.collection = $1", "organization.rkey = 'self'" }, { ORGANIZATION }
-  add_actors(where, values, actors)
+  if actors then add_in(where, values, "organization.did", actors) end
   add_organization_types(where, values, organization_types)
   if visibility ~= nil then
     values[#values + 1] = visibility
@@ -332,7 +318,7 @@ local function query_organizations(actors, organization_types, visibility, searc
 
   values[#values + 1] = limit + 1
   local ordering = direction == "asc" and "ASC" or "DESC"
-  local sort_key = created_at_sort_expression("organization")
+  local sort_key = created_at_sort("organization")
   local sql = "SELECT organization.uri, organization.did, organization.cid, organization.indexed_at::text AS indexed_at, " ..
     "organization.record::text AS record, to_char(sorted.sort_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp " ..
     "FROM happyview_records AS organization CROSS JOIN LATERAL (SELECT " .. sort_key .. " AS sort_at) AS sorted WHERE " ..

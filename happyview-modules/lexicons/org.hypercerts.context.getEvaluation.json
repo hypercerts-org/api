@@ -39,6 +39,7 @@
       "type": "object",
       "description": "Evaluation with the original record, hydrated publisher, and evaluator projections. The record is not rewritten when evaluator data is malformed. A missing or non-array evaluator container yields an empty hydrated array; malformed entries are omitted. Missing profile or organization sidecars are omitted from evaluators; query or hydration failures fail the request. Evaluator arrays over 1000 entries still fail exact lookup and are skipped by lists.",
       "required": ["uri", "cid", "indexedAt", "did", "author", "record", "evaluators"],
+      "nullable": ["indexedAt"],
       "properties": {
         "uri": { "type": "string", "format": "at-uri" },
         "cid": { "type": "string", "format": "cid" },

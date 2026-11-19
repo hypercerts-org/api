@@ -10,8 +10,8 @@
         "required": ["entity"],
         "properties": {
           "entity": { "type": "string", "format": "at-uri", "description": "Full AT-URI of the followed record using a DID authority; any target collection is accepted, and matching is by URI, not CID." },
-          "sortDirection": { "type": "string", "enum": ["asc", "desc"], "description": "Sorts by representative follow createdAt and URI; defaults to desc." },
-          "limit": { "type": "integer", "minimum": 1, "maximum": 100, "description": "Maximum relationships per page; defaults to 25." },
+          "sortDirection": { "type": "string", "default": "desc", "enum": ["asc", "desc"], "description": "Sorts by representative follow createdAt and URI; defaults to desc." },
+          "limit": { "type": "integer", "default": 25, "minimum": 1, "maximum": 100, "description": "Maximum relationships per page; defaults to 25." },
           "cursor": { "type": "string", "description": "Opaque next-page cursor bound to sortDirection; keep the other query parameters unchanged between pages." }
         }
       },

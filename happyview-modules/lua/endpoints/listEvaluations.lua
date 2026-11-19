@@ -45,6 +45,7 @@ local function valid_datetime(value)
     "^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)(.*)$")
   if not year then return false end
   year, month, day = tonumber(year), tonumber(month), tonumber(day)
+  if year < 1 then return false end
   hour, minute, second = tonumber(hour), tonumber(minute), tonumber(second)
   if month < 1 or month > 12 or hour > 23 or minute > 59 or second > 59 then return false end
   local leap = year % 4 == 0 and (year % 100 ~= 0 or year % 400 == 0)
@@ -219,6 +220,57 @@ local function valid_nsid(value)
   return #name <= 63 and name:match("^[A-Za-z][A-Za-z0-9]*$") ~= nil
 end
 
+-- Decodes a hex-encoded {v, d, t, u} list cursor. Rejects malformed tokens, other
+-- sort directions and unknown keys; validate_value(value) -> boolean runs the
+-- endpoint-specific check on t and u. Not for endpoints that skip the 8192-character
+-- cap or accept extra keys.
+local function decode_cursor(token, direction, validate_value)
+  if token == nil then return nil end
+  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
+    invalid("cursor is malformed")
+  end
+  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
+  local ok, value = pcall(json.decode, decoded)
+  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
+    or type(value.t) ~= "string" or type(value.u) ~= "string" then
+    invalid("cursor is malformed or belongs to another sortDirection")
+  end
+  for key in pairs(value) do
+    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
+  end
+  if not validate_value(value) then invalid("cursor is malformed") end
+  return value
+end
+
+-- Adds `column IN ($n, ...)` to where, binding items; an empty list matches nothing.
+local function add_in(where, binds, column, items)
+  if #items == 0 then
+    where[#where + 1] = "FALSE"
+    return
+  end
+  local marks = {}
+  for _, item in ipairs(items) do
+    binds[#binds + 1] = item
+    marks[#marks + 1] = "$" .. #binds
+  end
+  where[#where + 1] = column .. " IN (" .. table.concat(marks, ", ") .. ")"
+end
+
+local CREATED_AT_SORT_PATTERN = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
+
+-- Sort key for a happyview_records row: the record's own createdAt when it is a
+-- valid timestamp, otherwise COALESCE(indexed_at, created_at). `alias` is the
+-- table alias; nil selects unqualified columns.
+local function created_at_sort(alias)
+  local prefix = alias and (alias .. ".") or ""
+  local record, indexed_at, created_at = prefix .. "record", prefix .. "indexed_at", prefix .. "created_at"
+  local created = record .. "::jsonb->>'createdAt'"
+  return "CASE WHEN jsonb_typeof(" .. record .. "::jsonb->'createdAt') = 'string' AND " .. created ..
+    " ~ '" .. CREATED_AT_SORT_PATTERN .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created ..
+    ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE COALESCE(" .. indexed_at ..
+    "::timestamptz, " .. created_at .. "::timestamptz) END"
+end
+
 local function evaluation_array(key, format)
   local value = params[key]
   if value == nil then return nil end
@@ -279,46 +331,16 @@ local function evaluation_evaluator_match(values, dids)
     "WHERE evaluator.value->>'did' IN (" .. table.concat(marks, ", ") .. "))"
 end
 
-local function evaluation_sort_expression()
-  local created = "evaluation.record::jsonb->>'createdAt'"
-  local zoned = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
-  return "CASE WHEN jsonb_typeof(evaluation.record::jsonb->'createdAt') = 'string' AND " .. created ..
-    " ~ '" .. zoned .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created ..
-    ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE " ..
-    "COALESCE(evaluation.indexed_at::timestamptz, evaluation.created_at::timestamptz) END"
-end
-
 local function decode_evaluation_cursor(token, direction)
-  if token == nil then return nil end
-  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
-    invalid("cursor is malformed")
-  end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
-  local ok, value = pcall(json.decode, decoded)
-  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
-    or type(value.t) ~= "string" or type(value.u) ~= "string" then
-    invalid("cursor is malformed or belongs to another sortDirection")
-  end
-  for key in pairs(value) do
-    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
-  end
-  local valid, collection = valid_record_uri(value.u)
-  if not valid_datetime(value.t) or not valid or collection ~= EVALUATION then
-    invalid("cursor is malformed")
-  end
-  return value
+  return decode_cursor(token, direction, function(value)
+    local valid, collection = valid_record_uri(value.u)
+    return valid_datetime(value.t) and valid and collection == EVALUATION
+  end)
 end
 
 local function evaluation_list_filters(authors, evaluators, subjects)
   local where, values = { "evaluation.collection = $1" }, { EVALUATION }
-  if authors then
-    if #authors == 0 then
-      where[#where + 1] = "FALSE"
-    else
-      where[#where + 1] = "evaluation.did IN (" ..
-        table.concat(bind_evaluation_values(values, authors), ", ") .. ")"
-    end
-  end
+  if authors then add_in(where, values, "evaluation.did", authors) end
   if evaluators then
     if #evaluators == 0 then
       where[#where + 1] = "FALSE"
@@ -326,14 +348,7 @@ local function evaluation_list_filters(authors, evaluators, subjects)
       where[#where + 1] = evaluation_evaluator_match(values, evaluators)
     end
   end
-  if subjects then
-    if #subjects == 0 then
-      where[#where + 1] = "FALSE"
-    else
-      where[#where + 1] = "evaluation.record::jsonb->'subject'->>'uri' IN (" ..
-        table.concat(bind_evaluation_values(values, subjects), ", ") .. ")"
-    end
-  end
+  if subjects then add_in(where, values, "evaluation.record::jsonb->'subject'->>'uri'", subjects) end
   return where, values
 end
 
@@ -358,7 +373,7 @@ local function evaluation_list_page_query(values, where, cursor, limit, directio
     "to_char(sorted.sort_at AT TIME ZONE 'UTC', " ..
     "'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp " ..
     "FROM happyview_records AS evaluation CROSS JOIN LATERAL (SELECT " ..
-    evaluation_sort_expression() .. " AS sort_at) AS sorted WHERE " .. table.concat(page_where, " AND ") ..
+    created_at_sort("evaluation") .. " AS sort_at) AS sorted WHERE " .. table.concat(page_where, " AND ") ..
     " ORDER BY sorted.sort_at " .. ordering .. ", evaluation.uri " .. ordering .. " LIMIT $" .. #page_values
   return sql, page_values
 end

@@ -45,6 +45,7 @@ local function valid_datetime(value)
     "^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)(.*)$")
   if not year then return false end
   year, month, day = tonumber(year), tonumber(month), tonumber(day)
+  if year < 1 then return false end
   hour, minute, second = tonumber(hour), tonumber(minute), tonumber(second)
   if month < 1 or month > 12 or hour > 23 or minute > 59 or second > 59 then return false end
   local leap = year % 4 == 0 and (year % 100 ~= 0 or year % 400 == 0)
@@ -79,6 +80,21 @@ end
 local function cursor_encode(value)
   local encoded = json.encode(value)
   return (encoded:gsub(".", function(char) return string.format("%02x", string.byte(char)) end))
+end
+
+local CREATED_AT_SORT_PATTERN = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
+
+-- Sort key for a happyview_records row: the record's own createdAt when it is a
+-- valid timestamp, otherwise COALESCE(indexed_at, created_at). `alias` is the
+-- table alias; nil selects unqualified columns.
+local function created_at_sort(alias)
+  local prefix = alias and (alias .. ".") or ""
+  local record, indexed_at, created_at = prefix .. "record", prefix .. "indexed_at", prefix .. "created_at"
+  local created = record .. "::jsonb->>'createdAt'"
+  return "CASE WHEN jsonb_typeof(" .. record .. "::jsonb->'createdAt') = 'string' AND " .. created ..
+    " ~ '" .. CREATED_AT_SORT_PATTERN .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created ..
+    ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE COALESCE(" .. indexed_at ..
+    "::timestamptz, " .. created_at .. "::timestamptz) END"
 end
 
 local NULL = json.decode("null")
@@ -161,15 +177,6 @@ local function decode_badge_response_cursor(token, direction)
   return value
 end
 
-local function response_sort_expression()
-  local created = "response.record::jsonb->>'createdAt'"
-  local zoned = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
-  return "CASE WHEN jsonb_typeof(response.record::jsonb->'createdAt') = 'string' AND " .. created ..
-    " ~ '" .. zoned .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created ..
-    ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE " ..
-    "COALESCE(response.indexed_at::timestamptz, response.created_at::timestamptz) END"
-end
-
 local function list_badge_responses(badge_award, limit, cursor, direction)
   local where, values = { "response.collection = $1" }, { RESPONSE }
   if badge_award then
@@ -190,7 +197,7 @@ local function list_badge_responses(badge_award, limit, cursor, direction)
   local sql = "SELECT response.uri, response.did, response.cid, response.indexed_at::text AS indexed_at, " ..
     "response.record::text AS record, to_char(sorted.sort_at AT TIME ZONE 'UTC', " ..
     "'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp " ..
-    "FROM happyview_records AS response CROSS JOIN LATERAL (SELECT " .. response_sort_expression() .. " AS sort_at) sorted " ..
+    "FROM happyview_records AS response CROSS JOIN LATERAL (SELECT " .. created_at_sort("response") .. " AS sort_at) sorted " ..
     "WHERE " .. table.concat(where, " AND ") .. " ORDER BY sorted.sort_at " .. ordering ..
     ", response.uri " .. ordering .. " LIMIT $" .. #values
   local rows = query(sql, values)

@@ -16,7 +16,7 @@ local function get_follows()
       .. "SELECT DISTINCT ON (requested.target) requested.target AS target, uri, did, cid, "
       .. "indexed_at::text AS indexed_at, record::text AS record FROM requested "
       .. "JOIN happyview_records ON collection = $1 AND did = $2 AND record::jsonb->>'subject' = requested.target AND " .. account_follow_filter_sql() .. " "
-      .. "CROSS JOIN LATERAL (SELECT " .. follow_sort_key() .. " AS sort_at) sorted "
+      .. "CROSS JOIN LATERAL (SELECT " .. created_at_sort() .. " AS sort_at) sorted "
       .. "ORDER BY requested.target, sorted.sort_at ASC, uri ASC",
     values)
   if type(rows) ~= "table" then error("ActorFollowQueryFailed: actor-follow lookup failed", 0) end

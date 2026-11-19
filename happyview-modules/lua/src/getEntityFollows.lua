@@ -18,7 +18,7 @@ local function get_entity_follows()
       .. "indexed_at::text AS indexed_at, record::text AS record FROM requested "
       .. "JOIN happyview_records ON collection = $1 AND did = $2 "
       .. "AND record::jsonb->'subject'->>'uri' = requested.target "
-      .. "CROSS JOIN LATERAL (SELECT " .. entity_follow_sort_key() .. " AS sort_at) sorted "
+      .. "CROSS JOIN LATERAL (SELECT " .. created_at_sort() .. " AS sort_at) sorted "
       .. "ORDER BY requested.target, sorted.sort_at ASC, uri ASC",
     values)
 

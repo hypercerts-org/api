@@ -10,6 +10,7 @@ import {
   seedRows as reactionFixtureRows,
   reactionUris,
 } from "../../http/fixtures/feed-reactions.fixture.js";
+import { lua } from "../helpers/lua.js";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const actor = "did:plc:aaaaaaaaaaaaaaaaaaaaaaaa";
@@ -52,20 +53,6 @@ function sidecarRow(collection, did, key, recordValue) {
     record: `record-${key}`,
     recordValue,
   };
-}
-
-function lua(value) {
-  if (value === null) return "nil";
-  if (typeof value === "string") return JSON.stringify(value);
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
-  if (Array.isArray(value)) return `{${value.map(lua).join(",")}}`;
-  if (value && typeof value === "object") {
-    return `{${Object.entries(value)
-      .filter(([, item]) => item !== undefined)
-      .map(([key, item]) => `[${JSON.stringify(key)}]=${lua(item)}`)
-      .join(",")}}`;
-  }
-  throw new TypeError(`Cannot encode ${typeof value} as a Lua fixture`);
 }
 
 function cursor({ direction = "desc", timestamp = "2025-01-02T03:04:05.000000Z", uri } = {}) {

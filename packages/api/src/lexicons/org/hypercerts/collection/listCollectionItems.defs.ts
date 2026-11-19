@@ -14,7 +14,7 @@ type $nsid = typeof $nsid;
 
 export { $nsid };
 
-export const $params = /*#__PURE__*/ l.params({"collection":/*#__PURE__*/ l.string({"format":"at-uri"}),"limit":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.integer({"minimum":1,"maximum":100})),"cursor":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string())});
+export const $params = /*#__PURE__*/ l.params({"collection":/*#__PURE__*/ l.string({"format":"at-uri"}),"limit":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.withDefault(/*#__PURE__*/ l.integer({"minimum":1,"maximum":100}), 25)),"cursor":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string())});
 
 export type $Params = l.InferOutput<typeof $params>;
 

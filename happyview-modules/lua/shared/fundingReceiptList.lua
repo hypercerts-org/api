@@ -60,33 +60,11 @@ local function funding_receipt_array(key, format)
   return unique
 end
 
-local valid_receipt_datetime = valid_datetime
-
 local function decode_funding_receipt_cursor(token, direction)
-  if token == nil then return nil end
-  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
-    invalid("cursor is malformed")
-  end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
-  local ok, value = pcall(json.decode, decoded)
-  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
-    or type(value.t) ~= "string" or type(value.u) ~= "string" then
-    invalid("cursor is malformed or belongs to another sortDirection")
-  end
-  for key in pairs(value) do
-    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
-  end
-  local valid, collection = valid_record_uri(value.u)
-  if not valid_receipt_datetime(value.t) or not valid or collection ~= RECEIPT then
-    invalid("cursor is malformed")
-  end
-  return value
-end
-
-local function encode_funding_receipt_cursor(value)
-  return (json.encode(value):gsub(".", function(char)
-    return string.format("%02x", string.byte(char))
-  end))
+  return decode_cursor(token, direction, function(value)
+    local valid, collection = valid_record_uri(value.u)
+    return valid_datetime(value.t) and valid and collection == RECEIPT
+  end)
 end
 
 local function bind_funding_receipt_values(values, items)
@@ -99,10 +77,7 @@ local function bind_funding_receipt_values(values, items)
 end
 
 local function add_funding_receipt_array_filter(where, values, items, expression)
-  if items == nil then return end
-  if #items == 0 then where[#where + 1] = "FALSE"; return end
-  local marks = bind_funding_receipt_values(values, items)
-  where[#where + 1] = expression .. " IN (" .. table.concat(marks, ", ") .. ")"
+  if items ~= nil then add_in(where, values, expression, items) end
 end
 
 local function add_funding_receipt_party_filter(where, values, key, items)
@@ -126,15 +101,6 @@ local function add_funding_receipt_party_filter(where, values, key, items)
       record_party .. "->>'uri' IN (" .. table.concat(uri_marks, ", ") .. "))"
   end
   where[#where + 1] = "(" .. table.concat(matches, " OR ") .. ")"
-end
-
-local function funding_receipt_sort_expression()
-  local created = "receipt.record::jsonb->>'createdAt'"
-  local zoned = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
-  return "CASE WHEN jsonb_typeof(receipt.record::jsonb->'createdAt') = 'string' AND " .. created ..
-    " ~ '" .. zoned .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created ..
-    ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE " ..
-    "COALESCE(receipt.indexed_at::timestamptz, receipt.created_at::timestamptz) END"
 end
 
 local function query_funding_receipts(authors, uris, from_values, to_values, for_uris, transaction_ids, limit, cursor, direction)
@@ -162,7 +128,7 @@ local function query_funding_receipts(authors, uris, from_values, to_values, for
     "receipt.record::text AS record, to_char(sorted.sort_at AT TIME ZONE 'UTC', " ..
     "'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp " ..
     "FROM happyview_records AS receipt CROSS JOIN LATERAL (SELECT " ..
-    funding_receipt_sort_expression() .. " AS sort_at) AS sorted WHERE " .. table.concat(where, " AND ") ..
+    created_at_sort("receipt") .. " AS sort_at) AS sorted WHERE " .. table.concat(where, " AND ") ..
     " ORDER BY sorted.sort_at " .. ordering .. ", receipt.uri " .. ordering .. " LIMIT $" .. #values
   local rows = receipt_query(sql, values)
   local more = #rows > limit
@@ -175,7 +141,7 @@ local function query_funding_receipts(authors, uris, from_values, to_values, for
   local next_cursor
   if more then
     local last = rows[#rows]
-    next_cursor = encode_funding_receipt_cursor({ v = 1, d = direction, t = last.sort_timestamp, u = last.uri })
+    next_cursor = cursor_encode({ v = 1, d = direction, t = last.sort_timestamp, u = last.uri })
   end
   return receipts, next_cursor
 end
@@ -200,10 +166,7 @@ local function funding_receipts_response()
   local for_uris = funding_receipt_array("forUris", "atUri")
   local transaction_ids = funding_receipt_array("transactionIds")
 
-  local direction = scalar(params, "sortDirection") or "desc"
-  if direction ~= "asc" and direction ~= "desc" then
-    invalid("sortDirection must be 'asc' or 'desc'")
-  end
+  local direction = parse_sort_direction(params)
   local limit = parse_list_limit(params)
   local cursor = decode_funding_receipt_cursor(scalar(params, "cursor"), direction)
   local receipts, next_cursor = query_funding_receipts(

@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { lua } from "../helpers/lua.js";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const badgeQueriesModuleRoot = new URL("../../../modules/badge-queries/", import.meta.url);
@@ -17,18 +18,6 @@ const profileCollection = "app.certified.actor.profile";
 const organizationCollection = "app.certified.actor.organization";
 const issuer = "did:plc:aaaaaaaaaaaaaaaaaaaaaaaa";
 const indexedAt = "2025-02-01T00:00:01.000Z";
-
-function lua(value) {
-  if (typeof value === "string") return JSON.stringify(value);
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
-  if (Array.isArray(value)) return `{${value.map(lua).join(",")}}`;
-  if (value && typeof value === "object") {
-    return `{${Object.entries(value)
-      .map(([key, item]) => `[${JSON.stringify(key)}]=${lua(item)}`)
-      .join(",")}}`;
-  }
-  throw new TypeError(`Cannot encode ${typeof value} as a Lua fixture`);
-}
 
 async function handlerSource(endpoint) {
   const manifest = await badgeQueriesManifest;
