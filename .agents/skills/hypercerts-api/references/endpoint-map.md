@@ -26,7 +26,7 @@ Inspect the exact operation in the bundled OpenAPI contract before constructing 
 | Load one actor's organization sidecar | `app.certified.actor.getOrganization` | `actor` is a DID. If no indexed sidecar exists, this single lookup declares `RecordNotFound`; unlike `getOrganizations`, it does not return a nullable organization per actor. |
 | Load organization context for known actors | `app.certified.actor.getOrganizations` | `actors` is a repeated DID array; results preserve request order and an absent organization is null per result. |
 | Browse/filter organizations | `app.certified.actor.listOrganizations` | Use for organization-type/visibility filters and pagination. |
-| Find organizations by text | `app.certified.actor.searchOrganizations` | Searches associated profile text, with optional organization filters. |
+| Find organizations by text | `app.certified.actor.searchOrganizations` | Searches organization legal name and associated profile text, with optional organization filters. |
 
 Use `getProfiles`/`getOrganizations` for known DID sets; use `list` or `search` for discovery. A missing optional profile inside an organization view is not the same as a missing organization record. Organization actor views from these four endpoints include `location` (the resolved, raw indexed location record, or null; `organization.record.location` stays the strong reference); use it instead of a second `getLocation` call. Organization views nested in other endpoints' author or actor views do not include it.
 
@@ -110,7 +110,7 @@ Paginated reaction-list queries use the earliest record per author/subject URI, 
 | Load one attachment | `org.hypercerts.context.getAttachment` | Exact record AT-URI in `uri`. |
 | List attachments | `org.hypercerts.context.listAttachments` | Filter by publisher, record URI, subject, or content type. |
 | Count comments for subjects | `org.hypercerts.context.getCommentCounts` | Pass 1–100 full subject record AT-URIs as repeated, unbracketed `subjects`. Counts attachments with `contentType` `comment` whose `subjects` include the URI, ignoring CID. Each comment record counts, so several by one author each count. Results preserve input order and duplicates. |
-| Load one evaluation | `org.hypercerts.context.getEvaluation` | Exact record AT-URI in `uri`; includes publisher and evaluator views and preserves raw records when malformed evaluator entries are omitted. |
+| Load one evaluation | `org.hypercerts.context.getEvaluation` | Exact record AT-URI in `uri`; includes publisher and evaluator views and preserves raw records when malformed evaluator entries are omitted. `indexedAt` can be null. |
 | List evaluations | `org.hypercerts.context.listEvaluations` | Filter by publisher, evaluator, or subject; malformed evaluator entries do not hide otherwise valid records. |
 | Load one measurement | `org.hypercerts.context.getMeasurement` | Exact record AT-URI in `uri`. |
 | List measurements | `org.hypercerts.context.listMeasurements` | Filter by publisher or subject. |
@@ -121,7 +121,7 @@ These records are context related to other Hypercert records, not alternate acti
 
 | User task | Query NSID | Practical choice |
 |---|---|---|
-| Load one location | `app.certified.location.getLocation` | Exact location AT-URI in `uri`. |
+| Load one location | `app.certified.location.getLocation` | Exact location AT-URI in `uri`. `indexedAt` can be null. |
 | List/filter locations | `app.certified.location.listLocations` | Filter by publisher, URI, or location type. |
 | Load one feature | `org.hypercerts.entity.getFeature` | Exact feature AT-URI in `uri`; includes author hydration. |
 | List/filter features | `org.hypercerts.entity.listFeatures` | Use publisher, organization-record, or type filters. |

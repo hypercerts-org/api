@@ -1,7 +1,3 @@
-local function contributor_information_datetime(value)
-  return valid_datetime(value) and tonumber(value:sub(1, 4)) > 0
-end
-
 local function contributor_information_query(sql, values)
   local backend_ok, backend = pcall(db.backend)
   if not backend_ok or backend ~= "postgres" then
@@ -52,38 +48,10 @@ local function contributor_information_array(params, key, validate, description)
   return unique
 end
 
-local function contributor_information_bind_in(where, values, expression, items)
-  if not items then return end
-  if #items == 0 then
-    where[#where + 1] = "FALSE"
-    return
-  end
-  local placeholders = {}
-  for _, item in ipairs(items) do
-    values[#values + 1] = item
-    placeholders[#placeholders + 1] = "$" .. #values
-  end
-  where[#where + 1] = expression .. " IN (" .. table.concat(placeholders, ", ") .. ")"
-end
-
 local function contributor_information_cursor_decode(token, direction)
-  if token == nil then return nil end
-  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
-    invalid("cursor is malformed")
-  end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
-  local ok, value = pcall(json.decode, decoded)
-  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
-    or type(value.t) ~= "string" or type(value.u) ~= "string" then
-    invalid("cursor is malformed or belongs to another sortDirection")
-  end
-  for key in pairs(value) do
-    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
-  end
-  if not contributor_information_uri(value.u) or not contributor_information_datetime(value.t) then
-    invalid("cursor is malformed")
-  end
-  return value
+  return decode_cursor(token, direction, function(value)
+    return contributor_information_uri(value.u) and valid_datetime(value.t)
+  end)
 end
 
 local function preserve_contributor_author_timestamps(author)
@@ -96,18 +64,9 @@ local function preserve_contributor_author_timestamps(author)
   end
 end
 
-local function contributor_information_sort_expression()
-  local created = "contributor.record::jsonb->>'createdAt'"
-  local zoned = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
-  return "CASE WHEN jsonb_typeof(contributor.record::jsonb->'createdAt') = 'string' AND " .. created ..
-    " ~ '" .. zoned .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created ..
-    ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE " ..
-    "COALESCE(contributor.indexed_at::timestamptz, contributor.created_at::timestamptz) END"
-end
-
 local function query_contributor_information(authors, limit, cursor, direction)
   local where, values = { "contributor.collection = $1" }, { CONTRIBUTOR_INFORMATION_COLLECTION }
-  contributor_information_bind_in(where, values, "contributor.did", authors)
+  if authors then add_in(where, values, "contributor.did", authors) end
 
   if cursor then
     values[#values + 1] = cursor.t
@@ -121,7 +80,7 @@ local function query_contributor_information(authors, limit, cursor, direction)
 
   values[#values + 1] = limit + 1
   local ordering = direction == "asc" and "ASC" or "DESC"
-  local sort_key = contributor_information_sort_expression()
+  local sort_key = created_at_sort("contributor")
   local sql = "SELECT contributor.uri, contributor.did, contributor.cid, " ..
     "contributor.indexed_at::text AS indexed_at, contributor.record::text AS record, " ..
     "to_char(sorted.sort_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp " ..

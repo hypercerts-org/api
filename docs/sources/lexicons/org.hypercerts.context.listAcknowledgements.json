@@ -28,6 +28,7 @@
           },
           "sortDirection": {
             "type": "string",
+            "default": "desc",
             "enum": [
               "asc",
               "desc"

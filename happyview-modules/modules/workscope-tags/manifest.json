@@ -54,6 +54,8 @@
         "../../lua/shared/workscopeRecordView.lua",
         "../../lua/shared/actorView.lua",
         "../../lua/shared/workscopeTag.lua",
+        "../../lua/shared/listCursor.lua",
+        "../../lua/shared/listWhere.lua",
         "../../lua/shared/workscopeTagList.lua"
       ],
       "config": {

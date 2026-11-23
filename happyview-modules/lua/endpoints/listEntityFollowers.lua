@@ -45,6 +45,7 @@ local function valid_datetime(value)
     "^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)(.*)$")
   if not year then return false end
   year, month, day = tonumber(year), tonumber(month), tonumber(day)
+  if year < 1 then return false end
   hour, minute, second = tonumber(hour), tonumber(minute), tonumber(second)
   if month < 1 or month > 12 or hour > 23 or minute > 59 or second > 59 then return false end
   local leap = year % 4 == 0 and (year % 100 ~= 0 or year % 400 == 0)
@@ -95,13 +96,6 @@ local function entity_follow_query(sql, values)
   return result
 end
 
--- Keep malformed publisher timestamps out of casts; preserve the actor-follow fallback order.
-local function entity_follow_sort_key()
-  local created = "record::jsonb->>'createdAt'"
-  local zoned = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
-  return "CASE WHEN jsonb_typeof(record::jsonb->'createdAt') = 'string' AND " .. created .. " ~ '" .. zoned .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created .. ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE COALESCE(indexed_at::timestamptz, created_at::timestamptz) END"
-end
-
 local function entity_follow_indexed_record_view(row)
   return {
     uri = row.uri,
@@ -118,7 +112,11 @@ local function entity_follow_record_view(row)
   return view
 end
 
-local function entity_follow_decode_cursor(token, direction)
+-- Decodes a hex-encoded {v, d, t, u} list cursor. Rejects malformed tokens, other
+-- sort directions and unknown keys; validate_value(value) -> boolean runs the
+-- endpoint-specific check on t and u. Not for endpoints that skip the 8192-character
+-- cap or accept extra keys.
+local function decode_cursor(token, direction, validate_value)
   if token == nil then return nil end
   if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
     invalid("cursor is malformed")
@@ -132,11 +130,30 @@ local function entity_follow_decode_cursor(token, direction)
   for key in pairs(value) do
     if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
   end
-  local valid, collection = valid_record_uri(value.u)
-  if not valid or collection ~= ENTITY_FOLLOW or not valid_datetime(value.t) then
-    invalid("cursor is malformed")
-  end
+  if not validate_value(value) then invalid("cursor is malformed") end
   return value
+end
+
+local CREATED_AT_SORT_PATTERN = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
+
+-- Sort key for a happyview_records row: the record's own createdAt when it is a
+-- valid timestamp, otherwise COALESCE(indexed_at, created_at). `alias` is the
+-- table alias; nil selects unqualified columns.
+local function created_at_sort(alias)
+  local prefix = alias and (alias .. ".") or ""
+  local record, indexed_at, created_at = prefix .. "record", prefix .. "indexed_at", prefix .. "created_at"
+  local created = record .. "::jsonb->>'createdAt'"
+  return "CASE WHEN jsonb_typeof(" .. record .. "::jsonb->'createdAt') = 'string' AND " .. created ..
+    " ~ '" .. CREATED_AT_SORT_PATTERN .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created ..
+    ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE COALESCE(" .. indexed_at ..
+    "::timestamptz, " .. created_at .. "::timestamptz) END"
+end
+
+local function entity_follow_decode_cursor(token, direction)
+  return decode_cursor(token, direction, function(value)
+    local valid, collection = valid_record_uri(value.u)
+    return valid and collection == ENTITY_FOLLOW and valid_datetime(value.t)
+  end)
 end
 
 local function entity_follow_query_page(mode, identity, limit, cursor, direction)
@@ -160,7 +177,7 @@ local function entity_follow_query_page(mode, identity, limit, cursor, direction
   values[#values + 1] = limit + 1
   local ordering = direction == "asc" and "ASC" or "DESC"
   local subject_uri = "record::jsonb->'subject'->>'uri'"
-  local ranked_follows = "ranked_follows AS (SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record, sorted.sort_at, ROW_NUMBER() OVER (PARTITION BY did, " .. subject_uri .. " ORDER BY sorted.sort_at ASC, uri ASC) AS relationship_rank FROM happyview_records CROSS JOIN LATERAL (SELECT " .. entity_follow_sort_key() .. " AS sort_at) sorted WHERE " .. table.concat(filters, " AND ") .. ")"
+  local ranked_follows = "ranked_follows AS (SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record, sorted.sort_at, ROW_NUMBER() OVER (PARTITION BY did, " .. subject_uri .. " ORDER BY sorted.sort_at ASC, uri ASC) AS relationship_rank FROM happyview_records CROSS JOIN LATERAL (SELECT " .. created_at_sort() .. " AS sort_at) sorted WHERE " .. table.concat(filters, " AND ") .. ")"
   local representatives = "representatives AS (SELECT uri, did, cid, indexed_at, record, sort_at FROM ranked_follows WHERE relationship_rank = 1)"
   local page = "page AS (SELECT uri, did, cid, indexed_at, record, sort_at FROM representatives" .. cursor_filter .. " ORDER BY sort_at " .. ordering .. ", uri " .. ordering .. " LIMIT $" .. #values .. ")"
   local sql

@@ -77,16 +77,6 @@ local function decode_evm_link_cursor(token, direction)
   return value
 end
 
-local function evm_link_sort_key()
-  -- CASE guards the cast from malformed publisher-controlled timestamps.
-  local created = "link.record::jsonb->>'createdAt'"
-  local zoned = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
-  return "CASE WHEN jsonb_typeof(link.record::jsonb->'createdAt') = 'string' AND " .. created ..
-    " ~ '" .. zoned .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created ..
-    ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE " ..
-    "COALESCE(link.indexed_at::timestamptz, link.created_at::timestamptz) END"
-end
-
 local function list_evm_links(actors, addresses, limit, cursor, direction)
   local where, values = { "link.collection = $1" }, { EVMLINK }
   add_filter(where, values, "link.did", actors)
@@ -107,7 +97,7 @@ local function list_evm_links(actors, addresses, limit, cursor, direction)
   local sql = "SELECT link.uri, link.did, link.cid, link.indexed_at::text AS indexed_at, " ..
     "link.record::text AS record, to_char(sorted.sort_at AT TIME ZONE 'UTC', " ..
     "'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp " ..
-    "FROM happyview_records AS link CROSS JOIN LATERAL (SELECT " .. evm_link_sort_key() .. " AS sort_at) sorted WHERE " ..
+    "FROM happyview_records AS link CROSS JOIN LATERAL (SELECT " .. created_at_sort("link") .. " AS sort_at) sorted WHERE " ..
     table.concat(where, " AND ") .. " ORDER BY sorted.sort_at " .. ordering ..
     ", link.uri " .. ordering .. " LIMIT $" .. #values
   local rows = evm_link_query(sql, values)

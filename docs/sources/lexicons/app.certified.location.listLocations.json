@@ -37,6 +37,7 @@
           },
           "limit": {
             "type": "integer",
+            "default": 25,
             "description": "Page size; defaults to 25.",
             "minimum": 1,
             "maximum": 100
@@ -47,6 +48,7 @@
           },
           "sortDirection": {
             "type": "string",
+            "default": "desc",
             "description": "Sort by a valid zoned createdAt; otherwise indexedAt or stored row creation time, then URI, all in this direction. Defaults to desc.",
             "enum": [
               "asc",

@@ -4,24 +4,12 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { lua } from "../helpers/lua.js";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const endpointPath = "lua/endpoints/getCommentCounts.lua";
 const post = "at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/org.hypercerts.context.attachment/post";
 const activity = "at://did:web:example.com/org.hypercerts.claim.activity/missing";
-
-function lua(value) {
-  if (value === null) return "nil";
-  if (typeof value === "string") return JSON.stringify(value);
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
-  if (Array.isArray(value)) return `{${value.map(lua).join(",")}}`;
-  if (value && typeof value === "object") {
-    return `{${Object.entries(value)
-      .map(([key, item]) => `[${JSON.stringify(key)}]=${lua(item)}`)
-      .join(",")}}`;
-  }
-  throw new TypeError(`Cannot encode ${typeof value} as a Lua fixture`);
-}
 
 function runLua({
   params,
@@ -127,4 +115,17 @@ test("getCommentCounts reports named errors for database and count failures", ()
       expectedCalls: 1,
     });
   }
+});
+
+test("getCommentCounts looks subjects up in record_refs and re-checks subjects[].uri on the comment", () => {
+  runLua({
+    params: { subjects: [post] },
+    assertions: `
+local sql = calls[1].sql
+assert(sql:find('happyview_record_refs', 1, true), 'subjects are found through the refs index')
+assert(sql:find('ref.target_uri IN', 1, true), 'lookup is by target URI')
+assert(sql:find("subject.value->>'uri' = ref.target_uri", 1, true), 'a ref anywhere else in the record must not count')
+assert(not sql:find('FROM happyview_records AS comment', 1, true), 'the collection is no longer scanned')
+`,
+  });
 });

@@ -5,6 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { validatePackageLexicons } from "../../../tooling/validate-lexicons.js";
+import { lua } from "../helpers/lua.js";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const endpointPath = "lua/endpoints/getFollowerCounts.lua";
@@ -14,19 +15,6 @@ const account = "did:plc:aaaaaaaaaaaaaaaaaaaaaaaa";
 const otherAccount = "did:web:example.com";
 const entity = "at://did:plc:bbbbbbbbbbbbbbbbbbbbbbbb/org.hypercerts.collection/project";
 const missingEntity = "at://did:plc:cccccccccccccccccccccccc/org.hypercerts.claim.activity/missing";
-
-function lua(value) {
-  if (value === null) return "nil";
-  if (typeof value === "string") return JSON.stringify(value);
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
-  if (Array.isArray(value)) return `{${value.map(lua).join(",")}}`;
-  if (value && typeof value === "object") {
-    return `{${Object.entries(value)
-      .map(([key, item]) => `[${JSON.stringify(key)}]=${lua(item)}`)
-      .join(",")}}`;
-  }
-  throw new TypeError(`Cannot encode ${typeof value} as a Lua fixture`);
-}
 
 function runLua({
   params,
@@ -177,4 +165,17 @@ test("getFollowerCounts Lexicon accepts DIDs and AT-URIs in one subjects list", 
   // DIDs and AT-URIs share one list, so items use the generic uri format.
   assert.equal(main.parameters.properties.subjects.items.format, "uri");
   assert.equal(main.parameters.properties.subjects.maxLength, 100);
+});
+
+test("getFollowerCounts uses record_refs for entity URIs and keeps the collection scan for DIDs", () => {
+  runLua({
+    params: { subjects: [account, entity] },
+    assertions: `
+local sql = calls[1].sql
+local account_branch, entity_branch = sql:match('^(.-) UNION ALL (.*)$')
+assert(not account_branch:find('happyview_record_refs', 1, true), 'a DID is not an at:// string, so refs cannot find it')
+assert(entity_branch:find('happyview_record_refs', 1, true), 'entity URIs are found through the refs index')
+assert(entity_branch:find("source.record::jsonb->'subject'->>'uri' = ref.target_uri", 1, true), 'a ref in another field must not count')
+`,
+  });
 });

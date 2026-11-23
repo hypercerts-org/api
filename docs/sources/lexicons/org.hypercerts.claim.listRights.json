@@ -19,6 +19,7 @@
           },
           "sortDirection": {
             "type": "string",
+            "default": "desc",
             "enum": [
               "asc",
               "desc"
@@ -27,6 +28,7 @@
           },
           "limit": {
             "type": "integer",
+            "default": 25,
             "minimum": 1,
             "maximum": 100,
             "description": "Maximum records in the page; defaults to 25."

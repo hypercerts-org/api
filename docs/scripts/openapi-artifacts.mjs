@@ -1,5 +1,30 @@
 import { buildOpenApi, DEFAULT_SERVER_URL } from "./openapi.mjs";
 
+/** Repository-relative location of the OpenAPI copy bundled with the hypercerts-api skill. */
+export const SKILL_OPENAPI_PATH = ".agents/skills/hypercerts-api/references/openapi.json";
+
+const SKILL_OPENAPI_INFO = {
+  title: "Hypercerts API",
+  version: "contract-snapshot",
+  description:
+    "Public, read-only Hypercerts XRPC query endpoints. This static contract snapshot describes declared behavior, not availability on a particular deployment.",
+};
+
+function stripHypercertsExtensions(value) {
+  if (Array.isArray(value)) return value.map(stripHypercertsExtensions);
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key]) => !key.startsWith("x-hypercerts-"))
+      .map(([key, child]) => [key, stripHypercertsExtensions(child)]),
+  );
+}
+
+/** Derive the self-contained skill copy: no repository-specific `x-hypercerts-*` keys. */
+export function buildSkillOpenApi(openapi) {
+  return { ...stripHypercertsExtensions(openapi), info: SKILL_OPENAPI_INFO };
+}
+
 export function buildDocumentationArtifacts(sourceIndex, lexicons) {
   const lexiconsById = new Map();
   for (const lexicon of lexicons) {
@@ -83,5 +108,5 @@ export function buildDocumentationArtifacts(sourceIndex, lexicons) {
     })),
   };
 
-  return { openapi: document, coverage: coverageReport };
+  return { openapi: document, skillOpenapi: buildSkillOpenApi(document), coverage: coverageReport };
 }

@@ -242,6 +242,7 @@ local function valid_datetime(value)
     "^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)(.*)$")
   if not year then return false end
   year, month, day = tonumber(year), tonumber(month), tonumber(day)
+  if year < 1 then return false end
   hour, minute, second = tonumber(hour), tonumber(minute), tonumber(second)
   if month < 1 or month > 12 or hour > 23 or minute > 59 or second > 59 then return false end
   local leap = year % 4 == 0 and (year % 100 ~= 0 or year % 400 == 0)
@@ -267,37 +268,66 @@ local function parse_list_limit(params)
   return limit
 end
 
-local CREATED_AT_SORT_COLUMNS = {
-  profile = { record = "record", indexed_at = "indexed_at", created_at = "created_at" },
-  organization = {
-    record = "organization.record",
-    indexed_at = "organization.indexed_at",
-    created_at = "organization.created_at",
-  },
-  activity = {
-    record = "activity.record",
-    indexed_at = "activity.indexed_at",
-    created_at = "activity.created_at",
-  },
-  collection = {
-    record = "collection.record",
-    indexed_at = "collection.indexed_at",
-    created_at = "collection.created_at",
-  },
-}
 local CREATED_AT_SORT_PATTERN = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
 
-local function created_at_sort_expression(source)
-  local columns = CREATED_AT_SORT_COLUMNS[source]
-  if not columns then
-    error("CreatedAtSortExpressionError: source must be 'profile', 'organization', 'activity', or 'collection'", 0)
-  end
-
-  local created = columns.record .. "::jsonb->>'createdAt'"
-  return "CASE WHEN jsonb_typeof(" .. columns.record .. "::jsonb->'createdAt') = 'string' AND " .. created ..
+-- Sort key for a happyview_records row: the record's own createdAt when it is a
+-- valid timestamp, otherwise COALESCE(indexed_at, created_at). `alias` is the
+-- table alias; nil selects unqualified columns.
+local function created_at_sort(alias)
+  local prefix = alias and (alias .. ".") or ""
+  local record, indexed_at, created_at = prefix .. "record", prefix .. "indexed_at", prefix .. "created_at"
+  local created = record .. "::jsonb->>'createdAt'"
+  return "CASE WHEN jsonb_typeof(" .. record .. "::jsonb->'createdAt') = 'string' AND " .. created ..
     " ~ '" .. CREATED_AT_SORT_PATTERN .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created ..
-    ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE COALESCE(" .. columns.indexed_at ..
-    "::timestamptz, " .. columns.created_at .. "::timestamptz) END"
+    ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE COALESCE(" .. indexed_at ..
+    "::timestamptz, " .. created_at .. "::timestamptz) END"
+end
+
+local function parse_sort_direction(params)
+  local direction = scalar(params, "sortDirection") or "desc"
+  if direction ~= "asc" and direction ~= "desc" then invalid("sortDirection must be 'asc' or 'desc'") end
+  return direction
+end
+
+local function cursor_encode(value)
+  local encoded = json.encode(value)
+  return (encoded:gsub(".", function(char) return string.format("%02x", string.byte(char)) end))
+end
+
+-- Decodes a hex-encoded {v, d, t, u} list cursor. Rejects malformed tokens, other
+-- sort directions and unknown keys; validate_value(value) -> boolean runs the
+-- endpoint-specific check on t and u. Not for endpoints that skip the 8192-character
+-- cap or accept extra keys.
+local function decode_cursor(token, direction, validate_value)
+  if token == nil then return nil end
+  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
+    invalid("cursor is malformed")
+  end
+  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
+  local ok, value = pcall(json.decode, decoded)
+  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
+    or type(value.t) ~= "string" or type(value.u) ~= "string" then
+    invalid("cursor is malformed or belongs to another sortDirection")
+  end
+  for key in pairs(value) do
+    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
+  end
+  if not validate_value(value) then invalid("cursor is malformed") end
+  return value
+end
+
+-- Adds `column IN ($n, ...)` to where, binding items; an empty list matches nothing.
+local function add_in(where, binds, column, items)
+  if #items == 0 then
+    where[#where + 1] = "FALSE"
+    return
+  end
+  local marks = {}
+  for _, item in ipairs(items) do
+    binds[#binds + 1] = item
+    marks[#marks + 1] = "$" .. #binds
+  end
+  where[#where + 1] = column .. " IN (" .. table.concat(marks, ", ") .. ")"
 end
 
 local function activity_scalar(values, key)
@@ -350,30 +380,10 @@ local function activity_array(key, format)
 end
 
 local function decode_activity_cursor(token, direction)
-  if token == nil then return nil end
-  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
-    invalid("cursor is malformed")
-  end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
-  local ok, value = pcall(json.decode, decoded)
-  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
-    or type(value.t) ~= "string" or type(value.u) ~= "string" then
-    invalid("cursor is malformed or belongs to another sortDirection")
-  end
-  for key in pairs(value) do
-    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
-  end
-  local valid, collection = valid_record_uri(value.u)
-  if not valid_datetime(value.t) or not valid or collection ~= ACTIVITY then
-    invalid("cursor is malformed")
-  end
-  return value
-end
-
-local function encode_activity_cursor(value)
-  return (json.encode(value):gsub(".", function(char)
-    return string.format("%02x", string.byte(char))
-  end))
+  return decode_cursor(token, direction, function(value)
+    local valid, collection = valid_record_uri(value.u)
+    return valid_datetime(value.t) and valid and collection == ACTIVITY
+  end)
 end
 
 local function bind_values(values, items)
@@ -404,13 +414,7 @@ end
 
 local function activity_query(authors, has_organization_record, contributors, involved_actors, uris, search, limit, cursor, direction)
   local where, values = { "activity.collection = $1" }, { ACTIVITY }
-  if authors then
-    if #authors == 0 then
-      where[#where + 1] = "FALSE"
-    else
-      where[#where + 1] = "activity.did IN (" .. table.concat(bind_values(values, authors), ", ") .. ")"
-    end
-  end
+  if authors then add_in(where, values, "activity.did", authors) end
   if has_organization_record ~= nil then
     local predicate = has_organization_record and "EXISTS" or "NOT EXISTS"
     where[#where + 1] = predicate .. " (SELECT 1 FROM happyview_records AS organization " ..
@@ -430,10 +434,7 @@ local function activity_query(authors, has_organization_record, contributors, in
         activity_contributor_match(values, involved_actors) .. ")"
     end
   end
-  if uris then
-    if #uris == 0 then where[#where + 1] = "FALSE"
-    else where[#where + 1] = "activity.uri IN (" .. table.concat(bind_values(values, uris), ", ") .. ")" end
-  end
+  if uris then add_in(where, values, "activity.uri", uris) end
   if search ~= nil then
     values[#values + 1] = search
     local pattern = "$" .. #values
@@ -455,7 +456,7 @@ local function activity_query(authors, has_organization_record, contributors, in
   local sql = "SELECT activity.uri, activity.did, activity.cid, activity.indexed_at::text AS indexed_at, " ..
     "activity.record::text AS record, to_char(sorted.sort_at AT TIME ZONE 'UTC', " ..
     "'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp " ..
-    "FROM happyview_records AS activity CROSS JOIN LATERAL (SELECT " .. created_at_sort_expression("activity") .. " AS sort_at) AS sorted " ..
+    "FROM happyview_records AS activity CROSS JOIN LATERAL (SELECT " .. created_at_sort("activity") .. " AS sort_at) AS sorted " ..
     "WHERE " .. table.concat(where, " AND ") .. " ORDER BY sorted.sort_at " .. ordering ..
     ", activity.uri " .. ordering .. " LIMIT $" .. #values
   local rows = query(sql, values)
@@ -469,7 +470,7 @@ local function activity_query(authors, has_organization_record, contributors, in
   local next_cursor
   if more then
     local last = rows[#rows]
-    next_cursor = encode_activity_cursor({ v = 1, d = direction, t = last.sort_timestamp, u = last.uri })
+    next_cursor = cursor_encode({ v = 1, d = direction, t = last.sort_timestamp, u = last.uri })
   end
   return views, next_cursor
 end
@@ -509,8 +510,7 @@ local function activity_list_response(search_enabled)
     search = search:match("^%s*(.-)%s*$")
     if search == "" then search = nil end
   end
-  local direction = scalar(params, "sortDirection") or "desc"
-  if direction ~= "asc" and direction ~= "desc" then invalid("sortDirection must be 'asc' or 'desc'") end
+  local direction = parse_sort_direction(params)
   local limit = parse_list_limit(params)
   local cursor = decode_activity_cursor(scalar(params, "cursor"), direction)
   local activities, next_cursor = activity_query(

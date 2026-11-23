@@ -54,6 +54,9 @@
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",
         "../../lua/shared/attachment.lua",
+        "../../lua/shared/listCursor.lua",
+        "../../lua/shared/listWhere.lua",
+        "../../lua/shared/createdAtSort.lua",
         "../../lua/shared/attachmentList.lua"
       ],
       "config": {
@@ -83,6 +86,7 @@
         "../../lua/shared/nsidValidation.lua",
         "../../lua/shared/subjectRecordUri.lua",
         "../../lua/shared/batchRequestTarget.lua",
+        "../../lua/shared/reactionCounts.lua",
         "../../lua/shared/followBatch.lua"
       ],
       "config": {

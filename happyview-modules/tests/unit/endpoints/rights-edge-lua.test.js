@@ -22,6 +22,9 @@ async function endpointSources(name) {
       "lua/shared/datetimeValidation.lua",
       "lua/shared/listValidation.lua",
       "lua/shared/listQuery.lua",
+      "lua/shared/listCursor.lua",
+      "lua/shared/listWhere.lua",
+      "lua/shared/createdAtSort.lua",
     );
   return Promise.all([...shared, `lua/src/${name}.lua`].map(read));
 }

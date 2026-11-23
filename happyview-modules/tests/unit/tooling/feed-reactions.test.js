@@ -10,6 +10,7 @@ import {
   seedRows as reactionFixtureRows,
   reactionUris,
 } from "../../http/fixtures/feed-reactions.fixture.js";
+import { lua } from "../helpers/lua.js";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const actor = "did:plc:aaaaaaaaaaaaaaaaaaaaaaaa";
@@ -52,20 +53,6 @@ function sidecarRow(collection, did, key, recordValue) {
     record: `record-${key}`,
     recordValue,
   };
-}
-
-function lua(value) {
-  if (value === null) return "nil";
-  if (typeof value === "string") return JSON.stringify(value);
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
-  if (Array.isArray(value)) return `{${value.map(lua).join(",")}}`;
-  if (value && typeof value === "object") {
-    return `{${Object.entries(value)
-      .filter(([, item]) => item !== undefined)
-      .map(([key, item]) => `[${JSON.stringify(key)}]=${lua(item)}`)
-      .join(",")}}`;
-  }
-  throw new TypeError(`Cannot encode ${typeof value} as a Lua fixture`);
 }
 
 function cursor({ direction = "desc", timestamp = "2025-01-02T03:04:05.000000Z", uri } = {}) {
@@ -262,6 +249,20 @@ assert(result.counts[1].subject == '${subject}' and result.counts[1].likeCount =
 assert(result.counts[2].subject == '${missingSubject}' and result.counts[2].likeCount == 0 and result.counts[2].repostCount == 0)
 assert(result.counts[3].subject == '${subject}' and result.counts[3].likeCount == 2 and result.counts[3].repostCount == 1)
 assert(#calls == 1, 'one batched database query must serve all requested subject occurrences')
+`,
+  });
+});
+
+test("getReactionCounts looks subjects up in record_refs and re-checks subject.uri so a via URI is not a like", () => {
+  runLua({
+    endpoint: "getReactionCounts",
+    params: { subjects: [subject] },
+    assertions: `
+local sql = calls[1].sql
+assert(sql:find('happyview_record_refs', 1, true), 'subjects are found through the refs index')
+assert(sql:find('ref.target_uri IN', 1, true), 'lookup is by target URI')
+assert(sql:find("source.record::jsonb->'subject'->>'uri' = ref.target_uri", 1, true), 'a like found via a repost must not count on the repost')
+assert(sql:find('COUNT(DISTINCT source.did)', 1, true), 'likes and reposts count distinct publishers')
 `,
   });
 });

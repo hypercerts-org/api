@@ -4,14 +4,14 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Searches organizations by associated profile text and optional filters. Filters combine with AND, and values within each array filter are ORed. Authentication is not required.",
+      "description": "Searches organizations by legal name, profile text and optional filters. Filters combine with AND, and values within each array filter are ORed. Authentication is not required.",
       "parameters": {
         "type": "params",
         "required": ["search"],
         "properties": {
           "search": {
             "type": "string",
-            "description": "Trimmed text is matched literally and case-insensitively as a substring in either displayName or description. Blank text is unrestricted; nonblank text requires an associated profile."
+            "description": "Trimmed text is matched literally and case-insensitively as a substring in the organization's legalName or in the associated profile's displayName or description. Organizations without a profile match on legalName alone. Blank text is unrestricted."
           },
           "actors": {
             "type": "array",
@@ -31,11 +31,13 @@
           },
           "sortDirection": {
             "type": "string",
+            "default": "desc",
             "enum": ["asc", "desc"],
             "description": "Sort by a valid zoned createdAt, otherwise indexedAt, falling back to row creation time; URI breaks ties. Default desc."
           },
           "limit": {
             "type": "integer",
+            "default": 25,
             "minimum": 1,
             "maximum": 100,
             "description": "Page size; default 25."

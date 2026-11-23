@@ -145,6 +145,34 @@ test("seed input selects only explicitly supplied non-location rows", () => {
   );
 });
 
+test("seed input writes one record_refs row per at:// string, as HappyView does when it indexes a record", () => {
+  const target = "at://did:web:target.example/org.example.thing/a";
+  const via = "at://did:web:via.example/app.certified.feed.repost/b";
+  const sql = buildSeedInput(safeSeedEnv, [
+    {
+      uri: "at://did:web:liker.example/app.certified.feed.like/c",
+      did: "did:web:liker.example",
+      collection: "app.certified.feed.like",
+      rkey: "c",
+      record: { subject: { uri: target }, via: { uri: via }, note: "not a uri", again: [target] },
+      cid: "bafylike",
+      indexedAt: "2025-01-02T03:04:05.000Z",
+    },
+  ]);
+  const refs = sql.split("\n").filter((line) => line.startsWith("EXECUTE happyview_fixture_ref("));
+  const source = "at://did:web:liker.example/app.certified.feed.like/c";
+  const collection = "app.certified.feed.like";
+  assert.deepEqual(
+    refs,
+    [target, via].map(
+      (uri) =>
+        `EXECUTE happyview_fixture_ref(${[source, uri, collection].map((v) => `E'${v}'`).join(", ")});`,
+    ),
+    "a repeated URI yields one row; non-URI strings yield none; rows keep record order",
+  );
+  assert.match(sql, /ON CONFLICT DO NOTHING/);
+});
+
 test("seed input refuses empty row sets instead of generating invalid PREPARE SQL", () => {
   assert.throws(() => buildSeedInput(safeSeedEnv, []), /at least one.*row/i);
   assert.throws(() => buildBadDateSeedInput(safeSeedEnv, []), /at least one.*row/i);

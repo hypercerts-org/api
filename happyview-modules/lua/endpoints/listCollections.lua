@@ -208,26 +208,6 @@ end
 
 local COLLECTION = "org.hypercerts.collection"
 
-local function collection_invalid(message)
-  error("InvalidRequest: " .. message, 0)
-end
-
-local function collection_keys_only(values, allowed)
-  for key in pairs(values) do
-    if not allowed[key] then collection_invalid("unknown query parameter: " .. key) end
-  end
-end
-
-local function collection_scalar(values, key)
-  local value = values[key]
-  if value == nil then return nil end
-  if key == "hasOrganizationRecord" and type(value) == "boolean" then return tostring(value) end
-  if type(value) ~= "string" and type(value) ~= "number" then
-    collection_invalid(key .. " must occur once")
-  end
-  return tostring(value)
-end
-
 local function collection_valid_record_uri(value)
   if type(value) ~= "string" or #value > 8192 then return false end
   return valid_record_uri(value)
@@ -258,6 +238,7 @@ local function valid_datetime(value)
     "^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)(.*)$")
   if not year then return false end
   year, month, day = tonumber(year), tonumber(month), tonumber(day)
+  if year < 1 then return false end
   hour, minute, second = tonumber(hour), tonumber(minute), tonumber(second)
   if month < 1 or month > 12 or hour > 23 or minute > 59 or second > 59 then return false end
   local leap = year % 4 == 0 and (year % 100 ~= 0 or year % 400 == 0)
@@ -275,37 +256,100 @@ local function valid_datetime(value)
   return true
 end
 
-local CREATED_AT_SORT_COLUMNS = {
-  profile = { record = "record", indexed_at = "indexed_at", created_at = "created_at" },
-  organization = {
-    record = "organization.record",
-    indexed_at = "organization.indexed_at",
-    created_at = "organization.created_at",
-  },
-  activity = {
-    record = "activity.record",
-    indexed_at = "activity.indexed_at",
-    created_at = "activity.created_at",
-  },
-  collection = {
-    record = "collection.record",
-    indexed_at = "collection.indexed_at",
-    created_at = "collection.created_at",
-  },
-}
 local CREATED_AT_SORT_PATTERN = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
 
-local function created_at_sort_expression(source)
-  local columns = CREATED_AT_SORT_COLUMNS[source]
-  if not columns then
-    error("CreatedAtSortExpressionError: source must be 'profile', 'organization', 'activity', or 'collection'", 0)
-  end
-
-  local created = columns.record .. "::jsonb->>'createdAt'"
-  return "CASE WHEN jsonb_typeof(" .. columns.record .. "::jsonb->'createdAt') = 'string' AND " .. created ..
+-- Sort key for a happyview_records row: the record's own createdAt when it is a
+-- valid timestamp, otherwise COALESCE(indexed_at, created_at). `alias` is the
+-- table alias; nil selects unqualified columns.
+local function created_at_sort(alias)
+  local prefix = alias and (alias .. ".") or ""
+  local record, indexed_at, created_at = prefix .. "record", prefix .. "indexed_at", prefix .. "created_at"
+  local created = record .. "::jsonb->>'createdAt'"
+  return "CASE WHEN jsonb_typeof(" .. record .. "::jsonb->'createdAt') = 'string' AND " .. created ..
     " ~ '" .. CREATED_AT_SORT_PATTERN .. "' AND " .. created .. " !~ '-00:00$' AND pg_input_is_valid(" .. created ..
-    ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE COALESCE(" .. columns.indexed_at ..
-    "::timestamptz, " .. columns.created_at .. "::timestamptz) END"
+    ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE COALESCE(" .. indexed_at ..
+    "::timestamptz, " .. created_at .. "::timestamptz) END"
+end
+
+local function invalid(message)
+  error("InvalidRequest: " .. message, 0)
+end
+
+local function keys_only(values, allowed, unknown_message_prefix)
+  for key in pairs(values) do
+    if not allowed[key] then
+      invalid(unknown_message_prefix and (unknown_message_prefix .. key) or "unknown query parameter")
+    end
+  end
+end
+
+local function scalar(params, key)
+  local value = params[key]
+  if value == nil then return nil end
+  if type(value) ~= "string" and type(value) ~= "number" then
+    invalid(key .. " must occur once")
+  end
+  return tostring(value)
+end
+
+local function parse_list_limit(params)
+  local limit_value = scalar(params, "limit")
+  if limit_value and not limit_value:match("^%d+$") then invalid("limit must be an integer from 1 through 100") end
+  local limit = limit_value and tonumber(limit_value) or 25
+  if not limit or limit % 1 ~= 0 or limit < 1 or limit > 100 then invalid("limit must be an integer from 1 through 100") end
+  return limit
+end
+
+local function parse_sort_direction(params)
+  local direction = scalar(params, "sortDirection") or "desc"
+  if direction ~= "asc" and direction ~= "desc" then invalid("sortDirection must be 'asc' or 'desc'") end
+  return direction
+end
+
+local function cursor_encode(value)
+  local encoded = json.encode(value)
+  return (encoded:gsub(".", function(char) return string.format("%02x", string.byte(char)) end))
+end
+
+-- Decodes a hex-encoded {v, d, t, u} list cursor. Rejects malformed tokens, other
+-- sort directions and unknown keys; validate_value(value) -> boolean runs the
+-- endpoint-specific check on t and u. Not for endpoints that skip the 8192-character
+-- cap or accept extra keys.
+local function decode_cursor(token, direction, validate_value)
+  if token == nil then return nil end
+  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
+    invalid("cursor is malformed")
+  end
+  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
+  local ok, value = pcall(json.decode, decoded)
+  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
+    or type(value.t) ~= "string" or type(value.u) ~= "string" then
+    invalid("cursor is malformed or belongs to another sortDirection")
+  end
+  for key in pairs(value) do
+    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
+  end
+  if not validate_value(value) then invalid("cursor is malformed") end
+  return value
+end
+
+-- Adds `column IN ($n, ...)` to where, binding items; an empty list matches nothing.
+local function add_in(where, binds, column, items)
+  if #items == 0 then
+    where[#where + 1] = "FALSE"
+    return
+  end
+  local marks = {}
+  for _, item in ipairs(items) do
+    binds[#binds + 1] = item
+    marks[#marks + 1] = "$" .. #binds
+  end
+  where[#where + 1] = column .. " IN (" .. table.concat(marks, ", ") .. ")"
+end
+
+local function collection_scalar(values, key)
+  if key == "hasOrganizationRecord" and type(values[key]) == "boolean" then return tostring(values[key]) end
+  return scalar(values, key)
 end
 
 local function collection_array(key, kind)
@@ -319,40 +363,40 @@ local function collection_array(key, kind)
     local count = 0
     for index in pairs(value) do
       if type(index) ~= "number" or index < 1 or index % 1 ~= 0 then
-        collection_invalid(key .. " must use repeated query values")
+        invalid(key .. " must use repeated query values")
       end
       count = count + 1
     end
-    if count ~= #value then collection_invalid(key .. " must use repeated query values") end
+    if count ~= #value then invalid(key .. " must use repeated query values") end
     for index = 1, count do
-      if type(value[index]) ~= "string" then collection_invalid(key .. " entries must be strings") end
+      if type(value[index]) ~= "string" then invalid(key .. " entries must be strings") end
       supplied[#supplied + 1] = value[index]
     end
   else
-    collection_invalid(key .. " must be a string or repeated string parameter")
+    invalid(key .. " must be a string or repeated string parameter")
   end
-  if #supplied > 100 then collection_invalid(key .. " accepts at most 100 values") end
+  if #supplied > 100 then invalid(key .. " accepts at most 100 values") end
 
   local unique, seen = {}, {}
   for _, item in ipairs(supplied) do
     if kind == "did" and not valid_did(item) then
-      collection_invalid("each authors value must be a valid DID; resolve handles to DIDs first")
+      invalid("each authors value must be a valid DID; resolve handles to DIDs first")
     elseif kind == "collectionUri" then
       local valid, collection = collection_valid_record_uri(item)
       if not valid or collection ~= COLLECTION then
-        collection_invalid("each uris value must be a full org.hypercerts.collection AT-URI with a DID authority")
+        invalid("each uris value must be a full org.hypercerts.collection AT-URI with a DID authority")
       end
     elseif kind == "recordUri" then
       if not collection_valid_record_uri(item) then
-        collection_invalid("each " .. key .. " value must be a full AT-URI with a DID authority")
+        invalid("each " .. key .. " value must be a full AT-URI with a DID authority")
       end
     elseif kind == "tagUri" then
       local valid, collection = collection_valid_record_uri(item)
       if not valid or collection ~= "org.hypercerts.vocab.tag" then
-        collection_invalid("each tagUris value must be a full org.hypercerts.vocab.tag AT-URI with a DID authority")
+        invalid("each tagUris value must be a full org.hypercerts.vocab.tag AT-URI with a DID authority")
       end
     elseif kind == "type" and #item > 64 then
-      collection_invalid("types entries must be at most 64 UTF-8 bytes")
+      invalid("types entries must be at most 64 UTF-8 bytes")
     end
     if not seen[item] then
       seen[item] = true
@@ -362,44 +406,11 @@ local function collection_array(key, kind)
   return unique
 end
 
-local function collection_list_limit()
-  local value = collection_scalar(params, "limit")
-  if value == nil then return 25 end
-  if not value:match("^%d+$") then collection_invalid("limit must be an integer from 1 through 100") end
-  local limit = tonumber(value)
-  if not limit or limit < 1 or limit > 100 then
-    collection_invalid("limit must be an integer from 1 through 100")
-  end
-  return limit
-end
-
 local function collection_list_cursor_decode(token, direction)
-  if token == nil then return nil end
-  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
-    collection_invalid("cursor is malformed")
-  end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
-  local ok, value = pcall(json.decode, decoded)
-  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
-    or type(value.t) ~= "string" or type(value.u) ~= "string" then
-    collection_invalid("cursor is malformed or belongs to another sortDirection")
-  end
-  for key in pairs(value) do
-    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then
-      collection_invalid("cursor is malformed")
-    end
-  end
-  local valid, collection = collection_valid_record_uri(value.u)
-  if not valid_datetime(value.t) or not valid or collection ~= COLLECTION then
-    collection_invalid("cursor is malformed")
-  end
-  return value
-end
-
-local function collection_cursor_encode(value)
-  return (json.encode(value):gsub(".", function(char)
-    return string.format("%02x", string.byte(char))
-  end))
+  return decode_cursor(token, direction, function(value)
+    local valid, collection = collection_valid_record_uri(value.u)
+    return valid_datetime(value.t) and valid and collection == COLLECTION
+  end)
 end
 
 local function collection_bind_values(values, items)
@@ -414,34 +425,15 @@ end
 local function collection_list_filters(filters, search)
   local where, values = { "collection.collection = $1" }, { COLLECTION }
 
-  if filters.authors then
-    if #filters.authors == 0 then
-      where[#where + 1] = "FALSE"
-    else
-      where[#where + 1] = "collection.did IN (" .. table.concat(collection_bind_values(values, filters.authors), ", ") .. ")"
-    end
-  end
+  if filters.authors then add_in(where, values, "collection.did", filters.authors) end
   if filters.hasOrganizationRecord ~= nil then
     local predicate = filters.hasOrganizationRecord and "EXISTS" or "NOT EXISTS"
     where[#where + 1] = predicate .. " (SELECT 1 FROM happyview_records AS organization " ..
       "WHERE organization.collection = 'app.certified.actor.organization' AND organization.rkey = 'self' " ..
       "AND organization.did = collection.did)"
   end
-  if filters.types then
-    if #filters.types == 0 then
-      where[#where + 1] = "FALSE"
-    else
-      where[#where + 1] = "collection.record::jsonb->>'type' IN (" ..
-        table.concat(collection_bind_values(values, filters.types), ", ") .. ")"
-    end
-  end
-  if filters.uris then
-    if #filters.uris == 0 then
-      where[#where + 1] = "FALSE"
-    else
-      where[#where + 1] = "collection.uri IN (" .. table.concat(collection_bind_values(values, filters.uris), ", ") .. ")"
-    end
-  end
+  if filters.types then add_in(where, values, "collection.record::jsonb->>'type'", filters.types) end
+  if filters.uris then add_in(where, values, "collection.uri", filters.uris) end
   if filters.itemUris then
     if #filters.itemUris == 0 then
       where[#where + 1] = "FALSE"
@@ -487,7 +479,7 @@ end
 local function collection_list_sql(where, values, limit, direction)
   values[#values + 1] = limit + 1
   local ordering = direction == "asc" and "ASC" or "DESC"
-  local sort_key = created_at_sort_expression("collection")
+  local sort_key = created_at_sort("collection")
   return "SELECT collection.uri, collection.did, collection.cid, collection.indexed_at::text AS indexed_at, " ..
     "collection.record::text AS record, to_char(sorted.sort_at AT TIME ZONE 'UTC', " ..
     "'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp " ..
@@ -508,7 +500,7 @@ local function collection_list_page(rows, limit, direction)
   local next_cursor
   if more then
     local last = rows[#rows]
-    next_cursor = collection_cursor_encode({ v = 1, d = direction, t = last.sort_timestamp, u = last.uri })
+    next_cursor = cursor_encode({ v = 1, d = direction, t = last.sort_timestamp, u = last.uri })
   end
   return views, next_cursor
 end
@@ -533,7 +525,7 @@ local function collection_list_response(search_enabled)
     cursor = true,
   }
   if search_enabled then allowed.search = true end
-  collection_keys_only(params, allowed)
+  keys_only(params, allowed, "unknown query parameter: ")
 
   local authors = collection_array("authors", "did")
   local has_organization_record = collection_scalar(params, "hasOrganizationRecord")
@@ -543,7 +535,7 @@ local function collection_list_response(search_enabled)
     elseif has_organization_record == "false" then
       has_organization_record = false
     else
-      collection_invalid("hasOrganizationRecord must be true or false")
+      invalid("hasOrganizationRecord must be true or false")
     end
   end
   local types = collection_array("types", "type")
@@ -552,17 +544,14 @@ local function collection_list_response(search_enabled)
   local tag_uris = collection_array("tagUris", "tagUri")
   local search
   if search_enabled then
-    search = collection_scalar(params, "search")
-    if search == nil then collection_invalid("search is required") end
+    search = scalar(params, "search")
+    if search == nil then invalid("search is required") end
     search = search:match("^%s*(.-)%s*$")
     if search == "" then search = nil end
   end
-  local direction = collection_scalar(params, "sortDirection") or "desc"
-  if direction ~= "asc" and direction ~= "desc" then
-    collection_invalid("sortDirection must be 'asc' or 'desc'")
-  end
-  local limit = collection_list_limit()
-  local cursor = collection_list_cursor_decode(collection_scalar(params, "cursor"), direction)
+  local direction = parse_sort_direction(params)
+  local limit = parse_list_limit(params)
+  local cursor = collection_list_cursor_decode(scalar(params, "cursor"), direction)
   local collections, next_cursor = collection_list_query({
     authors = authors,
     hasOrganizationRecord = has_organization_record,

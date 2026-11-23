@@ -1,6 +1,3 @@
-local LIKE = "app.certified.feed.like"
-local REPOST = "app.certified.feed.repost"
-
 local function reaction_count_subjects()
   local value = params.subjects
   if value == nil then invalid("subjects is required") end
@@ -45,29 +42,12 @@ local function reaction_count_subjects()
 end
 
 local function reaction_count_query(subjects)
-  local backend_ok, backend = pcall(db.backend)
-  if not backend_ok or backend ~= "postgres" then
-    error("ReactionCountQueryFailed: reaction counts require PostgreSQL", 0)
-  end
-
-  local values = { LIKE, REPOST }
-  local placeholders = {}
-  for _, subject in ipairs(subjects) do
-    values[#values + 1] = subject
-    placeholders[#placeholders + 1] = "$" .. #values
-  end
-
-  local subject_uri = "record::jsonb->'subject'->>'uri'"
-  local sql = "SELECT " .. subject_uri .. " AS subject_uri, " ..
-    "COUNT(DISTINCT did) FILTER (WHERE collection = $1) AS like_count, " ..
-    "COUNT(DISTINCT did) FILTER (WHERE collection = $2) AS repost_count " ..
-    "FROM happyview_records WHERE collection IN ($1, $2) AND " .. subject_uri ..
-    " IN (" .. table.concat(placeholders, ", ") .. ") GROUP BY " .. subject_uri
-  local ok, rows = pcall(db.raw, sql, values)
-  if not ok or type(rows) ~= "table" then
-    error("ReactionCountQueryFailed: indexed reaction count query failed", 0)
-  end
-  return rows
+  local values = {}
+  local sql = ref_counts.reaction_sql(values, subjects)
+  return ref_counts.run({
+    backend = "ReactionCountQueryFailed: reaction counts require PostgreSQL",
+    query = "ReactionCountQueryFailed: indexed reaction count query failed",
+  }, sql, values)
 end
 
 local function reaction_count_number(value)
