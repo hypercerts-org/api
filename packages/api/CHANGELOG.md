@@ -1,5 +1,15 @@
 # @hypercerts-org/api
 
+## 0.5.0
+
+### Minor Changes
+
+- [#86](https://github.com/hypercerts-org/api/pull/86) [`7c0da77`](https://github.com/hypercerts-org/api/commit/7c0da77775c69c4285a92983c6a15cf66c4bff81) Thanks [@Kzoeps](https://github.com/Kzoeps)! - Query definitions now state what the API already does: `limit` defaults to 25 and `sortDirection` to `desc`, `getLocation` documents its `InvalidRequest` error, and `indexedAt` on location and evaluation results can be null.
+
+  Client type changes (no wire change):
+  - `indexedAt` on `locationView` and `evaluationView` is now `string | null`; handle null if you read it.
+  - On list endpoints with new defaults, `$Params` now describes parsed params, so `limit` and `sortDirection` are required there. `client.call(..., {})` still compiles. If you annotate request objects with `$Params` and omit those keys, use `l.InferInput<typeof $params>` instead.
+
 ## 0.4.1
 
 ### Patch Changes
