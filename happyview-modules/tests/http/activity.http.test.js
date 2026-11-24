@@ -40,6 +40,15 @@ async function assertDomainError(response, code) {
   assert.doesNotMatch(body.message, /SELECT|happyview_records|at:\/\//);
 }
 
+async function assertInvalidRequest(nsid, params) {
+  const response = await fetch(contractUrl(baseUrl, nsid, params));
+  const body = await response.json();
+  assert.equal(response.status, 500, JSON.stringify(body));
+  assert.equal(body.error, "script_error");
+  assert.equal(body.errorType, "runtime");
+  assert.match(body.message, /InvalidRequest/);
+}
+
 test("getActivity preserves its source record and hydrates contributor versions and actors faithfully", async () => {
   const result = await get("org.hypercerts.claim.getActivity", { uri: activityRecord.uri });
   assert.deepEqual(result.activity.record, activityRecord.record);
@@ -75,9 +84,11 @@ test("listActivities filters by contributor DID only when the exact referenced v
     contributors: [contributorDid],
     involvedActors: [contributorDid],
     uris: [activityRecord.uri, staleOnlyActivityRecord.uri],
+    includeTotal: true,
     sortDirection: "asc",
     limit: 100,
   });
+  assert.equal(result.totalCount, 1);
   assert.deepEqual(
     result.activities.map(({ uri }) => uri),
     [activityRecord.uri],
@@ -94,7 +105,9 @@ test("listActivities filters by organization self-record presence independently 
   const organizationAuthor = await get("org.hypercerts.claim.listActivities", {
     authors: [organizationOnlyActivityRecord.did],
     hasOrganizationRecord: true,
+    includeTotal: true,
   });
+  assert.equal(organizationAuthor.totalCount, 1);
   assert.deepEqual(
     organizationAuthor.activities.map(({ uri }) => uri),
     [organizationOnlyActivityRecord.uri],
@@ -112,8 +125,10 @@ test("listActivities filters by organization self-record presence independently 
   const organizationExcluded = await get("org.hypercerts.claim.listActivities", {
     authors: [organizationOnlyActivityRecord.did],
     hasOrganizationRecord: false,
+    includeTotal: true,
   });
   assert.deepEqual(organizationExcluded.activities, []);
+  assert.equal(organizationExcluded.totalCount, 0);
 
   const profilelessAuthor = await get("org.hypercerts.claim.listActivities", {
     authors: [profilelessActivityRecord.did],
@@ -143,6 +158,7 @@ test("searchActivities treats wildcard characters literally and applies URI filt
     [activityRecord.uri],
   );
   assert.deepEqual(result.activities[0].author.profile, recordView(activityAuthorProfile));
+  assert.equal(Object.hasOwn(result, "totalCount"), false);
 });
 
 test("getActivity distinguishes an unindexed URI from a successful empty listing", async () => {
@@ -187,6 +203,35 @@ async function requestActivityEndpoint(nsid, params) {
   }
   return { response, body };
 }
+
+function encodeCursor(value) {
+  return Buffer.from(JSON.stringify(value), "utf8").toString("hex");
+}
+
+test("listActivities makes totals opt-in and rejects invalid or search totals", async () => {
+  const omitted = await requestActivityEndpoint("org.hypercerts.claim.listActivities", {
+    authors: [httpActivityAuthorDid],
+  });
+  assert.equal(omitted.response.status, 200, JSON.stringify(omitted.body));
+  assert.equal(Object.hasOwn(omitted.body, "totalCount"), false);
+
+  const disabled = await requestActivityEndpoint("org.hypercerts.claim.listActivities", {
+    authors: [httpActivityAuthorDid],
+    includeTotal: false,
+  });
+  assert.equal(disabled.response.status, 200, JSON.stringify(disabled.body));
+  assert.equal(Object.hasOwn(disabled.body, "totalCount"), false);
+  assert.deepEqual(disabled.body.activities, omitted.body.activities);
+
+  await assertInvalidRequest("org.hypercerts.claim.listActivities", { includeTotal: "sometimes" });
+  await assertInvalidRequest("org.hypercerts.claim.listActivities", {
+    includeTotal: ["true", "false"],
+  });
+  await assertInvalidRequest("org.hypercerts.claim.searchActivities", {
+    search: "river",
+    includeTotal: true,
+  });
+});
 
 test("getActivity returns the CBOR-addressed fixture and hydrated nullable sidecars over HTTP", async () => {
   const { response, body } = await requestActivityEndpoint("org.hypercerts.claim.getActivity", {
@@ -255,6 +300,7 @@ test("listActivities paginates tied createdAt values by URI without repeats or o
   const first = await requestActivityEndpoint("org.hypercerts.claim.listActivities", {
     authors: [httpActivityAuthorDid],
     hasOrganizationRecord: true,
+    includeTotal: true,
     sortDirection: "asc",
     limit: 2,
   });
@@ -263,11 +309,13 @@ test("listActivities paginates tied createdAt values by URI without repeats or o
     first.body.activities.map(({ uri }) => uri),
     httpActivityUris.slice(0, 2),
   );
+  assert.equal(first.body.totalCount, httpActivityUris.length);
   assert.equal(typeof first.body.cursor, "string");
 
   const second = await requestActivityEndpoint("org.hypercerts.claim.listActivities", {
     authors: [httpActivityAuthorDid],
     hasOrganizationRecord: true,
+    includeTotal: true,
     sortDirection: "asc",
     limit: 2,
     cursor: first.body.cursor,
@@ -277,11 +325,13 @@ test("listActivities paginates tied createdAt values by URI without repeats or o
     second.body.activities.map(({ uri }) => uri),
     httpActivityUris.slice(2, 4),
   );
+  assert.equal(second.body.totalCount, httpActivityUris.length);
   assert.equal(typeof second.body.cursor, "string");
 
   const third = await requestActivityEndpoint("org.hypercerts.claim.listActivities", {
     authors: [httpActivityAuthorDid],
     hasOrganizationRecord: true,
+    includeTotal: true,
     sortDirection: "asc",
     limit: 2,
     cursor: second.body.cursor,
@@ -291,7 +341,26 @@ test("listActivities paginates tied createdAt values by URI without repeats or o
     third.body.activities.map(({ uri }) => uri),
     httpActivityUris.slice(4),
   );
+  assert.equal(third.body.totalCount, httpActivityUris.length);
   assert.equal(Object.hasOwn(third.body, "cursor"), false);
+
+  const pastEnd = await requestActivityEndpoint("org.hypercerts.claim.listActivities", {
+    authors: [httpActivityAuthorDid],
+    hasOrganizationRecord: true,
+    includeTotal: true,
+    sortDirection: "asc",
+    limit: 2,
+    cursor: encodeCursor({
+      v: 1,
+      d: "asc",
+      t: "2025-02-03T00:00:00.000000Z",
+      u: httpActivityUris.at(-1),
+    }),
+  });
+  assert.equal(pastEnd.response.status, 200, JSON.stringify(pastEnd.body));
+  assert.deepEqual(pastEnd.body.activities, []);
+  assert.equal(pastEnd.body.totalCount, httpActivityUris.length);
+  assert.equal(Object.hasOwn(pastEnd.body, "cursor"), false);
 });
 
 test("searchActivities trims case, matches percent and underscore literally, and filters authors over HTTP", async () => {
