@@ -186,12 +186,7 @@ local function funding_receipts_response()
   local direction = parse_sort_direction(params)
   local limit = parse_list_limit(params)
   local cursor = decode_funding_receipt_cursor(scalar(params, "cursor"), direction)
-  local include_total = params.includeTotal
-  if include_total ~= nil and type(include_total) ~= "boolean" then
-    local value = scalar(params, "includeTotal")
-    if value ~= "true" and value ~= "false" then invalid("includeTotal must be true or false") end
-    include_total = value == "true"
-  end
+  local include_total = parse_include_total(params)
   local receipts, next_cursor, total_count = query_funding_receipts(
     authors, uris, from_values, to_values, for_uris, transaction_ids, limit, cursor, direction, include_total)
   local response = { receipts = toarray(receipts), totalCount = total_count }

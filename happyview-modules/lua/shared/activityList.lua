@@ -54,16 +54,6 @@ local function decode_activity_cursor(token, direction)
   end)
 end
 
-local function parse_include_total()
-  local value = params.includeTotal
-  if value == nil then return false end
-  if type(value) == "boolean" then return value end
-  value = scalar(params, "includeTotal")
-  if value == "true" then return true end
-  if value == "false" then return false end
-  invalid("includeTotal must be true or false")
-end
-
 local function bind_values(values, items)
   local placeholders = {}
   for _, item in ipairs(items) do
@@ -207,7 +197,7 @@ local function activity_list_response(search_enabled)
     if search == "" then search = nil end
   end
   local include_total = false
-  if not search_enabled then include_total = parse_include_total() end
+  if not search_enabled then include_total = parse_include_total(params) end
   local direction = parse_sort_direction(params)
   local limit = parse_list_limit(params)
   local cursor = decode_activity_cursor(scalar(params, "cursor"), direction)

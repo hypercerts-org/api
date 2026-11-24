@@ -227,6 +227,16 @@ local function created_at_sort(alias)
     "::timestamptz, " .. created_at .. "::timestamptz) END"
 end
 
+local function parse_include_total(values)
+  local value = values.includeTotal
+  if value == nil then return false end
+  if type(value) == "boolean" then return value end
+  value = scalar(values, "includeTotal")
+  if value == "true" then return true end
+  if value == "false" then return false end
+  invalid("includeTotal must be true or false")
+end
+
 local function valid_funding_record_uri(value)
   local valid, collection = valid_record_uri(value)
   if not valid or not valid_nsid(collection) then return false, collection end
@@ -415,12 +425,7 @@ local function funding_receipts_response()
   local direction = parse_sort_direction(params)
   local limit = parse_list_limit(params)
   local cursor = decode_funding_receipt_cursor(scalar(params, "cursor"), direction)
-  local include_total = params.includeTotal
-  if include_total ~= nil and type(include_total) ~= "boolean" then
-    local value = scalar(params, "includeTotal")
-    if value ~= "true" and value ~= "false" then invalid("includeTotal must be true or false") end
-    include_total = value == "true"
-  end
+  local include_total = parse_include_total(params)
   local receipts, next_cursor, total_count = query_funding_receipts(
     authors, uris, from_values, to_values, for_uris, transaction_ids, limit, cursor, direction, include_total)
   local response = { receipts = toarray(receipts), totalCount = total_count }

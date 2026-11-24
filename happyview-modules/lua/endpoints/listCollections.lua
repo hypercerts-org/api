@@ -347,6 +347,16 @@ local function add_in(where, binds, column, items)
   where[#where + 1] = column .. " IN (" .. table.concat(marks, ", ") .. ")"
 end
 
+local function parse_include_total(values)
+  local value = values.includeTotal
+  if value == nil then return false end
+  if type(value) == "boolean" then return value end
+  value = scalar(values, "includeTotal")
+  if value == "true" then return true end
+  if value == "false" then return false end
+  invalid("includeTotal must be true or false")
+end
+
 local function collection_scalar(values, key)
   if key == "hasOrganizationRecord" and type(values[key]) == "boolean" then return tostring(values[key]) end
   return scalar(values, key)
@@ -411,16 +421,6 @@ local function collection_list_cursor_decode(token, direction)
     local valid, collection = collection_valid_record_uri(value.u)
     return valid_datetime(value.t) and valid and collection == COLLECTION
   end)
-end
-
-local function parse_include_total()
-  local value = params.includeTotal
-  if value == nil then return false end
-  if type(value) == "boolean" then return value end
-  value = scalar(params, "includeTotal")
-  if value == "true" then return true end
-  if value == "false" then return false end
-  invalid("includeTotal must be true or false")
 end
 
 local function collection_bind_values(values, items)
@@ -578,7 +578,7 @@ local function collection_list_response(search_enabled)
     if search == "" then search = nil end
   end
   local include_total = false
-  if not search_enabled then include_total = parse_include_total() end
+  if not search_enabled then include_total = parse_include_total(params) end
   local direction = parse_sort_direction(params)
   local limit = parse_list_limit(params)
   local cursor = collection_list_cursor_decode(scalar(params, "cursor"), direction)
