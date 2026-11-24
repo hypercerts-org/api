@@ -35,7 +35,7 @@ Use `getProfiles`/`getOrganizations` for known DID sets; use `list` or `search` 
 | User task | Query NSID | Practical choice |
 |---|---|---|
 | Load one activity | `org.hypercerts.claim.getActivity` | Exact activity AT-URI in `uri`; hydrated activity view. |
-| Filter/browse activities | `org.hypercerts.claim.listActivities` | Use structured filters such as authors, contributors, involved actors, or exact activity URIs; no text query is required. |
+| Filter/browse activities | `org.hypercerts.claim.listActivities` | Use structured filters such as authors, contributors, involved actors, or exact activity URIs; no text query is required. Set `includeTotal=true` for the exact matching activity count before cursor and limit, including on an empty page. |
 | Search activities by text | `org.hypercerts.claim.searchActivities` | `search` is required; current contract describes a case-insensitive literal substring of title or short description. |
 | Load one contribution | `org.hypercerts.claim.getContribution` | Exact record AT-URI in `uri`. |
 | List contributions | `org.hypercerts.claim.listContributions` | Browse/filter by publisher DID. |
@@ -51,7 +51,7 @@ For activities, distinguish repository-owner `authors` from `contributors`; `inv
 | User task | Query NSID | Practical choice |
 |---|---|---|
 | Load one collection | `org.hypercerts.collection.getCollection` | Exact collection AT-URI in `uri`; hydrates selected related projections. |
-| Find collections by filters | `org.hypercerts.collection.listCollections` | Use filters such as author, collection URI, item URI, or tag URI. Some URI filters intentionally ignore CID; inspect the contract. |
+| Find collections by filters | `org.hypercerts.collection.listCollections` | Use filters such as author, collection URI, item URI, or tag URI. Some URI filters intentionally ignore CID; inspect the contract. Set `includeTotal=true` for the exact matching collection count before cursor and limit, including on an empty page. |
 | Find collections by text | `org.hypercerts.collection.searchCollections` | `search` is required; current contract searches title/short description. Other filters still apply. |
 | Resolve embedded collection items | `org.hypercerts.collection.listCollectionItems` | Pass the collection AT-URI. Resolves each embedded strong reference by exact URI+CID, one level deep; see [the collection recipe](recipes.md#load-exact-collection-item-versions). |
 

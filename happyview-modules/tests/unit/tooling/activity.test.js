@@ -165,6 +165,13 @@ test("activity API manifests and Lexicons declare the implemented endpoint contr
   );
   assert.equal(listSchema.defs.main.parameters.properties.uris.maxLength, 100);
   assert.equal(listSchema.defs.main.parameters.properties.limit.maximum, 100);
+  assert.equal(listSchema.defs.main.parameters.properties.includeTotal.type, "boolean");
+  assert.equal(listSchema.defs.main.parameters.properties.includeTotal.default, false);
+  assert.equal(Object.hasOwn(listSchema.defs.main.parameters.properties, "types"), false);
+  assert.equal(listSchema.defs.output.properties.totalCount.type, "integer");
+  assert.equal(listSchema.defs.output.properties.totalCount.minimum, 0);
+  assert.equal(Object.hasOwn(searchSchema.defs.main.parameters.properties, "includeTotal"), false);
+  assert.equal(Object.hasOwn(searchSchema.defs.output.properties, "totalCount"), false);
   assert.deepEqual(searchSchema.defs.main.parameters.required, ["search"]);
   assert.equal(searchSchema.defs.main.parameters.properties.contributors.maxLength, 100);
   for (const schema of [listSchema, searchSchema]) {

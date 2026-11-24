@@ -21,6 +21,27 @@ test("presentation preserves endpoint contracts and explains unresolved schema r
     source.paths[endpointPath].get.parameters,
     "descriptions, requirements, array serialization, and constraints remain available",
   );
+  for (const id of [
+    "org.hypercerts.claim.listActivities",
+    "org.hypercerts.collection.listCollections",
+  ]) {
+    const operation = presentation.paths[`/xrpc/${id}`].get;
+    const includeTotal = operation.parameters.find(
+      (parameter) => parameter.name === "includeTotal",
+    );
+    const output = presentation.components.schemas[`${id}.output`];
+    assert.deepEqual(includeTotal.schema, { type: "boolean", default: false });
+    assert.equal(includeTotal.required, false);
+    assert.equal(output.properties.totalCount.type, "integer");
+    assert.equal(output.properties.totalCount.minimum, 0);
+    assert.equal(output.required.includes("totalCount"), false);
+  }
+  assert.equal(
+    presentation.paths["/xrpc/org.hypercerts.claim.searchActivities"].get.parameters.some(
+      (parameter) => parameter.name === "includeTotal",
+    ),
+    false,
+  );
   assert.match(presentation.info.description, /Explore public Hypercerts XRPC queries/i);
   assert.doesNotMatch(
     presentation.info.description,

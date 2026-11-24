@@ -54,6 +54,16 @@ local function decode_activity_cursor(token, direction)
   end)
 end
 
+local function parse_include_total()
+  local value = params.includeTotal
+  if value == nil then return false end
+  if type(value) == "boolean" then return value end
+  value = scalar(params, "includeTotal")
+  if value == "true" then return true end
+  if value == "false" then return false end
+  invalid("includeTotal must be true or false")
+end
+
 local function bind_values(values, items)
   local placeholders = {}
   for _, item in ipairs(items) do
@@ -80,7 +90,7 @@ local function activity_contributor_match(values, dids)
     "OR substring(" .. information_identifier .. " from '^at://([^/]+)/') IN (" .. set .. ")))"
 end
 
-local function activity_query(authors, has_organization_record, contributors, involved_actors, uris, search, limit, cursor, direction)
+local function activity_query(authors, has_organization_record, contributors, involved_actors, uris, search, limit, cursor, direction, include_total)
   local where, values = { "activity.collection = $1" }, { ACTIVITY }
   if authors then add_in(where, values, "activity.did", authors) end
   if has_organization_record ~= nil then
@@ -109,6 +119,7 @@ local function activity_query(authors, has_organization_record, contributors, in
     where[#where + 1] = "(strpos(lower(COALESCE(activity.record::jsonb->>'title', '')), lower(" .. pattern .. ")) > 0 " ..
       "OR strpos(lower(COALESCE(activity.record::jsonb->>'shortDescription', '')), lower(" .. pattern .. ")) > 0)"
   end
+  local filter_sql = table.concat(where, " AND ")
   if cursor then
     values[#values + 1] = cursor.t
     local timestamp = "$" .. #values
@@ -121,13 +132,30 @@ local function activity_query(authors, has_organization_record, contributors, in
 
   values[#values + 1] = limit + 1
   local ordering = direction == "asc" and "ASC" or "DESC"
-  local sql = "SELECT activity.uri, activity.did, activity.cid, activity.indexed_at::text AS indexed_at, " ..
+  local page_sql = "SELECT " .. (include_total and "sorted.sort_at AS sort_at, " or "") ..
+    "activity.uri, activity.did, activity.cid, activity.indexed_at::text AS indexed_at, " ..
     "activity.record::text AS record, to_char(sorted.sort_at AT TIME ZONE 'UTC', " ..
     "'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp " ..
     "FROM happyview_records AS activity CROSS JOIN LATERAL (SELECT " .. created_at_sort("activity") .. " AS sort_at) AS sorted " ..
     "WHERE " .. table.concat(where, " AND ") .. " ORDER BY sorted.sort_at " .. ordering ..
     ", activity.uri " .. ordering .. " LIMIT $" .. #values
+  local sql = page_sql
+  if include_total then
+    sql = "WITH total AS (SELECT COUNT(*) AS total_count FROM happyview_records AS activity WHERE " .. filter_sql .. "), " ..
+      "page AS (" .. page_sql .. ") " ..
+      "SELECT page.uri, page.did, page.cid, page.indexed_at, page.record, page.sort_timestamp, total.total_count " ..
+      "FROM total LEFT JOIN page ON TRUE ORDER BY page.sort_at " .. ordering .. ", page.uri " .. ordering
+  end
+
   local rows = query(sql, values)
+  local total_count
+  if include_total then
+    total_count = rows[1] and tonumber(rows[1].total_count)
+    if not total_count or total_count < 0 or total_count > 9007199254740991 or total_count % 1 ~= 0 then
+      error("ActivityQueryFailed: activity count unavailable", 0)
+    end
+    if rows[1].uri == nil then rows = {} end
+  end
   local more = #rows > limit
   if more then rows[#rows] = nil end
 
@@ -140,7 +168,7 @@ local function activity_query(authors, has_organization_record, contributors, in
     local last = rows[#rows]
     next_cursor = cursor_encode({ v = 1, d = direction, t = last.sort_timestamp, u = last.uri })
   end
-  return views, next_cursor
+  return views, next_cursor, total_count
 end
 
 local function activity_list_response(search_enabled)
@@ -154,7 +182,7 @@ local function activity_list_response(search_enabled)
     limit = true,
     cursor = true,
   }
-  if search_enabled then allowed.search = true end
+  if search_enabled then allowed.search = true else allowed.includeTotal = true end
   keys_only(params, allowed, "unknown query parameter: ")
 
   local authors = activity_array("authors", "did")
@@ -178,12 +206,15 @@ local function activity_list_response(search_enabled)
     search = search:match("^%s*(.-)%s*$")
     if search == "" then search = nil end
   end
+  local include_total = false
+  if not search_enabled then include_total = parse_include_total() end
   local direction = parse_sort_direction(params)
   local limit = parse_list_limit(params)
   local cursor = decode_activity_cursor(scalar(params, "cursor"), direction)
-  local activities, next_cursor = activity_query(
-    authors, has_organization_record, contributors, involved_actors, uris, search, limit, cursor, direction)
+  local activities, next_cursor, total_count = activity_query(
+    authors, has_organization_record, contributors, involved_actors, uris, search, limit, cursor, direction, include_total)
   local response = { activities = toarray(activities) }
   if next_cursor then response.cursor = next_cursor end
+  if include_total then response.totalCount = total_count end
   return response
 end

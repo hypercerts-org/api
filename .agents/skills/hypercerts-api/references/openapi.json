@@ -2859,6 +2859,16 @@
             "explode": true
           },
           {
+            "name": "includeTotal",
+            "in": "query",
+            "required": false,
+            "description": "When true, include the exact number of matching activity records across all filters, before cursor and limit.",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
             "name": "sortDirection",
             "in": "query",
             "required": false,
@@ -3526,6 +3536,16 @@
             },
             "style": "form",
             "explode": true
+          },
+          {
+            "name": "includeTotal",
+            "in": "query",
+            "required": false,
+            "description": "When true, include the exact number of matching collection records across all filters, before cursor and limit.",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           },
           {
             "name": "sortDirection",
@@ -7619,6 +7639,11 @@
           "cursor": {
             "type": "string",
             "description": "Next-page cursor; absent when pagination is complete."
+          },
+          "totalCount": {
+            "type": "integer",
+            "description": "Exact number of indexed activity records matching all filters before cursor and limit; present only when includeTotal is true.",
+            "minimum": 0
           }
         }
       },
@@ -7814,6 +7839,11 @@
           "cursor": {
             "type": "string",
             "description": "Cursor for the next page; omitted when there is no next page."
+          },
+          "totalCount": {
+            "type": "integer",
+            "description": "Exact number of indexed collection records matching all filters before cursor and limit; present only when includeTotal is true.",
+            "minimum": 0
           }
         }
       },

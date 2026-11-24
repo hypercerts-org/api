@@ -126,6 +126,57 @@ test("every cursor-taking manifest query has a cursor fixture", assertEndpointCo
 
 test("fixtures reach real handler paths for every endpoint", assertFixturesReachHandlerPaths);
 
+test("activity and collection totals are opt-in and preserve page-only behavior when disabled", () => {
+  const cases = (endpoint, name) =>
+    records.find((record) => record.endpoint === endpoint && record.case === name);
+  for (const [endpoint, pageKey, queryError] of [
+    ["org.hypercerts.claim.listActivities", "activities", "ActivityQueryFailed"],
+    ["org.hypercerts.collection.listCollections", "collections", "CollectionQueryFailed"],
+  ]) {
+    const ordinary = cases(endpoint, "default");
+    const disabled = cases(endpoint, "filter:includeTotal=boolean:false");
+    assert.deepEqual(
+      disabled.calls,
+      ordinary.calls,
+      `${endpoint}: false uses the original page query`,
+    );
+    assert.equal(Object.hasOwn(disabled.outcome.result, "totalCount"), false);
+    assert.doesNotMatch(disabled.calls[0].sql, /\bCOUNT\s*\(/i);
+
+    const empty = cases(endpoint, "empty:includeTotal");
+    assert.deepEqual(empty.outcome.result[pageKey], []);
+    assert.equal(empty.outcome.result.totalCount, 0);
+
+    const pastEnd = cases(endpoint, "past-end:includeTotal");
+    assert.deepEqual(pastEnd.outcome.result[pageKey], []);
+    assert.equal(pastEnd.outcome.result.totalCount, 12);
+    assert.equal(Object.hasOwn(pastEnd.outcome.result, "cursor"), false);
+
+    const paged = cases(endpoint, "paged:includeTotal");
+    assert.equal(paged.outcome.result[pageKey].length, 2);
+    assert.equal(paged.outcome.result.totalCount, 12);
+    assert.equal(typeof paged.outcome.result.cursor, "string");
+
+    for (const label of ["negative", "fractional", "unsafe", "invalid"]) {
+      const invalidCount = cases(endpoint, `error:includeTotal-count-${label}`);
+      assert.match(invalidCount.outcome.error, new RegExp(`^${queryError}:`));
+    }
+    for (const label of ["invalid", "repeated"]) {
+      const invalidInput = cases(endpoint, `error:includeTotal-${label}`);
+      assert.match(invalidInput.outcome.error, /^InvalidRequest:/);
+      assert.equal(Object.keys(invalidInput.calls).length, 0);
+    }
+  }
+  for (const endpoint of [
+    "org.hypercerts.claim.searchActivities",
+    "org.hypercerts.collection.searchCollections",
+  ]) {
+    const search = cases(endpoint, "error:includeTotal-on-search");
+    assert.match(search.outcome.error, /^InvalidRequest:/);
+    assert.equal(Object.keys(search.calls).length, 0);
+  }
+});
+
 test("list endpoint SQL, binds and outcomes match the golden snapshot", () => {
   const expected = readFileSync(goldenPath, "utf8");
   if (expected === actual) return;
