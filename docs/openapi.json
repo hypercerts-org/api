@@ -4989,6 +4989,15 @@
             "explode": true
           },
           {
+            "name": "includeTotal",
+            "in": "query",
+            "required": false,
+            "description": "When true, include the exact number of indexed receipts matching all filters before cursor and limit. Omit or set to false to skip counting.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
             "name": "sortDirection",
             "in": "query",
             "required": false,
@@ -8637,6 +8646,11 @@
           "cursor": {
             "type": "string",
             "description": "Opaque cursor for the next page; omitted when there is no next page."
+          },
+          "totalCount": {
+            "type": "integer",
+            "description": "Number of indexed receipts matching all filters before cursor and limit. Present only when includeTotal is true, including on empty pages.",
+            "minimum": 0
           }
         }
       },
