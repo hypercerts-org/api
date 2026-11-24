@@ -48,6 +48,11 @@
               "format": "at-uri"
             }
           },
+          "includeTotal": {
+            "type": "boolean",
+            "default": false,
+            "description": "When true, include the exact number of matching activity records across all filters, before cursor and limit."
+          },
           "sortDirection": {
             "type": "string",
             "default": "desc",
@@ -104,6 +109,11 @@
         "cursor": {
           "type": "string",
           "description": "Next-page cursor; absent when pagination is complete."
+        },
+        "totalCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Exact number of indexed activity records matching all filters before cursor and limit; present only when includeTotal is true."
         }
       }
     }

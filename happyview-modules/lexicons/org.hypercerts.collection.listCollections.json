@@ -14,6 +14,7 @@
           "uris": { "type": "array", "maxLength": 100, "description": "Match by collection record AT-URI; this does not select a CID version.", "items": { "type": "string", "format": "at-uri" } },
           "itemUris": { "type": "array", "maxLength": 100, "description": "Match when an embedded item's itemIdentifier.uri equals a supplied AT-URI; matching ignores CID.", "items": { "type": "string", "format": "at-uri" } },
           "tagUris": { "type": "array", "maxLength": 100, "description": "Require every supplied vocabulary-tag AT-URI to occur in record.tags; matching ignores CID and tag records.", "items": { "type": "string", "format": "at-uri" } },
+          "includeTotal": { "type": "boolean", "default": false, "description": "When true, include the exact number of matching collection records across all filters, before cursor and limit." },
           "sortDirection": { "type": "string", "default": "desc", "enum": ["asc", "desc"], "description": "Direction for (createdAt, uri) ordering; defaults to desc." },
           "limit": { "type": "integer", "default": 25, "minimum": 1, "maximum": 100, "description": "Maximum collections per page; defaults to 25." },
           "cursor": { "type": "string", "description": "Opaque cursor from a previous response; use the same sortDirection." }
@@ -27,7 +28,8 @@
       "required": ["collections"],
       "properties": {
         "collections": { "type": "array", "items": { "type": "ref", "ref": "org.hypercerts.collection.getCollection#collectionView" } },
-        "cursor": { "type": "string", "description": "Cursor for the next page; omitted when there is no next page." }
+        "cursor": { "type": "string", "description": "Cursor for the next page; omitted when there is no next page." },
+        "totalCount": { "type": "integer", "minimum": 0, "description": "Exact number of indexed collection records matching all filters before cursor and limit; present only when includeTotal is true." }
       }
     }
   }

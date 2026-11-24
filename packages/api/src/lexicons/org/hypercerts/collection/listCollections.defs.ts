@@ -11,7 +11,7 @@ type $nsid = typeof $nsid;
 
 export { $nsid };
 
-export const $params = /*#__PURE__*/ l.params({"authors":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.array(/*#__PURE__*/ l.string({"format":"did"}), {"maxLength":100})),"hasOrganizationRecord":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.boolean()),"types":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.array(/*#__PURE__*/ l.string({"maxLength":64}), {"maxLength":100})),"uris":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.array(/*#__PURE__*/ l.string({"format":"at-uri"}), {"maxLength":100})),"itemUris":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.array(/*#__PURE__*/ l.string({"format":"at-uri"}), {"maxLength":100})),"tagUris":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.array(/*#__PURE__*/ l.string({"format":"at-uri"}), {"maxLength":100})),"sortDirection":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.withDefault(/*#__PURE__*/ l.enum(["asc","desc"]), "desc")),"limit":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.withDefault(/*#__PURE__*/ l.integer({"minimum":1,"maximum":100}), 25)),"cursor":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string())});
+export const $params = /*#__PURE__*/ l.params({"authors":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.array(/*#__PURE__*/ l.string({"format":"did"}), {"maxLength":100})),"hasOrganizationRecord":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.boolean()),"types":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.array(/*#__PURE__*/ l.string({"maxLength":64}), {"maxLength":100})),"uris":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.array(/*#__PURE__*/ l.string({"format":"at-uri"}), {"maxLength":100})),"itemUris":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.array(/*#__PURE__*/ l.string({"format":"at-uri"}), {"maxLength":100})),"tagUris":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.array(/*#__PURE__*/ l.string({"format":"at-uri"}), {"maxLength":100})),"includeTotal":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.withDefault(/*#__PURE__*/ l.boolean(), false)),"sortDirection":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.withDefault(/*#__PURE__*/ l.enum(["asc","desc"]), "desc")),"limit":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.withDefault(/*#__PURE__*/ l.integer({"minimum":1,"maximum":100}), 25)),"cursor":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string())});
 
 export type $Params = l.InferOutput<typeof $params>;
 
@@ -36,10 +36,15 @@ type Output = { $type?: "org.hypercerts.collection.listCollections#output";"coll
   /**
    * Cursor for the next page; omitted when there is no next page.
    */
-  "cursor"?:string };
+  "cursor"?:string;
+
+  /**
+   * Exact number of indexed collection records matching all filters before cursor and limit; present only when includeTotal is true.
+   */
+  "totalCount"?:number };
 
 export type { Output };
 
-const output = /*#__PURE__*/ l.typedObject<Output>($nsid, "output", /*#__PURE__*/ l.object({"collections":/*#__PURE__*/ l.array(/*#__PURE__*/ l.ref<CollectionGetCollection.CollectionView>((() => CollectionGetCollection.collectionView) as any), ),"cursor":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string())}));
+const output = /*#__PURE__*/ l.typedObject<Output>($nsid, "output", /*#__PURE__*/ l.object({"collections":/*#__PURE__*/ l.array(/*#__PURE__*/ l.ref<CollectionGetCollection.CollectionView>((() => CollectionGetCollection.collectionView) as any), ),"cursor":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string()),"totalCount":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.integer({"minimum":0}))}));
 
 export { output };
