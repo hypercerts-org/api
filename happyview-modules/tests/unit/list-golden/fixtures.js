@@ -702,10 +702,47 @@ export function casesFor(endpoint) {
     }
   }
   if (endpoint.properties.includeTotal) {
+    const direction = directions[0] ?? "desc";
+    cases.push(
+      {
+        name: "paged:includeTotal",
+        params: { ...base, limit: PAGE_ROWS - 1, includeTotal: true },
+        rowsByCall: pagedRowsByCall(endpoint, direction),
+      },
+      {
+        name: "empty:includeTotal",
+        params: { ...base, includeTotal: true },
+        rowsByCall: [[{ total_count: "0" }]],
+      },
+      {
+        name: "past-end:includeTotal",
+        params: {
+          ...base,
+          sortDirection: direction,
+          includeTotal: true,
+          cursor: hexCursor(cursorFor(endpoint, direction, "2025")),
+        },
+        rowsByCall: [[{ total_count: String(TOTAL_COUNT) }]],
+      },
+      ...[
+        ["negative", "-1"],
+        ["fractional", "1.5"],
+        ["unsafe", "9007199254740992"],
+        ["invalid", "not-a-number"],
+      ].map(([label, total_count]) => ({
+        name: `error:includeTotal-count-${label}`,
+        params: { ...base, includeTotal: true },
+        rowsByCall: [[{ total_count }]],
+      })),
+    );
+  }
+  if (
+    endpoint.id === "org.hypercerts.claim.searchActivities" ||
+    endpoint.id === "org.hypercerts.collection.searchCollections"
+  ) {
     cases.push({
-      name: "paged:includeTotal",
-      params: { ...base, limit: PAGE_ROWS - 1, includeTotal: true },
-      rowsByCall: pagedRowsByCall(endpoint, directions[0]),
+      name: "error:includeTotal-on-search",
+      params: { ...base, includeTotal: true },
     });
   }
   if (endpoint.id === "org.hypercerts.collection.listCollectionItems") {
@@ -715,6 +752,12 @@ export function casesFor(endpoint) {
       params: base,
       rowsByCall: [[collectionRow(collectionItems(30))]],
     });
+  }
+  if (endpoint.properties.includeTotal) {
+    cases.push(
+      { name: "error:includeTotal-invalid", params: { ...base, includeTotal: "sometimes" } },
+      { name: "error:includeTotal-repeated", params: { ...base, includeTotal: ["true", "false"] } },
+    );
   }
   cases.push(...filterCases(endpoint, base), ...errorCases(endpoint, base, directions));
   // Unpaged cases answer every query with the same minimal rows (if any is

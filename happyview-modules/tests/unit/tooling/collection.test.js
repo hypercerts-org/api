@@ -777,11 +777,19 @@ test("collection Lexicons and module manifest close all four endpoint contracts"
     "types",
     "uris",
   ].sort();
-  assert.deepEqual(Object.keys(list.defs.main.parameters.properties).sort(), expectedFilters);
+  assert.deepEqual(
+    Object.keys(list.defs.main.parameters.properties).sort(),
+    [...expectedFilters, "includeTotal"].sort(),
+  );
   assert.deepEqual(
     Object.keys(search.defs.main.parameters.properties).sort(),
     [...expectedFilters, "search"].sort(),
   );
+  assert.equal(list.defs.main.parameters.properties.includeTotal.type, "boolean");
+  assert.equal(list.defs.main.parameters.properties.includeTotal.default, false);
+  assert.equal(list.defs.output.properties.totalCount.type, "integer");
+  assert.equal(list.defs.output.properties.totalCount.minimum, 0);
+  assert.equal(Object.hasOwn(search.defs.output.properties, "totalCount"), false);
   assert.deepEqual(search.defs.main.parameters.required, ["search"]);
   for (const query of [list, search]) {
     const properties = query.defs.main.parameters.properties;

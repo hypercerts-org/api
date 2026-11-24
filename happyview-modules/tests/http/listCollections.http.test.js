@@ -17,8 +17,8 @@ const tagUris = {
   restoration: `at://${authorA}/org.hypercerts.vocab.tag/outcome-class.restoration`,
 };
 
-async function listCollections(params = {}) {
-  const url = contractUrl(requireContractTarget(), endpoint, params);
+async function requestEndpoint(nsid, params = {}) {
+  const url = contractUrl(requireContractTarget(), nsid, params);
   const response = await fetch(url, {
     headers: { accept: "application/json" },
     signal: AbortSignal.timeout(10_000),
@@ -31,6 +31,18 @@ async function listCollections(params = {}) {
     body = text;
   }
   return { response, body };
+}
+
+function listCollections(params = {}) {
+  return requestEndpoint(endpoint, params);
+}
+
+async function assertInvalidRequest(nsid, params) {
+  const { response, body } = await requestEndpoint(nsid, params);
+  assert.equal(response.status, 500, JSON.stringify(body));
+  assert.equal(body.error, "script_error");
+  assert.equal(body.errorType, "runtime");
+  assert.match(body.message, /InvalidRequest/);
 }
 
 test("listCollections applies author, organization, item, and conjunctive tag filters to indexed rows", async () => {
@@ -66,19 +78,27 @@ test("listCollections applies author, organization, item, and conjunctive tag fi
   );
 
   const requiringBothTags = await listCollections({
+    authors: [authorA],
+    hasOrganizationRecord: false,
+    types: ["project"],
+    uris: [collectionUris.main, collectionUris.overview],
+    itemUris: [activityUri],
     tagUris: [tagUris.mangrove, tagUris.restoration],
+    includeTotal: true,
   });
   assert.equal(requiringBothTags.response.status, 200, JSON.stringify(requiringBothTags.body));
   assert.deepEqual(
     requiringBothTags.body.collections.map(({ uri }) => uri),
     [collectionUris.main],
   );
+  assert.equal(requiringBothTags.body.totalCount, 1);
 });
 
 test("listCollections paginates tied createdAt values by URI without duplicates or omissions", async () => {
   const first = await listCollections({
     authors: [authorA],
     types: ["project"],
+    includeTotal: true,
     sortDirection: "asc",
     limit: 2,
   });
@@ -87,11 +107,13 @@ test("listCollections paginates tied createdAt values by URI without duplicates 
     first.body.collections.map(({ uri }) => uri),
     [collectionUris.main, collectionUris.overview],
   );
+  assert.equal(first.body.totalCount, 3);
   assert.equal(typeof first.body.cursor, "string");
 
   const second = await listCollections({
     authors: [authorA],
     types: ["project"],
+    includeTotal: true,
     sortDirection: "asc",
     limit: 2,
     cursor: first.body.cursor,
@@ -101,6 +123,7 @@ test("listCollections paginates tied createdAt values by URI without duplicates 
     second.body.collections.map(({ uri }) => uri),
     [collectionUris.watershed],
   );
+  assert.equal(second.body.totalCount, 3);
   assert.equal(Object.hasOwn(second.body, "cursor"), false);
 });
 
@@ -118,6 +141,60 @@ test("listCollections applies type and exact-URI filters without an author filte
     byExactUri.body.collections.map(({ uri }) => uri),
     [collectionUris.main],
   );
+});
+
+test("listCollections totals stay opt-in and remain available on empty cursor pages", async () => {
+  const omitted = await listCollections({ authors: [authorA], types: ["project"] });
+  assert.equal(omitted.response.status, 200, JSON.stringify(omitted.body));
+  assert.equal(Object.hasOwn(omitted.body, "totalCount"), false);
+
+  const disabled = await listCollections({
+    authors: [authorA],
+    types: ["project"],
+    includeTotal: false,
+  });
+  assert.equal(disabled.response.status, 200, JSON.stringify(disabled.body));
+  assert.equal(Object.hasOwn(disabled.body, "totalCount"), false);
+  assert.deepEqual(disabled.body.collections, omitted.body.collections);
+
+  const noMatches = await listCollections({
+    authors: [authorA],
+    types: ["unknown"],
+    includeTotal: true,
+  });
+  assert.equal(noMatches.response.status, 200, JSON.stringify(noMatches.body));
+  assert.deepEqual(noMatches.body.collections, []);
+  assert.equal(noMatches.body.totalCount, 0);
+
+  const pastEnd = await listCollections({
+    authors: [authorA],
+    types: ["project"],
+    sortDirection: "asc",
+    limit: 2,
+    includeTotal: true,
+    cursor: Buffer.from(
+      JSON.stringify({
+        v: 1,
+        d: "asc",
+        t: "2025-03-01T00:00:00.000000Z",
+        u: collectionUris.watershed,
+      }),
+      "utf8",
+    ).toString("hex"),
+  });
+  assert.equal(pastEnd.response.status, 200, JSON.stringify(pastEnd.body));
+  assert.deepEqual(pastEnd.body.collections, []);
+  assert.equal(pastEnd.body.totalCount, 3);
+  assert.equal(Object.hasOwn(pastEnd.body, "cursor"), false);
+});
+
+test("listCollections rejects malformed, repeated, and search total parameters", async () => {
+  await assertInvalidRequest(endpoint, { includeTotal: "sometimes" });
+  await assertInvalidRequest(endpoint, { includeTotal: ["true", "false"] });
+  await assertInvalidRequest("org.hypercerts.collection.searchCollections", {
+    search: "mangrove",
+    includeTotal: true,
+  });
 });
 
 test("listCollections exposes InvalidRequest through the pinned HappyView runtime error response", async () => {

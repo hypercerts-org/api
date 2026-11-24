@@ -413,6 +413,16 @@ local function collection_list_cursor_decode(token, direction)
   end)
 end
 
+local function parse_include_total()
+  local value = params.includeTotal
+  if value == nil then return false end
+  if type(value) == "boolean" then return value end
+  value = scalar(params, "includeTotal")
+  if value == "true" then return true end
+  if value == "false" then return false end
+  invalid("includeTotal must be true or false")
+end
+
 local function collection_bind_values(values, items)
   local placeholders = {}
   for _, item in ipairs(items) do
@@ -476,11 +486,12 @@ local function collection_list_apply_cursor(where, values, cursor, direction)
   end
 end
 
-local function collection_list_sql(where, values, limit, direction)
+local function collection_list_sql(where, values, limit, direction, include_sort_at)
   values[#values + 1] = limit + 1
   local ordering = direction == "asc" and "ASC" or "DESC"
   local sort_key = created_at_sort("collection")
-  return "SELECT collection.uri, collection.did, collection.cid, collection.indexed_at::text AS indexed_at, " ..
+  return "SELECT " .. (include_sort_at and "sorted.sort_at AS sort_at, " or "") ..
+    "collection.uri, collection.did, collection.cid, collection.indexed_at::text AS indexed_at, " ..
     "collection.record::text AS record, to_char(sorted.sort_at AT TIME ZONE 'UTC', " ..
     "'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') AS sort_timestamp " ..
     "FROM happyview_records AS collection CROSS JOIN LATERAL (SELECT " .. sort_key .. " AS sort_at) AS sorted " ..
@@ -488,7 +499,15 @@ local function collection_list_sql(where, values, limit, direction)
     ", collection.uri " .. ordering .. " LIMIT $" .. #values
 end
 
-local function collection_list_page(rows, limit, direction)
+local function collection_list_page(rows, limit, direction, include_total)
+  local total_count
+  if include_total then
+    total_count = rows[1] and tonumber(rows[1].total_count)
+    if not total_count or total_count < 0 or total_count > 9007199254740991 or total_count % 1 ~= 0 then
+      error("CollectionQueryFailed: collection count unavailable", 0)
+    end
+    if rows[1].uri == nil then rows = {} end
+  end
   local more = #rows > limit
   if more then rows[#rows] = nil end
 
@@ -502,14 +521,23 @@ local function collection_list_page(rows, limit, direction)
     local last = rows[#rows]
     next_cursor = cursor_encode({ v = 1, d = direction, t = last.sort_timestamp, u = last.uri })
   end
-  return views, next_cursor
+  return views, next_cursor, total_count
 end
 
-local function collection_list_query(filters, search, limit, cursor, direction)
+local function collection_list_query(filters, search, limit, cursor, direction, include_total)
   local where, values = collection_list_filters(filters, search)
+  local filter_sql = table.concat(where, " AND ")
   collection_list_apply_cursor(where, values, cursor, direction)
-  local sql = collection_list_sql(where, values, limit, direction)
-  return collection_list_page(collection_query(sql, values), limit, direction)
+  local page_sql = collection_list_sql(where, values, limit, direction, include_total)
+  local sql = page_sql
+  if include_total then
+    local ordering = direction == "asc" and "ASC" or "DESC"
+    sql = "WITH total AS (SELECT COUNT(*) AS total_count FROM happyview_records AS collection WHERE " .. filter_sql .. "), " ..
+      "page AS (" .. page_sql .. ") " ..
+      "SELECT page.uri, page.did, page.cid, page.indexed_at, page.record, page.sort_timestamp, total.total_count " ..
+      "FROM total LEFT JOIN page ON TRUE ORDER BY page.sort_at " .. ordering .. ", page.uri " .. ordering
+  end
+  return collection_list_page(collection_query(sql, values), limit, direction, include_total)
 end
 
 local function collection_list_response(search_enabled)
@@ -524,7 +552,7 @@ local function collection_list_response(search_enabled)
     limit = true,
     cursor = true,
   }
-  if search_enabled then allowed.search = true end
+  if search_enabled then allowed.search = true else allowed.includeTotal = true end
   keys_only(params, allowed, "unknown query parameter: ")
 
   local authors = collection_array("authors", "did")
@@ -549,19 +577,22 @@ local function collection_list_response(search_enabled)
     search = search:match("^%s*(.-)%s*$")
     if search == "" then search = nil end
   end
+  local include_total = false
+  if not search_enabled then include_total = parse_include_total() end
   local direction = parse_sort_direction(params)
   local limit = parse_list_limit(params)
   local cursor = collection_list_cursor_decode(scalar(params, "cursor"), direction)
-  local collections, next_cursor = collection_list_query({
+  local collections, next_cursor, total_count = collection_list_query({
     authors = authors,
     hasOrganizationRecord = has_organization_record,
     types = types,
     uris = uris,
     itemUris = item_uris,
     tagUris = tag_uris,
-  }, search, limit, cursor, direction)
+  }, search, limit, cursor, direction, include_total)
   local response = { collections = toarray(collections) }
   if next_cursor then response.cursor = next_cursor end
+  if include_total then response.totalCount = total_count end
   return response
 end
 

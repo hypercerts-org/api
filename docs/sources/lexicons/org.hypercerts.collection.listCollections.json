@@ -57,6 +57,11 @@
               "format": "at-uri"
             }
           },
+          "includeTotal": {
+            "type": "boolean",
+            "default": false,
+            "description": "When true, include the exact number of matching collection records across all filters, before cursor and limit."
+          },
           "sortDirection": {
             "type": "string",
             "default": "desc",
@@ -109,6 +114,11 @@
         "cursor": {
           "type": "string",
           "description": "Cursor for the next page; omitted when there is no next page."
+        },
+        "totalCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Exact number of indexed collection records matching all filters before cursor and limit; present only when includeTotal is true."
         }
       }
     }
