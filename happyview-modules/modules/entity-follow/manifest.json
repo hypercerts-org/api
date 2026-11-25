@@ -78,6 +78,7 @@
         "../../lua/shared/batchRequestTarget.lua",
         "../../lua/shared/followBatch.lua",
         "../../lua/shared/nsidValidation.lua",
+        "../../lua/shared/didPercentEscapes.lua",
         "../../lua/shared/subjectRecordUri.lua"
       ],
       "config": {

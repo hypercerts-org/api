@@ -84,6 +84,7 @@
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/nsidValidation.lua",
+        "../../lua/shared/didPercentEscapes.lua",
         "../../lua/shared/subjectRecordUri.lua",
         "../../lua/shared/batchRequestTarget.lua",
         "../../lua/shared/reactionCounts.lua",

@@ -6,6 +6,16 @@ This package owns the shared API installer and build tooling, pinned upstream Le
 
 Use the [`docs/` endpoint explorer](../docs/) and generated [OpenAPI reference](../docs/openapi.json) for endpoint names and contracts. The [coverage report](../docs/coverage.json) lists manifest-registered operations; inclusion does not imply runtime or deployment validation. See [docs/README.md](../docs/README.md) to run the explorer locally and refresh its committed reference.
 
+## Actor lookups
+
+`app.certified.actor.getActor` takes one DID in `actor`. `app.certified.actor.getActors` takes 1–100 repeated, unbracketed `actors` values and preserves input order and duplicates. Both return a view even if no indexed records exist for the DID, with nullable `profile`, `organization`, and `location`. Use `getProfile` if you need a profile lookup by handle.
+
+Only `getActor` and `getActors` enrich those views with a handle. After reading the index, they send DIDs to the trusted HTTPS origin in `HYPERCERTS_HANDLE_RESOLVER_URL` using Slingshot's `blue.microcosm.identity.resolveMiniDoc` query. If the setting is missing or unsupported, the lookup fails, or the response does not contain a valid handle for the same DID, `handle` is omitted. This does not change `getProfile`'s resolver call or any legacy response.
+
+The batch attempts at most one lookup per DID for the first 50 distinct DIDs in request order. Later DIDs still get their indexed views. Lookups are serial: the cap limits attempts, not elapsed time. Slow responses can add up, and Lua does not impose a lookup or request-wide timeout.
+
+The primary location matches the strong reference's AT-URI, not its pinned CID. It can return a different version than the one named by the CID, or null when no primary location is indexed. Images, blobs, and additional location references stay as stored. Database errors are not empty projections. Existing organization and embedded author responses are unchanged.
+
 ## Graph follow capability
 
 `modules/actor-follow/manifest.json` provides `app.certified.graph.getFollows` for checking up to 100 subject DIDs against one actor. `modules/entity-follow/manifest.json` provides `app.certified.graph.getEntityFollows` for checking up to 100 entity AT-URIs against one actor. Supply targets as repeated query parameters; both queries preserve every input position and duplicate, return the original target beside its raw nullable representative, and reject the whole request when any target is invalid. The encoded GET request-target is bounded to 16,384 bytes. A null follow means no indexed relationship; database failures remain errors.

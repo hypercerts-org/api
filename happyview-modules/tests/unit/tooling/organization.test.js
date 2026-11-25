@@ -15,6 +15,16 @@ const secondActor = "did:plc:bbbbbbbbbbbbbbbbbbbbbbbb";
 const thirdActor = "did:plc:cccccccccccccccccccccccc";
 const fourthActor = "did:plc:dddddddddddddddddddddddd";
 const indexedAt = "2025-01-02T03:04:05.000Z";
+const resolverUrl = "https://resolver.example";
+const miniDocUrl = (did) =>
+  `${resolverUrl}/xrpc/blue.microcosm.identity.resolveMiniDoc?identifier=${encodeURIComponent(did)}`;
+
+function miniDoc(did, handle) {
+  return {
+    status: 200,
+    json: { did, handle, pds: "https://pds.example", signing_key: "zFixtureKey" },
+  };
+}
 
 function organizationRow(did, id, record, sortTimestamp = "2025-01-01T00:00:00.000000Z") {
   return {
@@ -78,8 +88,11 @@ function runLua({
   queryResults = [],
   backend = "postgres",
   queryFailureAt = 0,
+  resolverOrigin,
+  httpReplies = [],
   expectError,
   expectedCalls = 0,
+  expectedHttpCalls = 0,
   assertions,
 }) {
   const endpointPath = `lua/endpoints/${endpoint}.lua`;
@@ -95,11 +108,30 @@ function runLua({
       Object.fromEntries(Object.entries(row).filter(([key]) => key !== "record_json")),
     ),
   );
+  const httpJson = Object.fromEntries(
+    httpReplies
+      .filter(({ json }) => json !== undefined)
+      .map(({ json }) => [JSON.stringify(json), json]),
+  );
+  const responses = httpReplies.map(({ status, json, body, throws }) => ({
+    status,
+    body: json === undefined ? body : JSON.stringify(json),
+    throws,
+  }));
   const source = `
 local RECORDS = ${lua(records)}
 local RESULTS = ${lua(rows)}
+local HTTP_JSON = ${lua(httpJson)}
+local HTTP_RESPONSES = ${lua(responses)}
 local NULL = {}
-local calls = {}
+local calls, httpCalls = {}, {}
+env = ${lua({ HYPERCERTS_HANDLE_RESOLVER_URL: resolverOrigin })}
+http = { get = function(url)
+  httpCalls[#httpCalls + 1] = url
+  local response = HTTP_RESPONSES[#httpCalls]
+  if not response or response.throws then error('fixture transport failure') end
+  return response
+end }
 local function decode_cursor(value)
   local version = tonumber(value:match('"v":(%d+)'))
   local direction = value:match('"d":"([^"]*)"')
@@ -112,6 +144,7 @@ json = {
   decode = function(value)
     if value == 'null' then return NULL end
     if RECORDS[value] then return RECORDS[value] end
+    if HTTP_JSON[value] then return HTTP_JSON[value] end
     if value:sub(1, 1) == '{' then return decode_cursor(value) end
     local decoded = value:gsub('..', function(pair) return string.char(tonumber(pair, 16)) end)
     return decode_cursor(decoded)
@@ -134,9 +167,10 @@ dofile('${endpointPath}')
 local ok, result = pcall(handle)
 ${
   expectError
-    ? `assert(not ok, 'expected handler to reject the request')\nassert(tostring(result):find(${JSON.stringify(expectError)}, 1, true), tostring(result))\nassert(#calls == ${expectedCalls}, 'unexpected organization query count')`
+    ? `assert(not ok, 'expected handler to reject the request')\nassert(tostring(result):find(${JSON.stringify(expectError)}, 1, true), tostring(result))\nassert(#calls == ${expectedCalls}, 'unexpected database query count')`
     : `assert(ok, tostring(result))\n${assertions}`
 }
+assert(#httpCalls == ${expectedHttpCalls}, 'unexpected resolver request count: ' .. #httpCalls)
 `;
   const result = spawnSync("lua5.4", ["-e", source], { cwd: root, encoding: "utf8" });
   assert.equal(result.status, 0, `${result.stderr}${result.stdout}`);
@@ -193,14 +227,6 @@ test("organization Lexicons declare batch lookup results and separate list outpu
   const getParams = getOrganization.defs.main.parameters;
   assert.deepEqual(getParams.required, ["actor"]);
   assert.equal(getParams.properties.actor.format, "did");
-  const actorView = getOrganization.defs.organizationActorView;
-  assert.deepEqual(actorView.required, ["did", "profile", "organization"]);
-  assert.deepEqual(actorView.nullable, ["profile", "location"]);
-  const locationView = getOrganization.defs.locationRecordView;
-  assert.deepEqual(locationView.required, ["uri", "cid", "indexedAt", "did", "record"]);
-  assert.equal(locationView.properties.record.ref, "app.certified.location");
-  assert.equal(actorView.properties.organization.ref, "org.hypercerts.api.defs#organizationView");
-  assert.equal(getOrganization.defs.output.properties.actor.ref, "#organizationActorView");
 
   const batchParameters = getOrganizations.defs.main.parameters;
   assert.deepEqual(batchParameters.required, ["actors"]);
@@ -211,10 +237,6 @@ test("organization Lexicons declare batch lookup results and separate list outpu
   const batchResult = getOrganizations.defs.organizationResult;
   assert.deepEqual(batchResult.required, ["actor", "organization"]);
   assert.deepEqual(batchResult.nullable, ["organization"]);
-  assert.equal(
-    batchResult.properties.organization.ref,
-    "app.certified.actor.getOrganization#organizationActorView",
-  );
   assert.equal(
     getOrganizations.defs.output.properties.organizations.items.ref,
     "#organizationResult",
@@ -245,10 +267,6 @@ test("organization Lexicons declare batch lookup results and separate list outpu
     assert.equal(properties.limit.minimum, 1);
     assert.equal(properties.limit.maximum, 100);
     assert.match(properties.limit.description, /default 25/i);
-    assert.equal(
-      query.defs.output.properties.actors.items.ref,
-      "app.certified.actor.getOrganization#organizationActorView",
-    );
   }
 });
 
@@ -261,8 +279,9 @@ test("getOrganization returns the complete sidecar and an explicit null when its
     endpoint: "getOrganization",
     params: { actor },
     queryResults: [[organization], []],
+    resolverOrigin: resolverUrl,
     assertions: `
-assert(result.actor.did == '${actor}')
+assert(result.actor.did == '${actor}' and result.actor.handle == nil)
 assert(result.actor.profile == NULL)
 assert(result.actor.organization.uri == '${organization.uri}' and result.actor.organization.cid == '${organization.cid}')
 assert(result.actor.organization.indexedAt == '${indexedAt}' and result.actor.organization.did == '${actor}')
@@ -790,5 +809,220 @@ test("a failed location lookup is reported as an organization query failure, not
     queryFailureAt: 3,
     expectError: "OrganizationQueryFailed:",
     expectedCalls: 3,
+  });
+});
+
+test("getActor returns a projection even when the DID has no indexed sidecars", () => {
+  const did = "did:web:unknown.example%3A443";
+  runLua({
+    endpoint: "getActor",
+    params: { actor: did },
+    assertions: `
+assert(result.actor.did == '${did}')
+assert(result.actor.profile == NULL and result.actor.organization == NULL and result.actor.location == NULL)
+assert(result.actor.handle == nil)
+assert(#calls == 2)
+`,
+  });
+});
+
+test("getActors keeps input order and duplicates while loading only distinct DIDs and primary location URIs", () => {
+  const avatar = { $type: "blob", ref: { $link: "bafy-avatar" }, mimeType: "image/png", size: 42 };
+  const profile = profileRow(actor, "actor-person", { avatar, displayName: "Person" });
+  const primary = locationRef(secondActor, "3jzfcijpj2z2a");
+  const additional = locationRef(secondActor, "3jzfcijpj2z2b");
+  const missing = locationRef(thirdActor, "3jzfcijpj2z2c");
+  const org = organizationRow(secondActor, "actor-org", {
+    location: primary,
+    additionalLocations: [additional],
+  });
+  const otherOrg = organizationRow(thirdActor, "actor-org-miss", { location: missing });
+  const location = locationRow(secondActor, "3jzfcijpj2z2a", "actor-location", pointLocation);
+  location.indexed_at = undefined;
+  runLua({
+    endpoint: "getActors",
+    params: { actors: [secondActor, actor, thirdActor, fourthActor, secondActor] },
+    queryResults: [[profile], [otherOrg, org], [location]],
+    assertions: `
+assert(#result.actors == 5)
+local found, person, missing, unknown, repeated = table.unpack(result.actors)
+assert(found.did == '${secondActor}' and repeated.did == found.did)
+assert(person.did == '${actor}' and missing.did == '${thirdActor}' and unknown.did == '${fourthActor}')
+assert(person.profile.uri == '${profile.uri}' and person.profile.cid == '${profile.cid}')
+assert(person.profile.did == person.did and person.profile.indexedAt == '${indexedAt}')
+assert(person.profile.record.avatar.ref['$link'] == 'bafy-avatar')
+assert(person.organization == NULL and person.location == NULL)
+assert(found.profile == NULL and found.organization.record.location.cid == '${primary.cid}')
+assert(found.organization.record.additionalLocations[1].uri == '${additional.uri}')
+assert(found.location.uri == '${primary.uri}' and found.location.cid == '${location.cid}')
+assert(found.location.did == '${secondActor}' and found.location.indexedAt == NULL and found.location.author == nil)
+assert(found.location.record.location.string == 'POINT(89.64 27.47)')
+assert(repeated.location.uri == found.location.uri and repeated.organization.uri == found.organization.uri)
+assert(missing.organization.uri == '${otherOrg.uri}' and missing.location == NULL)
+assert(unknown.profile == NULL and unknown.organization == NULL and unknown.location == NULL)
+for _, item in ipairs(result.actors) do assert(item.handle == nil) end
+assert(#calls == 3)
+for i, collection in ipairs({ '${profileCollection}', '${organizationCollection}' }) do
+  assert(calls[i].values[1] == collection and #calls[i].values == 5)
+  assert(calls[i].sql:find("rkey = 'self'", 1, true))
+end
+assert(calls[3].values[1] == '${locationCollection}' and #calls[3].values == 3)
+assert(calls[3].values[2] == '${primary.uri}' and calls[3].values[3] == '${missing.uri}')
+assert(not calls[3].sql:find('cid =', 1, true))
+`,
+  });
+});
+
+test("getActors accepts one bare occurrence or exactly 100 repeated occurrences", () => {
+  for (const [actors, count] of [
+    [actor, 1],
+    [Array(100).fill(actor), 100],
+  ]) {
+    runLua({
+      endpoint: "getActors",
+      params: { actors },
+      assertions: `
+assert(#result.actors == ${count})
+assert(result.actors[${count}].did == '${actor}')
+assert(#calls == 2 and #calls[1].values == 2 and #calls[2].values == 2)
+`,
+    });
+  }
+});
+
+test("actor lookups reject invalid query occurrences before querying the index", () => {
+  const invalidDid = "did:web:example%GG";
+  for (const [endpoint, paramSets] of [
+    [
+      "getActor",
+      [
+        {},
+        { actor: "example.com" },
+        { actor: invalidDid },
+        { actor: [actor, actor] },
+        { actor, extra: "x" },
+      ],
+    ],
+    [
+      "getActors",
+      [
+        {},
+        { actors: [] },
+        { actors: [actor, invalidDid] },
+        { actors: [actor, "example.com"] },
+        { actors: [actor, 1] },
+        { actors: Array(101).fill(actor) },
+        { actors: { 2: actor } },
+        { actors: actor, extra: "x" },
+      ],
+    ],
+  ]) {
+    for (const params of paramSets) {
+      runLua({ endpoint, params, resolverOrigin: resolverUrl, expectError: "InvalidRequest:" });
+    }
+  }
+});
+
+test("actor lookups propagate sidecar and primary location query failures", () => {
+  const org = organizationRow(actor, "actor-location-failure", {
+    location: locationRef(actor, "3jzfcijpj2z2a"),
+  });
+  for (const queryFailureAt of [1, 2, 3]) {
+    runLua({
+      endpoint: "getActor",
+      params: { actor },
+      queryResults: [[], [org]],
+      resolverOrigin: resolverUrl,
+      queryFailureAt,
+      expectError: "ActorQueryFailed:",
+      expectedCalls: queryFailureAt,
+    });
+  }
+});
+
+test("getActor projects a matching Slingshot handle using the encoded DID", () => {
+  const did = "did:web:actor.example%3A8443";
+  runLua({
+    endpoint: "getActor",
+    params: { actor: did },
+    resolverOrigin: `${resolverUrl}/`,
+    httpReplies: [miniDoc(did, "Actor.Example")],
+    expectedHttpCalls: 1,
+    assertions: `
+assert(httpCalls[1] == '${resolverUrl}/xrpc/blue.microcosm.identity.resolveMiniDoc?identifier=did%3Aweb%3Aactor.example%253A8443')
+assert(result.actor.did == '${did}' and result.actor.handle == 'actor.example')
+assert(result.actor.profile == NULL and result.actor.organization == NULL and result.actor.location == NULL)
+assert(result.actor.pds == nil and result.actor.signing_key == nil)
+`,
+  });
+});
+
+test("getActor omits handles for resolver failures, malformed responses, and invalid handle claims", () => {
+  for (const reply of [
+    { throws: true },
+    { status: 503, json: miniDoc(actor, "valid.example").json },
+    { status: 200, body: "{" },
+    { status: 200, json: "not an object" },
+    miniDoc(secondActor, "valid.example"),
+    miniDoc(actor, "Handle.Invalid"),
+    miniDoc(actor, "bad_handle.example"),
+    miniDoc(actor, "bad.123"),
+    miniDoc(actor, "bad..example"),
+    miniDoc(actor, null),
+  ]) {
+    runLua({
+      endpoint: "getActor",
+      params: { actor },
+      resolverOrigin: resolverUrl,
+      httpReplies: [reply],
+      expectedHttpCalls: 1,
+      assertions: `
+assert(result.actor.did == '${actor}' and result.actor.handle == nil)
+assert(result.actor.profile == NULL and result.actor.organization == NULL and result.actor.location == NULL)
+`,
+    });
+  }
+});
+
+test("actor lookups never contact a resolver when its origin is missing or invalid", () => {
+  for (const resolverOrigin of [
+    undefined,
+    "http://resolver.example",
+    "https://user@resolver.example",
+    "https://resolver.example/path",
+  ]) {
+    runLua({
+      endpoint: "getActor",
+      params: { actor },
+      resolverOrigin,
+      assertions: "assert(result.actor.handle == nil)",
+    });
+  }
+});
+
+test("getActors caps lookup at the first 50 distinct DIDs without dropping any of 100 occurrences", () => {
+  const distinct = Array.from({ length: 52 }, (_, index) => `did:web:actor-${index}.example`);
+  const [found, failed] = distinct;
+  const requested = [found, found, failed, failed, ...distinct.slice(2), ...Array(46).fill(found)];
+  runLua({
+    endpoint: "getActors",
+    params: { actors: requested },
+    resolverOrigin: resolverUrl,
+    httpReplies: distinct
+      .slice(0, 50)
+      .map((did, i) => (did === failed ? { throws: true } : miniDoc(did, `handle-${i}.example`))),
+    expectedHttpCalls: 50,
+    assertions: `
+local requested = ${lua(requested)}
+local urls = ${lua(distinct.slice(0, 50).map(miniDocUrl))}
+assert(#result.actors == 100)
+for index, item in ipairs(result.actors) do assert(item.did == requested[index]) end
+for index, url in ipairs(urls) do assert(httpCalls[index] == url) end
+assert(result.actors[1].handle == 'handle-0.example' and result.actors[2].handle == 'handle-0.example')
+assert(result.actors[3].handle == nil and result.actors[4].handle == nil)
+assert(result.actors[52].handle == 'handle-49.example')
+assert(result.actors[53].handle == nil and result.actors[54].handle == nil)
+assert(result.actors[100].handle == 'handle-0.example')
+`,
   });
 });

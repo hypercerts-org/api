@@ -1,0 +1,53 @@
+{
+  "lexicon": 1,
+  "id": "app.certified.actor.getActor",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Projects one actor's indexed profile, organization and primary location by DID. Includes a best-effort handle when available from the configured resolver. An empty projection is not proof that an account exists. Authentication is not required.",
+      "parameters": {
+        "type": "params",
+        "required": [
+          "actor"
+        ],
+        "properties": {
+          "actor": {
+            "type": "string",
+            "format": "did",
+            "description": "DID of the actor to look up. Handles are not accepted."
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "ref",
+          "ref": "#output"
+        }
+      },
+      "errors": [
+        {
+          "name": "InvalidRequest",
+          "description": "An actor DID or query parameter is invalid."
+        },
+        {
+          "name": "ActorQueryFailed",
+          "description": "The indexed profile, organization or primary location could not be queried."
+        }
+      ]
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "actor"
+      ],
+      "properties": {
+        "actor": {
+          "type": "ref",
+          "ref": "org.hypercerts.api.defs#actorView",
+          "description": "View of the requested DID, even when no sidecars are indexed. Includes a nullable location."
+        }
+      }
+    }
+  }
+}

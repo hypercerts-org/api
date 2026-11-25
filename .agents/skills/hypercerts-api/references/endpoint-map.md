@@ -15,10 +15,12 @@ This task index lists the public query NSIDs in the bundled [OpenAPI contract](o
 
 Inspect the exact operation in the bundled OpenAPI contract before constructing a request: names such as `authors`, `actors`, `uri`, and `collection` have endpoint-specific meanings. Do not infer that a filter, search operation, output array name, or error exists just because a related endpoint has one.
 
-## People and organization context (8)
+## People and organization context (10)
 
 | User task | Query NSID | Practical choice |
 |---|---|---|
+| Load one actor by DID | `app.certified.actor.getActor` | Returns `{ actor }` with indexed profile, organization, and primary location, plus a handle when lookup succeeds. |
+| Load multiple actors by DID | `app.certified.actor.getActors` | Send 1–100 repeated `actors` DIDs. `{ actors }` preserves order and duplicates. Only the first 50 distinct DIDs are eligible for a handle lookup. |
 | Load one Certified profile | `app.certified.actor.getProfile` | `actor` is one DID or handle. Handle resolution is part of this operation. |
 | Load profiles for known actors | `app.certified.actor.getProfiles` | `actors` is a repeated array of DIDs; each result corresponds to an input occurrence and its profile may be null. |
 | Browse indexed profiles | `app.certified.actor.listProfiles` | Use for paged discovery, not free-text search. |

@@ -197,6 +197,17 @@ test("committed explorer operations and endpoint snapshots match the registered 
     assert.deepEqual(operation["x-lexicon-errors"] ?? [], lexicon.defs.main.errors ?? []);
   }
 
+  const actorBatch = openapi.paths["/xrpc/app.certified.actor.getActors"].get;
+  const [actors] = actorBatch.parameters;
+  assert.equal(actors.name, "actors");
+  assert.equal(actors.style, "form");
+  assert.equal(actors.explode, true);
+  assert.equal(actors.schema.maxItems, 100);
+  assert.equal(actors.schema.items.format, "did");
+  const actorView = openapi.components.schemas["org.hypercerts.api.defs.actorView"];
+  assert.ok(!actorView.required.includes("location"), "legacy embeds may omit location");
+  assert.ok(actorView.properties.location.anyOf.some(({ type }) => type === "null"));
+
   for (const id of [
     "app.certified.actor.getOrganization",
     "app.certified.actor.getOrganizations",

@@ -67,22 +67,14 @@ local function encode_query_value(value)
   end))
 end
 
-local function fail_resolution()
-  error("HandleResolutionFailed: handle could not be resolved", 0)
-end
-
-local function fail_resolver_config()
-  error("HandleResolverConfigError: HYPERCERTS_HANDLE_RESOLVER_URL must be an HTTPS resolver base URL with no credentials, path, query, or fragment, a valid host, and a port from 1 through 65535 if specified; fix or remove this HappyView script variable (unset uses the default resolver)", 0)
-end
-
-local function fetch_json(url)
+local function fetch_resolver_json(url)
   local ok, response = pcall(http.get, url)
   if not ok or type(response) ~= "table" or type(response.status) ~= "number"
     or response.status < 200 or response.status >= 300 or type(response.body) ~= "string" then
-    fail_resolution()
+    return nil
   end
   local decoded, value = pcall(json.decode, response.body)
-  if not decoded or type(value) ~= "table" then fail_resolution() end
+  if not decoded or type(value) ~= "table" then return nil end
   return value
 end
 
@@ -159,29 +151,35 @@ local function valid_resolver_authority(authority)
   return true
 end
 
-local DEFAULT_RESOLVER_URL = "https://slingshot.microcosm.blue"
-
 local function resolver_base_url()
   local configured = type(env) == "table" and env.HYPERCERTS_HANDLE_RESOLVER_URL or nil
-  -- Only an absent setting selects the default; a present but invalid value must still fail.
-  if configured == nil then return DEFAULT_RESOLVER_URL end
   if type(configured) ~= "string" or #configured > 2048
     or configured:find("[%c%s]") or configured:find("\\", 1, true) or configured:find("%", 1, true) then
-    fail_resolver_config()
+    return nil
   end
 
   local scheme, authority, suffix = configured:match("^([%a]+)://([^/?#]+)(.*)$")
   if not scheme or scheme:lower() ~= "https" or not authority
     or (suffix ~= "" and suffix ~= "/") or not valid_resolver_authority(authority) then
-    fail_resolver_config()
+    return nil
   end
   return "https://" .. authority
 end
 
+local function fail_resolution()
+  error("HandleResolutionFailed: handle could not be resolved", 0)
+end
+
+local function fail_resolver_config()
+  error("HandleResolverConfigError: HYPERCERTS_HANDLE_RESOLVER_URL must be an HTTPS resolver base URL with no credentials, path, query, or fragment, a valid host, and a port from 1 through 65535 if specified; configure this HappyView script variable before handle lookups", 0)
+end
+
 local function resolve_handle(handle)
-  local url = resolver_base_url() .. "/xrpc/com.atproto.identity.resolveHandle?handle=" .. encode_query_value(handle)
-  local resolved = fetch_json(url)
-  if type(resolved.did) ~= "string" or not valid_did(resolved.did) then fail_resolution() end
+  local base = resolver_base_url()
+  if not base then fail_resolver_config() end
+  local url = base .. "/xrpc/com.atproto.identity.resolveHandle?handle=" .. encode_query_value(handle)
+  local resolved = fetch_resolver_json(url)
+  if not resolved or not valid_did(resolved.did) then fail_resolution() end
   return resolved.did
 end
 

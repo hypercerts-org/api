@@ -58,6 +58,51 @@ async function assertDomainError(response, code) {
   assert.doesNotMatch(body.message, /SELECT|happyview_records|at:\/\//);
 }
 
+test("getActor returns explicit nulls for a valid DID with no sidecars", async () => {
+  const did = "did:web:actor-not-seeded.example%3A443";
+  assert.deepEqual(await get("app.certified.actor.getActor", { actor: did }), {
+    actor: { did, profile: null, organization: null, location: null },
+  });
+});
+
+test("getActors serializes sidecars, raw locations, ordered duplicates and nulls", async () => {
+  const { profileOnly, forest, river, organizationOnly, unindexedLocation } = actorFixtureDids;
+  const actors = [river, profileOnly, organizationOnly, forest, unindexedLocation, river];
+  const { actors: views } = await get("app.certified.actor.getActors", { actors });
+  assert.deepEqual(
+    views,
+    actors.map((did) => {
+      const profile = profileRecords.find((record) => record.did === did);
+      const organization = organizationRecords.find((record) => record.did === did);
+      return {
+        did,
+        profile: profile ? recordView(profile) : null,
+        organization: organization ? recordView(organization) : null,
+        location: expectedLocation(did),
+      };
+    }),
+  );
+  assert.notEqual(views[0].location.cid, views[0].organization.record.location.cid);
+
+  const maximum = await get("app.certified.actor.getActors", {
+    actors: Array(100).fill(organizationOnly),
+  });
+  assert.deepEqual(maximum.actors, Array(100).fill(views[2]));
+});
+
+test("actor query invalid parameters are reported as InvalidRequest", async () => {
+  const did = actorFixtureDids.alpine;
+  for (const [endpoint, params] of [
+    ["getActor", { actor: "example.com" }],
+    ["getActor", { actor: [did, did] }],
+    ["getActors", { actors: [did, "did:web:example%GG"] }],
+    ["getActors", { actors: Array(101).fill(did) }],
+  ]) {
+    const response = await fetch(contractUrl(baseUrl, `app.certified.actor.${endpoint}`, params));
+    await assertDomainError(response, "InvalidRequest");
+  }
+});
+
 test("getOrganization returns the original sidecar and explicit nullable profile", async () => {
   const withProfile = await get("app.certified.actor.getOrganization", {
     actor: publicOrganization.did,

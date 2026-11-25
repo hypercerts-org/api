@@ -1,0 +1,61 @@
+{
+  "lexicon": 1,
+  "id": "app.certified.actor.getActors",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Projects indexed actor views by DID, one per input occurrence in request order, including duplicates. Attempts best-effort handle lookup serially for at most the first 50 distinct DIDs; unattempted or unresolved handles are omitted. Authentication is not required.",
+      "parameters": {
+        "type": "params",
+        "required": [
+          "actors"
+        ],
+        "properties": {
+          "actors": {
+            "type": "array",
+            "description": "Actor DIDs supplied as 1–100 repeated, unbracketed query values. Handles are not accepted.",
+            "minLength": 1,
+            "maxLength": 100,
+            "items": {
+              "type": "string",
+              "format": "did"
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "ref",
+          "ref": "#output"
+        }
+      },
+      "errors": [
+        {
+          "name": "InvalidRequest",
+          "description": "An actor DID or query parameter is invalid."
+        },
+        {
+          "name": "ActorQueryFailed",
+          "description": "The indexed profile, organization or primary location could not be queried."
+        }
+      ]
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "actors"
+      ],
+      "properties": {
+        "actors": {
+          "type": "array",
+          "description": "One view per requested DID, even when no sidecars are indexed. Each view includes a nullable location.",
+          "items": {
+            "type": "ref",
+            "ref": "org.hypercerts.api.defs#actorView"
+          }
+        }
+      }
+    }
+  }
+}

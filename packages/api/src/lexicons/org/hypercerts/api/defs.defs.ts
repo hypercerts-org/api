@@ -5,6 +5,7 @@
 import { l } from "@atproto/lex";
 import * as ActorOrganization from "@hypercerts-org/lexicon/app/certified/actor/organization.defs";
 import * as ActorProfile from "@hypercerts-org/lexicon/app/certified/actor/profile.defs";
+import * as CertifiedLocation from "@hypercerts-org/lexicon/app/certified/location.defs";
 import * as ContextAcknowledgement from "@hypercerts-org/lexicon/org/hypercerts/context/acknowledgement.defs";
 
 const $nsid = "org.hypercerts.api.defs";
@@ -33,13 +34,33 @@ const organizationView = /*#__PURE__*/ l.typedObject<OrganizationView>($nsid, "o
 
 export { organizationView };
 
-/** Actor DID with nullable profile and raw organization sidecar views. */
-type ActorView = { $type?: "org.hypercerts.api.defs#actorView";"did":l.DidString;"profile":ProfileView | null;"organization":OrganizationView | null };
+/** Raw indexed location record view without a hydrated author; indexedAt may be null when the index has no timestamp. */
+type LocationRecordView = { $type?: "org.hypercerts.api.defs#locationRecordView";"uri":l.AtUriString;"cid":l.CidString;"indexedAt":l.DatetimeString | null;"did":l.DidString;"record":CertifiedLocation.Main };
+
+export type { LocationRecordView };
+
+/** Raw indexed location record view without a hydrated author; indexedAt may be null when the index has no timestamp. */
+const locationRecordView = /*#__PURE__*/ l.typedObject<LocationRecordView>($nsid, "locationRecordView", /*#__PURE__*/ l.object({"uri":/*#__PURE__*/ l.string({"format":"at-uri"}),"cid":/*#__PURE__*/ l.string({"format":"cid"}),"indexedAt":/*#__PURE__*/ l.nullable(/*#__PURE__*/ l.string({"format":"datetime"})),"did":/*#__PURE__*/ l.string({"format":"did"}),"record":/*#__PURE__*/ l.ref<CertifiedLocation.Main>((() => CertifiedLocation.main) as any)}));
+
+export { locationRecordView };
+
+/** Actor DID with nullable indexed profile and organization sidecars. Direct actor and organization queries also return a nullable primary location. Records retain raw blobs and URI references, not resolved image URLs. */
+type ActorView = { $type?: "org.hypercerts.api.defs#actorView";"did":l.DidString;
+
+  /**
+   * Resolved handle, populated only by getActor and getActors when available. Otherwise omitted; null is accepted for older responses.
+   */
+  "handle"?:l.HandleString | null;"profile":ProfileView | null;"organization":OrganizationView | null;
+
+  /**
+   * Raw primary location, or null when no valid primary location is indexed. Matched by AT-URI, not the pinned CID; the indexed version may differ. Additional locations stay as strong references in the organization record. Omitted in legacy author views.
+   */
+  "location"?:LocationRecordView | null };
 
 export type { ActorView };
 
-/** Actor DID with nullable profile and raw organization sidecar views. */
-const actorView = /*#__PURE__*/ l.typedObject<ActorView>($nsid, "actorView", /*#__PURE__*/ l.object({"did":/*#__PURE__*/ l.string({"format":"did"}),"profile":/*#__PURE__*/ l.nullable(/*#__PURE__*/ l.ref<ProfileView>((() => profileView) as any)),"organization":/*#__PURE__*/ l.nullable(/*#__PURE__*/ l.ref<OrganizationView>((() => organizationView) as any))}));
+/** Actor DID with nullable indexed profile and organization sidecars. Direct actor and organization queries also return a nullable primary location. Records retain raw blobs and URI references, not resolved image URLs. */
+const actorView = /*#__PURE__*/ l.typedObject<ActorView>($nsid, "actorView", /*#__PURE__*/ l.object({"did":/*#__PURE__*/ l.string({"format":"did"}),"handle":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.nullable(/*#__PURE__*/ l.string({"format":"handle"}))),"profile":/*#__PURE__*/ l.nullable(/*#__PURE__*/ l.ref<ProfileView>((() => profileView) as any)),"organization":/*#__PURE__*/ l.nullable(/*#__PURE__*/ l.ref<OrganizationView>((() => organizationView) as any)),"location":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.nullable(/*#__PURE__*/ l.ref<LocationRecordView>((() => locationRecordView) as any)))}));
 
 export { actorView };
 
