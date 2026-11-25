@@ -93,7 +93,7 @@ Treat cursors as opaque. Do not decode, synthesize, or reuse one after changing 
 
 ## Request exact list totals
 
-`org.hypercerts.claim.listActivities`, `org.hypercerts.collection.listCollections`, and `app.certified.badge.listBadgeAwards` accept optional `includeTotal=true`. Their `totalCount` is the exact number of indexed base records matching every supplied filter before cursor and limit; it is present on empty pages too. Counts are computed per request, not held constant across a multi-page walk while indexing changes. Search endpoints and other lists do not accept this option.
+`org.hypercerts.claim.listActivities`, `org.hypercerts.collection.listCollections`, `org.hypercerts.funding.listReceipts`, and `app.certified.badge.listBadgeAwards` accept optional `includeTotal=true`. Their `totalCount` is the exact number of indexed base records matching every supplied filter before cursor and limit; it is present on empty pages too. Counts are computed per request, not held constant across a multi-page walk while indexing changes. Search endpoints and other lists do not accept this option.
 
 For a count display or overview, request `includeTotal=true` with the relevant filters and `limit=1`; this returns at most one record but does not reduce the work needed to count all matches. Omit `includeTotal` or send `false` when a count is not needed.
 

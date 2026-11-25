@@ -133,7 +133,7 @@ These records are context related to other Hypercert records, not alternate acti
 | User task | Query NSID | Practical choice |
 |---|---|---|
 | Load one funding receipt | `org.hypercerts.funding.getReceipt` | Exact receipt AT-URI in `uri`. |
-| Find/list funding receipts | `org.hypercerts.funding.listReceipts` | Combine the documented publisher, URI, from/to, related-record, or transaction filters. |
+| Find/list funding receipts | `org.hypercerts.funding.listReceipts` | Combine publisher, URI, from/to, related-record, or transaction filters. Set `includeTotal=true` to count matching receipts before cursor and limit, including on empty pages. |
 | Load one vocabulary tag | `org.hypercerts.vocab.getVocabTag` | Exact tag AT-URI in `uri`. |
 | List vocabulary tags | `org.hypercerts.vocab.listVocabTags` | Browse by publisher DID. |
 | Load one work-scope tag | `org.hypercerts.workscope.getWorkscopeTag` | Exact tag AT-URI in `uri`. |
