@@ -11,7 +11,8 @@
   },
   "scripts": {
     "lint:lua": "node tooling/lint-lua.js",
-    "lint": "pnpm run lint:lua",
+    "lint:shared-helpers": "node tooling/lint-shared-helpers.js",
+    "lint": "pnpm run lint:lua && pnpm run lint:shared-helpers",
     "typecheck": "tsc --project tsconfig.json",
     "check:generated": "node tooling/build-lua.js --check",
     "check": "pnpm run check:generated && pnpm run lint && pnpm run typecheck && pnpm run test:unit",
