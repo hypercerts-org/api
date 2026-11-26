@@ -1152,7 +1152,7 @@ test("getActor omits the handle when the HTTP client is missing or has no get fu
       params: { actor },
       resolverOrigin: resolverUrl,
       httpGlobal,
-      assertions: "assert(result.actor.did == '" + actor + "' and result.actor.handle == nil)",
+      assertions: `assert(result.actor.did == '${actor}' and result.actor.handle == nil)`,
     });
   }
 });
