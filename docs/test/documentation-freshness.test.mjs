@@ -20,18 +20,17 @@ async function writeBaselineArtifacts(apiRoot, fixtureDocs, packageRoot) {
     lexiconPackageRoot: packageRoot,
   });
   for (const snapshot of snapshots) await writeFile(snapshot.file, snapshot.content);
-  const { openapi, skillOpenapi, coverage } = buildDocumentationArtifacts(
+  const { openapi, skillOpenapi } = buildDocumentationArtifacts(
     index,
     snapshots.map(({ content }) => JSON.parse(content)),
   );
   await writeJson(path.join(fixtureDocs, "sources/index.json"), index);
   await writeJson(path.join(fixtureDocs, "openapi.json"), openapi);
-  await writeJson(path.join(fixtureDocs, "coverage.json"), coverage);
   await writeJson(path.join(fixtureDocs, "..", SKILL_OPENAPI_PATH), skillOpenapi);
-  return { index, openapi, skillOpenapi, coverage };
+  return { index, openapi, skillOpenapi };
 }
 
-test("committed snapshots, index metadata, OpenAPI, and coverage match fresh manifest sources", async () => {
+test("committed snapshots, index metadata, and OpenAPI match fresh manifest sources", async () => {
   await assert.doesNotReject(() => assertDocumentationFresh());
 });
 
@@ -146,14 +145,6 @@ test("freshness gate rejects endpoint and pinned support-schema drift without wr
     /hypercerts-api\/references\/openapi\.json/,
   );
   await writeJson(skillCopy, baseline.skillOpenapi);
-
-  const staleCoverage = structuredClone(baseline.coverage);
-  staleCoverage.runtimeValidation = "runtime-validated";
-  await writeJson(path.join(fixtureDocs, "coverage.json"), staleCoverage);
-  await assert.rejects(
-    assertDocumentationFresh({ apiRoot, docsRoot: fixtureDocs, lexiconPackageRoot: packageRoot }),
-    /coverage\.json/,
-  );
 
   const staleIndex = structuredClone(baseline.index);
   staleIndex.sourcePolicy = "stale source metadata";

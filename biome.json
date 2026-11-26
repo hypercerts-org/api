@@ -17,7 +17,6 @@
       "!docs/sources",
       "!docs/openapi.json",
       "!.agents/skills/hypercerts-api/references/openapi.json",
-      "!docs/coverage.json",
       "!packages/api/src/lexicons",
       "!packages/api/src/index.ts"
     ]

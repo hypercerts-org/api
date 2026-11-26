@@ -41,10 +41,6 @@ async function main() {
     path.join(root, "..", SKILL_OPENAPI_PATH),
     `${JSON.stringify(artifacts.skillOpenapi, null, 2)}\n`,
   );
-  await writeFile(
-    path.join(root, "coverage.json"),
-    `${JSON.stringify(artifacts.coverage, null, 2)}\n`,
-  );
   console.log(
     `Generated ${sourceIndex.endpoints.length} manifest-registered endpoints; no unresolved schema references remain.`,
   );

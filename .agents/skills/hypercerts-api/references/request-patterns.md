@@ -41,6 +41,10 @@ The batch relationship checks `app.certified.graph.getFollows` and `app.certifie
 
 `app.certified.graph.getFollowerCounts` takes no `actor`: append 1–100 account DIDs and full DID-authority entity AT-URIs under the same unbracketed `subjects` key, in any mix. A value starting with `did:` is counted as an account; any other value must be an entity AT-URI. The response has one `{subject, followerCount}` entry per input occurrence in the same order, including duplicates. The same 16,384-byte request-target limit applies, and a zero count means no indexed followers were found at query time.
 
+### Batch actor views by DID
+
+`app.certified.actor.getActors` takes 1–100 DIDs as repeated, unbracketed `actors` parameters (for example, `actors=did%3Aweb%3Aa.example&actors=did%3Aweb%3Ab.example`). It returns `{ actors }` in that order, including duplicates and DIDs without indexed sidecars. Use `getActor` with one `actor` parameter for a single `{ actor }` response. `getActors` never looks up handles, so its views omit `handle`; `getActor` makes one best-effort lookup.
+
 ### Batch an actor's reactions for known subjects
 
 `app.certified.feed.getActorReactions` requires one actor DID and 1–100 full record AT-URIs with DID authorities, not handle authorities, within a 16,384-byte encoded request-target. Encode `subjects` as repeated, unbracketed query parameters; keep input order and duplicates if each occurrence matters:

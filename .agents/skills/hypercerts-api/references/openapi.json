@@ -53,6 +53,101 @@
     }
   ],
   "paths": {
+    "/xrpc/app.certified.actor.getActor": {
+      "get": {
+        "operationId": "app_certified_actor_getActor",
+        "tags": [
+          "app.certified.actor"
+        ],
+        "description": "Projects one actor's indexed profile, organization and primary location by DID. Makes one best-effort handle lookup against the configured resolver; the handle is omitted when it fails. An empty projection is not proof that an account exists. Authentication is not required.",
+        "parameters": [
+          {
+            "name": "actor",
+            "in": "query",
+            "required": true,
+            "description": "DID of the actor to look up. Handles are not accepted.",
+            "schema": {
+              "type": "string",
+              "format": "did"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app.certified.actor.getActor.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "app.certified.actor.getActor",
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "An actor DID or query parameter is invalid."
+          },
+          {
+            "name": "ActorQueryFailed",
+            "description": "The indexed profile, organization or primary location could not be queried."
+          }
+        ]
+      }
+    },
+    "/xrpc/app.certified.actor.getActors": {
+      "get": {
+        "operationId": "app_certified_actor_getActors",
+        "tags": [
+          "app.certified.actor"
+        ],
+        "description": "Projects indexed actor views by DID, one per input occurrence in request order, including duplicates. Makes no handle lookups; handles are omitted. Authentication is not required.",
+        "parameters": [
+          {
+            "name": "actors",
+            "in": "query",
+            "required": true,
+            "description": "Actor DIDs supplied as 1–100 repeated, unbracketed query values. Handles are not accepted.",
+            "schema": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 100,
+              "items": {
+                "type": "string",
+                "format": "did"
+              }
+            },
+            "style": "form",
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app.certified.actor.getActors.output"
+                }
+              }
+            }
+          }
+        },
+        "x-lexicon-id": "app.certified.actor.getActors",
+        "x-lexicon-errors": [
+          {
+            "name": "InvalidRequest",
+            "description": "An actor DID or query parameter is invalid."
+          },
+          {
+            "name": "ActorQueryFailed",
+            "description": "The indexed profile, organization or primary location could not be queried."
+          }
+        ]
+      }
+    },
     "/xrpc/app.certified.actor.getOrganization": {
       "get": {
         "operationId": "app_certified_actor_getOrganization",
@@ -5178,9 +5273,9 @@
         "type": "record",
         "description": "A location reference"
       },
-      "app.certified.actor.getOrganization.locationRecordView": {
+      "org.hypercerts.api.defs.locationRecordView": {
         "type": "object",
-        "description": "Indexed app.certified.location record view preserving the full record exactly as getLocation returns it, but without the hydrated author; indexedAt may be null when the index has no timestamp.",
+        "description": "Raw indexed location record view without a hydrated author; indexedAt may be null when the index has no timestamp.",
         "required": [
           "uri",
           "cid",
@@ -5217,9 +5312,9 @@
           }
         }
       },
-      "app.certified.actor.getOrganization.organizationActorView": {
+      "org.hypercerts.api.defs.actorView": {
         "type": "object",
-        "description": "Actor with an indexed organization sidecar, nullable profile view and nullable location view.",
+        "description": "Actor DID with nullable indexed profile and organization sidecars. Direct actor and organization queries also return a nullable primary location. Records retain raw blobs and URI references, not resolved image URLs.",
         "required": [
           "did",
           "profile",
@@ -5229,6 +5324,18 @@
           "did": {
             "type": "string",
             "format": "did"
+          },
+          "handle": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "Resolved handle, populated only by getActor when a best-effort lookup succeeds. Omitted by every other endpoint; null is accepted for older responses.",
+                "format": "handle"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "profile": {
             "anyOf": [
@@ -5241,17 +5348,50 @@
             ]
           },
           "organization": {
-            "$ref": "#/components/schemas/org.hypercerts.api.defs.organizationView"
-          },
-          "location": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/app.certified.actor.getOrganization.locationRecordView"
+                "$ref": "#/components/schemas/org.hypercerts.api.defs.organizationView"
               },
               {
                 "type": "null"
               }
             ]
+          },
+          "location": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/org.hypercerts.api.defs.locationRecordView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "app.certified.actor.getActor.output": {
+        "type": "object",
+        "required": [
+          "actor"
+        ],
+        "properties": {
+          "actor": {
+            "$ref": "#/components/schemas/org.hypercerts.api.defs.actorView"
+          }
+        }
+      },
+      "app.certified.actor.getActors.output": {
+        "type": "object",
+        "required": [
+          "actors"
+        ],
+        "properties": {
+          "actors": {
+            "type": "array",
+            "description": "One view per requested DID, even when no sidecars are indexed. Each view includes a nullable location.",
+            "items": {
+              "$ref": "#/components/schemas/org.hypercerts.api.defs.actorView"
+            }
           }
         }
       },
@@ -5262,7 +5402,7 @@
         ],
         "properties": {
           "actor": {
-            "$ref": "#/components/schemas/app.certified.actor.getOrganization.organizationActorView"
+            "$ref": "#/components/schemas/org.hypercerts.api.defs.actorView"
           }
         }
       },
@@ -5281,7 +5421,7 @@
           "organization": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/app.certified.actor.getOrganization.organizationActorView"
+                "$ref": "#/components/schemas/org.hypercerts.api.defs.actorView"
               },
               {
                 "type": "null"
@@ -5364,7 +5504,7 @@
           "actors": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/app.certified.actor.getOrganization.organizationActorView"
+              "$ref": "#/components/schemas/org.hypercerts.api.defs.actorView"
             }
           },
           "cursor": {
@@ -5400,7 +5540,7 @@
           "actors": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/app.certified.actor.getOrganization.organizationActorView"
+              "$ref": "#/components/schemas/org.hypercerts.api.defs.actorView"
             }
           },
           "cursor": {
@@ -5424,41 +5564,6 @@
           "cursor": {
             "type": "string",
             "description": "Opaque cursor for the next page; omitted when pagination is complete."
-          }
-        }
-      },
-      "org.hypercerts.api.defs.actorView": {
-        "type": "object",
-        "description": "Actor DID with nullable profile and raw organization sidecar views.",
-        "required": [
-          "did",
-          "profile",
-          "organization"
-        ],
-        "properties": {
-          "did": {
-            "type": "string",
-            "format": "did"
-          },
-          "profile": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/org.hypercerts.api.defs.profileView"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "organization": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/org.hypercerts.api.defs.organizationView"
-              },
-              {
-                "type": "null"
-              }
-            ]
           }
         }
       },

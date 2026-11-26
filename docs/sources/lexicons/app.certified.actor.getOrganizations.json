@@ -74,7 +74,7 @@
         },
         "organization": {
           "type": "ref",
-          "ref": "app.certified.actor.getOrganization#organizationActorView",
+          "ref": "org.hypercerts.api.defs#actorView",
           "description": "Hydrated actor view, or null when no indexed organization sidecar exists."
         }
       }

@@ -23,7 +23,7 @@ When a change affects registered query Lexicons or their schemas, refresh the co
 pnpm docs:sync
 ```
 
-This updates `docs/sources/index.json`, the committed Lexicon snapshots, `docs/openapi.json`, and `docs/coverage.json`. It uses the repository-pinned `@hypercerts-org/lexicon` dependency and makes no HappyView requests. Coverage reports manifest inclusion only; it does not validate runtime behavior or deployment. See [docs/README.md](docs/README.md) for the source and snapshot policy.
+This updates `docs/sources/index.json`, the committed Lexicon snapshots, and both OpenAPI snapshots. It uses the repository-pinned `@hypercerts-org/lexicon` dependency and makes no HappyView requests. See [docs/README.md](docs/README.md) for the source and snapshot policy.
 
 The same changes, and changes to the `@hypercerts-org/lexicon` or `@atproto/lex` version in `packages/api/package.json`, require regenerating the `@hypercerts-org/api` TypeScript package:
 
@@ -35,7 +35,7 @@ pnpm client:generate
 
 ## HTTP runtime tests
 
-`pnpm test:http` runs the suites in `happyview-modules/tests/http` against the activity, badge-definition, badge-query, EVM-link, acknowledgement, collection, context-measurement, context attachment and evaluation, contributor-information, funding, location, profile, organization, feature, work-scope-tag, rights, vocabulary-tag, graph, contribution, and feed-reaction query XRPC endpoints installed from this checkout. These tests exercise real HTTP behavior against PostgreSQL, not only Lua handlers with a fake database.
+`pnpm test:http` runs the suites in `happyview-modules/tests/http` against the actor, activity, badge-definition, badge-query, EVM-link, acknowledgement, collection, context-measurement, context attachment and evaluation, contributor-information, funding, location, profile, organization, feature, work-scope-tag, rights, vocabulary-tag, graph, contribution, and feed-reaction query XRPC endpoints installed from this checkout. These tests exercise real HTTP behavior against PostgreSQL, not only Lua handlers with a fake database.
 
 The local runner requires a local Docker Compose daemon, `psql`, and the pinned PostgreSQL and HappyView images already cached locally. Set `PSQL_PATH` to the absolute path of a trusted `psql` executable:
 
@@ -61,6 +61,7 @@ The HTTP gate fails if it discovers no suites, executes no `node:test` cases, or
 - Context-measurement exact retrieval and publisher-sidecar hydration, repeated author/subject filters and negative results, timestamp/URI tie pagination in both directions, missing sidecars, and named runtime errors.
 - Acknowledgement exact retrieval and full-record preservation, hydrated and absent publisher sidecars, repeated author/subject filters, ascending and descending pagination across timestamp ties, and named errors.
 - Badge-query baseline-aware definition feeds and discriminating filters, exact-version award/response lookups, recipient status, opt-in award totals across filters and past-the-end pages, raw response history, bidirectional tied pagination, nullable sidecars, and named runtime errors.
+- Actor lookups by DID, including ordered duplicates, unknown actors, profile and organization projections, raw URI-matched primary locations, and named request errors, plus agreement between the organization endpoints and `getActors` per DID, with every response checked against the shared actor view Lexicon.
 - Profile and organization queries across all four endpoints for each record type, including batch null results, profile-sidecar hydration, filters, `createdAt`/URI pagination ties, and named errors.
 - Vocabulary-tag exact-URI retrieval, repeated-author filtering and no-match behavior, hydrated and nullable sidecars, bidirectional pagination ties, unsupported-search rejection, and named errors.
 - Context attachment and evaluation retrieval with publisher/evaluator sidecar hydration, list filters, pagination across tied `createdAt` values, and named runtime errors. Batched comment counts cover per-record counting, CID-independent subject matching, excluded non-comment attachments, and agreement with `listAttachments`.

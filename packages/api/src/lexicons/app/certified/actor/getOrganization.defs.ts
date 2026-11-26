@@ -4,7 +4,6 @@
 
 import { l } from "@atproto/lex";
 import * as ApiDefs from "../../../org/hypercerts/api/defs.defs.js";
-import * as CertifiedLocation from "@hypercerts-org/lexicon/app/certified/location.defs";
 
 const $nsid = "app.certified.actor.getOrganization";
 
@@ -32,35 +31,10 @@ type $lxm = typeof $lxm;
 
 export { $lxm };
 
-/** Indexed app.certified.location record view preserving the full record exactly as getLocation returns it, but without the hydrated author; indexedAt may be null when the index has no timestamp. */
-type LocationRecordView = { $type?: "app.certified.actor.getOrganization#locationRecordView";"uri":l.AtUriString;"cid":l.CidString;"indexedAt":l.DatetimeString | null;"did":l.DidString;"record":CertifiedLocation.Main };
-
-export type { LocationRecordView };
-
-/** Indexed app.certified.location record view preserving the full record exactly as getLocation returns it, but without the hydrated author; indexedAt may be null when the index has no timestamp. */
-const locationRecordView = /*#__PURE__*/ l.typedObject<LocationRecordView>($nsid, "locationRecordView", /*#__PURE__*/ l.object({"uri":/*#__PURE__*/ l.string({"format":"at-uri"}),"cid":/*#__PURE__*/ l.string({"format":"cid"}),"indexedAt":/*#__PURE__*/ l.nullable(/*#__PURE__*/ l.string({"format":"datetime"})),"did":/*#__PURE__*/ l.string({"format":"did"}),"record":/*#__PURE__*/ l.ref<CertifiedLocation.Main>((() => CertifiedLocation.main) as any)}));
-
-export { locationRecordView };
-
-/** Actor with an indexed organization sidecar, nullable profile view and nullable location view. */
-type OrganizationActorView = { $type?: "app.certified.actor.getOrganization#organizationActorView";"did":l.DidString;"profile":ApiDefs.ProfileView | null;"organization":ApiDefs.OrganizationView;
-
-  /**
-   * The organization's location record, as stored (blobs are not resolved). Only returned by getOrganization, getOrganizations, listOrganizations and searchOrganizations. Null if there is no location or it is not indexed. Matched by URI, so it may be a newer version than organization.record.location.cid.
-   */
-  "location"?:LocationRecordView | null };
-
-export type { OrganizationActorView };
-
-/** Actor with an indexed organization sidecar, nullable profile view and nullable location view. */
-const organizationActorView = /*#__PURE__*/ l.typedObject<OrganizationActorView>($nsid, "organizationActorView", /*#__PURE__*/ l.object({"did":/*#__PURE__*/ l.string({"format":"did"}),"profile":/*#__PURE__*/ l.nullable(/*#__PURE__*/ l.ref<ApiDefs.ProfileView>((() => ApiDefs.profileView) as any)),"organization":/*#__PURE__*/ l.ref<ApiDefs.OrganizationView>((() => ApiDefs.organizationView) as any),"location":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.nullable(/*#__PURE__*/ l.ref<LocationRecordView>((() => locationRecordView) as any)))}));
-
-export { organizationActorView };
-
-type Output = { $type?: "app.certified.actor.getOrganization#output";"actor":OrganizationActorView };
+type Output = { $type?: "app.certified.actor.getOrganization#output";"actor":ApiDefs.ActorView };
 
 export type { Output };
 
-const output = /*#__PURE__*/ l.typedObject<Output>($nsid, "output", /*#__PURE__*/ l.object({"actor":/*#__PURE__*/ l.ref<OrganizationActorView>((() => organizationActorView) as any)}));
+const output = /*#__PURE__*/ l.typedObject<Output>($nsid, "output", /*#__PURE__*/ l.object({"actor":/*#__PURE__*/ l.ref<ApiDefs.ActorView>((() => ApiDefs.actorView) as any)}));
 
 export { output };

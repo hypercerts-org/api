@@ -1,3 +1,11 @@
+-- Hydrates page rows through the shared actor lookup, keeping this API's error
+-- mapping. Rows are unique per DID, so the result keeps row order.
+local function organization_actors(rows)
+  local dids = {}
+  for index, row in ipairs(rows) do dids[index] = row.did end
+  return lookup_actors(dids, query)
+end
+
 local function valid_organization_uri(value)
   if type(value) ~= "string" or value:find("[?#]") then return false end
   local authority, collection, rkey = value:match("^at://([^/]+)/([^/]+)/([^/]+)$")
@@ -111,16 +119,12 @@ local function query_organizations(actors, organization_types, visibility, searc
   local more = #rows > limit
   if more then rows[#rows] = nil end
 
-  local actors_result = {}
-  for _, row in ipairs(rows) do
-    actors_result[#actors_result + 1] = organization_actor_view(row)
-  end
+  local actors_result = organization_actors(rows)
   local next_cursor
   if more then
     local last = rows[#rows]
     next_cursor = cursor_encode({ v = 1, d = direction, t = last.sort_timestamp, u = last.uri })
   end
-  hydrate_organization_actors(actors_result)
   return actors_result, next_cursor
 end
 

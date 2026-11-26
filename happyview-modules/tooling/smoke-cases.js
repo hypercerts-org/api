@@ -127,6 +127,21 @@ const nonEmpty = (key) => (json) =>
     ? []
     : [`search for a term taken from an existing record returned no ${key}`];
 
+// Actor projection does not require a seed record to exist.
+const projectionDid = "did:web:actor-smoke.example";
+
+/** @param {any} actor @param {string} did @param {{ handleAllowed: boolean }} options */
+function checkActorProjection(actor, did, { handleAllowed }) {
+  const errors = [];
+  if (actor?.did !== did) errors.push(`actor DID did not echo ${did}`);
+  if (!actor || !Object.hasOwn(actor, "location")) errors.push("actor.location must be present");
+  if (!handleAllowed && actor && Object.hasOwn(actor, "handle"))
+    errors.push("actor.handle must be omitted: only getActor looks up handles");
+  if (actor?.handle === null || actor?.handle === "handle.invalid")
+    errors.push("actor.handle must be omitted when unresolved");
+  return errors;
+}
+
 /** @type {Record<string, SmokeCase>} */
 export const SMOKE_CASES = {
   // ---- phase 1: lists that need no input ----
@@ -206,6 +221,25 @@ export const SMOKE_CASES = {
   [`${NS.workscope}.getWorkscopeTag`]: getByUri("workscopeTag"),
 
   // ---- phase 2: actors, graph, feed ----
+  [`${NS.actor}.getActor`]: withSeed(
+    (s) => ({ actor: s.org ?? s.actor ?? projectionDid }),
+    (json, params) =>
+      checkActorProjection(json.actor, String(params.actor), { handleAllowed: true }),
+  ),
+  [`${NS.actor}.getActors`]: withSeed(
+    (s) => {
+      const did = s.org ?? s.actor ?? projectionDid;
+      return { actors: [did, s.actor ?? projectionDid, did] };
+    },
+    (json, params) => {
+      const actors = json.actors ?? [];
+      if (!Array.isArray(params.actors) || actors.length !== params.actors.length)
+        return ["actor view count did not match input occurrences"];
+      return params.actors.flatMap((did, index) =>
+        checkActorProjection(actors[index], did, { handleAllowed: false }),
+      );
+    },
+  ),
   [`${NS.actor}.getProfile`]: withSeed((s) => ({ actor: need(s.actor) })),
   [`${NS.actor}.getProfiles`]: withSeed(
     twoDids("actors", "profile"),

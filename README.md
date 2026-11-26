@@ -1,12 +1,12 @@
 # Hypercerts API workspace
 
-This repository builds and installs Hypercerts API modules for HappyView. `happyview-modules/manifest.json` is authoritative for included modules. The endpoint explorer in `docs/` is generated from committed Lexicon snapshots; `pnpm docs:sync` refreshes its index, snapshots, OpenAPI reference, and coverage report from local API sources and pinned dependencies. It does not contact remote Lexicons or HappyView.
+This repository builds and installs Hypercerts API modules for HappyView. `happyview-modules/manifest.json` is authoritative for included modules. The endpoint explorer in `docs/` is generated from committed Lexicon snapshots; `pnpm docs:sync` refreshes its index, snapshots, and OpenAPI reference from local API sources and pinned dependencies. It does not contact remote Lexicons or HappyView.
 
 ## Repository map
 
 - `happyview-modules/` — installer, manifests, Lua handlers, shared tooling, and unit/HTTP tests.
 - `packages/api/` — `@hypercerts-org/api`, TypeScript query definitions and types generated from the API's query Lexicons. See [packages/api/README.md](packages/api/README.md).
-- `docs/` — endpoint explorer, generated OpenAPI reference, Lexicon snapshots, coverage report, and explorer tests.
+- `docs/` — endpoint explorer, generated OpenAPI reference, Lexicon snapshots, and explorer tests.
 - `.changeset/` — release notes and versioning metadata.
 - `.github/` — GitHub workflows.
 - `.agents/` — repository-specific agent instructions and skills.

@@ -3,7 +3,7 @@
  */
 
 import { l } from "@atproto/lex";
-import * as ActorGetOrganization from "./getOrganization.defs.js";
+import * as ApiDefs from "../../../org/hypercerts/api/defs.defs.js";
 
 const $nsid = "app.certified.actor.getOrganizations";
 
@@ -54,10 +54,10 @@ type OrganizationResult = { $type?: "app.certified.actor.getOrganizations#organi
   /**
    * Hydrated actor view, or null when no indexed organization sidecar exists.
    */
-  "organization":ActorGetOrganization.OrganizationActorView | null };
+  "organization":ApiDefs.ActorView | null };
 
 export type { OrganizationResult };
 
-const organizationResult = /*#__PURE__*/ l.typedObject<OrganizationResult>($nsid, "organizationResult", /*#__PURE__*/ l.object({"actor":/*#__PURE__*/ l.string({"format":"did"}),"organization":/*#__PURE__*/ l.nullable(/*#__PURE__*/ l.ref<ActorGetOrganization.OrganizationActorView>((() => ActorGetOrganization.organizationActorView) as any))}));
+const organizationResult = /*#__PURE__*/ l.typedObject<OrganizationResult>($nsid, "organizationResult", /*#__PURE__*/ l.object({"actor":/*#__PURE__*/ l.string({"format":"did"}),"organization":/*#__PURE__*/ l.nullable(/*#__PURE__*/ l.ref<ApiDefs.ActorView>((() => ApiDefs.actorView) as any))}));
 
 export { organizationResult };

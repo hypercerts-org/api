@@ -71,7 +71,7 @@
           "type": "array",
           "items": {
             "type": "ref",
-            "ref": "app.certified.actor.getOrganization#organizationActorView"
+            "ref": "org.hypercerts.api.defs#actorView"
           }
         },
         "cursor": {

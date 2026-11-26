@@ -4,7 +4,15 @@ This package owns the shared API installer and build tooling, pinned upstream Le
 
 ## Endpoint reference
 
-Use the [`docs/` endpoint explorer](../docs/) and generated [OpenAPI reference](../docs/openapi.json) for endpoint names and contracts. The [coverage report](../docs/coverage.json) lists manifest-registered operations; inclusion does not imply runtime or deployment validation. See [docs/README.md](../docs/README.md) to run the explorer locally and refresh its committed reference.
+Use the [`docs/` endpoint explorer](../docs/) and generated [OpenAPI reference](../docs/openapi.json) for endpoint names and contracts. The explorer lists manifest-registered operations; inclusion does not imply runtime or deployment validation. See [docs/README.md](../docs/README.md) to run the explorer locally and refresh its committed reference.
+
+## Actor lookups
+
+`app.certified.actor.getActor` takes one DID in `actor`. `app.certified.actor.getActors` takes 1–100 repeated, unbracketed `actors` values and preserves input order and duplicates. Both return a view even if no indexed records exist for the DID, with nullable `profile`, `organization`, and `location`. Use `getProfile` if you need a profile lookup by handle. Both actor lookups use generic DID syntax validation: opaque percent sequences such as `did:example:abc%ZZ` are accepted, but a trailing `%` is not.
+
+Only `getActor` enriches its view with a handle, with one lookup. After reading the index, it sends the DID to the trusted HTTPS origin in `HYPERCERTS_HANDLE_RESOLVER_URL` (default `https://slingshot.microcosm.blue` when unset) using Slingshot's `blue.microcosm.identity.resolveMiniDoc` query. If the setting is unsupported, the lookup fails, or the response does not contain a valid handle for the same DID, `handle` is omitted. `getActors` and every other endpoint returning an actor view make no resolver calls and omit `handle`: HappyView Lua HTTP runs serially, so a batch lookup would add up latency, and Lua imposes no timeout. This does not change `getProfile`'s resolver call or any legacy response.
+
+The primary location matches the strong reference's AT-URI, not its pinned CID. It can return a different version than the one named by the CID, or null when no primary location is indexed. Images, blobs, and additional location references stay as stored. Database errors are not empty projections. Existing organization and embedded author responses are unchanged.
 
 ## Graph follow capability
 
