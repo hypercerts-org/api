@@ -56,7 +56,7 @@ local function filter_signature(authors)
   return table.concat(authors or {}, ",")
 end
 
-local function decode_cursor(token, direction, authors)
+local function decode_vocab_tag_cursor(token, direction, authors)
   if not token then return nil end
   if #token % 2 ~= 0 or token:find("[^0-9a-f]") then invalid("cursor is malformed") end
   local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
@@ -141,7 +141,7 @@ local function handle_list_vocab_tags()
   local authors = parse_authors(params.authors)
   local limit = parse_list_limit(params)
   local direction = parse_sort_direction(params)
-  local cursor = decode_cursor(scalar(params, "cursor"), direction, authors)
+  local cursor = decode_vocab_tag_cursor(scalar(params, "cursor"), direction, authors)
   local views, next_cursor = list_vocab_tags(authors, limit, cursor, direction)
   local response = { vocabTags = toarray(views) }
   if next_cursor then response.cursor = next_cursor end

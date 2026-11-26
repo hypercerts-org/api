@@ -27,6 +27,15 @@ local function scalar(params, key)
   return tostring(value)
 end
 
+-- luacheck: push ignore 211
+-- Like scalar(), but a boolean comes back as "true" or "false": HappyView can hand
+-- boolean-typed query parameters to Lua as booleans rather than strings.
+local function scalar_or_boolean(values, key)
+  if type(values[key]) == "boolean" then return tostring(values[key]) end
+  return scalar(values, key)
+end
+-- luacheck: pop
+
 local function valid_record_key(value)
   return #value >= 1 and #value <= 512 and value ~= "." and value ~= ".."
     and not value:find("[^%w_~%.:%-]")
@@ -39,6 +48,14 @@ local function valid_record_uri(value)
   return true, collection, authority
 end
 
+-- luacheck: push ignore 211
+-- For user-supplied filter values: bounds the size before parsing.
+local function valid_bounded_record_uri(value)
+  if type(value) ~= "string" or #value > 8192 then return false end
+  return valid_record_uri(value)
+end
+-- luacheck: pop
+
 local NULL = json.decode("null")
 
 local function record_view(row)
@@ -50,6 +67,20 @@ local function record_view(row)
     record = json.decode(row.record),
   }
 end
+
+-- luacheck: push ignore 211
+-- Like record_view, but a row without indexed_at has no indexedAt key instead of JSON null.
+-- Pass it to hydrate_actor_views for sidecars that preserve the omission.
+local function record_view_omitting_indexed_at(row)
+  return {
+    uri = row.uri,
+    cid = row.cid,
+    indexedAt = row.indexed_at,
+    did = row.did,
+    record = json.decode(row.record),
+  }
+end
+-- luacheck: pop
 
 local PROFILE = "app.certified.actor.profile"
 local ORGANIZATION = "app.certified.actor.organization"
@@ -81,18 +112,6 @@ local function hydrate_actor_views(actors, run_query, view)
     actor.profile = profiles[actor.did] and view(profiles[actor.did]) or NULL
     actor.organization = organizations[actor.did] and view(organizations[actor.did]) or NULL
   end
-end
-
--- Like record_view, but a row without indexed_at has no indexedAt key instead of JSON null.
--- Pass it to hydrate_actor_views for sidecars that preserve the omission.
-local function record_view_omitting_indexed_at(row)
-  return {
-    uri = row.uri,
-    cid = row.cid,
-    indexedAt = row.indexed_at,
-    did = row.did,
-    record = json.decode(row.record),
-  }
 end
 
 local VOCAB_TAG = "org.hypercerts.vocab.tag"

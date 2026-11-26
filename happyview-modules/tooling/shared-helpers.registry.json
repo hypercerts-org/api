@@ -30,7 +30,7 @@
           "description": "the AT-URI parsing pattern"
         }
       ],
-      "homes": ["lua/shared/recordIdentifier.lua", "lua/shared/boundedRecordIdentifier.lua"]
+      "homes": ["lua/shared/recordIdentifier.lua"]
     },
     {
       "id": "datetime-validation",
@@ -60,12 +60,7 @@
           "description": "the cursor length cap"
         }
       ],
-      "homes": [
-        "lua/shared/listCursor.lua",
-        "lua/shared/listQuery.lua",
-        "lua/shared/cursorEncode.lua",
-        "lua/shared/cursorToken.lua"
-      ]
+      "homes": ["lua/shared/listCursor.lua", "lua/shared/listQuery.lua"]
     },
     {
       "id": "list-params",
@@ -105,7 +100,7 @@
           "description": "single-value parameter parsing"
         }
       ],
-      "homes": ["lua/shared/query.lua", "lua/shared/scalarOrBoolean.lua"]
+      "homes": ["lua/shared/query.lua"]
     },
     {
       "id": "repeated-query-array",
@@ -125,7 +120,7 @@
           "description": "the indexedAt null fallback"
         }
       ],
-      "homes": ["lua/shared/recordView.lua", "lua/shared/recordViewOmittingIndexedAt.lua"]
+      "homes": ["lua/shared/recordView.lua"]
     },
     {
       "id": "actor-view",
@@ -528,9 +523,9 @@
     },
     {
       "file": "lua/src/listVocabTags.lua",
-      "family": "shared-helper",
-      "symbol": "decode_cursor",
-      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
+      "family": "list-cursor",
+      "symbol": "decode_vocab_tag_cursor",
+      "reason": "Pending A1 in the follow-up PR: this decoder has no 8192-character cap and an empty cursor gets a different message; its cursor also carries the author filter. Renamed from decode_cursor so it no longer collides with the shared helper."
     },
     {
       "file": "lua/src/searchBadgeDefinitions.lua",

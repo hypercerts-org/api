@@ -9,3 +9,11 @@ local function valid_record_uri(value)
   if not authority or not valid_did(authority) or not valid_record_key(rkey) then return false end
   return true, collection, authority
 end
+
+-- luacheck: push ignore 211
+-- For user-supplied filter values: bounds the size before parsing.
+local function valid_bounded_record_uri(value)
+  if type(value) ~= "string" or #value > 8192 then return false end
+  return valid_record_uri(value)
+end
+-- luacheck: pop

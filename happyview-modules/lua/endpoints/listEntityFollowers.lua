@@ -27,6 +27,15 @@ local function scalar(params, key)
   return tostring(value)
 end
 
+-- luacheck: push ignore 211
+-- Like scalar(), but a boolean comes back as "true" or "false": HappyView can hand
+-- boolean-typed query parameters to Lua as booleans rather than strings.
+local function scalar_or_boolean(values, key)
+  if type(values[key]) == "boolean" then return tostring(values[key]) end
+  return scalar(values, key)
+end
+-- luacheck: pop
+
 local function valid_record_key(value)
   return #value >= 1 and #value <= 512 and value ~= "." and value ~= ".."
     and not value:find("[^%w_~%.:%-]")
@@ -38,6 +47,14 @@ local function valid_record_uri(value)
   if not authority or not valid_did(authority) or not valid_record_key(rkey) then return false end
   return true, collection, authority
 end
+
+-- luacheck: push ignore 211
+-- For user-supplied filter values: bounds the size before parsing.
+local function valid_bounded_record_uri(value)
+  if type(value) ~= "string" or #value > 8192 then return false end
+  return valid_record_uri(value)
+end
+-- luacheck: pop
 
 local function valid_datetime(value)
   if type(value) ~= "string" then return false end
@@ -71,50 +88,6 @@ local function parse_list_limit(params)
   return limit
 end
 
--- Hex-encodes the JSON of a cursor table.
-local function cursor_encode(value)
-  local encoded = json.encode(value)
-  return (encoded:gsub(".", function(char) return string.format("%02x", string.byte(char)) end))
-end
-
-local function parse_sort_direction(params)
-  local direction = scalar(params, "sortDirection") or "desc"
-  if direction ~= "asc" and direction ~= "desc" then invalid("sortDirection must be 'asc' or 'desc'") end
-  return direction
-end
-
-local NULL = json.decode("null")
-
-local function record_view(row)
-  return {
-    uri = row.uri,
-    cid = row.cid,
-    indexedAt = row.indexed_at == nil and NULL or row.indexed_at,
-    did = row.did,
-    record = json.decode(row.record),
-  }
-end
-
-local ENTITY_FOLLOW = "app.certified.graph.entityFollow"
-local ENTITY_FOLLOW_NULL = json.decode("null")
-
-local function entity_follow_query(sql, values)
-  if db.backend() ~= "postgres" then
-    error("EntityFollowQueryFailed: entity-follow queries require PostgreSQL", 0)
-  end
-  local ok, result = pcall(db.raw, sql, values)
-  if not ok or type(result) ~= "table" then
-    error("EntityFollowQueryFailed: entity-follow lookup failed", 0)
-  end
-  return result
-end
-
-local function entity_follow_typed_view(row)
-  local view = record_view(row)
-  view["$type"] = "app.certified.graph.getEntityFollow#entityFollowRecordView"
-  return view
-end
-
 -- The hex prologue every list cursor shape shares: rejects empty, over-long (8192),
 -- odd-length and non-lowercase-hex tokens with "cursor is malformed" and returns the
 -- decoded JSON text. Shape and JSON checks stay with each cursor's own decoder.
@@ -125,6 +98,13 @@ local function decode_hex_cursor_token(token)
   return (token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end))
 end
 
+-- Hex-encodes the JSON of a cursor table.
+local function cursor_encode(value)
+  local encoded = json.encode(value)
+  return (encoded:gsub(".", function(char) return string.format("%02x", string.byte(char)) end))
+end
+
+-- luacheck: push ignore 211
 -- Decodes a hex-encoded {v, d, t, u} list cursor. Rejects malformed tokens, other
 -- sort directions and unknown keys; validate_value(value) -> boolean runs the
 -- endpoint-specific check on t and u. Not for endpoints that skip the 8192-character
@@ -155,6 +135,59 @@ local function decode_record_cursor(token, direction, record_uri, valid_t)
     local valid, collection = valid_record_uri(value.u)
     return valid and collection == record_uri
   end)
+end
+-- luacheck: pop
+
+local function parse_sort_direction(params)
+  local direction = scalar(params, "sortDirection") or "desc"
+  if direction ~= "asc" and direction ~= "desc" then invalid("sortDirection must be 'asc' or 'desc'") end
+  return direction
+end
+
+local NULL = json.decode("null")
+
+local function record_view(row)
+  return {
+    uri = row.uri,
+    cid = row.cid,
+    indexedAt = row.indexed_at == nil and NULL or row.indexed_at,
+    did = row.did,
+    record = json.decode(row.record),
+  }
+end
+
+-- luacheck: push ignore 211
+-- Like record_view, but a row without indexed_at has no indexedAt key instead of JSON null.
+-- Pass it to hydrate_actor_views for sidecars that preserve the omission.
+local function record_view_omitting_indexed_at(row)
+  return {
+    uri = row.uri,
+    cid = row.cid,
+    indexedAt = row.indexed_at,
+    did = row.did,
+    record = json.decode(row.record),
+  }
+end
+-- luacheck: pop
+
+local ENTITY_FOLLOW = "app.certified.graph.entityFollow"
+local ENTITY_FOLLOW_NULL = json.decode("null")
+
+local function entity_follow_query(sql, values)
+  if db.backend() ~= "postgres" then
+    error("EntityFollowQueryFailed: entity-follow queries require PostgreSQL", 0)
+  end
+  local ok, result = pcall(db.raw, sql, values)
+  if not ok or type(result) ~= "table" then
+    error("EntityFollowQueryFailed: entity-follow lookup failed", 0)
+  end
+  return result
+end
+
+local function entity_follow_typed_view(row)
+  local view = record_view(row)
+  view["$type"] = "app.certified.graph.getEntityFollow#entityFollowRecordView"
+  return view
 end
 
 local CREATED_AT_SORT_PATTERN = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"

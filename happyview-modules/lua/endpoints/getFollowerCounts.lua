@@ -27,6 +27,15 @@ local function scalar(params, key)
   return tostring(value)
 end
 
+-- luacheck: push ignore 211
+-- Like scalar(), but a boolean comes back as "true" or "false": HappyView can hand
+-- boolean-typed query parameters to Lua as booleans rather than strings.
+local function scalar_or_boolean(values, key)
+  if type(values[key]) == "boolean" then return tostring(values[key]) end
+  return scalar(values, key)
+end
+-- luacheck: pop
+
 local function valid_record_key(value)
   return #value >= 1 and #value <= 512 and value ~= "." and value ~= ".."
     and not value:find("[^%w_~%.:%-]")
@@ -38,6 +47,14 @@ local function valid_record_uri(value)
   if not authority or not valid_did(authority) or not valid_record_key(rkey) then return false end
   return true, collection, authority
 end
+
+-- luacheck: push ignore 211
+-- For user-supplied filter values: bounds the size before parsing.
+local function valid_bounded_record_uri(value)
+  if type(value) ~= "string" or #value > 8192 then return false end
+  return valid_record_uri(value)
+end
+-- luacheck: pop
 
 -- An atproto NSID: at least three dot-separated segments, at most 317 characters.
 local function valid_nsid(value)

@@ -18,6 +18,14 @@ local function valid_record_uri(value)
   return true, collection, authority
 end
 
+-- luacheck: push ignore 211
+-- For user-supplied filter values: bounds the size before parsing.
+local function valid_bounded_record_uri(value)
+  if type(value) ~= "string" or #value > 8192 then return false end
+  return valid_record_uri(value)
+end
+-- luacheck: pop
+
 local ACTIVITY_PROJECTION_CONTRIBUTOR_INFORMATION = "org.hypercerts.claim.contributorInformation"
 local ACTIVITY_PROJECTION_PROFILE = "app.certified.actor.profile"
 local ACTIVITY_PROJECTION_ORGANIZATION = "app.certified.actor.organization"
@@ -217,12 +225,14 @@ local function scalar(params, key)
   return tostring(value)
 end
 
+-- luacheck: push ignore 211
 -- Like scalar(), but a boolean comes back as "true" or "false": HappyView can hand
 -- boolean-typed query parameters to Lua as booleans rather than strings.
 local function scalar_or_boolean(values, key)
   if type(values[key]) == "boolean" then return tostring(values[key]) end
   return scalar(values, key)
 end
+-- luacheck: pop
 
 local ACTIVITY = "org.hypercerts.claim.activity"
 
@@ -290,18 +300,6 @@ local function created_at_sort(alias)
     "::timestamptz, " .. created_at .. "::timestamptz) END"
 end
 
--- Hex-encodes the JSON of a cursor table.
-local function cursor_encode(value)
-  local encoded = json.encode(value)
-  return (encoded:gsub(".", function(char) return string.format("%02x", string.byte(char)) end))
-end
-
-local function parse_sort_direction(params)
-  local direction = scalar(params, "sortDirection") or "desc"
-  if direction ~= "asc" and direction ~= "desc" then invalid("sortDirection must be 'asc' or 'desc'") end
-  return direction
-end
-
 -- The hex prologue every list cursor shape shares: rejects empty, over-long (8192),
 -- odd-length and non-lowercase-hex tokens with "cursor is malformed" and returns the
 -- decoded JSON text. Shape and JSON checks stay with each cursor's own decoder.
@@ -312,6 +310,13 @@ local function decode_hex_cursor_token(token)
   return (token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end))
 end
 
+-- Hex-encodes the JSON of a cursor table.
+local function cursor_encode(value)
+  local encoded = json.encode(value)
+  return (encoded:gsub(".", function(char) return string.format("%02x", string.byte(char)) end))
+end
+
+-- luacheck: push ignore 211
 -- Decodes a hex-encoded {v, d, t, u} list cursor. Rejects malformed tokens, other
 -- sort directions and unknown keys; validate_value(value) -> boolean runs the
 -- endpoint-specific check on t and u. Not for endpoints that skip the 8192-character
@@ -342,6 +347,13 @@ local function decode_record_cursor(token, direction, record_uri, valid_t)
     local valid, collection = valid_record_uri(value.u)
     return valid and collection == record_uri
   end)
+end
+-- luacheck: pop
+
+local function parse_sort_direction(params)
+  local direction = scalar(params, "sortDirection") or "desc"
+  if direction ~= "asc" and direction ~= "desc" then invalid("sortDirection must be 'asc' or 'desc'") end
+  return direction
 end
 
 -- Adds `column IN ($n, ...)` to where, binding items; an empty list matches nothing.

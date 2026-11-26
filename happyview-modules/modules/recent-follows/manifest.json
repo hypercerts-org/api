@@ -20,7 +20,7 @@
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/datetimeValidation.lua",
         "../../lua/shared/listValidation.lua",
-        "../../lua/shared/cursorEncode.lua",
+        "../../lua/shared/listCursor.lua",
         "../../lua/shared/accountFollowFilter.lua",
         "../../lua/shared/recentFollows.lua"
       ],
