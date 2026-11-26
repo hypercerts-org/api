@@ -217,6 +217,13 @@ local function scalar(params, key)
   return tostring(value)
 end
 
+-- Like scalar(), but a boolean comes back as "true" or "false": HappyView can hand
+-- boolean-typed query parameters to Lua as booleans rather than strings.
+local function scalar_or_boolean(values, key)
+  if type(values[key]) == "boolean" then return tostring(values[key]) end
+  return scalar(values, key)
+end
+
 local ACTIVITY = "org.hypercerts.claim.activity"
 
 local function query(sql, values)
@@ -338,13 +345,6 @@ local function parse_include_total(values)
   if value == "true" then return true end
   if value == "false" then return false end
   invalid("includeTotal must be true or false")
-end
-
-local function activity_scalar(values, key)
-  if key == "hasOrganizationRecord" and type(values[key]) == "boolean" then
-    return tostring(values[key])
-  end
-  return scalar(values, key)
 end
 
 local function activity_array(key, format)
@@ -518,7 +518,7 @@ local function activity_list_response(search_enabled)
   keys_only(params, allowed, "unknown query parameter: ")
 
   local authors = activity_array("authors", "did")
-  local has_organization_record = activity_scalar(params, "hasOrganizationRecord")
+  local has_organization_record = scalar_or_boolean(params, "hasOrganizationRecord")
   if has_organization_record ~= nil then
     if has_organization_record == "true" then
       has_organization_record = true

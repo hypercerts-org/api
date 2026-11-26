@@ -300,27 +300,19 @@ local ITEM_ACTIVITY = "org.hypercerts.claim.activity"
 local ITEM_FEATURE = "org.hypercerts.entity.feature"
 local ITEM_NULL = json.decode("null")
 
-local function collection_items_invalid(message)
-  error("InvalidRequest: " .. message, 0)
-end
-
-local function collection_items_keys_only(values, allowed)
-  keys_only(values, allowed, "unknown query parameter: ")
-end
-
 local function collection_items_cursor_decode(token, collection_uri)
   if token == nil then return nil end
   if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
-    collection_items_invalid("cursor is malformed")
+    invalid("cursor is malformed")
   end
   local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
   local ok, value = pcall(json.decode, decoded)
   if not ok or type(value) ~= "table" or value.v ~= 1 or value.u ~= collection_uri
     or type(value.i) ~= "number" or value.i < 1 or value.i % 1 ~= 0 then
-    collection_items_invalid("cursor is malformed or belongs to another collection")
+    invalid("cursor is malformed or belongs to another collection")
   end
   for key in pairs(value) do
-    if key ~= "v" and key ~= "u" and key ~= "i" then collection_items_invalid("cursor is malformed") end
+    if key ~= "v" and key ~= "u" and key ~= "i" then invalid("cursor is malformed") end
   end
   return value
 end
@@ -445,11 +437,11 @@ local function collection_items_resolve(items)
 end
 
 local function collection_items_response()
-  collection_items_keys_only(params, { collection = true, limit = true, cursor = true })
+  keys_only(params, { collection = true, limit = true, cursor = true }, "unknown query parameter: ")
   local collection_uri = scalar(params, "collection")
   local valid, collection = valid_record_uri(collection_uri)
   if not collection_uri or not valid or collection ~= ITEM_COLLECTION then
-    collection_items_invalid("collection must be a full org.hypercerts.collection AT-URI with a DID authority")
+    invalid("collection must be a full org.hypercerts.collection AT-URI with a DID authority")
   end
   local limit = parse_list_limit(params)
   local cursor = collection_items_cursor_decode(scalar(params, "cursor"), collection_uri)

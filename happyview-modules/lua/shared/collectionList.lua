@@ -1,8 +1,3 @@
-local function collection_scalar(values, key)
-  if key == "hasOrganizationRecord" and type(values[key]) == "boolean" then return tostring(values[key]) end
-  return scalar(values, key)
-end
-
 local function collection_array(key, kind)
   local value = params[key]
   if value == nil then return nil end
@@ -197,7 +192,7 @@ local function collection_list_response(search_enabled)
   keys_only(params, allowed, "unknown query parameter: ")
 
   local authors = collection_array("authors", "did")
-  local has_organization_record = collection_scalar(params, "hasOrganizationRecord")
+  local has_organization_record = scalar_or_boolean(params, "hasOrganizationRecord")
   if has_organization_record ~= nil then
     if has_organization_record == "true" then
       has_organization_record = true

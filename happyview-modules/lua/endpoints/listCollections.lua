@@ -288,6 +288,13 @@ local function scalar(params, key)
   return tostring(value)
 end
 
+-- Like scalar(), but a boolean comes back as "true" or "false": HappyView can hand
+-- boolean-typed query parameters to Lua as booleans rather than strings.
+local function scalar_or_boolean(values, key)
+  if type(values[key]) == "boolean" then return tostring(values[key]) end
+  return scalar(values, key)
+end
+
 local function parse_list_limit(params)
   local limit_value = scalar(params, "limit")
   if limit_value and not limit_value:match("^%d+$") then invalid("limit must be an integer from 1 through 100") end
@@ -351,11 +358,6 @@ local function parse_include_total(values)
   if value == "true" then return true end
   if value == "false" then return false end
   invalid("includeTotal must be true or false")
-end
-
-local function collection_scalar(values, key)
-  if key == "hasOrganizationRecord" and type(values[key]) == "boolean" then return tostring(values[key]) end
-  return scalar(values, key)
 end
 
 local function collection_array(key, kind)
@@ -552,7 +554,7 @@ local function collection_list_response(search_enabled)
   keys_only(params, allowed, "unknown query parameter: ")
 
   local authors = collection_array("authors", "did")
-  local has_organization_record = collection_scalar(params, "hasOrganizationRecord")
+  local has_organization_record = scalar_or_boolean(params, "hasOrganizationRecord")
   if has_organization_record ~= nil then
     if has_organization_record == "true" then
       has_organization_record = true

@@ -174,16 +174,6 @@ local function badge_award_view(row)
   return view
 end
 
-local function parse_include_total()
-  local value = params.includeTotal
-  if value == nil then return false end
-  if type(value) == "boolean" then return value end
-  value = scalar(params, "includeTotal")
-  if value == "true" then return true end
-  if value == "false" then return false end
-  invalid("includeTotal must be true or false")
-end
-
 local function list_badge_awards(authors, badge_uris, badge_types, subjects, responses, limit, cursor, direction,
   include_total)
   local where, values = { "award.collection = $1" }, { AWARD }
@@ -313,7 +303,7 @@ local function handle_list_badge_awards()
   local limit = parse_list_limit(params)
   local direction = parse_sort_direction(params)
   local cursor = decode_badge_award_cursor(scalar(params, "cursor"), direction)
-  local include_total = parse_include_total()
+  local include_total = parse_include_total(params)
   local views, next_cursor, total_count = list_badge_awards(authors, badge_uris, badge_types, subjects, responses,
     limit, cursor, direction, include_total)
   local response = { badgeAwards = toarray(views) }

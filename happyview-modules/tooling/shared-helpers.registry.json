@@ -100,7 +100,7 @@
           "description": "single-value parameter parsing"
         }
       ],
-      "homes": ["lua/shared/query.lua"]
+      "homes": ["lua/shared/query.lua", "lua/shared/scalarOrBoolean.lua"]
     },
     {
       "id": "repeated-query-array",
@@ -165,12 +165,6 @@
       "family": "list-cursor",
       "symbol": "decode_activity_cursor",
       "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
-    },
-    {
-      "file": "lua/shared/activityList.lua",
-      "family": "query-params",
-      "symbol": "activity_scalar",
-      "reason": "Existing endpoint-local copy of the shared query helpers; kept to avoid a behavior change. Use query.lua helpers instead."
     },
     {
       "file": "lua/shared/activityList.lua",
@@ -240,28 +234,10 @@
       "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
     },
     {
-      "file": "lua/shared/collectionItems.lua",
-      "family": "query-params",
-      "symbol": "collection_items_invalid",
-      "reason": "Existing endpoint-local copy of the shared query helpers; kept to avoid a behavior change. Use query.lua helpers instead."
-    },
-    {
-      "file": "lua/shared/collectionItems.lua",
-      "family": "query-params",
-      "symbol": "collection_items_keys_only",
-      "reason": "Existing endpoint-local copy of the shared query helpers; kept to avoid a behavior change. Use query.lua helpers instead."
-    },
-    {
       "file": "lua/shared/collectionList.lua",
       "family": "list-cursor",
       "symbol": "collection_list_cursor_decode",
       "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
-    },
-    {
-      "file": "lua/shared/collectionList.lua",
-      "family": "query-params",
-      "symbol": "collection_scalar",
-      "reason": "Existing endpoint-local copy of the shared query helpers; kept to avoid a behavior change. Use query.lua helpers instead."
     },
     {
       "file": "lua/shared/collectionList.lua",
@@ -436,12 +412,6 @@
       "family": "list-cursor",
       "symbol": "decode_badge_award_cursor",
       "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
-    },
-    {
-      "file": "lua/src/listBadgeAwards.lua",
-      "family": "list-params",
-      "symbol": "include-total-message",
-      "reason": "Existing endpoint-local list parameter parsing; kept to avoid a behavior change. Use includeTotal.lua instead."
     },
     {
       "file": "lua/src/listBadgeAwards.lua",
@@ -676,12 +646,6 @@
       "family": "shared-helper",
       "symbol": "query",
       "reason": "Per-module query entry point that shares a name; not a reusable helper."
-    },
-    {
-      "file": "lua/src/listBadgeAwards.lua",
-      "family": "shared-helper",
-      "symbol": "parse_include_total",
-      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
     },
     {
       "file": "lua/src/listBadgeDefinitions.lua",

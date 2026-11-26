@@ -103,6 +103,7 @@
       "sourcePath": "../../lua/src/listBadgeAwards.lua",
       "sharedSourcePaths": [
         "../../lua/shared/query.lua",
+        "../../lua/shared/includeTotal.lua",
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/datetimeValidation.lua",
