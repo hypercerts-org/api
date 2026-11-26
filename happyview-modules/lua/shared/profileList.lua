@@ -4,26 +4,12 @@ local function valid_profile_uri(value)
   return valid and collection == PROFILE and value:sub(-5) == "/self"
 end
 
-local function array(params, key)
-  local value = params[key]
-  if value == nil then return nil end
-  local values = {}
-  if type(value) == "string" then values[1] = value
-  elseif type(value) == "table" then
-    for index = 1, #value do
-      if type(value[index]) ~= "string" then invalid(key .. " entries must be strings") end
-      values[#values + 1] = value[index]
-    end
-  else
-    invalid(key .. " must be a string or repeated string parameter")
-  end
-  if #values > 100 then invalid(key .. " accepts at most 100 values") end
-  local unique, seen = {}, {}
-  for _, item in ipairs(values) do
+local function profile_filter_values(params, key)
+  local supplied = query_string_values(params, key)
+  if not supplied then return nil end
+  return unique_query_values(supplied, function(item)
     if not valid_did(item) then invalid("each " .. key .. " value must be a valid DID") end
-    if not seen[item] then seen[item] = true; unique[#unique + 1] = item end
-  end
-  return unique
+  end)
 end
 
 local function query_profiles(actors, search, limit, cursor, direction)
@@ -73,7 +59,7 @@ local function profiles_response(search_enabled)
   end
   keys_only(params, allowed)
   local actors
-  if search_enabled then actors = array(params, "actors") end
+  if search_enabled then actors = profile_filter_values(params, "actors") end
   local search
   if search_enabled then
     search = scalar(params, "search")

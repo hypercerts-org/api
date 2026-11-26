@@ -10,42 +10,14 @@ local function contributor_information_query(sql, values)
   return result
 end
 
-local function contributor_information_array(params, key, validate, description)
-  local value = params[key]
-  if value == nil then return nil end
-
-  local supplied = {}
-  if type(value) == "string" then
-    supplied[1] = value
-  elseif type(value) == "table" then
-    local count = 0
-    for index in pairs(value) do
-      if type(index) ~= "number" or index < 1 or index % 1 ~= 0 then
-        invalid(key .. " must use repeated query values")
-      end
-      count = count + 1
-    end
-    if count ~= #value then invalid(key .. " must use repeated query values") end
-    for index = 1, count do
-      if type(value[index]) ~= "string" then invalid(key .. " entries must be strings") end
-      supplied[#supplied + 1] = value[index]
-    end
-  else
-    invalid(key .. " must be a string or repeated string parameter")
-  end
-  if #supplied > 100 then invalid(key .. " accepts at most 100 values") end
-
-  local unique, seen = {}, {}
-  for _, item in ipairs(supplied) do
+local function contributor_information_filter_values(params, key, validate, description)
+  local supplied = query_string_values(params, key)
+  if not supplied then return nil end
+  return unique_query_values(supplied, function(item)
     if validate and not validate(item) then
       invalid("each " .. key .. " value must be " .. description .. "; resolve handles to DIDs first")
     end
-    if not seen[item] then
-      seen[item] = true
-      unique[#unique + 1] = item
-    end
-  end
-  return unique
+  end)
 end
 
 local function preserve_contributor_author_timestamps(author)
@@ -111,7 +83,7 @@ function handle()
     limit = true,
     cursor = true,
   })
-  local authors = contributor_information_array(params, "authors", valid_did, "valid DIDs")
+  local authors = contributor_information_filter_values(params, "authors", valid_did, "valid DIDs")
   local limit = parse_list_limit(params)
   local direction = parse_sort_direction(params)
   local cursor = decode_record_cursor(scalar(params, "cursor"), direction, contributor_information_uri)

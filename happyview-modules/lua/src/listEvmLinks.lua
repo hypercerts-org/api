@@ -13,34 +13,15 @@ local function valid_evm_address(value)
   return #value == 42 and value:match("^0x%x+$") ~= nil
 end
 
-local function array_values(key, validate, description, normalize)
-  local value = params[key]
-  if value == nil then return nil end
-  local values = {}
-  if type(value) == "string" then
-    values[1] = value
-  elseif type(value) == "table" then
-    for index = 1, #value do
-      if type(value[index]) ~= "string" then invalid(key .. " entries must be strings") end
-      values[#values + 1] = value[index]
-    end
-  else
-    invalid(key .. " must be a string or repeated string parameter")
-  end
-  if #values > 100 then invalid(key .. " accepts at most 100 values") end
-
-  local unique, seen = {}, {}
-  for index, item in ipairs(values) do
+local function evm_link_filter_values(key, validate, description, normalize)
+  local supplied = query_string_values(params, key)
+  if not supplied then return nil end
+  return unique_query_values(supplied, function(item, index)
     if not validate(item) then
       invalid(key .. "[" .. index .. "] must be " .. description)
     end
-    local normalized = normalize and normalize(item) or item
-    if not seen[normalized] then
-      seen[normalized] = true
-      unique[#unique + 1] = normalized
-    end
-  end
-  return unique
+    return normalize and normalize(item) or item
+  end)
 end
 
 local function add_filter(where, values, expression, items)
@@ -110,8 +91,8 @@ function handle()
     limit = true,
     cursor = true,
   })
-  local actors = array_values("actors", valid_did, "valid DIDs")
-  local addresses = array_values("addresses", valid_evm_address, "a 0x-prefixed 40-digit hexadecimal EVM address", string.lower)
+  local actors = evm_link_filter_values("actors", valid_did, "valid DIDs")
+  local addresses = evm_link_filter_values("addresses", valid_evm_address, "a 0x-prefixed 40-digit hexadecimal EVM address", string.lower)
   local limit = parse_list_limit(params)
   local direction = parse_sort_direction(params)
   local cursor = decode_record_cursor(scalar(params, "cursor"), direction, valid_evm_link_uri)

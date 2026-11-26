@@ -1,30 +1,7 @@
-local function collection_array(key, kind)
-  local value = params[key]
-  if value == nil then return nil end
-
-  local supplied = {}
-  if type(value) == "string" then
-    supplied[1] = value
-  elseif type(value) == "table" then
-    local count = 0
-    for index in pairs(value) do
-      if type(index) ~= "number" or index < 1 or index % 1 ~= 0 then
-        invalid(key .. " must use repeated query values")
-      end
-      count = count + 1
-    end
-    if count ~= #value then invalid(key .. " must use repeated query values") end
-    for index = 1, count do
-      if type(value[index]) ~= "string" then invalid(key .. " entries must be strings") end
-      supplied[#supplied + 1] = value[index]
-    end
-  else
-    invalid(key .. " must be a string or repeated string parameter")
-  end
-  if #supplied > 100 then invalid(key .. " accepts at most 100 values") end
-
-  local unique, seen = {}, {}
-  for _, item in ipairs(supplied) do
+local function collection_filter_values(key, kind)
+  local supplied = query_string_values(params, key)
+  if not supplied then return nil end
+  return unique_query_values(supplied, function(item)
     if kind == "did" and not valid_did(item) then
       invalid("each authors value must be a valid DID; resolve handles to DIDs first")
     elseif kind == "collectionUri" then
@@ -44,12 +21,7 @@ local function collection_array(key, kind)
     elseif kind == "type" and #item > 64 then
       invalid("types entries must be at most 64 UTF-8 bytes")
     end
-    if not seen[item] then
-      seen[item] = true
-      unique[#unique + 1] = item
-    end
-  end
-  return unique
+  end)
 end
 
 local function collection_bind_values(values, items)
@@ -184,7 +156,7 @@ local function collection_list_response(search_enabled)
   if search_enabled then allowed.search = true else allowed.includeTotal = true end
   keys_only(params, allowed, "unknown query parameter: ")
 
-  local authors = collection_array("authors", "did")
+  local authors = collection_filter_values("authors", "did")
   local has_organization_record = scalar_or_boolean(params, "hasOrganizationRecord")
   if has_organization_record ~= nil then
     if has_organization_record == "true" then
@@ -195,10 +167,10 @@ local function collection_list_response(search_enabled)
       invalid("hasOrganizationRecord must be true or false")
     end
   end
-  local types = collection_array("types", "type")
-  local uris = collection_array("uris", "collectionUri")
-  local item_uris = collection_array("itemUris", "recordUri")
-  local tag_uris = collection_array("tagUris", "tagUri")
+  local types = collection_filter_values("types", "type")
+  local uris = collection_filter_values("uris", "collectionUri")
+  local item_uris = collection_filter_values("itemUris", "recordUri")
+  local tag_uris = collection_filter_values("tagUris", "tagUri")
   local search
   if search_enabled then
     search = scalar(params, "search")

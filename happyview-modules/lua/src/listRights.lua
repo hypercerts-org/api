@@ -7,40 +7,6 @@ local function rights_list_run_query(sql, values)
   return result
 end
 
-local function rights_list_array(value)
-  if value == nil then return nil end
-  local supplied = {}
-  if type(value) == "string" then
-    supplied[1] = value
-  elseif type(value) == "table" then
-    local count = 0
-    for index in pairs(value) do
-      if type(index) ~= "number" or index < 1 or index % 1 ~= 0 then
-        invalid("authors must use repeated query values")
-      end
-      count = count + 1
-    end
-    if count ~= #value then invalid("authors must use repeated query values") end
-    for index = 1, count do
-      if type(value[index]) ~= "string" then invalid("authors entries must be strings") end
-      supplied[#supplied + 1] = value[index]
-    end
-  else
-    invalid("authors must be a string or repeated string parameter")
-  end
-  if #supplied > 100 then invalid("authors accepts at most 100 values") end
-
-  local unique, seen = {}, {}
-  for _, did in ipairs(supplied) do
-    if not valid_did(did) then invalid("each authors value must be a valid DID") end
-    if not seen[did] then
-      seen[did] = true
-      unique[#unique + 1] = did
-    end
-  end
-  return unique
-end
-
 local function rights_list_query(authors, limit, cursor, direction)
   local where, values = { "rights.collection = $1" }, { RIGHTS }
 
@@ -87,7 +53,10 @@ end
 
 local function rights_list_response()
   keys_only(params, { authors = true, sortDirection = true, limit = true, cursor = true })
-  local authors = rights_list_array(params.authors)
+  local authors = query_string_values(params, "authors")
+  authors = authors and unique_query_values(authors, function(did)
+    if not valid_did(did) then invalid("each authors value must be a valid DID") end
+  end)
   local direction = parse_sort_direction(params)
   local limit = parse_list_limit(params)
   local cursor = decode_record_cursor(scalar(params, "cursor"), direction, RIGHTS)

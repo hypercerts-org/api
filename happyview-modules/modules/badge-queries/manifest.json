@@ -62,6 +62,7 @@
       "sourcePath": "../../lua/src/searchBadgeDefinitions.lua",
       "sharedSourcePaths": [
         "../../lua/shared/query.lua",
+        "../../lua/shared/queryArray.lua",
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/badgeDefinitionValidation.lua",
@@ -104,6 +105,7 @@
       "sourcePath": "../../lua/src/listBadgeAwards.lua",
       "sharedSourcePaths": [
         "../../lua/shared/query.lua",
+        "../../lua/shared/queryArray.lua",
         "../../lua/shared/includeTotal.lua",
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/recordIdentifier.lua",

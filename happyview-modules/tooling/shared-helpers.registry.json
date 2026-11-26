@@ -105,9 +105,8 @@
     {
       "id": "repeated-query-array",
       "description": "repeated query parameter (array) parsing",
-      "unowned": "each endpoint has its own; add a shared parser in lua/shared and register it before adding another",
       "lookalikes": ["(^|_)array(_values)?$"],
-      "homes": []
+      "homes": ["lua/shared/queryArray.lua"]
     },
     {
       "id": "record-view",
@@ -143,23 +142,11 @@
       "reason": "Existing cursor timestamp check with its own rules; kept to avoid a behavior change."
     },
     {
-      "file": "lua/shared/acknowledgementList.lua",
-      "family": "repeated-query-array",
-      "symbol": "acknowledgement_array",
-      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
-    },
-    {
       "file": "lua/shared/activityList.lua",
       "family": "record-identifier",
       "symbol": "at-uri-pattern",
       "reason": "Existing record-URI check that predates the registry; kept to avoid a behavior change. Build on valid_record_uri where the shape allows.",
       "count": 2
-    },
-    {
-      "file": "lua/shared/activityList.lua",
-      "family": "repeated-query-array",
-      "symbol": "activity_array",
-      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
     },
     {
       "file": "lua/shared/activityProjection.lua",
@@ -168,22 +155,10 @@
       "reason": "Existing record view with endpoint-specific fields; kept to avoid a behavior change. Build on record_view where the shape allows."
     },
     {
-      "file": "lua/shared/attachmentList.lua",
-      "family": "repeated-query-array",
-      "symbol": "attachment_array",
-      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
-    },
-    {
       "file": "lua/shared/collectionItems.lua",
       "family": "list-cursor",
       "symbol": "collection_items_cursor_decode",
       "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
-    },
-    {
-      "file": "lua/shared/collectionList.lua",
-      "family": "repeated-query-array",
-      "symbol": "collection_array",
-      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
     },
     {
       "file": "lua/shared/evaluation.lua",
@@ -192,28 +167,10 @@
       "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
     },
     {
-      "file": "lua/shared/evaluationList.lua",
-      "family": "repeated-query-array",
-      "symbol": "evaluation_array",
-      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
-    },
-    {
       "file": "lua/shared/feedActorReactions.lua",
       "family": "record-view",
       "symbol": "feed_actor_reaction_record_view",
       "reason": "Existing record view with endpoint-specific fields; kept to avoid a behavior change. Build on record_view where the shape allows."
-    },
-    {
-      "file": "lua/shared/fundingReceiptList.lua",
-      "family": "repeated-query-array",
-      "symbol": "funding_receipt_array",
-      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
-    },
-    {
-      "file": "lua/shared/organizationList.lua",
-      "family": "repeated-query-array",
-      "symbol": "array",
-      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
     },
     {
       "file": "lua/shared/recentFollows.lua",
@@ -234,70 +191,16 @@
       "reason": "Existing record view with endpoint-specific fields; kept to avoid a behavior change. Build on record_view where the shape allows."
     },
     {
-      "file": "lua/shared/workscopeTagList.lua",
-      "family": "repeated-query-array",
-      "symbol": "workscope_tag_array",
-      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
-    },
-    {
-      "file": "lua/src/listBadgeAwards.lua",
-      "family": "repeated-query-array",
-      "symbol": "array_values",
-      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
-    },
-    {
-      "file": "lua/src/listBadgeDefinitions.lua",
-      "family": "repeated-query-array",
-      "symbol": "badge_definition_array",
-      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
-    },
-    {
-      "file": "lua/src/listContributorInformation.lua",
-      "family": "repeated-query-array",
-      "symbol": "contributor_information_array",
-      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
-    },
-    {
-      "file": "lua/src/listEvmLinks.lua",
-      "family": "repeated-query-array",
-      "symbol": "array_values",
-      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
-    },
-    {
       "file": "lua/src/listFeatures.lua",
       "family": "query-params",
       "symbol": "occur-once-message",
       "reason": "Existing endpoint-local copy of the shared query helpers; kept to avoid a behavior change. Use query.lua helpers instead."
     },
     {
-      "file": "lua/src/listFeatures.lua",
-      "family": "repeated-query-array",
-      "symbol": "feature_array",
-      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
-    },
-    {
-      "file": "lua/src/listMeasurements.lua",
-      "family": "repeated-query-array",
-      "symbol": "measurement_array",
-      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
-    },
-    {
-      "file": "lua/src/listRights.lua",
-      "family": "repeated-query-array",
-      "symbol": "rights_list_array",
-      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
-    },
-    {
       "file": "lua/src/listVocabTags.lua",
       "family": "list-cursor",
       "symbol": "cursor-hex-decode",
       "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
-    },
-    {
-      "file": "lua/src/searchBadgeDefinitions.lua",
-      "family": "repeated-query-array",
-      "symbol": "badge_definition_array",
-      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
     },
     {
       "file": "lua/shared/actorFollow.lua",
@@ -322,12 +225,6 @@
       "family": "shared-helper",
       "symbol": "query",
       "reason": "Per-module query entry point that shares a name; not a reusable helper."
-    },
-    {
-      "file": "lua/shared/profileList.lua",
-      "family": "shared-helper",
-      "symbol": "array",
-      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
     },
     {
       "file": "lua/src/getBadgeAward.lua",
@@ -370,12 +267,6 @@
       "family": "shared-helper",
       "symbol": "query",
       "reason": "Per-module query entry point that shares a name; not a reusable helper."
-    },
-    {
-      "file": "lua/src/listLocations.lua",
-      "family": "shared-helper",
-      "symbol": "array",
-      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
     },
     {
       "file": "lua/src/listVocabTags.lua",

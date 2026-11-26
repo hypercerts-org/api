@@ -4,32 +4,10 @@ local function valid_funding_record_uri(value)
   return true, collection
 end
 
-local function funding_receipt_array(key, format)
-  local value = params[key]
-  if value == nil then return nil end
-
-  local supplied, occurrences = {}, 0
-  if type(value) == "string" then
-    supplied[1] = value
-  elseif type(value) == "table" then
-    for index in pairs(value) do
-      if type(index) ~= "number" or index < 1 or index % 1 ~= 0 then
-        invalid(key .. " must use repeated query values")
-      end
-      occurrences = occurrences + 1
-    end
-    if occurrences ~= #value then invalid(key .. " must use repeated query values") end
-    for index = 1, occurrences do
-      if type(value[index]) ~= "string" then invalid(key .. " entries must be strings") end
-      supplied[#supplied + 1] = value[index]
-    end
-  else
-    invalid(key .. " must be a string or repeated string parameter")
-  end
-  if #supplied > 100 then invalid(key .. " accepts at most 100 values") end
-
-  local unique, seen = {}, {}
-  for _, item in ipairs(supplied) do
+local function funding_receipt_filter_values(key, format)
+  local supplied = query_string_values(params, key)
+  if not supplied then return nil end
+  return unique_query_values(supplied, function(item)
     if format == "did" and not valid_did(item) then
       invalid(key .. " entry " .. string.format("%q", item) .. " must be a valid DID")
     elseif format == "receiptUri" then
@@ -51,13 +29,7 @@ local function funding_receipt_array(key, format)
           " must be a valid DID or full record AT-URI; resolve handles to DIDs before querying")
       end
     end
-
-    if not seen[item] then
-      seen[item] = true
-      unique[#unique + 1] = item
-    end
-  end
-  return unique
+  end)
 end
 
 local function bind_funding_receipt_values(values, items)
@@ -169,12 +141,12 @@ local function funding_receipts_response()
     cursor = true,
   })
 
-  local authors = funding_receipt_array("authors", "did")
-  local uris = funding_receipt_array("uris", "receiptUri")
-  local from_values = funding_receipt_array("from", "party")
-  local to_values = funding_receipt_array("to", "party")
-  local for_uris = funding_receipt_array("forUris", "atUri")
-  local transaction_ids = funding_receipt_array("transactionIds")
+  local authors = funding_receipt_filter_values("authors", "did")
+  local uris = funding_receipt_filter_values("uris", "receiptUri")
+  local from_values = funding_receipt_filter_values("from", "party")
+  local to_values = funding_receipt_filter_values("to", "party")
+  local for_uris = funding_receipt_filter_values("forUris", "atUri")
+  local transaction_ids = funding_receipt_filter_values("transactionIds")
 
   local direction = parse_sort_direction(params)
   local limit = parse_list_limit(params)

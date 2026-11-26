@@ -731,10 +731,10 @@
 {"endpoint":"app.certified.actor.searchProfiles","case":"array:actors:non-string-item","calls":[],"outcome":{"error":"InvalidRequest: actors entries must be strings"}}
 {"endpoint":"app.certified.actor.searchProfiles","case":"array:actors:oversize-item","calls":[],"outcome":{"error":"InvalidRequest: each actors value must be a valid DID"}}
 {"endpoint":"app.certified.actor.searchProfiles","case":"array:actors:nested-array-item","calls":[],"outcome":{"error":"InvalidRequest: actors entries must be strings"}}
-{"endpoint":"app.certified.actor.searchProfiles","case":"array:actors:keyed-table","calls":[{"binds":["app.certified.actor.profile","did:plc:abcdefghijklmnopqrstuvwx","test",26],"sql":"a4a6ef4bdf"}],"outcome":{"result":{"profiles":[]}}}
-{"endpoint":"app.certified.actor.searchProfiles","case":"array:actors:string-keyed-table","calls":[{"binds":["app.certified.actor.profile","test",26],"sql":"d62f1fff4b"}],"outcome":{"result":{"profiles":[]}}}
-{"endpoint":"app.certified.actor.searchProfiles","case":"array:actors:sparse-table","calls":[{"binds":["app.certified.actor.profile","did:plc:abcdefghijklmnopqrstuvwx","test",26],"sql":"a4a6ef4bdf"}],"outcome":{"result":{"profiles":[]}}}
-{"endpoint":"app.certified.actor.searchProfiles","case":"array:actors:sparse-table-from-2","calls":[{"binds":["app.certified.actor.profile","test",26],"sql":"d62f1fff4b"}],"outcome":{"result":{"profiles":[]}}}
+{"endpoint":"app.certified.actor.searchProfiles","case":"array:actors:keyed-table","calls":[],"outcome":{"error":"InvalidRequest: actors must use repeated query values"}}
+{"endpoint":"app.certified.actor.searchProfiles","case":"array:actors:string-keyed-table","calls":[],"outcome":{"error":"InvalidRequest: actors must use repeated query values"}}
+{"endpoint":"app.certified.actor.searchProfiles","case":"array:actors:sparse-table","calls":[],"outcome":{"error":"InvalidRequest: actors must use repeated query values"}}
+{"endpoint":"app.certified.actor.searchProfiles","case":"array:actors:sparse-table-from-2","calls":[],"outcome":{"error":"InvalidRequest: actors must use repeated query values"}}
 {"endpoint":"app.certified.actor.searchProfiles","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"app.certified.actor.searchProfiles","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"app.certified.actor.searchProfiles","case":"error:sortDirection=empty","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
@@ -865,10 +865,10 @@
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"array:authors:non-string-item","calls":[],"outcome":{"error":"InvalidRequest: authors entries must be strings"}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"array:authors:oversize-item","calls":[],"outcome":{"error":"InvalidRequest: each authors value must be valid DIDs"}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"array:authors:nested-array-item","calls":[],"outcome":{"error":"InvalidRequest: authors entries must be strings"}}
-{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:authors:keyed-table","calls":[{"binds":["app.certified.badge.award","did:plc:abcdefghijklmnopqrstuvwx",26],"sql":"03c5ffce2b"}],"outcome":{"result":{"badgeAwards":[]}}}
-{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:authors:string-keyed-table","calls":[{"binds":["app.certified.badge.award",26],"sql":"b54d166028"}],"outcome":{"result":{"badgeAwards":[]}}}
-{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:authors:sparse-table","calls":[{"binds":["app.certified.badge.award","did:plc:abcdefghijklmnopqrstuvwx",26],"sql":"03c5ffce2b"}],"outcome":{"result":{"badgeAwards":[]}}}
-{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:authors:sparse-table-from-2","calls":[{"binds":["app.certified.badge.award",26],"sql":"b54d166028"}],"outcome":{"result":{"badgeAwards":[]}}}
+{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:authors:keyed-table","calls":[],"outcome":{"error":"InvalidRequest: authors must use repeated query values"}}
+{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:authors:string-keyed-table","calls":[],"outcome":{"error":"InvalidRequest: authors must use repeated query values"}}
+{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:authors:sparse-table","calls":[],"outcome":{"error":"InvalidRequest: authors must use repeated query values"}}
+{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:authors:sparse-table-from-2","calls":[],"outcome":{"error":"InvalidRequest: authors must use repeated query values"}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"filter:badgeUris:many","calls":[{"binds":["app.certified.badge.award","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.badge.definition/3kabcdefghija","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.badge.definition/3kabcdefghijb","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.badge.definition/3kabcdefghijc",26],"sql":"dd9ca50998"}],"outcome":{"result":{"badgeAwards":[]}}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"filter:badgeUris:one","calls":[{"binds":["app.certified.badge.award","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.badge.definition/3kabcdefghija",26],"sql":"792870ea3b"}],"outcome":{"result":{"badgeAwards":[]}}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"filter:badgeUris:one-scalar","calls":[{"binds":["app.certified.badge.award","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.badge.definition/3kabcdefghija",26],"sql":"792870ea3b"}],"outcome":{"result":{"badgeAwards":[]}}}
@@ -880,10 +880,10 @@
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"array:badgeUris:non-string-item","calls":[],"outcome":{"error":"InvalidRequest: badgeUris entries must be strings"}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"array:badgeUris:oversize-item","calls":[],"outcome":{"error":"InvalidRequest: each badgeUris value must be badge-definition AT-URIs"}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"array:badgeUris:nested-array-item","calls":[],"outcome":{"error":"InvalidRequest: badgeUris entries must be strings"}}
-{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:badgeUris:keyed-table","calls":[{"binds":["app.certified.badge.award","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.badge.definition/3kabcdefghija",26],"sql":"792870ea3b"}],"outcome":{"result":{"badgeAwards":[]}}}
-{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:badgeUris:string-keyed-table","calls":[{"binds":["app.certified.badge.award",26],"sql":"b54d166028"}],"outcome":{"result":{"badgeAwards":[]}}}
-{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:badgeUris:sparse-table","calls":[{"binds":["app.certified.badge.award","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.badge.definition/3kabcdefghija",26],"sql":"792870ea3b"}],"outcome":{"result":{"badgeAwards":[]}}}
-{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:badgeUris:sparse-table-from-2","calls":[{"binds":["app.certified.badge.award",26],"sql":"b54d166028"}],"outcome":{"result":{"badgeAwards":[]}}}
+{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:badgeUris:keyed-table","calls":[],"outcome":{"error":"InvalidRequest: badgeUris must use repeated query values"}}
+{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:badgeUris:string-keyed-table","calls":[],"outcome":{"error":"InvalidRequest: badgeUris must use repeated query values"}}
+{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:badgeUris:sparse-table","calls":[],"outcome":{"error":"InvalidRequest: badgeUris must use repeated query values"}}
+{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:badgeUris:sparse-table-from-2","calls":[],"outcome":{"error":"InvalidRequest: badgeUris must use repeated query values"}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"filter:badgeTypes:many","calls":[{"binds":["app.certified.badge.award","volunteer","contributor","steward",26],"sql":"de8e448a07"}],"outcome":{"result":{"badgeAwards":[]}}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"filter:badgeTypes:one","calls":[{"binds":["app.certified.badge.award","volunteer",26],"sql":"49f2ff18af"}],"outcome":{"result":{"badgeAwards":[]}}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"filter:badgeTypes:one-scalar","calls":[{"binds":["app.certified.badge.award","volunteer",26],"sql":"49f2ff18af"}],"outcome":{"result":{"badgeAwards":[]}}}
@@ -895,10 +895,10 @@
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"array:badgeTypes:non-string-item","calls":[],"outcome":{"error":"InvalidRequest: badgeTypes entries must be strings"}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"array:badgeTypes:oversize-item","calls":[],"outcome":{"error":"InvalidRequest: badgeTypes entries must be at most 100 UTF-8 bytes"}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"array:badgeTypes:nested-array-item","calls":[],"outcome":{"error":"InvalidRequest: badgeTypes entries must be strings"}}
-{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:badgeTypes:keyed-table","calls":[{"binds":["app.certified.badge.award","volunteer",26],"sql":"49f2ff18af"}],"outcome":{"result":{"badgeAwards":[]}}}
-{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:badgeTypes:string-keyed-table","calls":[{"binds":["app.certified.badge.award",26],"sql":"b54d166028"}],"outcome":{"result":{"badgeAwards":[]}}}
-{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:badgeTypes:sparse-table","calls":[{"binds":["app.certified.badge.award","volunteer",26],"sql":"49f2ff18af"}],"outcome":{"result":{"badgeAwards":[]}}}
-{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:badgeTypes:sparse-table-from-2","calls":[{"binds":["app.certified.badge.award",26],"sql":"b54d166028"}],"outcome":{"result":{"badgeAwards":[]}}}
+{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:badgeTypes:keyed-table","calls":[],"outcome":{"error":"InvalidRequest: badgeTypes must use repeated query values"}}
+{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:badgeTypes:string-keyed-table","calls":[],"outcome":{"error":"InvalidRequest: badgeTypes must use repeated query values"}}
+{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:badgeTypes:sparse-table","calls":[],"outcome":{"error":"InvalidRequest: badgeTypes must use repeated query values"}}
+{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:badgeTypes:sparse-table-from-2","calls":[],"outcome":{"error":"InvalidRequest: badgeTypes must use repeated query values"}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"filter:subjects:many","calls":[{"binds":["app.certified.badge.award","did:plc:abcdefghijklmnopqrstuvwy","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghija","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghijc",26],"sql":"ec5769b06c"}],"outcome":{"result":{"badgeAwards":[]}}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"filter:subjects:one","calls":[{"binds":["app.certified.badge.award","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghija",26],"sql":"07a40fe161"}],"outcome":{"result":{"badgeAwards":[]}}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"filter:subjects:one-scalar","calls":[{"binds":["app.certified.badge.award","at://did:plc:abcdefghijklmnopqrstuvwx/org.hypercerts.claim.activity/3kabcdefghija",26],"sql":"07a40fe161"}],"outcome":{"result":{"badgeAwards":[]}}}
@@ -926,10 +926,10 @@
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"array:responses:non-string-item","calls":[],"outcome":{"error":"InvalidRequest: responses entries must be strings"}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"array:responses:oversize-item","calls":[],"outcome":{"error":"InvalidRequest: each responses value must be accepted, rejected, or unanswered statuses"}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"array:responses:nested-array-item","calls":[],"outcome":{"error":"InvalidRequest: responses entries must be strings"}}
-{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:responses:keyed-table","calls":[{"binds":["app.certified.badge.award","accepted",26],"sql":"fac78ac0ee"}],"outcome":{"result":{"badgeAwards":[]}}}
-{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:responses:string-keyed-table","calls":[{"binds":["app.certified.badge.award",26],"sql":"b54d166028"}],"outcome":{"result":{"badgeAwards":[]}}}
-{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:responses:sparse-table","calls":[{"binds":["app.certified.badge.award","accepted",26],"sql":"fac78ac0ee"}],"outcome":{"result":{"badgeAwards":[]}}}
-{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:responses:sparse-table-from-2","calls":[{"binds":["app.certified.badge.award",26],"sql":"b54d166028"}],"outcome":{"result":{"badgeAwards":[]}}}
+{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:responses:keyed-table","calls":[],"outcome":{"error":"InvalidRequest: responses must use repeated query values"}}
+{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:responses:string-keyed-table","calls":[],"outcome":{"error":"InvalidRequest: responses must use repeated query values"}}
+{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:responses:sparse-table","calls":[],"outcome":{"error":"InvalidRequest: responses must use repeated query values"}}
+{"endpoint":"app.certified.badge.listBadgeAwards","case":"array:responses:sparse-table-from-2","calls":[],"outcome":{"error":"InvalidRequest: responses must use repeated query values"}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"filter:includeTotal=boolean:true","calls":[{"binds":["app.certified.badge.award",26],"sql":"3dfa9c7309"}],"outcome":{"result":{"badgeAwards":[],"totalCount":0}}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"filter:includeTotal=boolean:false","calls":[{"binds":["app.certified.badge.award",26],"sql":"eb4293ef0a"}],"outcome":{"result":{"badgeAwards":[]}}}
 {"endpoint":"app.certified.badge.listBadgeAwards","case":"filter:includeTotal=string:true","calls":[{"binds":["app.certified.badge.award",26],"sql":"3dfa9c7309"}],"outcome":{"result":{"badgeAwards":[],"totalCount":0}}}
@@ -1055,10 +1055,10 @@
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"array:authors:non-string-item","calls":[],"outcome":{"error":"InvalidRequest: authors entries must be strings"}}
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"array:authors:oversize-item","calls":[],"outcome":{"error":"InvalidRequest: each authors value must be valid DIDs"}}
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"array:authors:nested-array-item","calls":[],"outcome":{"error":"InvalidRequest: authors entries must be strings"}}
-{"endpoint":"app.certified.badge.listBadgeDefinitions","case":"array:authors:keyed-table","calls":[{"binds":["app.certified.badge.definition","did:plc:abcdefghijklmnopqrstuvwx",26],"sql":"cf715d2ab7"}],"outcome":{"result":{"badgeDefinitions":[]}}}
-{"endpoint":"app.certified.badge.listBadgeDefinitions","case":"array:authors:string-keyed-table","calls":[{"binds":["app.certified.badge.definition",26],"sql":"089df365a0"}],"outcome":{"result":{"badgeDefinitions":[]}}}
-{"endpoint":"app.certified.badge.listBadgeDefinitions","case":"array:authors:sparse-table","calls":[{"binds":["app.certified.badge.definition","did:plc:abcdefghijklmnopqrstuvwx",26],"sql":"cf715d2ab7"}],"outcome":{"result":{"badgeDefinitions":[]}}}
-{"endpoint":"app.certified.badge.listBadgeDefinitions","case":"array:authors:sparse-table-from-2","calls":[{"binds":["app.certified.badge.definition",26],"sql":"089df365a0"}],"outcome":{"result":{"badgeDefinitions":[]}}}
+{"endpoint":"app.certified.badge.listBadgeDefinitions","case":"array:authors:keyed-table","calls":[],"outcome":{"error":"InvalidRequest: authors must use repeated query values"}}
+{"endpoint":"app.certified.badge.listBadgeDefinitions","case":"array:authors:string-keyed-table","calls":[],"outcome":{"error":"InvalidRequest: authors must use repeated query values"}}
+{"endpoint":"app.certified.badge.listBadgeDefinitions","case":"array:authors:sparse-table","calls":[],"outcome":{"error":"InvalidRequest: authors must use repeated query values"}}
+{"endpoint":"app.certified.badge.listBadgeDefinitions","case":"array:authors:sparse-table-from-2","calls":[],"outcome":{"error":"InvalidRequest: authors must use repeated query values"}}
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"filter:badgeTypes:many","calls":[{"binds":["app.certified.badge.definition","volunteer","contributor","steward",26],"sql":"55bc2f4a15"}],"outcome":{"result":{"badgeDefinitions":[]}}}
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"filter:badgeTypes:one","calls":[{"binds":["app.certified.badge.definition","volunteer",26],"sql":"887630231f"}],"outcome":{"result":{"badgeDefinitions":[]}}}
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"filter:badgeTypes:one-scalar","calls":[{"binds":["app.certified.badge.definition","volunteer",26],"sql":"887630231f"}],"outcome":{"result":{"badgeDefinitions":[]}}}
@@ -1070,10 +1070,10 @@
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"array:badgeTypes:non-string-item","calls":[],"outcome":{"error":"InvalidRequest: badgeTypes entries must be strings"}}
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"array:badgeTypes:oversize-item","calls":[],"outcome":{"error":"InvalidRequest: badgeTypes entries must be at most 100 UTF-8 bytes"}}
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"array:badgeTypes:nested-array-item","calls":[],"outcome":{"error":"InvalidRequest: badgeTypes entries must be strings"}}
-{"endpoint":"app.certified.badge.listBadgeDefinitions","case":"array:badgeTypes:keyed-table","calls":[{"binds":["app.certified.badge.definition","volunteer",26],"sql":"887630231f"}],"outcome":{"result":{"badgeDefinitions":[]}}}
-{"endpoint":"app.certified.badge.listBadgeDefinitions","case":"array:badgeTypes:string-keyed-table","calls":[{"binds":["app.certified.badge.definition",26],"sql":"089df365a0"}],"outcome":{"result":{"badgeDefinitions":[]}}}
-{"endpoint":"app.certified.badge.listBadgeDefinitions","case":"array:badgeTypes:sparse-table","calls":[{"binds":["app.certified.badge.definition","volunteer",26],"sql":"887630231f"}],"outcome":{"result":{"badgeDefinitions":[]}}}
-{"endpoint":"app.certified.badge.listBadgeDefinitions","case":"array:badgeTypes:sparse-table-from-2","calls":[{"binds":["app.certified.badge.definition",26],"sql":"089df365a0"}],"outcome":{"result":{"badgeDefinitions":[]}}}
+{"endpoint":"app.certified.badge.listBadgeDefinitions","case":"array:badgeTypes:keyed-table","calls":[],"outcome":{"error":"InvalidRequest: badgeTypes must use repeated query values"}}
+{"endpoint":"app.certified.badge.listBadgeDefinitions","case":"array:badgeTypes:string-keyed-table","calls":[],"outcome":{"error":"InvalidRequest: badgeTypes must use repeated query values"}}
+{"endpoint":"app.certified.badge.listBadgeDefinitions","case":"array:badgeTypes:sparse-table","calls":[],"outcome":{"error":"InvalidRequest: badgeTypes must use repeated query values"}}
+{"endpoint":"app.certified.badge.listBadgeDefinitions","case":"array:badgeTypes:sparse-table-from-2","calls":[],"outcome":{"error":"InvalidRequest: badgeTypes must use repeated query values"}}
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"filter:all","calls":[{"binds":["app.certified.badge.definition","did:plc:abcdefghijklmnopqrstuvwx","did:plc:abcdefghijklmnopqrstuvwy","contributor","steward",26],"sql":"39e951d2e6"}],"outcome":{"result":{"badgeDefinitions":[]}}}
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"app.certified.badge.listBadgeDefinitions","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
@@ -1307,10 +1307,10 @@
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"array:authors:non-string-item","calls":[],"outcome":{"error":"InvalidRequest: authors entries must be strings"}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"array:authors:oversize-item","calls":[],"outcome":{"error":"InvalidRequest: each authors value must be valid DIDs"}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"array:authors:nested-array-item","calls":[],"outcome":{"error":"InvalidRequest: authors entries must be strings"}}
-{"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"array:authors:keyed-table","calls":[{"binds":["app.certified.badge.definition","did:plc:abcdefghijklmnopqrstuvwx","test",26],"sql":"7705bb084a"}],"outcome":{"result":{"badgeDefinitions":[]}}}
-{"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"array:authors:string-keyed-table","calls":[{"binds":["app.certified.badge.definition","test",26],"sql":"bf198ae94a"}],"outcome":{"result":{"badgeDefinitions":[]}}}
-{"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"array:authors:sparse-table","calls":[{"binds":["app.certified.badge.definition","did:plc:abcdefghijklmnopqrstuvwx","test",26],"sql":"7705bb084a"}],"outcome":{"result":{"badgeDefinitions":[]}}}
-{"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"array:authors:sparse-table-from-2","calls":[{"binds":["app.certified.badge.definition","test",26],"sql":"bf198ae94a"}],"outcome":{"result":{"badgeDefinitions":[]}}}
+{"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"array:authors:keyed-table","calls":[],"outcome":{"error":"InvalidRequest: authors must use repeated query values"}}
+{"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"array:authors:string-keyed-table","calls":[],"outcome":{"error":"InvalidRequest: authors must use repeated query values"}}
+{"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"array:authors:sparse-table","calls":[],"outcome":{"error":"InvalidRequest: authors must use repeated query values"}}
+{"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"array:authors:sparse-table-from-2","calls":[],"outcome":{"error":"InvalidRequest: authors must use repeated query values"}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"filter:badgeTypes:many","calls":[{"binds":["app.certified.badge.definition","volunteer","contributor","steward","test",26],"sql":"04e237168d"}],"outcome":{"result":{"badgeDefinitions":[]}}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"filter:badgeTypes:one","calls":[{"binds":["app.certified.badge.definition","volunteer","test",26],"sql":"f144453bcf"}],"outcome":{"result":{"badgeDefinitions":[]}}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"filter:badgeTypes:one-scalar","calls":[{"binds":["app.certified.badge.definition","volunteer","test",26],"sql":"f144453bcf"}],"outcome":{"result":{"badgeDefinitions":[]}}}
@@ -1322,10 +1322,10 @@
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"array:badgeTypes:non-string-item","calls":[],"outcome":{"error":"InvalidRequest: badgeTypes entries must be strings"}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"array:badgeTypes:oversize-item","calls":[],"outcome":{"error":"InvalidRequest: badgeTypes entries must be at most 100 UTF-8 bytes"}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"array:badgeTypes:nested-array-item","calls":[],"outcome":{"error":"InvalidRequest: badgeTypes entries must be strings"}}
-{"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"array:badgeTypes:keyed-table","calls":[{"binds":["app.certified.badge.definition","volunteer","test",26],"sql":"f144453bcf"}],"outcome":{"result":{"badgeDefinitions":[]}}}
-{"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"array:badgeTypes:string-keyed-table","calls":[{"binds":["app.certified.badge.definition","test",26],"sql":"bf198ae94a"}],"outcome":{"result":{"badgeDefinitions":[]}}}
-{"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"array:badgeTypes:sparse-table","calls":[{"binds":["app.certified.badge.definition","volunteer","test",26],"sql":"f144453bcf"}],"outcome":{"result":{"badgeDefinitions":[]}}}
-{"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"array:badgeTypes:sparse-table-from-2","calls":[{"binds":["app.certified.badge.definition","test",26],"sql":"bf198ae94a"}],"outcome":{"result":{"badgeDefinitions":[]}}}
+{"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"array:badgeTypes:keyed-table","calls":[],"outcome":{"error":"InvalidRequest: badgeTypes must use repeated query values"}}
+{"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"array:badgeTypes:string-keyed-table","calls":[],"outcome":{"error":"InvalidRequest: badgeTypes must use repeated query values"}}
+{"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"array:badgeTypes:sparse-table","calls":[],"outcome":{"error":"InvalidRequest: badgeTypes must use repeated query values"}}
+{"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"array:badgeTypes:sparse-table-from-2","calls":[],"outcome":{"error":"InvalidRequest: badgeTypes must use repeated query values"}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"filter:all","calls":[{"binds":["app.certified.badge.definition","did:plc:abcdefghijklmnopqrstuvwx","did:plc:abcdefghijklmnopqrstuvwy","contributor","steward","test",26],"sql":"8e6d1e6347"}],"outcome":{"result":{"badgeDefinitions":[]}}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"app.certified.badge.searchBadgeDefinitions","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
@@ -2421,10 +2421,10 @@
 {"endpoint":"app.certified.link.listEvmLinks","case":"array:actors:non-string-item","calls":[],"outcome":{"error":"InvalidRequest: actors entries must be strings"}}
 {"endpoint":"app.certified.link.listEvmLinks","case":"array:actors:oversize-item","calls":[],"outcome":{"error":"InvalidRequest: actors[2] must be valid DIDs"}}
 {"endpoint":"app.certified.link.listEvmLinks","case":"array:actors:nested-array-item","calls":[],"outcome":{"error":"InvalidRequest: actors entries must be strings"}}
-{"endpoint":"app.certified.link.listEvmLinks","case":"array:actors:keyed-table","calls":[{"binds":["app.certified.link.evm","did:plc:abcdefghijklmnopqrstuvwx",26],"sql":"269699e131"}],"outcome":{"result":{"evmLinks":[]}}}
-{"endpoint":"app.certified.link.listEvmLinks","case":"array:actors:string-keyed-table","calls":[{"binds":["app.certified.link.evm",26],"sql":"1d0659e810"}],"outcome":{"result":{"evmLinks":[]}}}
-{"endpoint":"app.certified.link.listEvmLinks","case":"array:actors:sparse-table","calls":[{"binds":["app.certified.link.evm","did:plc:abcdefghijklmnopqrstuvwx",26],"sql":"269699e131"}],"outcome":{"result":{"evmLinks":[]}}}
-{"endpoint":"app.certified.link.listEvmLinks","case":"array:actors:sparse-table-from-2","calls":[{"binds":["app.certified.link.evm",26],"sql":"1d0659e810"}],"outcome":{"result":{"evmLinks":[]}}}
+{"endpoint":"app.certified.link.listEvmLinks","case":"array:actors:keyed-table","calls":[],"outcome":{"error":"InvalidRequest: actors must use repeated query values"}}
+{"endpoint":"app.certified.link.listEvmLinks","case":"array:actors:string-keyed-table","calls":[],"outcome":{"error":"InvalidRequest: actors must use repeated query values"}}
+{"endpoint":"app.certified.link.listEvmLinks","case":"array:actors:sparse-table","calls":[],"outcome":{"error":"InvalidRequest: actors must use repeated query values"}}
+{"endpoint":"app.certified.link.listEvmLinks","case":"array:actors:sparse-table-from-2","calls":[],"outcome":{"error":"InvalidRequest: actors must use repeated query values"}}
 {"endpoint":"app.certified.link.listEvmLinks","case":"filter:addresses:many","calls":[{"binds":["app.certified.link.evm","0x1111111111111111111111111111111111111111","0x2222222222222222222222222222222222222222","0x3333333333333333333333333333333333333333",26],"sql":"7f03b386ae"}],"outcome":{"result":{"evmLinks":[]}}}
 {"endpoint":"app.certified.link.listEvmLinks","case":"filter:addresses:one","calls":[{"binds":["app.certified.link.evm","0x1111111111111111111111111111111111111111",26],"sql":"99c5929723"}],"outcome":{"result":{"evmLinks":[]}}}
 {"endpoint":"app.certified.link.listEvmLinks","case":"filter:addresses:one-scalar","calls":[{"binds":["app.certified.link.evm","0x1111111111111111111111111111111111111111",26],"sql":"99c5929723"}],"outcome":{"result":{"evmLinks":[]}}}
@@ -2436,10 +2436,10 @@
 {"endpoint":"app.certified.link.listEvmLinks","case":"array:addresses:non-string-item","calls":[],"outcome":{"error":"InvalidRequest: addresses entries must be strings"}}
 {"endpoint":"app.certified.link.listEvmLinks","case":"array:addresses:oversize-item","calls":[],"outcome":{"error":"InvalidRequest: addresses[2] must be a 0x-prefixed 40-digit hexadecimal EVM address"}}
 {"endpoint":"app.certified.link.listEvmLinks","case":"array:addresses:nested-array-item","calls":[],"outcome":{"error":"InvalidRequest: addresses entries must be strings"}}
-{"endpoint":"app.certified.link.listEvmLinks","case":"array:addresses:keyed-table","calls":[{"binds":["app.certified.link.evm","0x1111111111111111111111111111111111111111",26],"sql":"99c5929723"}],"outcome":{"result":{"evmLinks":[]}}}
-{"endpoint":"app.certified.link.listEvmLinks","case":"array:addresses:string-keyed-table","calls":[{"binds":["app.certified.link.evm",26],"sql":"1d0659e810"}],"outcome":{"result":{"evmLinks":[]}}}
-{"endpoint":"app.certified.link.listEvmLinks","case":"array:addresses:sparse-table","calls":[{"binds":["app.certified.link.evm","0x1111111111111111111111111111111111111111",26],"sql":"99c5929723"}],"outcome":{"result":{"evmLinks":[]}}}
-{"endpoint":"app.certified.link.listEvmLinks","case":"array:addresses:sparse-table-from-2","calls":[{"binds":["app.certified.link.evm",26],"sql":"1d0659e810"}],"outcome":{"result":{"evmLinks":[]}}}
+{"endpoint":"app.certified.link.listEvmLinks","case":"array:addresses:keyed-table","calls":[],"outcome":{"error":"InvalidRequest: addresses must use repeated query values"}}
+{"endpoint":"app.certified.link.listEvmLinks","case":"array:addresses:string-keyed-table","calls":[],"outcome":{"error":"InvalidRequest: addresses must use repeated query values"}}
+{"endpoint":"app.certified.link.listEvmLinks","case":"array:addresses:sparse-table","calls":[],"outcome":{"error":"InvalidRequest: addresses must use repeated query values"}}
+{"endpoint":"app.certified.link.listEvmLinks","case":"array:addresses:sparse-table-from-2","calls":[],"outcome":{"error":"InvalidRequest: addresses must use repeated query values"}}
 {"endpoint":"app.certified.link.listEvmLinks","case":"filter:all","calls":[{"binds":["app.certified.link.evm","did:plc:abcdefghijklmnopqrstuvwx","did:plc:abcdefghijklmnopqrstuvwy","0x2222222222222222222222222222222222222222","0x3333333333333333333333333333333333333333",26],"sql":"c9e349830f"}],"outcome":{"result":{"evmLinks":[]}}}
 {"endpoint":"app.certified.link.listEvmLinks","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"app.certified.link.listEvmLinks","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
@@ -2561,10 +2561,10 @@
 {"endpoint":"app.certified.location.listLocations","case":"array:authors:non-string-item","calls":[],"outcome":{"error":"InvalidRequest: authors entries must be strings"}}
 {"endpoint":"app.certified.location.listLocations","case":"array:authors:oversize-item","calls":[],"outcome":{"error":"InvalidRequest: each authors value must be valid DIDs"}}
 {"endpoint":"app.certified.location.listLocations","case":"array:authors:nested-array-item","calls":[],"outcome":{"error":"InvalidRequest: authors entries must be strings"}}
-{"endpoint":"app.certified.location.listLocations","case":"array:authors:keyed-table","calls":[{"binds":["app.certified.location","did:plc:abcdefghijklmnopqrstuvwx",26],"sql":"cf715d2ab7"}],"outcome":{"result":{"locations":[]}}}
-{"endpoint":"app.certified.location.listLocations","case":"array:authors:string-keyed-table","calls":[{"binds":["app.certified.location",26],"sql":"089df365a0"}],"outcome":{"result":{"locations":[]}}}
-{"endpoint":"app.certified.location.listLocations","case":"array:authors:sparse-table","calls":[{"binds":["app.certified.location","did:plc:abcdefghijklmnopqrstuvwx",26],"sql":"cf715d2ab7"}],"outcome":{"result":{"locations":[]}}}
-{"endpoint":"app.certified.location.listLocations","case":"array:authors:sparse-table-from-2","calls":[{"binds":["app.certified.location",26],"sql":"089df365a0"}],"outcome":{"result":{"locations":[]}}}
+{"endpoint":"app.certified.location.listLocations","case":"array:authors:keyed-table","calls":[],"outcome":{"error":"InvalidRequest: authors must use repeated query values"}}
+{"endpoint":"app.certified.location.listLocations","case":"array:authors:string-keyed-table","calls":[],"outcome":{"error":"InvalidRequest: authors must use repeated query values"}}
+{"endpoint":"app.certified.location.listLocations","case":"array:authors:sparse-table","calls":[],"outcome":{"error":"InvalidRequest: authors must use repeated query values"}}
+{"endpoint":"app.certified.location.listLocations","case":"array:authors:sparse-table-from-2","calls":[],"outcome":{"error":"InvalidRequest: authors must use repeated query values"}}
 {"endpoint":"app.certified.location.listLocations","case":"filter:uris:many","calls":[{"binds":["app.certified.location","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.location/3kabcdefghija","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.location/3kabcdefghijb","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.location/3kabcdefghijc",26],"sql":"ca16d794fb"}],"outcome":{"result":{"locations":[]}}}
 {"endpoint":"app.certified.location.listLocations","case":"filter:uris:one","calls":[{"binds":["app.certified.location","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.location/3kabcdefghija",26],"sql":"8d97cb081a"}],"outcome":{"result":{"locations":[]}}}
 {"endpoint":"app.certified.location.listLocations","case":"filter:uris:one-scalar","calls":[{"binds":["app.certified.location","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.location/3kabcdefghija",26],"sql":"8d97cb081a"}],"outcome":{"result":{"locations":[]}}}
@@ -2576,10 +2576,10 @@
 {"endpoint":"app.certified.location.listLocations","case":"array:uris:non-string-item","calls":[],"outcome":{"error":"InvalidRequest: uris entries must be strings"}}
 {"endpoint":"app.certified.location.listLocations","case":"array:uris:oversize-item","calls":[],"outcome":{"error":"InvalidRequest: each uris value must be full app.certified.location AT-URIs with DID authorities"}}
 {"endpoint":"app.certified.location.listLocations","case":"array:uris:nested-array-item","calls":[],"outcome":{"error":"InvalidRequest: uris entries must be strings"}}
-{"endpoint":"app.certified.location.listLocations","case":"array:uris:keyed-table","calls":[{"binds":["app.certified.location","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.location/3kabcdefghija",26],"sql":"8d97cb081a"}],"outcome":{"result":{"locations":[]}}}
-{"endpoint":"app.certified.location.listLocations","case":"array:uris:string-keyed-table","calls":[{"binds":["app.certified.location",26],"sql":"089df365a0"}],"outcome":{"result":{"locations":[]}}}
-{"endpoint":"app.certified.location.listLocations","case":"array:uris:sparse-table","calls":[{"binds":["app.certified.location","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.location/3kabcdefghija",26],"sql":"8d97cb081a"}],"outcome":{"result":{"locations":[]}}}
-{"endpoint":"app.certified.location.listLocations","case":"array:uris:sparse-table-from-2","calls":[{"binds":["app.certified.location",26],"sql":"089df365a0"}],"outcome":{"result":{"locations":[]}}}
+{"endpoint":"app.certified.location.listLocations","case":"array:uris:keyed-table","calls":[],"outcome":{"error":"InvalidRequest: uris must use repeated query values"}}
+{"endpoint":"app.certified.location.listLocations","case":"array:uris:string-keyed-table","calls":[],"outcome":{"error":"InvalidRequest: uris must use repeated query values"}}
+{"endpoint":"app.certified.location.listLocations","case":"array:uris:sparse-table","calls":[],"outcome":{"error":"InvalidRequest: uris must use repeated query values"}}
+{"endpoint":"app.certified.location.listLocations","case":"array:uris:sparse-table-from-2","calls":[],"outcome":{"error":"InvalidRequest: uris must use repeated query values"}}
 {"endpoint":"app.certified.location.listLocations","case":"filter:locationTypes:many","calls":[{"binds":["app.certified.location","coordinate-decimal","geojson","address",26],"sql":"03715b3085"}],"outcome":{"result":{"locations":[]}}}
 {"endpoint":"app.certified.location.listLocations","case":"filter:locationTypes:one","calls":[{"binds":["app.certified.location","coordinate-decimal",26],"sql":"bb7a1812ec"}],"outcome":{"result":{"locations":[]}}}
 {"endpoint":"app.certified.location.listLocations","case":"filter:locationTypes:one-scalar","calls":[{"binds":["app.certified.location","coordinate-decimal",26],"sql":"bb7a1812ec"}],"outcome":{"result":{"locations":[]}}}
@@ -2591,10 +2591,10 @@
 {"endpoint":"app.certified.location.listLocations","case":"array:locationTypes:non-string-item","calls":[],"outcome":{"error":"InvalidRequest: locationTypes entries must be strings"}}
 {"endpoint":"app.certified.location.listLocations","case":"array:locationTypes:oversize-item","calls":[],"outcome":{"error":"InvalidRequest: locationTypes entries must be at most 20 UTF-8 bytes"}}
 {"endpoint":"app.certified.location.listLocations","case":"array:locationTypes:nested-array-item","calls":[],"outcome":{"error":"InvalidRequest: locationTypes entries must be strings"}}
-{"endpoint":"app.certified.location.listLocations","case":"array:locationTypes:keyed-table","calls":[{"binds":["app.certified.location","coordinate-decimal",26],"sql":"bb7a1812ec"}],"outcome":{"result":{"locations":[]}}}
-{"endpoint":"app.certified.location.listLocations","case":"array:locationTypes:string-keyed-table","calls":[{"binds":["app.certified.location",26],"sql":"089df365a0"}],"outcome":{"result":{"locations":[]}}}
-{"endpoint":"app.certified.location.listLocations","case":"array:locationTypes:sparse-table","calls":[{"binds":["app.certified.location","coordinate-decimal",26],"sql":"bb7a1812ec"}],"outcome":{"result":{"locations":[]}}}
-{"endpoint":"app.certified.location.listLocations","case":"array:locationTypes:sparse-table-from-2","calls":[{"binds":["app.certified.location",26],"sql":"089df365a0"}],"outcome":{"result":{"locations":[]}}}
+{"endpoint":"app.certified.location.listLocations","case":"array:locationTypes:keyed-table","calls":[],"outcome":{"error":"InvalidRequest: locationTypes must use repeated query values"}}
+{"endpoint":"app.certified.location.listLocations","case":"array:locationTypes:string-keyed-table","calls":[],"outcome":{"error":"InvalidRequest: locationTypes must use repeated query values"}}
+{"endpoint":"app.certified.location.listLocations","case":"array:locationTypes:sparse-table","calls":[],"outcome":{"error":"InvalidRequest: locationTypes must use repeated query values"}}
+{"endpoint":"app.certified.location.listLocations","case":"array:locationTypes:sparse-table-from-2","calls":[],"outcome":{"error":"InvalidRequest: locationTypes must use repeated query values"}}
 {"endpoint":"app.certified.location.listLocations","case":"filter:all","calls":[{"binds":["app.certified.location","did:plc:abcdefghijklmnopqrstuvwx","did:plc:abcdefghijklmnopqrstuvwy","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.location/3kabcdefghijb","at://did:plc:abcdefghijklmnopqrstuvwx/app.certified.location/3kabcdefghijc","coordinate-decimal","geojson",26],"sql":"39d1ecf7da"}],"outcome":{"result":{"locations":[]}}}
 {"endpoint":"app.certified.location.listLocations","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"app.certified.location.listLocations","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
@@ -4524,10 +4524,10 @@
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"array:authors:non-string-item","calls":[],"outcome":{"error":"InvalidRequest: authors entries must be strings"}}
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"array:authors:oversize-item","calls":[],"outcome":{"error":"InvalidRequest: each authors value must be valid DIDs"}}
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"array:authors:nested-array-item","calls":[],"outcome":{"error":"InvalidRequest: authors entries must be strings"}}
-{"endpoint":"org.hypercerts.entity.listFeatures","case":"array:authors:keyed-table","calls":[],"outcome":{"error":"InvalidRequest: authors must use repeated string query parameters"}}
-{"endpoint":"org.hypercerts.entity.listFeatures","case":"array:authors:string-keyed-table","calls":[],"outcome":{"error":"InvalidRequest: authors must use repeated string query parameters"}}
-{"endpoint":"org.hypercerts.entity.listFeatures","case":"array:authors:sparse-table","calls":[],"outcome":{"error":"InvalidRequest: authors must use repeated string query parameters"}}
-{"endpoint":"org.hypercerts.entity.listFeatures","case":"array:authors:sparse-table-from-2","calls":[],"outcome":{"error":"InvalidRequest: authors must use repeated string query parameters"}}
+{"endpoint":"org.hypercerts.entity.listFeatures","case":"array:authors:keyed-table","calls":[],"outcome":{"error":"InvalidRequest: authors must use repeated query values"}}
+{"endpoint":"org.hypercerts.entity.listFeatures","case":"array:authors:string-keyed-table","calls":[],"outcome":{"error":"InvalidRequest: authors must use repeated query values"}}
+{"endpoint":"org.hypercerts.entity.listFeatures","case":"array:authors:sparse-table","calls":[],"outcome":{"error":"InvalidRequest: authors must use repeated query values"}}
+{"endpoint":"org.hypercerts.entity.listFeatures","case":"array:authors:sparse-table-from-2","calls":[],"outcome":{"error":"InvalidRequest: authors must use repeated query values"}}
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"filter:hasOrganizationRecord=boolean:true","calls":[{"binds":["org.hypercerts.entity.feature",26],"sql":"1f264cba3c"}],"outcome":{"result":{"features":[]}}}
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"filter:hasOrganizationRecord=boolean:false","calls":[{"binds":["org.hypercerts.entity.feature",26],"sql":"92fa39766a"}],"outcome":{"result":{"features":[]}}}
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"filter:hasOrganizationRecord=string:true","calls":[{"binds":["org.hypercerts.entity.feature",26],"sql":"1f264cba3c"}],"outcome":{"result":{"features":[]}}}
@@ -4543,10 +4543,10 @@
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"array:types:non-string-item","calls":[],"outcome":{"error":"InvalidRequest: types entries must be strings"}}
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"array:types:oversize-item","calls":[],"outcome":{"error":"InvalidRequest: types entries must be at most 64 UTF-8 bytes"}}
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"array:types:nested-array-item","calls":[],"outcome":{"error":"InvalidRequest: types entries must be strings"}}
-{"endpoint":"org.hypercerts.entity.listFeatures","case":"array:types:keyed-table","calls":[],"outcome":{"error":"InvalidRequest: types must use repeated string query parameters"}}
-{"endpoint":"org.hypercerts.entity.listFeatures","case":"array:types:string-keyed-table","calls":[],"outcome":{"error":"InvalidRequest: types must use repeated string query parameters"}}
-{"endpoint":"org.hypercerts.entity.listFeatures","case":"array:types:sparse-table","calls":[],"outcome":{"error":"InvalidRequest: types must use repeated string query parameters"}}
-{"endpoint":"org.hypercerts.entity.listFeatures","case":"array:types:sparse-table-from-2","calls":[],"outcome":{"error":"InvalidRequest: types must use repeated string query parameters"}}
+{"endpoint":"org.hypercerts.entity.listFeatures","case":"array:types:keyed-table","calls":[],"outcome":{"error":"InvalidRequest: types must use repeated query values"}}
+{"endpoint":"org.hypercerts.entity.listFeatures","case":"array:types:string-keyed-table","calls":[],"outcome":{"error":"InvalidRequest: types must use repeated query values"}}
+{"endpoint":"org.hypercerts.entity.listFeatures","case":"array:types:sparse-table","calls":[],"outcome":{"error":"InvalidRequest: types must use repeated query values"}}
+{"endpoint":"org.hypercerts.entity.listFeatures","case":"array:types:sparse-table-from-2","calls":[],"outcome":{"error":"InvalidRequest: types must use repeated query values"}}
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"filter:all","calls":[{"binds":["org.hypercerts.entity.feature","did:plc:abcdefghijklmnopqrstuvwx","did:plc:abcdefghijklmnopqrstuvwy","project","portfolio",26],"sql":"1a4336693f"}],"outcome":{"result":{"features":[]}}}
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"error:sortDirection=bad","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}
 {"endpoint":"org.hypercerts.entity.listFeatures","case":"error:sortDirection=ASC","calls":[],"outcome":{"error":"InvalidRequest: sortDirection must be 'asc' or 'desc'"}}

@@ -11,6 +11,7 @@ const read = (relative) => readFile(path.resolve(root, relative), "utf8");
 test("listContributorInformation filters repeated authors and resumes in the selected order", async () => {
   const sources = await Promise.all([
     read("lua/shared/query.lua"),
+    read("lua/shared/queryArray.lua"),
     read("lua/shared/didValidation.lua"),
     read("lua/shared/recordIdentifier.lua"),
     read("lua/shared/contributorInformationValidation.lua"),

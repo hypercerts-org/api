@@ -50,6 +50,7 @@
       "sourcePath": "../../lua/src/listContributorInformation.lua",
       "sharedSourcePaths": [
         "../../lua/shared/query.lua",
+        "../../lua/shared/queryArray.lua",
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/contributorInformationValidation.lua",

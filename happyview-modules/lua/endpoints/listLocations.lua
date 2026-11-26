@@ -36,6 +36,49 @@ local function scalar_or_boolean(values, key)
 end
 -- luacheck: pop
 
+-- Reads a repeated query parameter (?key=a&key=b) as a list of strings, or nil when absent.
+-- A single value counts as a list of one. Rejects non-string entries, keyed or sparse
+-- tables and more than 100 values. Item rules stay with the caller so each endpoint keeps
+-- its own error messages; see unique_query_values.
+local function query_string_values(params, key)
+  local value = params[key]
+  if value == nil then return nil end
+  if type(value) == "string" then return { value } end
+  if type(value) ~= "table" then
+    invalid(key .. " must be a string or repeated string parameter")
+  end
+  local count = 0
+  for index in pairs(value) do
+    if type(index) ~= "number" or index < 1 or index % 1 ~= 0 then
+      invalid(key .. " must use repeated query values")
+    end
+    count = count + 1
+  end
+  if count ~= #value then invalid(key .. " must use repeated query values") end
+  local values = {}
+  for index = 1, count do
+    if type(value[index]) ~= "string" then invalid(key .. " entries must be strings") end
+    values[index] = value[index]
+  end
+  if #values > 100 then invalid(key .. " accepts at most 100 values") end
+  return values
+end
+
+-- Runs check(item, index) on every value in order, then returns the distinct results in
+-- first-seen order. check raises its own error for a bad item and may return a normalized
+-- replacement; returning nothing keeps the item.
+local function unique_query_values(values, check)
+  local unique, seen = {}, {}
+  for index, item in ipairs(values) do
+    local value = check and check(item, index) or item
+    if not seen[value] then
+      seen[value] = true
+      unique[#unique + 1] = value
+    end
+  end
+  return unique
+end
+
 local function valid_record_key(value)
   return #value >= 1 and #value <= 512 and value ~= "." and value ~= ".."
     and not value:find("[^%w_~%.:%-]")
@@ -240,25 +283,13 @@ local function hydrate(views)
   hydrate_actor_views(authors, query)
 end
 
-local function array(params, key, validate, description, max_bytes)
-  local value = params[key]
-  if value == nil then return nil end
-  local values = {}
-  if type(value) == "string" then values[1] = value
-  elseif type(value) == "table" then
-    for i = 1, #value do
-      if type(value[i]) ~= "string" then invalid(key .. " entries must be strings") end
-      values[#values + 1] = value[i]
-    end
-  else invalid(key .. " must be a string or repeated string parameter") end
-  if #values > 100 then invalid(key .. " accepts at most 100 values") end
-  local unique, seen = {}, {}
-  for _, item in ipairs(values) do
+local function location_filter_values(params, key, validate, description, max_bytes)
+  local supplied = query_string_values(params, key)
+  if not supplied then return nil end
+  return unique_query_values(supplied, function(item)
     if max_bytes and #item > max_bytes then invalid(key .. " entries must be at most " .. max_bytes .. " UTF-8 bytes") end
     if validate and not validate(item) then invalid("each " .. key .. " value must be " .. description) end
-    if not seen[item] then seen[item] = true; unique[#unique + 1] = item end
-  end
-  return unique
+  end)
 end
 
 local function add_optional_in(where, params, column, values)
@@ -305,9 +336,9 @@ end
 
 local function list_locations()
   keys_only(params, { authors = true, uris = true, locationTypes = true, limit = true, cursor = true, sortDirection = true })
-  local authors = array(params, "authors", valid_did, "valid DIDs")
-  local uris = array(params, "uris", valid_location_uri, "full app.certified.location AT-URIs with DID authorities")
-  local types = array(params, "locationTypes", nil, nil, 20)
+  local authors = location_filter_values(params, "authors", valid_did, "valid DIDs")
+  local uris = location_filter_values(params, "uris", valid_location_uri, "full app.certified.location AT-URIs with DID authorities")
+  local types = location_filter_values(params, "locationTypes", nil, nil, 20)
   local limit = parse_list_limit(params)
   local direction = parse_sort_direction(params)
   local cursor = decode_record_cursor(scalar(params, "cursor"), direction, valid_location_uri)
