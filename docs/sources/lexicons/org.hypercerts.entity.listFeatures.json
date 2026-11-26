@@ -49,7 +49,7 @@
           },
           "cursor": {
             "type": "string",
-            "maxLength": 32768,
+            "maxLength": 8192,
             "description": "Opaque cursor from the previous page, bound to sortDirection."
           }
         }

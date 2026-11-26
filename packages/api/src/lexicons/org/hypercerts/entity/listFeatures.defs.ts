@@ -11,7 +11,7 @@ type $nsid = typeof $nsid;
 
 export { $nsid };
 
-export const $params = /*#__PURE__*/ l.params({"authors":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.array(/*#__PURE__*/ l.string({"format":"did"}), {"maxLength":100})),"hasOrganizationRecord":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.boolean()),"types":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.array(/*#__PURE__*/ l.string({"maxLength":64}), {"maxLength":100})),"sortDirection":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.withDefault(/*#__PURE__*/ l.enum(["asc","desc"]), "desc")),"limit":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.withDefault(/*#__PURE__*/ l.integer({"minimum":1,"maximum":100}), 25)),"cursor":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string({"maxLength":32768}))});
+export const $params = /*#__PURE__*/ l.params({"authors":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.array(/*#__PURE__*/ l.string({"format":"did"}), {"maxLength":100})),"hasOrganizationRecord":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.boolean()),"types":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.array(/*#__PURE__*/ l.string({"maxLength":64}), {"maxLength":100})),"sortDirection":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.withDefault(/*#__PURE__*/ l.enum(["asc","desc"]), "desc")),"limit":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.withDefault(/*#__PURE__*/ l.integer({"minimum":1,"maximum":100}), 25)),"cursor":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string({"maxLength":8192}))});
 
 export type $Params = l.InferOutput<typeof $params>;
 
