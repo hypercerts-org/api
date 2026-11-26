@@ -125,7 +125,7 @@
           "description": "the indexedAt null fallback"
         }
       ],
-      "homes": ["lua/shared/recordView.lua"]
+      "homes": ["lua/shared/recordView.lua", "lua/shared/recordViewOmittingIndexedAt.lua"]
     },
     {
       "id": "actor-view",
@@ -141,12 +141,6 @@
     }
   ],
   "allowlist": [
-    {
-      "file": "lua/shared/acknowledgement.lua",
-      "family": "record-view",
-      "symbol": "acknowledgement_record_view",
-      "reason": "Existing record view with endpoint-specific fields; kept to avoid a behavior change. Build on record_view where the shape allows."
-    },
     {
       "file": "lua/shared/acknowledgementList.lua",
       "family": "datetime-validation",
@@ -209,24 +203,6 @@
       "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
     },
     {
-      "file": "lua/shared/collectionProjection.lua",
-      "family": "record-view",
-      "symbol": "collection_projection_record_view",
-      "reason": "Existing record view with endpoint-specific fields; kept to avoid a behavior change. Build on record_view where the shape allows."
-    },
-    {
-      "file": "lua/shared/entityFollow.lua",
-      "family": "record-view",
-      "symbol": "entity_follow_indexed_record_view",
-      "reason": "Existing record view with endpoint-specific fields; kept to avoid a behavior change. Build on record_view where the shape allows."
-    },
-    {
-      "file": "lua/shared/entityFollow.lua",
-      "family": "record-view",
-      "symbol": "entity_follow_record_view",
-      "reason": "Existing record view with endpoint-specific fields; kept to avoid a behavior change. Build on record_view where the shape allows."
-    },
-    {
       "file": "lua/shared/evaluation.lua",
       "family": "repeated-query-array",
       "symbol": "evaluation_evaluator_array",
@@ -239,28 +215,10 @@
       "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
     },
     {
-      "file": "lua/shared/evmLinkIdentifier.lua",
-      "family": "record-view",
-      "symbol": "evm_link_record_view",
-      "reason": "Existing record view with endpoint-specific fields; kept to avoid a behavior change. Build on record_view where the shape allows."
-    },
-    {
-      "file": "lua/shared/featureProjection.lua",
-      "family": "record-view",
-      "symbol": "feature_projection_record_view",
-      "reason": "Existing record view with endpoint-specific fields; kept to avoid a behavior change. Build on record_view where the shape allows."
-    },
-    {
       "file": "lua/shared/feedActorReactions.lua",
       "family": "record-view",
       "symbol": "feed_actor_reaction_record_view",
       "reason": "Existing record view with endpoint-specific fields; kept to avoid a behavior change. Build on record_view where the shape allows."
-    },
-    {
-      "file": "lua/shared/fundingReceipt.lua",
-      "family": "record-view",
-      "symbol": "indexed-at-null",
-      "reason": "funding_receipt_view repeats the record_view null indexedAt fallback because it also adds author; kept to avoid a behavior change."
     },
     {
       "file": "lua/shared/fundingReceiptList.lua",
@@ -303,24 +261,6 @@
       "family": "record-view",
       "symbol": "recent_record_view",
       "reason": "Existing record view with endpoint-specific fields; kept to avoid a behavior change. Build on record_view where the shape allows."
-    },
-    {
-      "file": "lua/shared/rightsView.lua",
-      "family": "actor-view",
-      "symbol": "rights_hydrate_actor_views",
-      "reason": "Existing actor hydration variant; kept to avoid a behavior change. Build on hydrate_actor_views where the shape allows."
-    },
-    {
-      "file": "lua/shared/rightsView.lua",
-      "family": "record-view",
-      "symbol": "rights_record_view",
-      "reason": "Existing record view with endpoint-specific fields; kept to avoid a behavior change. Build on record_view where the shape allows."
-    },
-    {
-      "file": "lua/shared/vocabTagValidation.lua",
-      "family": "actor-view",
-      "symbol": "hydrate_vocab_actor_views",
-      "reason": "Existing actor hydration variant; kept to avoid a behavior change. Build on hydrate_actor_views where the shape allows."
     },
     {
       "file": "lua/shared/workscopeTagList.lua",
@@ -506,12 +446,6 @@
       "file": "lua/shared/profileList.lua",
       "family": "shared-helper",
       "symbol": "cursor_decode",
-      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
-    },
-    {
-      "file": "lua/shared/workscopeRecordView.lua",
-      "family": "shared-helper",
-      "symbol": "record_view",
       "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
     },
     {

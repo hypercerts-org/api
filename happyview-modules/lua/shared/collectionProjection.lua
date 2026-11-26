@@ -15,16 +15,6 @@ local function collection_projection_query(sql, values)
   return result
 end
 
-local function collection_projection_record_view(row)
-  return {
-    uri = row.uri,
-    cid = row.cid,
-    indexedAt = row.indexed_at == nil and COLLECTION_PROJECTION_NULL or row.indexed_at,
-    did = row.did,
-    record = json.decode(row.record),
-  }
-end
-
 local function collection_projection_ref_key(uri, cid)
   return uri .. "\0" .. cid
 end
@@ -147,8 +137,8 @@ local function collection_projection_hydrate(views, omit_invalid)
   local tags = collection_projection_load_exact_refs(COLLECTION_PROJECTION_TAG, tag_refs)
 
   for _, view in ipairs(views) do
-    view.author.profile = profiles[view.did] and collection_projection_record_view(profiles[view.did]) or COLLECTION_PROJECTION_NULL
-    view.author.organization = organizations[view.did] and collection_projection_record_view(organizations[view.did]) or COLLECTION_PROJECTION_NULL
+    view.author.profile = profiles[view.did] and record_view(profiles[view.did]) or COLLECTION_PROJECTION_NULL
+    view.author.organization = organizations[view.did] and record_view(organizations[view.did]) or COLLECTION_PROJECTION_NULL
 
     local source_location = view.record.location ~= nil and
       collection_projection_reference(view.record.location, "location", COLLECTION_PROJECTION_LOCATION, omit_invalid) or nil
@@ -158,7 +148,7 @@ local function collection_projection_hydrate(views, omit_invalid)
       view.location = {
         uri = source_location.uri,
         cid = source_location.cid,
-        record = row and collection_projection_record_view(row) or COLLECTION_PROJECTION_NULL,
+        record = row and record_view(row) or COLLECTION_PROJECTION_NULL,
       }
     end
 
@@ -172,7 +162,7 @@ local function collection_projection_hydrate(views, omit_invalid)
           projected_tags[#projected_tags + 1] = {
             uri = reference.uri,
             cid = reference.cid,
-            record = row and collection_projection_record_view(row) or COLLECTION_PROJECTION_NULL,
+            record = row and record_view(row) or COLLECTION_PROJECTION_NULL,
           }
         end
       end

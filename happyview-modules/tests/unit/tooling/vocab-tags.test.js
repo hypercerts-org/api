@@ -19,6 +19,7 @@ const sharedSources = [
   "lua/shared/listQuery.lua",
   "lua/shared/recordView.lua",
   "lua/shared/actorView.lua",
+  "lua/shared/recordViewOmittingIndexedAt.lua",
   "lua/shared/vocabTagValidation.lua",
 ];
 

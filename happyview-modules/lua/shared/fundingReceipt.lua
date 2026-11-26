@@ -12,14 +12,9 @@ local function receipt_query(sql, values)
 end
 
 local function funding_receipt_view(row)
-  return {
-    uri = row.uri,
-    cid = row.cid,
-    indexedAt = row.indexed_at == nil and NULL or row.indexed_at,
-    did = row.did,
-    author = { did = row.did },
-    record = json.decode(row.record),
-  }
+  local view = record_view(row)
+  view.author = { did = row.did }
+  return view
 end
 
 local function hydrate_funding_receipt_views(views)

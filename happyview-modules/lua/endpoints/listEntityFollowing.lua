@@ -267,6 +267,18 @@ local function activity_projection_hydrate_views(views)
   end
 end
 
+local NULL = json.decode("null")
+
+local function record_view(row)
+  return {
+    uri = row.uri,
+    cid = row.cid,
+    indexedAt = row.indexed_at == nil and NULL or row.indexed_at,
+    did = row.did,
+    record = json.decode(row.record),
+  }
+end
+
 local COLLECTION_PROJECTION_PROFILE = "app.certified.actor.profile"
 local COLLECTION_PROJECTION_ORGANIZATION = "app.certified.actor.organization"
 local COLLECTION_PROJECTION_LOCATION = "app.certified.location"
@@ -282,16 +294,6 @@ local function collection_projection_query(sql, values)
     error("CollectionQueryFailed: collection lookup failed", 0)
   end
   return result
-end
-
-local function collection_projection_record_view(row)
-  return {
-    uri = row.uri,
-    cid = row.cid,
-    indexedAt = row.indexed_at == nil and COLLECTION_PROJECTION_NULL or row.indexed_at,
-    did = row.did,
-    record = json.decode(row.record),
-  }
 end
 
 local function collection_projection_ref_key(uri, cid)
@@ -416,8 +418,8 @@ local function collection_projection_hydrate(views, omit_invalid)
   local tags = collection_projection_load_exact_refs(COLLECTION_PROJECTION_TAG, tag_refs)
 
   for _, view in ipairs(views) do
-    view.author.profile = profiles[view.did] and collection_projection_record_view(profiles[view.did]) or COLLECTION_PROJECTION_NULL
-    view.author.organization = organizations[view.did] and collection_projection_record_view(organizations[view.did]) or COLLECTION_PROJECTION_NULL
+    view.author.profile = profiles[view.did] and record_view(profiles[view.did]) or COLLECTION_PROJECTION_NULL
+    view.author.organization = organizations[view.did] and record_view(organizations[view.did]) or COLLECTION_PROJECTION_NULL
 
     local source_location = view.record.location ~= nil and
       collection_projection_reference(view.record.location, "location", COLLECTION_PROJECTION_LOCATION, omit_invalid) or nil
@@ -427,7 +429,7 @@ local function collection_projection_hydrate(views, omit_invalid)
       view.location = {
         uri = source_location.uri,
         cid = source_location.cid,
-        record = row and collection_projection_record_view(row) or COLLECTION_PROJECTION_NULL,
+        record = row and record_view(row) or COLLECTION_PROJECTION_NULL,
       }
     end
 
@@ -441,7 +443,7 @@ local function collection_projection_hydrate(views, omit_invalid)
           projected_tags[#projected_tags + 1] = {
             uri = reference.uri,
             cid = reference.cid,
-            record = row and collection_projection_record_view(row) or COLLECTION_PROJECTION_NULL,
+            record = row and record_view(row) or COLLECTION_PROJECTION_NULL,
           }
         end
       end
@@ -481,16 +483,6 @@ local function feature_projection_load_actor_records(collection, dids)
   return by_did
 end
 
-local function feature_projection_record_view(row)
-  return {
-    uri = row.uri,
-    cid = row.cid,
-    indexedAt = row.indexed_at == nil and FEATURE_PROJECTION_NULL or row.indexed_at,
-    did = row.did,
-    record = json.decode(row.record),
-  }
-end
-
 local function feature_projection_view(row)
   return {
     ["$type"] = "org.hypercerts.collection.listCollectionItems#featureView",
@@ -515,8 +507,8 @@ local function feature_projection_hydrate(views)
   local profiles = feature_projection_load_actor_records(FEATURE_PROJECTION_PROFILE, dids)
   local organizations = feature_projection_load_actor_records(FEATURE_PROJECTION_ORGANIZATION, dids)
   for _, view in ipairs(views) do
-    view.author.profile = profiles[view.did] and feature_projection_record_view(profiles[view.did]) or FEATURE_PROJECTION_NULL
-    view.author.organization = organizations[view.did] and feature_projection_record_view(organizations[view.did]) or FEATURE_PROJECTION_NULL
+    view.author.profile = profiles[view.did] and record_view(profiles[view.did]) or FEATURE_PROJECTION_NULL
+    view.author.organization = organizations[view.did] and record_view(organizations[view.did]) or FEATURE_PROJECTION_NULL
   end
 end
 
@@ -534,18 +526,8 @@ local function entity_follow_query(sql, values)
   return result
 end
 
-local function entity_follow_indexed_record_view(row)
-  return {
-    uri = row.uri,
-    cid = row.cid,
-    indexedAt = row.indexed_at == nil and ENTITY_FOLLOW_NULL or row.indexed_at,
-    did = row.did,
-    record = json.decode(row.record),
-  }
-end
-
-local function entity_follow_record_view(row)
-  local view = entity_follow_indexed_record_view(row)
+local function entity_follow_typed_view(row)
+  local view = record_view(row)
   view["$type"] = "app.certified.graph.getEntityFollow#entityFollowRecordView"
   return view
 end
@@ -743,7 +725,7 @@ local function entity_follow_resolve_entities(rows, subjects_by_row)
       ["$type"] = "app.certified.graph.listEntityFollowing#entityFollowingItem",
       uri = uri,
       entity = views_by_uri[uri] or ENTITY_FOLLOW_NULL,
-      follow = entity_follow_record_view(row),
+      follow = entity_follow_typed_view(row),
     }
   end
   return entities

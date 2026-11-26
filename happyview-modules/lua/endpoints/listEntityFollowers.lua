@@ -83,6 +83,18 @@ local function parse_sort_direction(params)
   return direction
 end
 
+local NULL = json.decode("null")
+
+local function record_view(row)
+  return {
+    uri = row.uri,
+    cid = row.cid,
+    indexedAt = row.indexed_at == nil and NULL or row.indexed_at,
+    did = row.did,
+    record = json.decode(row.record),
+  }
+end
+
 local ENTITY_FOLLOW = "app.certified.graph.entityFollow"
 local ENTITY_FOLLOW_NULL = json.decode("null")
 
@@ -97,18 +109,8 @@ local function entity_follow_query(sql, values)
   return result
 end
 
-local function entity_follow_indexed_record_view(row)
-  return {
-    uri = row.uri,
-    cid = row.cid,
-    indexedAt = row.indexed_at == nil and ENTITY_FOLLOW_NULL or row.indexed_at,
-    did = row.did,
-    record = json.decode(row.record),
-  }
-end
-
-local function entity_follow_record_view(row)
-  local view = entity_follow_indexed_record_view(row)
+local function entity_follow_typed_view(row)
+  local view = record_view(row)
   view["$type"] = "app.certified.graph.getEntityFollow#entityFollowRecordView"
   return view
 end
@@ -255,8 +257,8 @@ local function entity_follow_hydrate_followers(followers)
   local profiles = entity_follow_load_actor_records(ENTITY_FOLLOW_FOLLOWER_PROFILE, dids)
   local organizations = entity_follow_load_actor_records(ENTITY_FOLLOW_FOLLOWER_ORGANIZATION, dids)
   for _, follower in ipairs(followers) do
-    follower.profile = profiles[follower.did] and entity_follow_indexed_record_view(profiles[follower.did]) or ENTITY_FOLLOW_NULL
-    follower.organization = organizations[follower.did] and entity_follow_indexed_record_view(organizations[follower.did]) or ENTITY_FOLLOW_NULL
+    follower.profile = profiles[follower.did] and record_view(profiles[follower.did]) or ENTITY_FOLLOW_NULL
+    follower.organization = organizations[follower.did] and record_view(organizations[follower.did]) or ENTITY_FOLLOW_NULL
   end
 end
 
@@ -266,7 +268,7 @@ local function entity_follow_follower_views(rows)
     followers[#followers + 1] = {
       ["$type"] = "app.certified.graph.listEntityFollowers#entityFollowerView",
       did = row.did,
-      follow = entity_follow_record_view(row),
+      follow = entity_follow_typed_view(row),
     }
   end
   entity_follow_hydrate_followers(followers)

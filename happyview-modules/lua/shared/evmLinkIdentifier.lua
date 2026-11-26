@@ -6,12 +6,6 @@ local function valid_evm_link_uri(value)
   return valid and collection == EVMLINK_COLLECTION
 end
 
-local function evm_link_record_view(row)
-  local view = record_view(row)
-  if view.indexedAt == nil then view.indexedAt = NULL end
-  return view
-end
-
 local function normalize_evm_actor_indexed_at(actors)
   for _, actor in ipairs(actors) do
     for _, field in ipairs({ "profile", "organization" }) do

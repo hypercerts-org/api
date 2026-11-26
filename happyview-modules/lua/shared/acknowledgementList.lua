@@ -103,7 +103,7 @@ local function list_acknowledgements()
   local rows = acknowledgement_list_query(authors, subjects, limit, cursor, direction)
   local acknowledgements = {}
   for index = 1, math.min(#rows, limit) do
-    acknowledgements[#acknowledgements + 1] = acknowledgement_record_view(rows[index])
+    acknowledgements[#acknowledgements + 1] = record_view(rows[index])
   end
   if #acknowledgements > 0 then hydrate_acknowledgement_authors(acknowledgements) end
 

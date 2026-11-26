@@ -120,7 +120,7 @@ local function list_vocab_tags(authors, limit, cursor, direction)
     views[#views + 1] = view
     authors_to_hydrate[#authors_to_hydrate + 1] = view.author
   end
-  hydrate_vocab_actor_views(authors_to_hydrate, query)
+  hydrate_actor_views(authors_to_hydrate, query, record_view_omitting_indexed_at)
 
   local next_cursor
   if more then

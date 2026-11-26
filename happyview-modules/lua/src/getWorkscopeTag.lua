@@ -12,7 +12,7 @@ local function workscope_tag_get(uri)
   if #rows == 0 then error("RecordNotFound: work-scope tag is not indexed", 0) end
 
   local view = workscope_tag_view(rows[1])
-  hydrate_actor_views({ view.author }, workscope_tag_query)
+  hydrate_actor_views({ view.author }, workscope_tag_query, record_view_omitting_indexed_at)
   return { workscopeTag = view }
 end
 

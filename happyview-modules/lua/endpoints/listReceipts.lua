@@ -86,7 +86,9 @@ end
 local PROFILE = "app.certified.actor.profile"
 local ORGANIZATION = "app.certified.actor.organization"
 
-local function hydrate_actor_views(actors, run_query)
+-- view(row) builds each profile/organization sidecar; it defaults to record_view.
+local function hydrate_actor_views(actors, run_query, view)
+  view = view or record_view
   if #actors == 0 then return end
   local dids, seen = {}, {}
   for _, actor in ipairs(actors) do
@@ -108,8 +110,8 @@ local function hydrate_actor_views(actors, run_query)
   load(PROFILE, profiles)
   load(ORGANIZATION, organizations)
   for _, actor in ipairs(actors) do
-    actor.profile = profiles[actor.did] and record_view(profiles[actor.did]) or NULL
-    actor.organization = organizations[actor.did] and record_view(organizations[actor.did]) or NULL
+    actor.profile = profiles[actor.did] and view(profiles[actor.did]) or NULL
+    actor.organization = organizations[actor.did] and view(organizations[actor.did]) or NULL
   end
 end
 
@@ -127,14 +129,9 @@ local function receipt_query(sql, values)
 end
 
 local function funding_receipt_view(row)
-  return {
-    uri = row.uri,
-    cid = row.cid,
-    indexedAt = row.indexed_at == nil and NULL or row.indexed_at,
-    did = row.did,
-    author = { did = row.did },
-    record = json.decode(row.record),
-  }
+  local view = record_view(row)
+  view.author = { did = row.did }
+  return view
 end
 
 local function hydrate_funding_receipt_views(views)

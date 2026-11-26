@@ -39,10 +39,21 @@ local function valid_record_uri(value)
   return true, collection, authority
 end
 
+local NULL = json.decode("null")
+
+local function record_view(row)
+  return {
+    uri = row.uri,
+    cid = row.cid,
+    indexedAt = row.indexed_at == nil and NULL or row.indexed_at,
+    did = row.did,
+    record = json.decode(row.record),
+  }
+end
+
 local ACKNOWLEDGEMENT = "org.hypercerts.context.acknowledgement"
 local PROFILE = "app.certified.actor.profile"
 local ORGANIZATION = "app.certified.actor.organization"
-local NULL = json.decode("null")
 
 local function acknowledgement_query(sql, values)
   if db.backend() ~= "postgres" then
@@ -53,16 +64,6 @@ local function acknowledgement_query(sql, values)
     error("AcknowledgementQueryFailed: indexed record or publisher lookup failed", 0)
   end
   return result
-end
-
-local function acknowledgement_record_view(row)
-  return {
-    uri = row.uri,
-    cid = row.cid,
-    indexedAt = row.indexed_at or NULL,
-    did = row.did,
-    record = json.decode(row.record),
-  }
 end
 
 local function hydrate_acknowledgement_authors(views)
@@ -93,8 +94,8 @@ local function hydrate_acknowledgement_authors(views)
   for _, view in ipairs(views) do
     view.author = {
       did = view.did,
-      profile = profiles[view.did] and acknowledgement_record_view(profiles[view.did]) or NULL,
-      organization = organizations[view.did] and acknowledgement_record_view(organizations[view.did]) or NULL,
+      profile = profiles[view.did] and record_view(profiles[view.did]) or NULL,
+      organization = organizations[view.did] and record_view(organizations[view.did]) or NULL,
     }
   end
 end
@@ -113,7 +114,7 @@ function handle()
     { ACKNOWLEDGEMENT, uri })
   if #rows == 0 then error("RecordNotFound: acknowledgement record is not indexed", 0) end
 
-  local acknowledgement = acknowledgement_record_view(rows[1])
+  local acknowledgement = record_view(rows[1])
   hydrate_acknowledgement_authors({ acknowledgement })
   return { acknowledgement = acknowledgement }
 end

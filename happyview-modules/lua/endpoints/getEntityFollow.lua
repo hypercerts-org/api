@@ -39,6 +39,18 @@ local function valid_record_uri(value)
   return true, collection, authority
 end
 
+local NULL = json.decode("null")
+
+local function record_view(row)
+  return {
+    uri = row.uri,
+    cid = row.cid,
+    indexedAt = row.indexed_at == nil and NULL or row.indexed_at,
+    did = row.did,
+    record = json.decode(row.record),
+  }
+end
+
 local ENTITY_FOLLOW = "app.certified.graph.entityFollow"
 local ENTITY_FOLLOW_NULL = json.decode("null")
 
@@ -53,18 +65,8 @@ local function entity_follow_query(sql, values)
   return result
 end
 
-local function entity_follow_indexed_record_view(row)
-  return {
-    uri = row.uri,
-    cid = row.cid,
-    indexedAt = row.indexed_at == nil and ENTITY_FOLLOW_NULL or row.indexed_at,
-    did = row.did,
-    record = json.decode(row.record),
-  }
-end
-
-local function entity_follow_record_view(row)
-  local view = entity_follow_indexed_record_view(row)
+local function entity_follow_typed_view(row)
+  local view = record_view(row)
   view["$type"] = "app.certified.graph.getEntityFollow#entityFollowRecordView"
   return view
 end
@@ -89,7 +91,7 @@ local function entity_follow_lookup(actor, entity_uri)
     "SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record FROM happyview_records CROSS JOIN LATERAL (SELECT " .. created_at_sort() .. " AS sort_at) sorted WHERE collection = $1 AND did = $2 AND record::jsonb->'subject'->>'uri' = $3 ORDER BY sorted.sort_at ASC, uri ASC LIMIT 1",
     { ENTITY_FOLLOW, actor, entity_uri })
   if #rows == 0 then return ENTITY_FOLLOW_NULL end
-  return entity_follow_record_view(rows[1])
+  return entity_follow_typed_view(rows[1])
 end
 
 local function get_entity_follow()

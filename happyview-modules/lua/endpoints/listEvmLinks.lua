@@ -118,12 +118,6 @@ local function valid_evm_link_uri(value)
   return valid and collection == EVMLINK_COLLECTION
 end
 
-local function evm_link_record_view(row)
-  local view = record_view(row)
-  if view.indexedAt == nil then view.indexedAt = NULL end
-  return view
-end
-
 local function normalize_evm_actor_indexed_at(actors)
   for _, actor in ipairs(actors) do
     for _, field in ipairs({ "profile", "organization" }) do
@@ -138,7 +132,9 @@ end
 local PROFILE = "app.certified.actor.profile"
 local ORGANIZATION = "app.certified.actor.organization"
 
-local function hydrate_actor_views(actors, run_query)
+-- view(row) builds each profile/organization sidecar; it defaults to record_view.
+local function hydrate_actor_views(actors, run_query, view)
+  view = view or record_view
   if #actors == 0 then return end
   local dids, seen = {}, {}
   for _, actor in ipairs(actors) do
@@ -160,8 +156,8 @@ local function hydrate_actor_views(actors, run_query)
   load(PROFILE, profiles)
   load(ORGANIZATION, organizations)
   for _, actor in ipairs(actors) do
-    actor.profile = profiles[actor.did] and record_view(profiles[actor.did]) or NULL
-    actor.organization = organizations[actor.did] and record_view(organizations[actor.did]) or NULL
+    actor.profile = profiles[actor.did] and view(profiles[actor.did]) or NULL
+    actor.organization = organizations[actor.did] and view(organizations[actor.did]) or NULL
   end
 end
 
@@ -273,7 +269,7 @@ local function list_evm_links(actors, addresses, limit, cursor, direction)
 
   local views, actors_to_hydrate = {}, {}
   for _, row in ipairs(rows) do
-    local view = evm_link_record_view(row)
+    local view = record_view(row)
     view.actor = { did = view.did }
     views[#views + 1] = view
     actors_to_hydrate[#actors_to_hydrate + 1] = view.actor

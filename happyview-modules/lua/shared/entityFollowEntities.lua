@@ -79,7 +79,7 @@ local function entity_follow_resolve_entities(rows, subjects_by_row)
       ["$type"] = "app.certified.graph.listEntityFollowing#entityFollowingItem",
       uri = uri,
       entity = views_by_uri[uri] or ENTITY_FOLLOW_NULL,
-      follow = entity_follow_record_view(row),
+      follow = entity_follow_typed_view(row),
     }
   end
   return entities

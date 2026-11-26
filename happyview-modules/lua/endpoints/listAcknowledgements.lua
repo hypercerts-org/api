@@ -71,10 +71,21 @@ local function parse_list_limit(params)
   return limit
 end
 
+local NULL = json.decode("null")
+
+local function record_view(row)
+  return {
+    uri = row.uri,
+    cid = row.cid,
+    indexedAt = row.indexed_at == nil and NULL or row.indexed_at,
+    did = row.did,
+    record = json.decode(row.record),
+  }
+end
+
 local ACKNOWLEDGEMENT = "org.hypercerts.context.acknowledgement"
 local PROFILE = "app.certified.actor.profile"
 local ORGANIZATION = "app.certified.actor.organization"
-local NULL = json.decode("null")
 
 local function acknowledgement_query(sql, values)
   if db.backend() ~= "postgres" then
@@ -85,16 +96,6 @@ local function acknowledgement_query(sql, values)
     error("AcknowledgementQueryFailed: indexed record or publisher lookup failed", 0)
   end
   return result
-end
-
-local function acknowledgement_record_view(row)
-  return {
-    uri = row.uri,
-    cid = row.cid,
-    indexedAt = row.indexed_at or NULL,
-    did = row.did,
-    record = json.decode(row.record),
-  }
 end
 
 local function hydrate_acknowledgement_authors(views)
@@ -125,8 +126,8 @@ local function hydrate_acknowledgement_authors(views)
   for _, view in ipairs(views) do
     view.author = {
       did = view.did,
-      profile = profiles[view.did] and acknowledgement_record_view(profiles[view.did]) or NULL,
-      organization = organizations[view.did] and acknowledgement_record_view(organizations[view.did]) or NULL,
+      profile = profiles[view.did] and record_view(profiles[view.did]) or NULL,
+      organization = organizations[view.did] and record_view(organizations[view.did]) or NULL,
     }
   end
 end
@@ -321,7 +322,7 @@ local function list_acknowledgements()
   local rows = acknowledgement_list_query(authors, subjects, limit, cursor, direction)
   local acknowledgements = {}
   for index = 1, math.min(#rows, limit) do
-    acknowledgements[#acknowledgements + 1] = acknowledgement_record_view(rows[index])
+    acknowledgements[#acknowledgements + 1] = record_view(rows[index])
   end
   if #acknowledgements > 0 then hydrate_acknowledgement_authors(acknowledgements) end
 

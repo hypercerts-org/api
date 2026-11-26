@@ -37,6 +37,7 @@
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/recordView.lua",
         "../../lua/shared/acknowledgement.lua"
       ],
       "config": {
@@ -66,6 +67,7 @@
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/datetimeValidation.lua",
         "../../lua/shared/listValidation.lua",
+        "../../lua/shared/recordView.lua",
         "../../lua/shared/acknowledgement.lua",
         "../../lua/shared/nsidValidation.lua",
         "../../lua/shared/cursorEncode.lua",

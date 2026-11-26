@@ -106,6 +106,18 @@ local function feature_valid_uri(value)
   return valid_did(authority)
 end
 
+local NULL = json.decode("null")
+
+local function record_view(row)
+  return {
+    uri = row.uri,
+    cid = row.cid,
+    indexedAt = row.indexed_at == nil and NULL or row.indexed_at,
+    did = row.did,
+    record = json.decode(row.record),
+  }
+end
+
 local FEATURE_PROJECTION_PROFILE = "app.certified.actor.profile"
 local FEATURE_PROJECTION_ORGANIZATION = "app.certified.actor.organization"
 local FEATURE_PROJECTION_NULL = json.decode("null")
@@ -137,16 +149,6 @@ local function feature_projection_load_actor_records(collection, dids)
   return by_did
 end
 
-local function feature_projection_record_view(row)
-  return {
-    uri = row.uri,
-    cid = row.cid,
-    indexedAt = row.indexed_at == nil and FEATURE_PROJECTION_NULL or row.indexed_at,
-    did = row.did,
-    record = json.decode(row.record),
-  }
-end
-
 local function feature_projection_view(row)
   return {
     ["$type"] = "org.hypercerts.collection.listCollectionItems#featureView",
@@ -171,8 +173,8 @@ local function feature_projection_hydrate(views)
   local profiles = feature_projection_load_actor_records(FEATURE_PROJECTION_PROFILE, dids)
   local organizations = feature_projection_load_actor_records(FEATURE_PROJECTION_ORGANIZATION, dids)
   for _, view in ipairs(views) do
-    view.author.profile = profiles[view.did] and feature_projection_record_view(profiles[view.did]) or FEATURE_PROJECTION_NULL
-    view.author.organization = organizations[view.did] and feature_projection_record_view(organizations[view.did]) or FEATURE_PROJECTION_NULL
+    view.author.profile = profiles[view.did] and record_view(profiles[view.did]) or FEATURE_PROJECTION_NULL
+    view.author.organization = organizations[view.did] and record_view(organizations[view.did]) or FEATURE_PROJECTION_NULL
   end
 end
 

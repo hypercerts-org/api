@@ -70,12 +70,12 @@ local function rights_list_query(authors, limit, cursor, direction)
 
   local views, authors_to_hydrate = {}, {}
   for _, row in ipairs(rows) do
-    local view = rights_record_view(row)
+    local view = record_view(row)
     view.author = { did = view.did }
     views[#views + 1] = view
     authors_to_hydrate[#authors_to_hydrate + 1] = view.author
   end
-  rights_hydrate_actor_views(authors_to_hydrate, rights_list_run_query)
+  hydrate_actor_views(authors_to_hydrate, rights_list_run_query)
 
   local next_cursor
   if more then

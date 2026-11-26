@@ -23,8 +23,8 @@ function handle()
     { RIGHTS, uri })
   if #rows == 0 then error("RecordNotFound: rights record is not indexed", 0) end
 
-  local view = rights_record_view(rows[1])
+  local view = record_view(rows[1])
   view.author = { did = view.did }
-  rights_hydrate_actor_views({ view.author }, rights_query)
+  hydrate_actor_views({ view.author }, rights_query)
   return { rights = view }
 end

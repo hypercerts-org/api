@@ -12,7 +12,7 @@ function handle()
     { ACKNOWLEDGEMENT, uri })
   if #rows == 0 then error("RecordNotFound: acknowledgement record is not indexed", 0) end
 
-  local acknowledgement = acknowledgement_record_view(rows[1])
+  local acknowledgement = record_view(rows[1])
   hydrate_acknowledgement_authors({ acknowledgement })
   return { acknowledgement = acknowledgement }
 end

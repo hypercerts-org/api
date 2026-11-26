@@ -84,7 +84,7 @@ local function workscope_tag_list()
     views[#views + 1] = view
     authors_to_hydrate[#authors_to_hydrate + 1] = view.author
   end
-  hydrate_actor_views(authors_to_hydrate, workscope_tag_query)
+  hydrate_actor_views(authors_to_hydrate, workscope_tag_query, record_view_omitting_indexed_at)
 
   local next_cursor
   if more then

@@ -54,6 +54,18 @@ local function created_at_sort(alias)
     "::timestamptz, " .. created_at .. "::timestamptz) END"
 end
 
+local NULL = json.decode("null")
+
+local function record_view(row)
+  return {
+    uri = row.uri,
+    cid = row.cid,
+    indexedAt = row.indexed_at == nil and NULL or row.indexed_at,
+    did = row.did,
+    record = json.decode(row.record),
+  }
+end
+
 local ENTITY_FOLLOW = "app.certified.graph.entityFollow"
 local ENTITY_FOLLOW_NULL = json.decode("null")
 
@@ -68,18 +80,8 @@ local function entity_follow_query(sql, values)
   return result
 end
 
-local function entity_follow_indexed_record_view(row)
-  return {
-    uri = row.uri,
-    cid = row.cid,
-    indexedAt = row.indexed_at == nil and ENTITY_FOLLOW_NULL or row.indexed_at,
-    did = row.did,
-    record = json.decode(row.record),
-  }
-end
-
-local function entity_follow_record_view(row)
-  local view = entity_follow_indexed_record_view(row)
+local function entity_follow_typed_view(row)
+  local view = record_view(row)
   view["$type"] = "app.certified.graph.getEntityFollow#entityFollowRecordView"
   return view
 end
@@ -218,7 +220,7 @@ local function get_entity_follows()
     values)
 
   local follows_by_entity = {}
-  for _, row in ipairs(rows) do follows_by_entity[row.target] = entity_follow_record_view(row) end
+  for _, row in ipairs(rows) do follows_by_entity[row.target] = entity_follow_typed_view(row) end
 
   local results = {}
   for _, entity_uri in ipairs(entities) do
