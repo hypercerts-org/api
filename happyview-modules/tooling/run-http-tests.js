@@ -335,8 +335,6 @@ function bootstrapAdmin(psqlPath, env, token) {
   const permissions = JSON.stringify([
     "lexicons:create",
     "lexicons:read",
-    "script-variables:create",
-    "script-variables:read",
     "scripts:read",
     "scripts:manage",
   ]);
@@ -347,8 +345,6 @@ INSERT INTO happyview_users (id, did, is_super, created_at)
 INSERT INTO happyview_user_permissions (user_id, permission, granted_at)
   VALUES (${sqlString(userId)}, 'lexicons:create', ${sqlString(now)}),
          (${sqlString(userId)}, 'lexicons:read', ${sqlString(now)}),
-         (${sqlString(userId)}, 'script-variables:create', ${sqlString(now)}),
-         (${sqlString(userId)}, 'script-variables:read', ${sqlString(now)}),
          (${sqlString(userId)}, 'scripts:read', ${sqlString(now)}),
          (${sqlString(userId)}, 'scripts:manage', ${sqlString(now)});
 INSERT INTO happyview_api_keys (id, user_id, name, key_hash, key_prefix, permissions, created_at)
@@ -606,7 +602,6 @@ async function installAndSeedApi(context) {
     ...localEnv,
     HAPPYVIEW_BASE_URL: baseUrl,
     HAPPYVIEW_ADMIN_TOKEN: context.adminToken,
-    HYPERCERTS_HANDLE_RESOLVER_URL: "https://resolver.invalid",
   };
   run("pnpm", ["--filter", "@hypercerts-org/happyview-modules", "run", "install:api"], {
     env: installerEnv,

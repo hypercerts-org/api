@@ -48,13 +48,12 @@ git clone --depth 1 --branch '@hypercerts-org/happyview-modules@X.Y.Z' https://g
 cd hypercerts-api
 pnpm install --frozen-lockfile
 cd happyview-modules
-HYPERCERTS_HANDLE_RESOLVER_URL='https://resolver.example' \
 HAPPYVIEW_BASE_URL='https://your-happyview.example' \
 HAPPYVIEW_ADMIN_TOKEN='<scoped-admin-token>' \
 pnpm install:api
 ```
 
-For bundles that register `app.certified.actor.getProfile`, handle lookups require `HYPERCERTS_HANDLE_RESOLVER_URL` to be an HTTPS origin without credentials, path, query, or fragment. Interactive installs prompt when it is absent; noninteractive installs must set it. The admin token needs `script-variables:read`, and `script-variables:create` if the installer must create the setting. Existing settings are retained; HappyView exposes only a masked preview, so the installer cannot verify the configured value. See [CONTRIBUTING.md](../CONTRIBUTING.md) for release-note requirements and installer safety details.
+For bundles that register `app.certified.actor.getProfile`, handle lookups use `https://slingshot.microcosm.blue` by default. To use another resolver, set the HappyView script variable `HYPERCERTS_HANDLE_RESOLVER_URL` to an HTTPS origin without credentials, path, query, or fragment, directly in HappyView. The installer does not prompt for, read, create or change it, so an existing value is kept. If the variable is set but invalid, `getProfile` fails with `HandleResolverConfigError` for handle lookups; remove or fix it. See [CONTRIBUTING.md](../CONTRIBUTING.md) for release-note requirements and installer safety details.
 
 ## Deploys
 
@@ -69,8 +68,7 @@ Pushing to `main`, `staging` or `production` runs [`.github/workflows/deploy.yml
 Each environment must allow deployments from its branch and define its own values; never reuse a token across environments:
 
 - variable `HAPPYVIEW_BASE_URL`: that environment's HappyView origin
-- secret `HAPPYVIEW_ADMIN_TOKEN`: a scoped admin token for that HappyView, including `script-variables:read`
-- variable `HYPERCERTS_HANDLE_RESOLVER_URL`: needed only if that HappyView does not already have this setting; the token then also needs `script-variables:create`
+- secret `HAPPYVIEW_ADMIN_TOKEN`: a scoped admin token for that HappyView
 
 Pushes that only change docs, tests or tooling skip the deploy (`paths-ignore` in `deploy.yml`). To deploy by hand, run the workflow with `workflow_dispatch`: choose the environment, run it from that environment's branch, and optionally give a rollback commit SHA, which must be on that branch. A smoke step runs after every install, in the same deploy job, and checks the live API.
 
