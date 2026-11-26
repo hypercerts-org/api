@@ -194,7 +194,7 @@
       "file": "lua/src/listFeatures.lua",
       "family": "query-params",
       "symbol": "occur-once-message",
-      "reason": "Declined change: the cursor must be a string (a number is rejected) with the message \"cursor must occur once as a string\", while the shared scalar() accepts numbers and says \"cursor must occur once\"."
+      "reason": "listFeatures reads cursor from params directly and rejects anything that is not a string (\"cursor must occur once as a string\"), including numbers, which scalar() accepts and stringifies. Moving to scalar() would change which inputs are rejected and the message."
     },
     {
       "file": "lua/src/listVocabTags.lua",
@@ -206,79 +206,79 @@
       "file": "lua/shared/actorFollow.lua",
       "family": "shared-helper",
       "symbol": "query",
-      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+      "reason": "Module-local database wrapper `query(sql, values)` that raises that module's own *QueryFailed error name and message, so it is not one shared function. It only shares a name with the others."
     },
     {
       "file": "lua/shared/location.lua",
       "family": "shared-helper",
       "symbol": "query",
-      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+      "reason": "Module-local database wrapper `query(sql, values)` that raises that module's own *QueryFailed error name and message, so it is not one shared function. It only shares a name with the others."
     },
     {
       "file": "lua/shared/organization.lua",
       "family": "shared-helper",
       "symbol": "query",
-      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+      "reason": "Module-local database wrapper `query(sql, values)` that raises that module's own *QueryFailed error name and message, so it is not one shared function. It only shares a name with the others."
     },
     {
       "file": "lua/shared/profile.lua",
       "family": "shared-helper",
       "symbol": "query",
-      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+      "reason": "Module-local database wrapper `query(sql, values)` that raises that module's own *QueryFailed error name and message, so it is not one shared function. It only shares a name with the others."
     },
     {
       "file": "lua/src/getBadgeAward.lua",
       "family": "shared-helper",
       "symbol": "query",
-      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+      "reason": "Module-local database wrapper `query(sql, values)` that raises that module's own *QueryFailed error name and message, so it is not one shared function. It only shares a name with the others."
     },
     {
       "file": "lua/src/getBadgeDefinition.lua",
       "family": "shared-helper",
       "symbol": "query",
-      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+      "reason": "Module-local database wrapper `query(sql, values)` that raises that module's own *QueryFailed error name and message, so it is not one shared function. It only shares a name with the others."
     },
     {
       "file": "lua/src/getBadgeResponse.lua",
       "family": "shared-helper",
       "symbol": "query",
-      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+      "reason": "Module-local database wrapper `query(sql, values)` that raises that module's own *QueryFailed error name and message, so it is not one shared function. It only shares a name with the others."
     },
     {
       "file": "lua/src/getVocabTag.lua",
       "family": "shared-helper",
       "symbol": "query",
-      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+      "reason": "Module-local database wrapper `query(sql, values)` that raises that module's own *QueryFailed error name and message, so it is not one shared function. It only shares a name with the others."
     },
     {
       "file": "lua/src/listBadgeAwards.lua",
       "family": "shared-helper",
       "symbol": "query",
-      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+      "reason": "Module-local database wrapper `query(sql, values)` that raises that module's own *QueryFailed error name and message, so it is not one shared function. It only shares a name with the others."
     },
     {
       "file": "lua/src/listBadgeDefinitions.lua",
       "family": "shared-helper",
       "symbol": "query",
-      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+      "reason": "Module-local database wrapper `query(sql, values)` that raises that module's own *QueryFailed error name and message, so it is not one shared function. It only shares a name with the others."
     },
     {
       "file": "lua/src/listBadgeResponses.lua",
       "family": "shared-helper",
       "symbol": "query",
-      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+      "reason": "Module-local database wrapper `query(sql, values)` that raises that module's own *QueryFailed error name and message, so it is not one shared function. It only shares a name with the others."
     },
     {
       "file": "lua/src/listVocabTags.lua",
       "family": "shared-helper",
       "symbol": "query",
-      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+      "reason": "Module-local database wrapper `query(sql, values)` that raises that module's own *QueryFailed error name and message, so it is not one shared function. It only shares a name with the others."
     },
     {
       "file": "lua/src/searchBadgeDefinitions.lua",
       "family": "shared-helper",
       "symbol": "query",
-      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+      "reason": "Module-local database wrapper `query(sql, values)` that raises that module's own *QueryFailed error name and message, so it is not one shared function. It only shares a name with the others."
     },
     {
       "file": "lua/src/listVocabTags.lua",

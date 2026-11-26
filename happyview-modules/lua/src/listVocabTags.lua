@@ -6,6 +6,9 @@ local function query(sql, values)
   return result
 end
 
+-- Not query_string_values: its shape error is "authors must be repeated string values"
+-- (the shared parser says "must use repeated query values"), and the result is sorted
+-- because the author list is part of the cursor signature.
 local function parse_authors(value)
   if value == nil then return nil end
   local supplied = {}
