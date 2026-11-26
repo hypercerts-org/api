@@ -1,5 +1,23 @@
 # @hypercerts-org/api
 
+## 1.0.0
+
+### Major Changes
+
+- [#103](https://github.com/hypercerts-org/api/pull/103) [`f1cf4ab`](https://github.com/hypercerts-org/api/commit/f1cf4abf4853d3a12862c3c1cfaf05fded7df375) Thanks [@Kzoeps](https://github.com/Kzoeps)! - Added DID-only `app.certified.actor.getActor` and `getActors` queries.
+
+  Replace `app.certified.actor.getOrganization.OrganizationActorView` with `org.hypercerts.api.defs.ActorView` and import `LocationRecordView` from the same shared namespace. Narrow `actor.organization` before accessing it: the shared TypeScript type allows null even though existing organization queries keep their response shapes.
+
+### Minor Changes
+
+- [#98](https://github.com/hypercerts-org/api/pull/98) [`0e95364`](https://github.com/hypercerts-org/api/commit/0e9536487a17ea771d20bb68319892bb90be596f) Thanks [@Kzoeps](https://github.com/Kzoeps)! - Activity and collection lists can optionally return an exact total for records matching the supplied filters. Set `includeTotal=true` to receive `totalCount`, counted before cursor and page limit, including on empty pages.
+
+- [#101](https://github.com/hypercerts-org/api/pull/101) [`2e8600f`](https://github.com/hypercerts-org/api/commit/2e8600f4986ad6cc72b1873aa1e3eaf7604e23db) Thanks [@Kzoeps](https://github.com/Kzoeps)! - Set `includeTotal=true` on `org.hypercerts.funding.listReceipts` to get `totalCount`: the number of matching indexed receipts before pagination, even on an empty page. Omit the flag or set it to `false` to skip counting.
+
+### Patch Changes
+
+- [#106](https://github.com/hypercerts-org/api/pull/106) [`34003e2`](https://github.com/hypercerts-org/api/commit/34003e299bbb6661d0830d8abd5f7ccb86531043) Thanks [@Kzoeps](https://github.com/Kzoeps)! - `app.certified.actor.getProfile` now resolves handles through `https://slingshot.microcosm.blue` when the HappyView script variable `HYPERCERTS_HANDLE_RESOLVER_URL` is unset. A valid value still overrides it; an invalid value still fails with `HandleResolverConfigError`. `pnpm install:api` no longer prompts for, reads or creates that variable, so it does not need `script-variables:*` permissions; existing values are kept. Operators who relied on the installer to set it must set it in HappyView directly.
+
 ## 0.5.0
 
 ### Minor Changes
