@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -131,3 +131,79 @@ test("rejects allowlist entries without a reason and owners that do not define t
   const errors = await check({ "lua/shared/didValidation.lua": "local x = 1\n" });
   assert.match(errors[0], /protects "valid_did" but no owner file defines it/);
 });
+
+test("an allowlist count catches a second copy in an already-allowlisted file", async () => {
+  const files = {
+    ...owner,
+    "lua/src/a.lua": "local function valid_did(v)\nend\nlocal function valid_did(v)\nend\n",
+  };
+  const entry = {
+    file: "lua/src/a.lua",
+    family: "did-validation",
+    symbol: "valid_did",
+    reason: "kept",
+  };
+  const [error] = await check(files, { allowlist: [entry] });
+  assert.match(error, /covers 1 occurrence\(s\) but 2 exist/);
+  assert.deepEqual(await check(files, { allowlist: [{ ...entry, count: 2 }] }), []);
+  const [stale] = await check(
+    { ...owner, "lua/src/a.lua": "local function valid_did(v)\nend\n" },
+    {
+      allowlist: [{ ...entry, count: 2 }],
+    },
+  );
+  assert.match(stale, /allows 2 but only 1 remain/);
+});
+
+test("detects module-table definitions by their last segment", async () => {
+  const errors = await check({
+    ...owner,
+    "lua/src/a.lua":
+      "function M.valid_did(v)\nend\nM.valid_did = function(v)\nend\nfunction M:valid_did(v)\nend\n",
+  });
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /defines "valid_did"/);
+});
+
+// The real registry must catch the obvious new copy, not only exact names.
+const realRegistryCases = [
+  ["a suffixed DID validator", "local function valid_did_strict(v)\nend\n", /valid_did_strict/],
+  ["a module-table NSID validator", "function M.valid_nsid(v)\nend\n", /valid_nsid/],
+  [
+    "a new datetime validator",
+    "local function valid_datetime_strict(v)\nend\n",
+    /valid_datetime_strict/,
+  ],
+  [
+    "a prefixed cursor decoder",
+    "local function decode_widget_cursor(t)\nend\n",
+    /decode_widget_cursor/,
+  ],
+  ["a new array parser", "local function widget_array(p, k)\nend\n", /widget_array/],
+  ["an inline DID pattern", 'local ok = v:find("^did:[a-z]+:")\n', /DID syntax pattern/],
+  ["an inline AT-URI pattern", 'local a = v:match("^at://([^/]+)/")\n', /AT-URI parsing pattern/],
+  ["a local record view", "local function widget_record_view(r)\nend\n", /widget_record_view/],
+];
+
+for (const [name, source, expected] of realRegistryCases) {
+  test(`real registry flags ${name}`, async () => {
+    const packageRoot = path.resolve(import.meta.dirname, "../../..");
+    const root = await mkdtemp(path.join(os.tmpdir(), "hypercerts-shared-helpers-real-"));
+    try {
+      await cp(path.join(packageRoot, "lua/shared"), path.join(root, "lua/shared"), {
+        recursive: true,
+      });
+      await cp(path.join(packageRoot, "lua/src"), path.join(root, "lua/src"), { recursive: true });
+      await writeFile(path.join(root, "lua/src/probe.lua"), source);
+      const realRegistry = JSON.parse(
+        await readFile(path.join(packageRoot, "tooling/shared-helpers.registry.json"), "utf8"),
+      );
+      const { errors } = await checkSharedHelpers({ root, registry: realRegistry });
+      assert.equal(errors.length, 1, errors.join("\n"));
+      assert.match(errors[0], /^lua\/src\/probe\.lua:1/);
+      assert.match(errors[0], expected);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+}

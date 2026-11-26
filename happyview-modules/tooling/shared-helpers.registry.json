@@ -5,11 +5,11 @@
       "description": "DID syntax check",
       "owners": ["lua/shared/didValidation.lua"],
       "names": ["valid_did"],
-      "lookalikes": ["^valid_[a-z_]*did$"],
+      "lookalikes": ["^valid_[a-z_]*did"],
       "inline": [
         {
           "id": "did-pattern",
-          "pattern": "\\^did:\\(",
+          "pattern": "\\^did:",
           "description": "the DID syntax pattern"
         }
       ]
@@ -19,18 +19,18 @@
       "description": "NSID syntax check",
       "owners": ["lua/shared/nsidValidation.lua"],
       "names": ["valid_nsid"],
-      "lookalikes": ["^valid_[a-z_]*nsid$"]
+      "lookalikes": ["^valid_[a-z_]*nsid"]
     },
     {
       "id": "record-identifier",
       "description": "AT-URI record key and record URI parsing",
       "owners": ["lua/shared/recordIdentifier.lua"],
       "names": ["valid_record_uri", "valid_record_key"],
-      "lookalikes": ["^[a-z_]+_valid_record_(uri|key)$", "^valid_record_[a-z_]+$"],
+      "lookalikes": ["valid_record_(uri|key)"],
       "inline": [
         {
           "id": "at-uri-pattern",
-          "pattern": "\\^at://\\(",
+          "pattern": "\\^at://",
           "description": "the AT-URI parsing pattern"
         }
       ]
@@ -46,7 +46,7 @@
       "description": "RFC 3339 datetime check",
       "owners": ["lua/shared/datetimeValidation.lua"],
       "names": ["valid_datetime"],
-      "lookalikes": ["^valid_[a-z_]*(datetime|timestamp)$"]
+      "lookalikes": ["^valid_[a-z_]*(datetime|timestamp)"]
     },
     {
       "id": "handle-resolver",
@@ -62,20 +62,14 @@
         "resolve_handle",
         "fail_resolver_config"
       ],
-      "lookalikes": ["^valid_(handle|ipv4|ipv6|port)[a-z_]*$", "^[a-z_]*resolve_handle$"]
+      "lookalikes": ["^valid_(handle|ipv4|ipv6|port)", "resolve_handle"]
     },
     {
       "id": "list-cursor",
       "description": "list cursor encoding and decoding",
       "owners": ["lua/shared/listCursor.lua", "lua/shared/listQuery.lua"],
       "names": ["decode_cursor", "cursor_encode"],
-      "lookalikes": [
-        "^([a-z_]+_)?cursor_decode$",
-        "^decode_[a-z_]+_cursor$",
-        "^[a-z_]+_cursor_encode$",
-        "^[a-z_]+_decode_cursor$",
-        "^encode_[a-z_]*cursor$"
-      ],
+      "lookalikes": ["cursor_(decode|encode)", "(decode|encode)_([a-z_]+_)?cursor"],
       "inline": [
         {
           "id": "cursor-hex-decode",
@@ -98,7 +92,7 @@
         "lua/shared/listQuery.lua"
       ],
       "names": ["parse_list_limit", "parse_include_total", "parse_sort_direction"],
-      "lookalikes": ["^parse_[a-z_]*(limit|include_total|sort_direction)$"],
+      "lookalikes": ["^parse_[a-z_]*(limit|include_total|sort_direction)"],
       "inline": [
         {
           "id": "limit-message",
@@ -122,7 +116,7 @@
       "description": "InvalidRequest errors, unknown-parameter checks and single-value parameters",
       "owners": ["lua/shared/query.lua"],
       "names": ["invalid", "keys_only", "scalar"],
-      "lookalikes": ["^[a-z_]+_(invalid|keys_only|scalar)$"],
+      "lookalikes": ["(^|_)(invalid|keys_only|scalar)$"],
       "inline": [
         {
           "id": "occur-once-message",
@@ -136,14 +130,14 @@
       "description": "repeated query parameter (array) parsing",
       "owners": [],
       "unowned": "each endpoint has its own; add a shared parser in lua/shared and register it before adding another",
-      "lookalikes": ["^([a-z_]+_)?array(_values)?$"]
+      "lookalikes": ["(^|_)array(_values)?$"]
     },
     {
       "id": "record-view",
       "description": "the {uri, cid, indexedAt, did, record} view of an indexed row",
       "owners": ["lua/shared/recordView.lua"],
       "names": ["record_view"],
-      "lookalikes": ["^[a-z_]+_record_view$"],
+      "lookalikes": ["record_view"],
       "inline": [
         {
           "id": "indexed-at-null",
@@ -208,7 +202,8 @@
       "file": "lua/shared/activityList.lua",
       "family": "record-identifier",
       "symbol": "at-uri-pattern",
-      "reason": "Existing record-URI check that predates the registry; kept to avoid a behavior change. Build on valid_record_uri where the shape allows."
+      "reason": "Existing record-URI check that predates the registry; kept to avoid a behavior change. Build on valid_record_uri where the shape allows.",
+      "count": 2
     },
     {
       "file": "lua/shared/activityList.lua",
@@ -726,5 +721,6 @@
       "symbol": "badge_definition_array",
       "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
     }
-  ]
+  ],
+  "allowlistNote": "The allowlist is a baseline of copies that existed when the lint was added. It is not approval to add more: new entries need a specific reason, and count must match the occurrences exactly."
 }
