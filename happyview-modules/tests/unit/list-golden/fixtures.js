@@ -736,7 +736,7 @@ export function maximalCursorCase(endpoint) {
       ...(direction ? { sortDirection: direction } : {}),
       limit: PAGE_ROWS - 1,
     },
-    rowsByCall: [direction === "asc" ? rows : rows.reverse()],
+    rowsByCall: [direction === "asc" ? rows : rows.toReversed()],
   };
 }
 
