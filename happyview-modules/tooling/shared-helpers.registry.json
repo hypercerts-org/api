@@ -42,7 +42,7 @@
       "id": "handle-resolver",
       "description": "handle syntax check and handle resolution",
       "lookalikes": ["^valid_(handle|ipv4|ipv6|port)", "resolve_handle"],
-      "homes": ["lua/shared/profileLookup.lua"]
+      "homes": ["lua/shared/identityResolver.lua", "lua/shared/profileLookup.lua"]
     },
     {
       "id": "list-cursor",
