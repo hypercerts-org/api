@@ -1,7 +1,3 @@
-local function valid_lookup_did(value)
-  return valid_did(value) and valid_did_percent_escapes(value)
-end
-
 local function actor_query(sql, values)
   if db.backend() ~= "postgres" then error("ActorQueryFailed: actor API requires PostgreSQL", 0) end
   local ok, result = pcall(db.raw, sql, values)

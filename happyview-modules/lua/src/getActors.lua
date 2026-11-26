@@ -1,6 +1,6 @@
 function handle()
   keys_only(params, { actors = true })
-  local dids, unique = requested_actor_dids(params, valid_lookup_did)
+  local dids, unique = requested_actor_dids(params, valid_did)
   local by_did = {}
   for _, actor in ipairs(lookup_actors(unique)) do by_did[actor.did] = actor end
 

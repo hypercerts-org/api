@@ -890,8 +890,22 @@ assert(#calls == 2 and #calls[1].values == 2 and #calls[2].values == 2)
   }
 });
 
+test("actor lookups preserve opaque percent sequences in DIDs", () => {
+  const did = "did:web:example%GG";
+  for (const [endpoint, params, view] of [
+    ["getActor", { actor: did }, "result.actor"],
+    ["getActors", { actors: [actor, did] }, "result.actors[2]"],
+  ]) {
+    runLua({
+      endpoint,
+      params,
+      assertions: `assert(${view}.did == '${did}')`,
+    });
+  }
+});
+
 test("actor lookups reject invalid query occurrences before querying the index", () => {
-  const invalidDid = "did:web:example%GG";
+  const invalidDid = "did:web:example%";
   for (const [endpoint, paramSets] of [
     [
       "getActor",

@@ -95,7 +95,7 @@ test("actor query invalid parameters are reported as InvalidRequest", async () =
   for (const [endpoint, params] of [
     ["getActor", { actor: "example.com" }],
     ["getActor", { actor: [did, did] }],
-    ["getActors", { actors: [did, "did:web:example%GG"] }],
+    ["getActors", { actors: [did, "did:web:example%"] }],
     ["getActors", { actors: Array(101).fill(did) }],
   ]) {
     const response = await fetch(contractUrl(baseUrl, `app.certified.actor.${endpoint}`, params));

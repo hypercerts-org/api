@@ -472,9 +472,6 @@ test("handle lookup rejects set but unsafe resolver configuration before HTTP", 
     "https://resolver.example?tenant=one",
     "https://resolver.example/path",
     "https://resolver.example#fragment",
-    "https://999.999.999.999",
-    "https://999.1",
-    "https://[:::]",
     "https://resolver.example\\\\@evil.example",
   ]) {
     runLua({

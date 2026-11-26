@@ -25,7 +25,6 @@
       "sourcePath": "../../lua/src/getActor.lua",
       "sharedSourcePaths": [
         "../../lua/shared/didValidation.lua",
-        "../../lua/shared/didPercentEscapes.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/recordView.lua",
@@ -48,7 +47,6 @@
       "sourcePath": "../../lua/src/getActors.lua",
       "sharedSourcePaths": [
         "../../lua/shared/didValidation.lua",
-        "../../lua/shared/didPercentEscapes.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/recordView.lua",

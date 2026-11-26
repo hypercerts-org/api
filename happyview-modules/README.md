@@ -8,7 +8,7 @@ Use the [`docs/` endpoint explorer](../docs/) and generated [OpenAPI reference](
 
 ## Actor lookups
 
-`app.certified.actor.getActor` takes one DID in `actor`. `app.certified.actor.getActors` takes 1–100 repeated, unbracketed `actors` values and preserves input order and duplicates. Both return a view even if no indexed records exist for the DID, with nullable `profile`, `organization`, and `location`. Use `getProfile` if you need a profile lookup by handle.
+`app.certified.actor.getActor` takes one DID in `actor`. `app.certified.actor.getActors` takes 1–100 repeated, unbracketed `actors` values and preserves input order and duplicates. Both return a view even if no indexed records exist for the DID, with nullable `profile`, `organization`, and `location`. Use `getProfile` if you need a profile lookup by handle. Both actor lookups use generic DID syntax validation: opaque percent sequences such as `did:example:abc%ZZ` are accepted, but a trailing `%` is not.
 
 Only `getActor` and `getActors` enrich those views with a handle. After reading the index, they send DIDs to the trusted HTTPS origin in `HYPERCERTS_HANDLE_RESOLVER_URL` using Slingshot's `blue.microcosm.identity.resolveMiniDoc` query. If the setting is missing or unsupported, the lookup fails, or the response does not contain a valid handle for the same DID, `handle` is omitted. This does not change `getProfile`'s resolver call or any legacy response.
 
