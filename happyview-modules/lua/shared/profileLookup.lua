@@ -3,7 +3,7 @@ local function fail_resolution()
 end
 
 local function fail_resolver_config()
-  error("HandleResolverConfigError: HYPERCERTS_HANDLE_RESOLVER_URL must be an HTTPS resolver base URL with no credentials, path, query, or fragment; configure this HappyView script variable before handle lookups", 0)
+  error("HandleResolverConfigError: HYPERCERTS_HANDLE_RESOLVER_URL must be an HTTPS resolver base URL with no credentials, path, query, or fragment; fix or remove this HappyView script variable (unset uses the default resolver)", 0)
 end
 
 local function resolve_handle(handle)

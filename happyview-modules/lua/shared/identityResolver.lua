@@ -28,8 +28,12 @@ local function fetch_resolver_json(url)
   return value
 end
 
+local DEFAULT_RESOLVER_URL = "https://slingshot.microcosm.blue"
+
 local function resolver_base_url()
   local configured = type(env) == "table" and env.HYPERCERTS_HANDLE_RESOLVER_URL or nil
+  -- Only an absent setting selects the default; a present but invalid value must still fail.
+  if configured == nil then return DEFAULT_RESOLVER_URL end
   if type(configured) ~= "string" or #configured > 2048
     or configured:find("[%c%s]") or configured:find("\\", 1, true) or configured:find("%", 1, true) then
     return nil

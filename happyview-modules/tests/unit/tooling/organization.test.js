@@ -815,6 +815,7 @@ test("getActor returns a projection even when the DID has no indexed sidecars", 
   runLua({
     endpoint: "getActor",
     params: { actor: did },
+    resolverOrigin: "http://resolver.example",
     assertions: `
 assert(result.actor.did == '${did}')
 assert(result.actor.profile == NULL and result.actor.organization == NULL and result.actor.location == NULL)
@@ -897,6 +898,7 @@ test("actor lookups preserve opaque percent sequences in DIDs", () => {
     runLua({
       endpoint,
       params,
+      resolverOrigin: "http://resolver.example",
       assertions: `assert(${view}.did == '${did}')`,
     });
   }
@@ -996,9 +998,21 @@ assert(result.actor.profile == NULL and result.actor.organization == NULL and re
   }
 });
 
-test("actor lookups never contact a resolver when its origin is missing or invalid", () => {
+test("getActor uses the default Slingshot resolver when no origin is set", () => {
+  runLua({
+    endpoint: "getActor",
+    params: { actor },
+    httpReplies: [miniDoc(actor, "Actor.Example")],
+    expectedHttpCalls: 1,
+    assertions: `
+assert(httpCalls[1]:find('https://slingshot.microcosm.blue/xrpc/blue.microcosm.identity.resolveMiniDoc?identifier=', 1, true) == 1)
+assert(result.actor.handle == 'actor.example')
+`,
+  });
+});
+
+test("getActor never contacts a resolver when its origin is invalid", () => {
   for (const resolverOrigin of [
-    undefined,
     "http://resolver.example",
     "https://user@resolver.example",
     "https://resolver.example/path",
