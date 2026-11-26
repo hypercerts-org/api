@@ -690,12 +690,6 @@
       "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
     },
     {
-      "file": "lua/shared/subjectRecordUri.lua",
-      "family": "did-validation",
-      "symbol": "valid_did_percent_escapes",
-      "reason": "Distinct check (percent escapes in a DID authority) for subject URIs, not a second DID validator."
-    },
-    {
       "file": "lua/shared/workscopeRecordView.lua",
       "family": "shared-helper",
       "symbol": "record_view",
