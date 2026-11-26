@@ -1,10 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { createViewValidator } from "../../tooling/smoke.js";
+import { validatePackageLexicons } from "../../tooling/validate-lexicons.js";
 import { locationRecords } from "../fixtures/records.js";
 import { actorFixtureDids, seedRows } from "./fixtures/actors.fixture.js";
 import { contractUrl, requireContractTarget } from "./helpers.js";
 
 const baseUrl = requireContractTarget();
+const { lexicons: fullLexicons, documents } = await validatePackageLexicons();
+// Embedded records are opaque to this validator; the view shape is what it checks.
+const lexicons = createViewValidator(documents, fullLexicons);
 const organizationCollection = "app.certified.actor.organization";
 const profileCollection = "app.certified.actor.profile";
 const organizationRecords = seedRows.filter(
@@ -46,6 +51,8 @@ async function get(nsid, params) {
   const response = await fetch(contractUrl(baseUrl, nsid, params));
   const body = await response.json();
   assert.equal(response.status, 200, `${nsid}: ${JSON.stringify(body)}`);
+  // Every view the handlers emit must satisfy the shared actorView schema.
+  lexicons.assertValidXrpcOutput(nsid, body);
   return body;
 }
 
@@ -88,6 +95,37 @@ test("getActors serializes sidecars, raw locations, ordered duplicates and nulls
     actors: Array(100).fill(organizationOnly),
   });
   assert.deepEqual(maximum.actors, Array(100).fill(views[2]));
+});
+
+test("getActor returns the full view of an organization with profile and location", async () => {
+  const did = actorFixtureDids.alpine;
+  assert.deepEqual(await get("app.certified.actor.getActor", { actor: did }), {
+    actor: {
+      did,
+      profile: recordView(profileRecords.find((record) => record.did === did)),
+      organization: recordView(publicOrganization),
+      location: recordView(pointLocation),
+    },
+  });
+});
+
+test("organization endpoints return the same view per DID as getActors", async () => {
+  const dids = organizationRecords.map(({ did }) => did);
+  const { actors } = await get("app.certified.actor.getActors", { actors: dids });
+  const byDid = new Map(actors.map((view) => [view.did, view]));
+
+  const batch = await get("app.certified.actor.getOrganizations", { actors: dids });
+  assert.deepEqual(
+    batch.organizations.map(({ organization }) => organization),
+    dids.map((did) => byDid.get(did)),
+  );
+  const listed = await get("app.certified.actor.listOrganizations", { limit: 100 });
+  const listedByDid = new Map(listed.actors.map((view) => [view.did, view]));
+  for (const did of dids) {
+    const { actor } = await get("app.certified.actor.getOrganization", { actor: did });
+    assert.deepEqual(actor, byDid.get(did), `getOrganization ${did}`);
+    assert.deepEqual(listedByDid.get(did), byDid.get(did), `listOrganizations ${did}`);
+  }
 });
 
 test("actor query invalid parameters are reported as InvalidRequest", async () => {

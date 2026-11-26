@@ -201,12 +201,6 @@ if (hasModule("modules/actor/manifest.json"))
     };
     lexicons.assertValidXrpcOutput(get.id, { actor: emptyActor });
     lexicons.assertValidXrpcOutput(batch.id, { actors: [emptyActor, emptyActor] });
-    if (hasModule("modules/organization/manifest.json")) {
-      assert.equal(
-        byId.get("app.certified.actor.getOrganization").defs.organizationActorView,
-        undefined,
-      );
-    }
   });
 
 if (hasModule("modules/workscope-tags/manifest.json"))
