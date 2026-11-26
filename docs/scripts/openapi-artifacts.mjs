@@ -82,31 +82,5 @@ export function buildDocumentationArtifacts(sourceIndex, lexicons) {
     throw new Error(`OpenAPI generation found unresolved Lexicon references:\n${references}`);
   }
 
-  const methods = lexicons
-    .filter(({ id }) => Object.hasOwn(coverage, id))
-    .reduce((result, lexicon) => {
-      const method = lexicon.defs.main.type === "query" ? "GET" : "POST";
-      result[method] = (result[method] ?? 0) + 1;
-      return result;
-    }, {});
-  const coverageReport = {
-    source: {
-      apiManifest: sourceIndex.apiManifest,
-      pinnedLexiconPackage: sourceIndex.pinnedLexiconPackage,
-    },
-    runtimeValidation: sourceIndex.runtimeValidation,
-    deploymentValidation: sourceIndex.deploymentValidation,
-    endpointCount: sourceIndex.endpoints.length,
-    methods,
-    inclusion: { "manifest-registered": sourceIndex.endpoints.length },
-    unresolvedReferences: document["x-hypercerts-unresolved-references"],
-    endpoints: sourceIndex.endpoints.map((endpoint) => ({
-      id: endpoint.id,
-      method: endpoint.type === "query" ? "GET" : "POST",
-      inclusion: "manifest-registered",
-      module: endpoint.module,
-    })),
-  };
-
-  return { openapi: document, skillOpenapi: buildSkillOpenApi(document), coverage: coverageReport };
+  return { openapi: document, skillOpenapi: buildSkillOpenApi(document) };
 }

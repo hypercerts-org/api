@@ -4,7 +4,7 @@ This package owns the shared API installer and build tooling, pinned upstream Le
 
 ## Endpoint reference
 
-Use the [`docs/` endpoint explorer](../docs/) and generated [OpenAPI reference](../docs/openapi.json) for endpoint names and contracts. The [coverage report](../docs/coverage.json) lists manifest-registered operations; inclusion does not imply runtime or deployment validation. See [docs/README.md](../docs/README.md) to run the explorer locally and refresh its committed reference.
+Use the [`docs/` endpoint explorer](../docs/) and generated [OpenAPI reference](../docs/openapi.json) for endpoint names and contracts. The explorer lists manifest-registered operations; inclusion does not imply runtime or deployment validation. See [docs/README.md](../docs/README.md) to run the explorer locally and refresh its committed reference.
 
 ## Actor lookups
 

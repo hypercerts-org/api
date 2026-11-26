@@ -173,16 +173,12 @@ test("committed explorer operations and endpoint snapshots match the registered 
   const activeIds = [...activeQueries.keys()].sort();
   const sourceIndex = await readJson(path.join(docsRoot, "sources/index.json"));
   const openapi = await readJson(path.join(docsRoot, "openapi.json"));
-  const coverage = await readJson(path.join(docsRoot, "coverage.json"));
   const operationIds = Object.keys(openapi.paths)
     .map((operationPath) => operationPath.replace(/^\/xrpc\//, ""))
     .sort();
 
   assert.deepEqual(sourceIndex.endpoints.map(({ id }) => id).sort(), activeIds);
   assert.deepEqual(operationIds, activeIds);
-  assert.equal(coverage.endpointCount, activeIds.length);
-  assert.equal(coverage.inclusion["manifest-registered"], activeIds.length);
-  assert.deepEqual(coverage.unresolvedReferences, []);
   assert.equal(sourceIndex.runtimeValidation, "not-assessed");
   assert.equal(sourceIndex.deploymentValidation, "not-assessed");
 

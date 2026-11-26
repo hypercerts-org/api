@@ -23,7 +23,7 @@ When a change affects registered query Lexicons or their schemas, refresh the co
 pnpm docs:sync
 ```
 
-This updates `docs/sources/index.json`, the committed Lexicon snapshots, `docs/openapi.json`, and `docs/coverage.json`. It uses the repository-pinned `@hypercerts-org/lexicon` dependency and makes no HappyView requests. Coverage reports manifest inclusion only; it does not validate runtime behavior or deployment. See [docs/README.md](docs/README.md) for the source and snapshot policy.
+This updates `docs/sources/index.json`, the committed Lexicon snapshots, and both OpenAPI snapshots. It uses the repository-pinned `@hypercerts-org/lexicon` dependency and makes no HappyView requests. See [docs/README.md](docs/README.md) for the source and snapshot policy.
 
 The same changes, and changes to the `@hypercerts-org/lexicon` or `@atproto/lex` version in `packages/api/package.json`, require regenerating the `@hypercerts-org/api` TypeScript package:
 
