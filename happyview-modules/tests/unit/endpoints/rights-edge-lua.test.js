@@ -12,10 +12,8 @@ async function endpointSources(name) {
     "lua/shared/didValidation.lua",
     "lua/shared/query.lua",
     "lua/shared/recordIdentifier.lua",
-    "lua/shared/rightsIdentifier.lua",
     "lua/shared/recordView.lua",
     "lua/shared/actorView.lua",
-    "lua/shared/rightsView.lua",
   ];
   if (name === "listRights")
     shared.push(
