@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Gets an indexed Certified profile by DID or handle. Handles resolve through the configured resolver's com.atproto.identity.resolveHandle endpoint; no DID document is fetched for independent verification. Authentication is not required.",
+      "description": "Gets an indexed Certified profile by DID or handle. Handles resolve to a DID through com.atproto.identity.resolveHandle on the configured resolver, or on https://slingshot.microcosm.blue when none is configured; no DID document is fetched for independent verification. Authentication is not required.",
       "parameters": {
         "type": "params",
         "required": [
@@ -32,7 +32,7 @@
         },
         {
           "name": "HandleResolverConfigError",
-          "description": "HYPERCERTS_HANDLE_RESOLVER_URL is missing or invalid."
+          "description": "HYPERCERTS_HANDLE_RESOLVER_URL is set but is not a valid HTTPS origin."
         },
         {
           "name": "HandleResolutionFailed",

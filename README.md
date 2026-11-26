@@ -33,17 +33,16 @@ This requires Docker Compose, `psql`, and the pinned PostgreSQL and HappyView im
 
 ## Install to HappyView
 
-Install workspace dependencies first, then run the installer from `happyview-modules/` with an approved HappyView URL and scoped admin token. For bundles that include `app.certified.actor.getProfile`, also set `HYPERCERTS_HANDLE_RESOLVER_URL` to an HTTPS origin without credentials, path, query, or fragment:
+Install workspace dependencies first, then run the installer from `happyview-modules/` with an approved HappyView URL and scoped admin token:
 
 ```sh
 cd happyview-modules
-HYPERCERTS_HANDLE_RESOLVER_URL='https://resolver.example' \
 HAPPYVIEW_BASE_URL='https://your-happyview.example' \
 HAPPYVIEW_ADMIN_TOKEN='<scoped-admin-token>' \
 pnpm install:api
 ```
 
-The admin token needs `script-variables:read`; if the resolver setting is absent and the installer must create it, it also needs `script-variables:create`. Conflicting assets stop installation by default; `--override` opts into replacing declared conflicts. The installer sends admin requests and uploads assets, and writes are not rolled back if a later asset fails. Run it only against an explicitly approved target with approved credentials. For tagged-release installation and resolver-setting behavior, see [happyview-modules/README.md](happyview-modules/README.md#install-a-released-api-bundle).
+`app.certified.actor.getProfile` resolves handles through `https://slingshot.microcosm.blue` unless the HappyView script variable `HYPERCERTS_HANDLE_RESOLVER_URL` is set; the installer neither reads nor writes it (see [happyview-modules/README.md](happyview-modules/README.md#install-a-released-api-bundle)). Conflicting assets stop installation by default; `--override` opts into replacing declared conflicts. The installer sends admin requests and uploads assets, and writes are not rolled back if a later asset fails. Run it only against an explicitly approved target with approved credentials. For tagged-release installation, see [happyview-modules/README.md](happyview-modules/README.md#install-a-released-api-bundle).
 
 ## License
 

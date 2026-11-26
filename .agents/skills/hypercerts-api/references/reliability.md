@@ -6,7 +6,7 @@
 - **AT-URI** (`at://<DID>/<collection>/<rkey>`) identifies a record location. It is the input for many `uri` parameters and may identify the current indexed version at that location; it does not pin a particular content version.
 - **CID** identifies record content at a version. A strong reference carries both URI and CID. Preserve both when the source contract uses a strong reference.
 
-A handle is a resolvable actor identifier, not a DID or record URI. `app.certified.actor.getProfile` accepts a DID or handle and uses the configured handle resolver; the declared contract does not claim independent DID-document verification. Batch profile/organization lookups take DIDs.
+A handle is a resolvable actor identifier, not a DID or record URI. `app.certified.actor.getProfile` accepts a DID or handle and resolves handles through the deployment's configured resolver, defaulting to Slingshot; the declared contract does not claim independent DID-document verification. Batch profile/organization lookups take DIDs.
 
 The API's shared DID syntax check permits `%` without requiring a following pair of hexadecimal digits, so a value such as `did:example:abc%ZZ` passes DID syntax validation, including in record AT-URI subjects. When sending such a DID in a query string, use `URLSearchParams` to encode it as query data; see [request construction](request-patterns.md#build-one-public-xrpc-get). The shared syntax also permits empty internal colon-separated segments (for example, `did:example:a::b`), including for EVM-link identifiers; a trailing colon remains invalid.
 

@@ -22,7 +22,7 @@ local function fail_resolution()
 end
 
 local function fail_resolver_config()
-  error("HandleResolverConfigError: HYPERCERTS_HANDLE_RESOLVER_URL must be an HTTPS resolver base URL with no credentials, path, query, or fragment, a valid host, and a port from 1 through 65535 if specified; configure this HappyView script variable before handle lookups", 0)
+  error("HandleResolverConfigError: HYPERCERTS_HANDLE_RESOLVER_URL must be an HTTPS resolver base URL with no credentials, path, query, or fragment, a valid host, and a port from 1 through 65535 if specified; fix or remove this HappyView script variable (unset uses the default resolver)", 0)
 end
 
 local function fetch_json(url)
@@ -109,8 +109,12 @@ local function valid_resolver_authority(authority)
   return true
 end
 
+local DEFAULT_RESOLVER_URL = "https://slingshot.microcosm.blue"
+
 local function resolver_base_url()
   local configured = type(env) == "table" and env.HYPERCERTS_HANDLE_RESOLVER_URL or nil
+  -- Only an absent setting selects the default; a present but invalid value must still fail.
+  if configured == nil then return DEFAULT_RESOLVER_URL end
   if type(configured) ~= "string" or #configured > 2048
     or configured:find("[%c%s]") or configured:find("\\", 1, true) or configured:find("%", 1, true) then
     fail_resolver_config()
