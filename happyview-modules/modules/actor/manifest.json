@@ -52,8 +52,6 @@
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",
         "../../lua/shared/actorLocation.lua",
-        "../../lua/shared/identityResolver.lua",
-        "../../lua/shared/actorHandle.lua",
         "../../lua/shared/actorLookup.lua",
         "../../lua/shared/actorBatchParams.lua"
       ],

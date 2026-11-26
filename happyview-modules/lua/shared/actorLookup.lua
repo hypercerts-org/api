@@ -14,6 +14,5 @@ local function lookup_actors(dids)
   end
   hydrate_actor_views(actors, actor_query)
   hydrate_actor_locations(actors, actor_query)
-  hydrate_actor_handles(actors)
   return actors
 end

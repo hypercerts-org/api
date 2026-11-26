@@ -130,11 +130,13 @@ const nonEmpty = (key) => (json) =>
 // Actor projection does not require a seed record to exist.
 const projectionDid = "did:web:actor-smoke.example";
 
-/** @param {any} actor @param {string} did */
-function checkActorProjection(actor, did) {
+/** @param {any} actor @param {string} did @param {{ handleAllowed: boolean }} options */
+function checkActorProjection(actor, did, { handleAllowed }) {
   const errors = [];
   if (actor?.did !== did) errors.push(`actor DID did not echo ${did}`);
   if (!actor || !Object.hasOwn(actor, "location")) errors.push("actor.location must be present");
+  if (!handleAllowed && actor && Object.hasOwn(actor, "handle"))
+    errors.push("actor.handle must be omitted: only getActor looks up handles");
   if (actor?.handle === null || actor?.handle === "handle.invalid")
     errors.push("actor.handle must be omitted when unresolved");
   return errors;
@@ -221,7 +223,8 @@ export const SMOKE_CASES = {
   // ---- phase 2: actors, graph, feed ----
   [`${NS.actor}.getActor`]: withSeed(
     (s) => ({ actor: s.org ?? s.actor ?? projectionDid }),
-    (json, params) => checkActorProjection(json.actor, String(params.actor)),
+    (json, params) =>
+      checkActorProjection(json.actor, String(params.actor), { handleAllowed: true }),
   ),
   [`${NS.actor}.getActors`]: withSeed(
     (s) => {
@@ -232,7 +235,9 @@ export const SMOKE_CASES = {
       const actors = json.actors ?? [];
       if (!Array.isArray(params.actors) || actors.length !== params.actors.length)
         return ["actor view count did not match input occurrences"];
-      return params.actors.flatMap((did, index) => checkActorProjection(actors[index], did));
+      return params.actors.flatMap((did, index) =>
+        checkActorProjection(actors[index], did, { handleAllowed: false }),
+      );
     },
   ),
   [`${NS.actor}.getProfile`]: withSeed((s) => ({ actor: need(s.actor) })),

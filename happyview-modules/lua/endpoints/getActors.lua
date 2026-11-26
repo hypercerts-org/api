@@ -121,71 +121,6 @@ local function hydrate_actor_locations(actors, run_query)
   end
 end
 
-local function valid_handle(value)
-  if type(value) ~= "string" or #value > 253 or value:find("[^%w%.%-]")
-    or value:find("%.%.") or value:sub(1, 1) == "." or value:sub(-1) == "." then
-    return false
-  end
-  local labels = 0
-  for label in value:gmatch("[^%.]+") do
-    labels = labels + 1
-    if #label > 63 or label:sub(1, 1) == "-" or label:sub(-1) == "-" then return false end
-  end
-  return labels >= 2
-end
-
-local function encode_query_value(value)
-  return (value:gsub("([^%w%.%-_~])", function(char)
-    return string.format("%%%02X", string.byte(char))
-  end))
-end
-
-local function fetch_resolver_json(url)
-  local ok, response = pcall(http.get, url)
-  if not ok or type(response) ~= "table" or type(response.status) ~= "number"
-    or response.status < 200 or response.status >= 300 or type(response.body) ~= "string" then
-    return nil
-  end
-  local decoded, value = pcall(json.decode, response.body)
-  if not decoded or type(value) ~= "table" then return nil end
-  return value
-end
-
-local function resolver_base_url()
-  local configured = type(env) == "table" and env.HYPERCERTS_HANDLE_RESOLVER_URL or nil
-  if type(configured) ~= "string" or #configured > 2048
-    or configured:find("[%c%s]") or configured:find("\\", 1, true) or configured:find("%", 1, true) then
-    return nil
-  end
-
-  local scheme, authority, suffix = configured:match("^([%a]+)://([^/?#]+)(.*)$")
-  if not scheme or scheme:lower() ~= "https" or (suffix ~= "" and suffix ~= "/")
-    or authority:find("@", 1, true) then
-    return nil
-  end
-  return "https://" .. authority
-end
-
-local MAX_ACTOR_HANDLE_LOOKUPS = 50
-local MINI_DOC_PATH = "/xrpc/blue.microcosm.identity.resolveMiniDoc?identifier="
-
--- Actors are already unique and in first occurrence order. HTTP runs serially;
--- this budget bounds attempt count, not elapsed time.
-local function hydrate_actor_handles(actors)
-  local base = resolver_base_url()
-  if not base or type(http) ~= "table" or type(http.get) ~= "function" then return end
-
-  for index = 1, math.min(#actors, MAX_ACTOR_HANDLE_LOOKUPS) do
-    local actor = actors[index]
-    local resolved = fetch_resolver_json(base .. MINI_DOC_PATH .. encode_query_value(actor.did))
-    if resolved and resolved.did == actor.did and valid_handle(resolved.handle)
-      and not resolved.handle:find("[^A-Za-z0-9.%-]") and resolved.handle:match("%.[A-Za-z][^.]*$") then
-      local handle = resolved.handle:lower()
-      if handle ~= "handle.invalid" then actor.handle = handle end
-    end
-  end
-end
-
 local function actor_query(sql, values)
   if db.backend() ~= "postgres" then error("ActorQueryFailed: actor API requires PostgreSQL", 0) end
   local ok, result = pcall(db.raw, sql, values)
@@ -202,7 +137,6 @@ local function lookup_actors(dids)
   end
   hydrate_actor_views(actors, actor_query)
   hydrate_actor_locations(actors, actor_query)
-  hydrate_actor_handles(actors)
   return actors
 end
 

@@ -20,7 +20,7 @@ export const $output = /*#__PURE__*/ l.payload("application/json", /*#__PURE__*/
 export type $Output<B = l.BinaryData> = l.InferPayload<typeof $output, B>;
 export type $OutputBody<B = l.BinaryData> = l.InferPayloadBody<typeof $output, B>;
 
-/** Projects one actor's indexed profile, organization and primary location by DID. Includes a best-effort handle when available from the configured resolver. An empty projection is not proof that an account exists. Authentication is not required. */
+/** Projects one actor's indexed profile, organization and primary location by DID. Makes one best-effort handle lookup against the configured resolver; the handle is omitted when it fails. An empty projection is not proof that an account exists. Authentication is not required. */
 const main = /*#__PURE__*/ l.query($nsid, $params, $output, ["InvalidRequest","ActorQueryFailed"]);
 
 export { main };

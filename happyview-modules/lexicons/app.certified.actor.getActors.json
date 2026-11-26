@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Projects indexed actor views by DID, one per input occurrence in request order, including duplicates. Attempts best-effort handle lookup serially for at most the first 50 distinct DIDs; unattempted or unresolved handles are omitted. Authentication is not required.",
+      "description": "Projects indexed actor views by DID, one per input occurrence in request order, including duplicates. Makes no handle lookups; handles are omitted. Authentication is not required.",
       "parameters": {
         "type": "params",
         "required": [

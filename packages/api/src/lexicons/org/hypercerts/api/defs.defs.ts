@@ -48,7 +48,7 @@ export { locationRecordView };
 type ActorView = { $type?: "org.hypercerts.api.defs#actorView";"did":l.DidString;
 
   /**
-   * Resolved handle, populated only by getActor and getActors when available. Otherwise omitted; null is accepted for older responses.
+   * Resolved handle, populated only by getActor when a best-effort lookup succeeds. Omitted by every other endpoint; null is accepted for older responses.
    */
   "handle"?:l.HandleString | null;"profile":ProfileView | null;"organization":OrganizationView | null;
 

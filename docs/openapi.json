@@ -59,7 +59,7 @@
         "tags": [
           "app.certified.actor"
         ],
-        "description": "Projects one actor's indexed profile, organization and primary location by DID. Includes a best-effort handle when available from the configured resolver. An empty projection is not proof that an account exists. Authentication is not required.",
+        "description": "Projects one actor's indexed profile, organization and primary location by DID. Makes one best-effort handle lookup against the configured resolver; the handle is omitted when it fails. An empty projection is not proof that an account exists. Authentication is not required.",
         "parameters": [
           {
             "name": "actor",
@@ -107,7 +107,7 @@
         "tags": [
           "app.certified.actor"
         ],
-        "description": "Projects indexed actor views by DID, one per input occurrence in request order, including duplicates. Attempts best-effort handle lookup serially for at most the first 50 distinct DIDs; unattempted or unresolved handles are omitted. Authentication is not required.",
+        "description": "Projects indexed actor views by DID, one per input occurrence in request order, including duplicates. Makes no handle lookups; handles are omitted. Authentication is not required.",
         "parameters": [
           {
             "name": "actors",
@@ -5597,7 +5597,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "description": "Resolved handle, populated only by getActor and getActors when available. Otherwise omitted; null is accepted for older responses.",
+                "description": "Resolved handle, populated only by getActor when a best-effort lookup succeeds. Omitted by every other endpoint; null is accepted for older responses.",
                 "format": "handle"
               },
               {

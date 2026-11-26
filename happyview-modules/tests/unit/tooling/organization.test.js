@@ -16,8 +16,6 @@ const thirdActor = "did:plc:cccccccccccccccccccccccc";
 const fourthActor = "did:plc:dddddddddddddddddddddddd";
 const indexedAt = "2025-01-02T03:04:05.000Z";
 const resolverUrl = "https://resolver.example";
-const miniDocUrl = (did) =>
-  `${resolverUrl}/xrpc/blue.microcosm.identity.resolveMiniDoc?identifier=${encodeURIComponent(did)}`;
 
 function miniDoc(did, handle) {
   return {
@@ -1014,29 +1012,21 @@ test("actor lookups never contact a resolver when its origin is missing or inval
   }
 });
 
-test("getActors caps lookup at the first 50 distinct DIDs without dropping any of 100 occurrences", () => {
-  const distinct = Array.from({ length: 52 }, (_, index) => `did:web:actor-${index}.example`);
-  const [found, failed] = distinct;
-  const requested = [found, found, failed, failed, ...distinct.slice(2), ...Array(46).fill(found)];
+test("getActors makes no resolver calls and omits handles even when a resolver is configured", () => {
+  const distinct = Array.from({ length: 3 }, (_, index) => `did:web:actor-${index}.example`);
+  const requested = [distinct[0], distinct[0], distinct[1], distinct[2]];
   runLua({
     endpoint: "getActors",
     params: { actors: requested },
     resolverOrigin: resolverUrl,
-    httpReplies: distinct
-      .slice(0, 50)
-      .map((did, i) => (did === failed ? { throws: true } : miniDoc(did, `handle-${i}.example`))),
-    expectedHttpCalls: 50,
+    httpReplies: distinct.map((did) => miniDoc(did, "unexpected.example")),
+    expectedHttpCalls: 0,
     assertions: `
 local requested = ${lua(requested)}
-local urls = ${lua(distinct.slice(0, 50).map(miniDocUrl))}
-assert(#result.actors == 100)
-for index, item in ipairs(result.actors) do assert(item.did == requested[index]) end
-for index, url in ipairs(urls) do assert(httpCalls[index] == url) end
-assert(result.actors[1].handle == 'handle-0.example' and result.actors[2].handle == 'handle-0.example')
-assert(result.actors[3].handle == nil and result.actors[4].handle == nil)
-assert(result.actors[52].handle == 'handle-49.example')
-assert(result.actors[53].handle == nil and result.actors[54].handle == nil)
-assert(result.actors[100].handle == 'handle-0.example')
+assert(#result.actors == #requested)
+for index, item in ipairs(result.actors) do
+  assert(item.did == requested[index] and item.handle == nil)
+end
 `,
   });
 });

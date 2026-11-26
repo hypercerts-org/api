@@ -166,23 +166,19 @@ local function resolver_base_url()
   return "https://" .. authority
 end
 
-local MAX_ACTOR_HANDLE_LOOKUPS = 50
 local MINI_DOC_PATH = "/xrpc/blue.microcosm.identity.resolveMiniDoc?identifier="
 
--- Actors are already unique and in first occurrence order. HTTP runs serially;
--- this budget bounds attempt count, not elapsed time.
-local function hydrate_actor_handles(actors)
+-- One best-effort lookup, for getActor only. HappyView Lua HTTP is serial, so
+-- batch endpoints must not call this.
+local function hydrate_actor_handle(actor)
   local base = resolver_base_url()
   if not base or type(http) ~= "table" or type(http.get) ~= "function" then return end
 
-  for index = 1, math.min(#actors, MAX_ACTOR_HANDLE_LOOKUPS) do
-    local actor = actors[index]
-    local resolved = fetch_resolver_json(base .. MINI_DOC_PATH .. encode_query_value(actor.did))
-    if resolved and resolved.did == actor.did and valid_handle(resolved.handle)
-      and not resolved.handle:find("[^A-Za-z0-9.%-]") and resolved.handle:match("%.[A-Za-z][^.]*$") then
-      local handle = resolved.handle:lower()
-      if handle ~= "handle.invalid" then actor.handle = handle end
-    end
+  local resolved = fetch_resolver_json(base .. MINI_DOC_PATH .. encode_query_value(actor.did))
+  if resolved and resolved.did == actor.did and valid_handle(resolved.handle)
+    and not resolved.handle:find("[^A-Za-z0-9.%-]") and resolved.handle:match("%.[A-Za-z][^.]*$") then
+    local handle = resolved.handle:lower()
+    if handle ~= "handle.invalid" then actor.handle = handle end
   end
 end
 
@@ -202,7 +198,6 @@ local function lookup_actors(dids)
   end
   hydrate_actor_views(actors, actor_query)
   hydrate_actor_locations(actors, actor_query)
-  hydrate_actor_handles(actors)
   return actors
 end
 
@@ -211,5 +206,7 @@ function handle()
   local did = scalar(params, "actor")
   if not valid_did(did) then invalid("actor must be a valid DID") end
 
-  return { actor = lookup_actors({ did })[1] }
+  local actor = lookup_actors({ did })[1]
+  hydrate_actor_handle(actor)
+  return { actor = actor }
 end

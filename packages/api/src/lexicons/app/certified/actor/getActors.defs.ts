@@ -20,7 +20,7 @@ export const $output = /*#__PURE__*/ l.payload("application/json", /*#__PURE__*/
 export type $Output<B = l.BinaryData> = l.InferPayload<typeof $output, B>;
 export type $OutputBody<B = l.BinaryData> = l.InferPayloadBody<typeof $output, B>;
 
-/** Projects indexed actor views by DID, one per input occurrence in request order, including duplicates. Attempts best-effort handle lookup serially for at most the first 50 distinct DIDs; unattempted or unresolved handles are omitted. Authentication is not required. */
+/** Projects indexed actor views by DID, one per input occurrence in request order, including duplicates. Makes no handle lookups; handles are omitted. Authentication is not required. */
 const main = /*#__PURE__*/ l.query($nsid, $params, $output, ["InvalidRequest","ActorQueryFailed"]);
 
 export { main };

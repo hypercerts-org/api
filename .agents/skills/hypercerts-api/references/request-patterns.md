@@ -43,7 +43,7 @@ The batch relationship checks `app.certified.graph.getFollows` and `app.certifie
 
 ### Batch actor views by DID
 
-`app.certified.actor.getActors` takes 1–100 DIDs as repeated, unbracketed `actors` parameters (for example, `actors=did%3Aweb%3Aa.example&actors=did%3Aweb%3Ab.example`). It returns `{ actors }` in that order, including duplicates and DIDs without indexed sidecars. Use `getActor` with one `actor` parameter for a single `{ actor }` response. Handle lookups are attempted only for the first 50 distinct DIDs in the order supplied; this does not reduce the 100-occurrence input or output limit.
+`app.certified.actor.getActors` takes 1–100 DIDs as repeated, unbracketed `actors` parameters (for example, `actors=did%3Aweb%3Aa.example&actors=did%3Aweb%3Ab.example`). It returns `{ actors }` in that order, including duplicates and DIDs without indexed sidecars. Use `getActor` with one `actor` parameter for a single `{ actor }` response. `getActors` never looks up handles, so its views omit `handle`; `getActor` makes one best-effort lookup.
 
 ### Batch an actor's reactions for known subjects
 
