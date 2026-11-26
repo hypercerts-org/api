@@ -323,26 +323,6 @@ local function feature_parse_organization_filter(params)
   invalid("hasOrganizationRecord must be true or false")
 end
 
-local function feature_cursor_decode(token, direction)
-  if token == nil then return nil end
-  if type(token) ~= "string" or #token > 32768 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
-    invalid("cursor is malformed")
-  end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
-  local ok, value = pcall(json.decode, decoded)
-  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
-    or type(value.t) ~= "string" or type(value.u) ~= "string" then
-    invalid("cursor is malformed or belongs to another sortDirection")
-  end
-  for key in pairs(value) do
-    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
-  end
-  if not feature_valid_uri(value.u) or not valid_datetime(value.t) then
-    invalid("cursor is malformed")
-  end
-  return value
-end
-
 local function feature_query_rows(sql, binds)
   if db.backend() ~= "postgres" then error("FeatureQueryFailed: feature API requires PostgreSQL", 0) end
   local ok, rows = pcall(db.raw, sql, binds)
@@ -413,7 +393,7 @@ local function list_features()
   local direction = parse_sort_direction(params)
   local cursor_value = params.cursor
   if cursor_value ~= nil and type(cursor_value) ~= "string" then invalid("cursor must occur once as a string") end
-  local cursor = feature_cursor_decode(cursor_value, direction)
+  local cursor = decode_record_cursor(cursor_value, direction, feature_valid_uri)
   local rows = feature_list_rows({
     authors = authors,
     hasOrganizationRecord = has_organization_record,

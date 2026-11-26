@@ -43,24 +43,6 @@ local function add_badge_definition_filter(where, values, column, items)
   where[#where + 1] = column .. " IN (" .. table.concat(placeholders, ",") .. ")"
 end
 
-local function decode_badge_definition_cursor(token, direction)
-  if not token then return nil end
-  if #token % 2 ~= 0 or token:find("[^0-9a-f]") then invalid("cursor is malformed") end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
-  local ok, value = pcall(json.decode, decoded)
-  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
-    or type(value.t) ~= "string" or type(value.u) ~= "string" then
-    invalid("cursor is malformed or belongs to another sortDirection")
-  end
-  for key in pairs(value) do
-    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
-  end
-  if not valid_datetime(value.t) or not valid_badge_definition_uri(value.u) then
-    invalid("cursor is malformed")
-  end
-  return value
-end
-
 local function query_badge_definitions(authors, badge_types, search, limit, cursor, direction)
   local where, values = { "collection = $1" }, { COLLECTION }
   add_badge_definition_filter(where, values, "did", authors)
@@ -127,7 +109,7 @@ local function handle_search_badge_definitions()
   local badge_types = badge_definition_array("badgeTypes", nil, nil, 100)
   local limit = parse_list_limit(params)
   local direction = parse_sort_direction(params)
-  local cursor = decode_badge_definition_cursor(scalar(params, "cursor"), direction)
+  local cursor = decode_record_cursor(scalar(params, "cursor"), direction, valid_badge_definition_uri)
   local views, next_cursor = query_badge_definitions(authors, badge_types, search, limit, cursor, direction)
   local response = { badgeDefinitions = toarray(views) }
   if next_cursor then response.cursor = next_cursor end

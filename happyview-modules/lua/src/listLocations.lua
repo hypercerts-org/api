@@ -30,22 +30,6 @@ local function add_optional_in(where, params, column, values)
   where[#where + 1] = column .. " IN (" .. table.concat(placeholders, ",") .. ")"
 end
 
-local function cursor_decode(token, direction)
-  if not token then return nil end
-  if #token % 2 ~= 0 or token:find("[^0-9a-f]") then invalid("cursor is malformed") end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
-  local ok, value = pcall(json.decode, decoded)
-  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
-    or type(value.t) ~= "string" or type(value.u) ~= "string" then
-    invalid("cursor is malformed or belongs to another sortDirection")
-  end
-  for key in pairs(value) do
-    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
-  end
-  if not valid_location_uri(value.u) or not valid_datetime(value.t) then invalid("cursor is malformed") end
-  return value
-end
-
 local function query_locations(filters, limit, cursor, direction)
   if db.backend() ~= "postgres" then error("LocationQueryFailed: location API requires PostgreSQL", 0) end
   local where, binds = { "collection = $1" }, { COLLECTION }
@@ -84,7 +68,7 @@ local function list_locations()
   local types = array(params, "locationTypes", nil, nil, 20)
   local limit = parse_list_limit(params)
   local direction = parse_sort_direction(params)
-  local cursor = cursor_decode(scalar(params, "cursor"), direction)
+  local cursor = decode_record_cursor(scalar(params, "cursor"), direction, valid_location_uri)
   local views, next_cursor = query_locations({ authors = authors, uris = uris, locationTypes = types }, limit, cursor, direction)
   local response = { locations = toarray(views) }
   if next_cursor then response.cursor = next_cursor end

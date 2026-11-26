@@ -295,26 +295,6 @@ local function add_filter(where, values, expression, items)
   where[#where + 1] = expression .. " IN (" .. table.concat(placeholders, ",") .. ")"
 end
 
-local function decode_evm_link_cursor(token, direction)
-  if not token then return nil end
-  if #token == 0 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
-    invalid("cursor is malformed")
-  end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
-  local ok, value = pcall(json.decode, decoded)
-  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
-    or type(value.t) ~= "string" or type(value.u) ~= "string" then
-    invalid("cursor is malformed or belongs to another sortDirection")
-  end
-  for key in pairs(value) do
-    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
-  end
-  if not valid_datetime(value.t) or not valid_evm_link_uri(value.u) then
-    invalid("cursor is malformed")
-  end
-  return value
-end
-
 local function list_evm_links(actors, addresses, limit, cursor, direction)
   local where, values = { "link.collection = $1" }, { EVMLINK }
   add_filter(where, values, "link.did", actors)
@@ -372,7 +352,7 @@ function handle()
   local addresses = array_values("addresses", valid_evm_address, "a 0x-prefixed 40-digit hexadecimal EVM address", string.lower)
   local limit = parse_list_limit(params)
   local direction = parse_sort_direction(params)
-  local cursor = decode_evm_link_cursor(scalar(params, "cursor"), direction)
+  local cursor = decode_record_cursor(scalar(params, "cursor"), direction, valid_evm_link_uri)
   local views, next_cursor = list_evm_links(actors, addresses, limit, cursor, direction)
   local response = { evmLinks = toarray(views) }
   if next_cursor then response.cursor = next_cursor end

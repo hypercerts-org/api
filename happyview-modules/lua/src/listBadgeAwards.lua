@@ -113,22 +113,6 @@ local function add_subject_filter(where, values, subjects)
   else where[#where + 1] = "(" .. table.concat(clauses, " OR ") .. ")" end
 end
 
-local function decode_badge_award_cursor(token, direction)
-  if not token then return nil end
-  if #token % 2 ~= 0 or token:find("[^0-9a-f]") then invalid("cursor is malformed") end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
-  local ok, value = pcall(json.decode, decoded)
-  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
-    or type(value.t) ~= "string" or type(value.u) ~= "string" then
-    invalid("cursor is malformed or belongs to another sortDirection")
-  end
-  for key in pairs(value) do
-    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
-  end
-  if not valid_datetime(value.t) or not valid_badge_award_uri(value.u) then invalid("cursor is malformed") end
-  return value
-end
-
 local function recipient_did_expression()
   local subject = "award.record::jsonb->'subject'"
   return "CASE WHEN jsonb_typeof(" .. subject .. ") = 'string' THEN award.record::jsonb->>'subject' " ..
@@ -297,7 +281,7 @@ local function handle_list_badge_awards()
     "accepted, rejected, or unanswered statuses")
   local limit = parse_list_limit(params)
   local direction = parse_sort_direction(params)
-  local cursor = decode_badge_award_cursor(scalar(params, "cursor"), direction)
+  local cursor = decode_record_cursor(scalar(params, "cursor"), direction, valid_badge_award_uri)
   local include_total = parse_include_total(params)
   local views, next_cursor, total_count = list_badge_awards(authors, badge_uris, badge_types, subjects, responses,
     limit, cursor, direction, include_total)

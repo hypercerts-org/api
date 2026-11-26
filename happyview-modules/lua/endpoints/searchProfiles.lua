@@ -241,22 +241,6 @@ local function array(params, key)
   return unique
 end
 
-local function cursor_decode(token, direction)
-  if not token then return nil end
-  if #token % 2 ~= 0 or token:find("[^0-9a-f]") then invalid("cursor is malformed") end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
-  local ok, value = pcall(json.decode, decoded)
-  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
-    or type(value.t) ~= "string" or type(value.u) ~= "string" then
-    invalid("cursor is malformed or belongs to another sortDirection")
-  end
-  for key in pairs(value) do
-    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
-  end
-  if not valid_profile_uri(value.u) or not valid_datetime(value.t) then invalid("cursor is malformed") end
-  return value
-end
-
 local function query_profiles(actors, search, limit, cursor, direction)
   local where, values = { "collection = $1", "rkey = 'self'" }, { PROFILE }
   if actors then add_in(where, values, "did", actors) end
@@ -316,7 +300,7 @@ local function profiles_response(search_enabled)
   local limit = parse_list_limit(params)
 
   local direction = parse_sort_direction(params)
-  local cursor = cursor_decode(scalar(params, "cursor"), direction)
+  local cursor = decode_record_cursor(scalar(params, "cursor"), direction, valid_profile_uri)
   local profiles, next_cursor = query_profiles(actors, search, limit, cursor, direction)
   local response = { profiles = toarray(profiles) }
   if next_cursor then response.cursor = next_cursor end

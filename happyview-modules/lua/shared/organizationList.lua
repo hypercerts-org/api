@@ -63,22 +63,6 @@ local function add_organization_types(where, values, organization_types)
     ") AS organization_type(value) WHERE organization_type.value IN (" .. table.concat(placeholders, ", ") .. "))"
 end
 
-local function cursor_decode(token, direction)
-  if token == nil then return nil end
-  if #token % 2 ~= 0 or token:find("[^0-9a-f]") then invalid("cursor is malformed") end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
-  local ok, value = pcall(json.decode, decoded)
-  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
-    or type(value.t) ~= "string" or type(value.u) ~= "string" then
-    invalid("cursor is malformed or belongs to another sortDirection")
-  end
-  for key in pairs(value) do
-    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
-  end
-  if not valid_organization_uri(value.u) or not valid_datetime(value.t) then invalid("cursor is malformed") end
-  return value
-end
-
 local function query_organizations(actors, organization_types, visibility, search, limit, cursor, direction)
   local where, values = { "organization.collection = $1", "organization.rkey = 'self'" }, { ORGANIZATION }
   if actors then add_in(where, values, "organization.did", actors) end
@@ -157,7 +141,7 @@ local function organizations_response(search_enabled)
   local limit = parse_list_limit(params)
 
   local direction = parse_sort_direction(params)
-  local cursor = cursor_decode(scalar(params, "cursor"), direction)
+  local cursor = decode_record_cursor(scalar(params, "cursor"), direction, valid_organization_uri)
   local actors_result, next_cursor = query_organizations(actors, organization_types, visibility, search, limit, cursor, direction)
   local response = { actors = toarray(actors_result) }
   if next_cursor then response.cursor = next_cursor end

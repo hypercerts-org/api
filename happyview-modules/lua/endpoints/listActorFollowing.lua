@@ -242,27 +242,6 @@ local function query(sql, values)
   return result
 end
 
-local function valid_follow_uri(value)
-  local valid, collection = valid_record_uri(value)
-  return valid and collection == FOLLOW
-end
-
-local function cursor_decode(token, direction)
-  if not token then return nil end
-  if #token % 2 ~= 0 or token:find("[^0-9a-f]") then invalid("cursor is malformed") end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
-  local ok, value = pcall(json.decode, decoded)
-  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
-    or type(value.t) ~= "string" or type(value.u) ~= "string" then
-    invalid("cursor is malformed or belongs to another sortDirection")
-  end
-  for key in pairs(value) do
-    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
-  end
-  if not valid_follow_uri(value.u) or not valid_datetime(value.t) then invalid("cursor is malformed") end
-  return value
-end
-
 local function build_actor_follow_query(mode, actor, limit, cursor, direction)
   local filters, values = { "collection = $1", account_follow_filter_sql() }, { FOLLOW }
   values[#values + 1] = actor
@@ -326,7 +305,7 @@ local function list_actor_follows(mode)
 
   local limit = parse_list_limit(params)
   local direction = parse_sort_direction(params)
-  local cursor = cursor_decode(scalar(params, "cursor"), direction)
+  local cursor = decode_record_cursor(scalar(params, "cursor"), direction, FOLLOW)
   local views, next_cursor, total_count = query_actor_follows(mode, actor, limit, cursor, direction)
   local response = { [mode] = toarray(views), totalCount = total_count }
   if next_cursor then response.cursor = next_cursor end

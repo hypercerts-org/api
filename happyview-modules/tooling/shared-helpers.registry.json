@@ -168,18 +168,6 @@
       "reason": "Existing record view with endpoint-specific fields; kept to avoid a behavior change. Build on record_view where the shape allows."
     },
     {
-      "file": "lua/shared/actorFollowList.lua",
-      "family": "list-cursor",
-      "symbol": "cursor_decode",
-      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
-    },
-    {
-      "file": "lua/shared/actorFollowList.lua",
-      "family": "list-cursor",
-      "symbol": "cursor-hex-decode",
-      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
-    },
-    {
       "file": "lua/shared/attachmentList.lua",
       "family": "repeated-query-array",
       "symbol": "attachment_array",
@@ -223,21 +211,9 @@
     },
     {
       "file": "lua/shared/organizationList.lua",
-      "family": "list-cursor",
-      "symbol": "cursor-hex-decode",
-      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
-    },
-    {
-      "file": "lua/shared/organizationList.lua",
       "family": "repeated-query-array",
       "symbol": "array",
       "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
-    },
-    {
-      "file": "lua/shared/profileList.lua",
-      "family": "list-cursor",
-      "symbol": "cursor-hex-decode",
-      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
     },
     {
       "file": "lua/shared/recentFollows.lua",
@@ -265,51 +241,15 @@
     },
     {
       "file": "lua/src/listBadgeAwards.lua",
-      "family": "list-cursor",
-      "symbol": "cursor-hex-decode",
-      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
-    },
-    {
-      "file": "lua/src/listBadgeAwards.lua",
-      "family": "list-cursor",
-      "symbol": "decode_badge_award_cursor",
-      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
-    },
-    {
-      "file": "lua/src/listBadgeAwards.lua",
       "family": "repeated-query-array",
       "symbol": "array_values",
       "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
     },
     {
       "file": "lua/src/listBadgeDefinitions.lua",
-      "family": "list-cursor",
-      "symbol": "cursor-hex-decode",
-      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
-    },
-    {
-      "file": "lua/src/listBadgeDefinitions.lua",
-      "family": "list-cursor",
-      "symbol": "decode_badge_definition_cursor",
-      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
-    },
-    {
-      "file": "lua/src/listBadgeDefinitions.lua",
       "family": "repeated-query-array",
       "symbol": "badge_definition_array",
       "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
-    },
-    {
-      "file": "lua/src/listBadgeResponses.lua",
-      "family": "list-cursor",
-      "symbol": "cursor-hex-decode",
-      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
-    },
-    {
-      "file": "lua/src/listBadgeResponses.lua",
-      "family": "list-cursor",
-      "symbol": "decode_badge_response_cursor",
-      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
     },
     {
       "file": "lua/src/listContributorInformation.lua",
@@ -319,33 +259,9 @@
     },
     {
       "file": "lua/src/listEvmLinks.lua",
-      "family": "list-cursor",
-      "symbol": "cursor-hex-decode",
-      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
-    },
-    {
-      "file": "lua/src/listEvmLinks.lua",
-      "family": "list-cursor",
-      "symbol": "decode_evm_link_cursor",
-      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
-    },
-    {
-      "file": "lua/src/listEvmLinks.lua",
       "family": "repeated-query-array",
       "symbol": "array_values",
       "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
-    },
-    {
-      "file": "lua/src/listFeatures.lua",
-      "family": "list-cursor",
-      "symbol": "cursor-hex-decode",
-      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
-    },
-    {
-      "file": "lua/src/listFeatures.lua",
-      "family": "list-cursor",
-      "symbol": "feature_cursor_decode",
-      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
     },
     {
       "file": "lua/src/listFeatures.lua",
@@ -358,12 +274,6 @@
       "family": "repeated-query-array",
       "symbol": "feature_array",
       "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
-    },
-    {
-      "file": "lua/src/listLocations.lua",
-      "family": "list-cursor",
-      "symbol": "cursor-hex-decode",
-      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
     },
     {
       "file": "lua/src/listMeasurements.lua",
@@ -381,18 +291,6 @@
       "file": "lua/src/listVocabTags.lua",
       "family": "list-cursor",
       "symbol": "cursor-hex-decode",
-      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
-    },
-    {
-      "file": "lua/src/searchBadgeDefinitions.lua",
-      "family": "list-cursor",
-      "symbol": "cursor-hex-decode",
-      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
-    },
-    {
-      "file": "lua/src/searchBadgeDefinitions.lua",
-      "family": "list-cursor",
-      "symbol": "decode_badge_definition_cursor",
       "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
     },
     {
@@ -420,12 +318,6 @@
       "reason": "Per-module query entry point that shares a name; not a reusable helper."
     },
     {
-      "file": "lua/shared/organizationList.lua",
-      "family": "shared-helper",
-      "symbol": "cursor_decode",
-      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
-    },
-    {
       "file": "lua/shared/profile.lua",
       "family": "shared-helper",
       "symbol": "query",
@@ -435,12 +327,6 @@
       "file": "lua/shared/profileList.lua",
       "family": "shared-helper",
       "symbol": "array",
-      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
-    },
-    {
-      "file": "lua/shared/profileList.lua",
-      "family": "shared-helper",
-      "symbol": "cursor_decode",
       "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
     },
     {
@@ -492,13 +378,13 @@
       "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
     },
     {
-      "file": "lua/src/listLocations.lua",
+      "file": "lua/src/listVocabTags.lua",
       "family": "shared-helper",
-      "symbol": "cursor_decode",
-      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
+      "symbol": "query",
+      "reason": "Per-module query entry point that shares a name; not a reusable helper."
     },
     {
-      "file": "lua/src/listVocabTags.lua",
+      "file": "lua/src/searchBadgeDefinitions.lua",
       "family": "shared-helper",
       "symbol": "query",
       "reason": "Per-module query entry point that shares a name; not a reusable helper."
@@ -507,13 +393,7 @@
       "file": "lua/src/listVocabTags.lua",
       "family": "list-cursor",
       "symbol": "decode_vocab_tag_cursor",
-      "reason": "Pending A1 in the follow-up PR: this decoder has no 8192-character cap and an empty cursor gets a different message; its cursor also carries the author filter. Renamed from decode_cursor so it no longer collides with the shared helper."
-    },
-    {
-      "file": "lua/src/searchBadgeDefinitions.lua",
-      "family": "shared-helper",
-      "symbol": "query",
-      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+      "reason": "The cursor also carries the author filter ({v,d,f,t,u}), so its size is not bounded by an AT-URI and it cannot take the shared 8192-character cap without rejecting cursors the API issued. Renamed from decode_cursor so it no longer collides with the shared helper name."
     }
   ],
   "allowlistNote": "The allowlist is a baseline of copies that existed when the lint was added. It is not approval to add more: new entries need a specific reason, and count must match the occurrences exactly."
