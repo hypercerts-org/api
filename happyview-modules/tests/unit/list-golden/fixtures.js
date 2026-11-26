@@ -638,8 +638,17 @@ function pagedRowsByCall(endpoint, direction) {
     return [[collectionRow(COLLECTION_ITEMS)]];
   }
   const rows = Array.from({ length: PAGE_ROWS }, (_, n) => pageRow(endpoint, n));
-  return [direction === "asc" ? rows : rows.reverse()];
+  const ordered = direction === "asc" ? rows : rows.reverse();
+  // Organization views are re-read through the shared actor lookup: the profile
+  // query (call 2) finds nothing and the organization query (call 3) finds the page rows.
+  if (ORGANIZATION_LIST_ENDPOINTS.has(endpoint.id)) return [ordered, [], ordered];
+  return [ordered];
 }
+
+const ORGANIZATION_LIST_ENDPOINTS = new Set([
+  "app.certified.actor.listOrganizations",
+  "app.certified.actor.searchOrganizations",
+]);
 
 /** Only the collection lookup returns the collection row; later queries see no rows. */
 function defaultRowsByCall(endpoint) {

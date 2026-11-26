@@ -51,6 +51,36 @@ local function record_view(row)
   }
 end
 
+local PROFILE = "app.certified.actor.profile"
+local ORGANIZATION = "app.certified.actor.organization"
+
+local function hydrate_actor_views(actors, run_query)
+  if #actors == 0 then return end
+  local dids, seen = {}, {}
+  for _, actor in ipairs(actors) do
+    if not seen[actor.did] then
+      seen[actor.did] = true
+      dids[#dids + 1] = actor.did
+    end
+  end
+  local profiles, organizations = {}, {}
+  local function load(collection, target)
+    local params, marks = { collection }, {}
+    for _, did in ipairs(dids) do
+      params[#params + 1] = did
+      marks[#marks + 1] = "$" .. #params
+    end
+    local rows = run_query("SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record FROM happyview_records WHERE collection = $1 AND rkey = 'self' AND did IN (" .. table.concat(marks, ",") .. ")", params)
+    for _, row in ipairs(rows) do target[row.did] = row end
+  end
+  load(PROFILE, profiles)
+  load(ORGANIZATION, organizations)
+  for _, actor in ipairs(actors) do
+    actor.profile = profiles[actor.did] and record_view(profiles[actor.did]) or NULL
+    actor.organization = organizations[actor.did] and record_view(organizations[actor.did]) or NULL
+  end
+end
+
 local LOCATION = "app.certified.location"
 
 -- Match only the URI: the indexed version may differ from the organization's pinned CID.
@@ -91,8 +121,27 @@ local function hydrate_actor_locations(actors, run_query)
   end
 end
 
-local PROFILE = "app.certified.actor.profile"
-local ORGANIZATION = "app.certified.actor.organization"
+local function actor_query(sql, values)
+  if db.backend() ~= "postgres" then error("ActorQueryFailed: actor API requires PostgreSQL", 0) end
+  local ok, result = pcall(db.raw, sql, values)
+  if not ok or type(result) ~= "table" then
+    error("ActorQueryFailed: indexed actor lookup failed", 0)
+  end
+  return result
+end
+
+-- run_query defaults to the actor API's own error mapping; the organization
+-- endpoints pass theirs so their documented OrganizationQueryFailed is kept.
+local function lookup_actors(dids, run_query)
+  run_query = run_query or actor_query
+  local actors = {}
+  for index, did in ipairs(dids) do
+    actors[index] = { did = did, location = NULL }
+  end
+  hydrate_actor_views(actors, run_query)
+  hydrate_actor_locations(actors, run_query)
+  return actors
+end
 
 local function query(sql, values)
   if db.backend() ~= "postgres" then error("OrganizationQueryFailed: organization API requires PostgreSQL", 0) end
@@ -101,46 +150,6 @@ local function query(sql, values)
     error("OrganizationQueryFailed: organization lookup failed", 0)
   end
   return result
-end
-
-local function organization_actor_view(row)
-  return {
-    did = row.did,
-    profile = NULL,
-    organization = record_view(row),
-    location = NULL,
-  }
-end
-
-local function hydrate_profiles(actors)
-  local dids, seen = {}, {}
-  for _, actor in ipairs(actors) do
-    if not seen[actor.did] then
-      seen[actor.did] = true
-      dids[#dids + 1] = actor.did
-    end
-  end
-
-  local values, marks = { PROFILE }, {}
-  for _, did in ipairs(dids) do
-    values[#values + 1] = did
-    marks[#marks + 1] = "$" .. #values
-  end
-  local rows = query(
-    "SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record " ..
-      "FROM happyview_records WHERE collection = $1 AND rkey = 'self' AND did IN (" .. table.concat(marks, ", ") .. ")",
-    values)
-  local profiles = {}
-  for _, row in ipairs(rows) do profiles[row.did] = row end
-  for _, actor in ipairs(actors) do
-    actor.profile = profiles[actor.did] and record_view(profiles[actor.did]) or NULL
-  end
-end
-
-local function hydrate_organization_actors(actors)
-  if #actors == 0 then return end
-  hydrate_profiles(actors)
-  hydrate_actor_locations(actors, query)
 end
 
 local function requested_actor_dids(params, validate_did)
@@ -184,29 +193,15 @@ function handle()
   keys_only(params, { actors = true })
   local actors, unique = requested_actor_dids(params, valid_did)
 
-  local values, placeholders = { ORGANIZATION }, {}
-  for _, did in ipairs(unique) do
-    values[#values + 1] = did
-    placeholders[#placeholders + 1] = "$" .. #values
-  end
-  local rows = query(
-    "SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record " ..
-      "FROM happyview_records WHERE collection = $1 AND rkey = 'self' AND did IN (" .. table.concat(placeholders, ", ") .. ")",
-    values)
-
-  local organizations_by_did, organization_actors = {}, {}
-  for _, row in ipairs(rows) do
-    local actor = organization_actor_view(row)
-    organizations_by_did[row.did] = actor
-    organization_actors[#organization_actors + 1] = actor
-  end
-  hydrate_organization_actors(organization_actors)
+  local by_did = {}
+  for _, actor in ipairs(lookup_actors(unique, query)) do by_did[actor.did] = actor end
 
   local organizations = {}
   for _, did in ipairs(actors) do
+    local actor = by_did[did]
     organizations[#organizations + 1] = {
       actor = did,
-      organization = organizations_by_did[did] or NULL,
+      organization = actor.organization ~= NULL and actor or NULL,
     }
   end
   return { organizations = toarray(organizations) }
