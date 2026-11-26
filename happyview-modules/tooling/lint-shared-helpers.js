@@ -35,36 +35,45 @@ function stripComment(line) {
   return index === -1 ? line : line.slice(0, index);
 }
 
+function familyProblems(family, seen) {
+  const problems = [];
+  if (!family.id || seen.has(family.id))
+    problems.push(`family id missing or duplicated: ${family.id}`);
+  seen.add(family.id);
+  if (!family.description) problems.push(`family ${family.id} needs a description`);
+  if (!Array.isArray(family.owners)) problems.push(`family ${family.id} needs an owners array`);
+  if (family.owners?.length === 0 && !family.unowned) {
+    problems.push(
+      `family ${family.id} has no owners; set "unowned": "<what to do first>" or name an owner file`,
+    );
+  }
+  return problems;
+}
+
+function allowlistEntryProblems(entry) {
+  const problems = [];
+  if (entry.count !== undefined && !(Number.isInteger(entry.count) && entry.count >= 1)) {
+    problems.push(
+      `allowlist entry ${JSON.stringify(entry)} has an invalid "count"; use a positive integer`,
+    );
+  }
+  for (const key of ["file", "family", "symbol", "reason"]) {
+    if (typeof entry[key] !== "string" || !entry[key].trim()) {
+      problems.push(
+        `allowlist entry ${JSON.stringify(entry)} needs a nonempty "${key}" (reason says why the copy must stay)`,
+      );
+    }
+  }
+  return problems;
+}
+
 /** Throws one error listing every problem in the registry itself, so a bad edit fails loudly. */
 function validateRegistry(registry) {
-  const problems = [];
   const seen = new Set();
-  for (const family of registry.families ?? []) {
-    if (!family.id || seen.has(family.id))
-      problems.push(`family id missing or duplicated: ${family.id}`);
-    seen.add(family.id);
-    if (!family.description) problems.push(`family ${family.id} needs a description`);
-    if (!Array.isArray(family.owners)) problems.push(`family ${family.id} needs an owners array`);
-    if (family.owners?.length === 0 && !family.unowned) {
-      problems.push(
-        `family ${family.id} has no owners; set "unowned": "<what to do first>" or name an owner file`,
-      );
-    }
-  }
-  for (const entry of registry.allowlist ?? []) {
-    if (entry.count !== undefined && !(Number.isInteger(entry.count) && entry.count >= 1)) {
-      problems.push(
-        `allowlist entry ${JSON.stringify(entry)} has an invalid "count"; use a positive integer`,
-      );
-    }
-    for (const key of ["file", "family", "symbol", "reason"]) {
-      if (typeof entry[key] !== "string" || !entry[key].trim()) {
-        problems.push(
-          `allowlist entry ${JSON.stringify(entry)} needs a nonempty "${key}" (reason says why the copy must stay)`,
-        );
-      }
-    }
-  }
+  const problems = [
+    ...(registry.families ?? []).flatMap((family) => familyProblems(family, seen)),
+    ...(registry.allowlist ?? []).flatMap(allowlistEntryProblems),
+  ];
   if (problems.length > 0) {
     throw new Error(`Invalid ${registryFile}:\n- ${problems.join("\n- ")}`);
   }
@@ -182,8 +191,9 @@ function allowlistKey(file, family, symbol) {
  * Checks handwritten Lua against the shared-helper registry.
  * Returns { errors: string[] }; an empty list means the check passed.
  */
-export async function checkSharedHelpers({ root = defaultRoot, registry } = {}) {
-  const loaded = registry ?? JSON.parse(await readFile(path.join(root, registryFile), "utf8"));
+async function checkSharedHelpers() {
+  const root = defaultRoot;
+  const loaded = JSON.parse(await readFile(path.join(root, registryFile), "utf8"));
   validateRegistry(loaded);
 
   const files = (await Promise.all(scannedDirectories.map((dir) => luaFiles(root, dir)))).flat();
