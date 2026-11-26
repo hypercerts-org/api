@@ -86,7 +86,7 @@ function depthTracker(code) {
     events.filter((event) => event.index < offset).reduce((sum, event) => sum + event.delta, 0);
 }
 
-/** Every function definition in a Lua file: last-segment name, 1-based line, top-level or nested. */
+/** Every function definition in a Lua file: last-segment name, 1-based line, top-level or nested, local or not. */
 function definitions(source) {
   const code = blankLua(source);
   const depthAt = depthTracker(code);
@@ -98,6 +98,9 @@ function definitions(source) {
         // Report the line of the name, not of leading blank space.
         line: code.slice(0, nameStart).split("\n").length,
         topLevel: depthAt(match.index) === 0,
+        // A nested definition without `local` still assigns a global, so it replaces any
+        // earlier binding of the name once the files are concatenated into one chunk.
+        isLocal: /^\s*local\s/.test(match[0]),
       };
     }),
   );
@@ -213,10 +216,11 @@ function sourceFindings(registry, sources) {
   const shared = sharedHelperOwners(parsed);
   const findings = [];
   for (const [file, entry] of parsed) {
-    for (const { name, line, topLevel } of entry.defs) {
+    for (const { name, line, topLevel, isLocal } of entry.defs) {
       const owner = shared.get(name);
-      // Inside lua/shared only a top-level definition can be a second copy; nested locals are private.
-      const counts = file.startsWith("lua/shared/") ? topLevel : true;
+      // Inside lua/shared only a top-level definition or a non-local one can be a second copy;
+      // a nested `local function` is private to its block.
+      const counts = file.startsWith("lua/shared/") ? topLevel || !isLocal : true;
       if (owner && owner !== file && counts) {
         findings.push({
           kind: "redefinition",
