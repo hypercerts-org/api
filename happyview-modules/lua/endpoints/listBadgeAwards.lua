@@ -66,6 +66,13 @@ local function valid_bounded_record_uri(value)
 end
 -- luacheck: pop
 
+local BADGE_DEFINITION_COLLECTION = "app.certified.badge.definition"
+
+local function valid_badge_definition_uri(value)
+  local valid, collection = valid_record_uri(value)
+  return valid and collection == BADGE_DEFINITION_COLLECTION
+end
+
 local function valid_datetime(value)
   if type(value) ~= "string" then return false end
   local year, month, day, hour, minute, second, suffix = value:match(
@@ -252,11 +259,6 @@ local RESPONSE_STATUSES = { accepted = true, rejected = true, unanswered = true 
 local function valid_badge_award_uri(value)
   local valid, collection = valid_record_uri(value)
   return valid and collection == AWARD
-end
-
-local function valid_badge_definition_uri(value)
-  local valid, collection = valid_record_uri(value)
-  return valid and collection == DEFINITION
 end
 
 local function query(sql, values)

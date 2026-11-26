@@ -261,7 +261,7 @@ local function array(params, key, validate, description, max_bytes)
   return unique
 end
 
-local function add_in(where, params, column, values)
+local function add_optional_in(where, params, column, values)
   if not values then return end
   if #values == 0 then where[#where + 1] = "FALSE"; return end
   local placeholders = {}
@@ -291,9 +291,9 @@ end
 local function query_locations(filters, limit, cursor, direction)
   if db.backend() ~= "postgres" then error("LocationQueryFailed: location API requires PostgreSQL", 0) end
   local where, binds = { "collection = $1" }, { COLLECTION }
-  add_in(where, binds, "did", filters.authors)
-  add_in(where, binds, "uri", filters.uris)
-  add_in(where, binds, "(record::jsonb)->>'locationType'", filters.locationTypes)
+  add_optional_in(where, binds, "did", filters.authors)
+  add_optional_in(where, binds, "uri", filters.uris)
+  add_optional_in(where, binds, "(record::jsonb)->>'locationType'", filters.locationTypes)
   if cursor then
     binds[#binds + 1] = cursor.t
     local time = "$" .. #binds

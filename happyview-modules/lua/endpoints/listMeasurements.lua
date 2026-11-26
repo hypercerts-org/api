@@ -257,18 +257,23 @@ local function valid_nsid(value)
   return #name <= 63 and name:match("^[A-Za-z][A-Za-z0-9]*$") ~= nil
 end
 
+-- Appends each item to binds and returns its "$n" placeholders, in order.
+local function bind_values(binds, items)
+  local placeholders = {}
+  for _, item in ipairs(items) do
+    binds[#binds + 1] = item
+    placeholders[#placeholders + 1] = "$" .. #binds
+  end
+  return placeholders
+end
+
 -- Adds `column IN ($n, ...)` to where, binding items; an empty list matches nothing.
 local function add_in(where, binds, column, items)
   if #items == 0 then
     where[#where + 1] = "FALSE"
     return
   end
-  local marks = {}
-  for _, item in ipairs(items) do
-    binds[#binds + 1] = item
-    marks[#marks + 1] = "$" .. #binds
-  end
-  where[#where + 1] = column .. " IN (" .. table.concat(marks, ", ") .. ")"
+  where[#where + 1] = column .. " IN (" .. table.concat(bind_values(binds, items), ", ") .. ")"
 end
 
 local CREATED_AT_SORT_PATTERN = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
@@ -327,15 +332,6 @@ local function measurement_array(key, format)
     end
   end
   return unique
-end
-
-local function bind_values(values, items)
-  local placeholders = {}
-  for _, item in ipairs(items) do
-    values[#values + 1] = item
-    placeholders[#placeholders + 1] = "$" .. #values
-  end
-  return placeholders
 end
 
 local function measurement_list_query(authors, subjects, limit, cursor, direction)

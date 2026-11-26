@@ -8,11 +8,6 @@ local function valid_badge_award_uri(value)
   return valid and collection == AWARD
 end
 
-local function valid_badge_definition_uri(value)
-  local valid, collection = valid_record_uri(value)
-  return valid and collection == DEFINITION
-end
-
 local function query(sql, values)
   if db.backend() ~= "postgres" then
     error("BadgeAwardQueryFailed: badge award API requires PostgreSQL", 0)

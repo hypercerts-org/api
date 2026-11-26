@@ -470,12 +470,6 @@
     {
       "file": "lua/src/listBadgeAwards.lua",
       "family": "shared-helper",
-      "symbol": "valid_badge_definition_uri",
-      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
-    },
-    {
-      "file": "lua/src/listBadgeAwards.lua",
-      "family": "shared-helper",
       "symbol": "query",
       "reason": "Per-module query entry point that shares a name; not a reusable helper."
     },
@@ -500,19 +494,7 @@
     {
       "file": "lua/src/listLocations.lua",
       "family": "shared-helper",
-      "symbol": "add_in",
-      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
-    },
-    {
-      "file": "lua/src/listLocations.lua",
-      "family": "shared-helper",
       "symbol": "cursor_decode",
-      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
-    },
-    {
-      "file": "lua/src/listMeasurements.lua",
-      "family": "shared-helper",
-      "symbol": "bind_values",
       "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
     },
     {

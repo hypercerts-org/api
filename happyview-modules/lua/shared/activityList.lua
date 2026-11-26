@@ -40,15 +40,6 @@ local function activity_array(key, format)
   return unique
 end
 
-local function bind_values(values, items)
-  local placeholders = {}
-  for _, item in ipairs(items) do
-    values[#values + 1] = item
-    placeholders[#placeholders + 1] = "$" .. #values
-  end
-  return placeholders
-end
-
 local function activity_contributor_match(values, dids)
   local marks = bind_values(values, dids)
   local set = table.concat(marks, ", ")

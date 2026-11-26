@@ -41,15 +41,6 @@ local function measurement_array(key, format)
   return unique
 end
 
-local function bind_values(values, items)
-  local placeholders = {}
-  for _, item in ipairs(items) do
-    values[#values + 1] = item
-    placeholders[#placeholders + 1] = "$" .. #values
-  end
-  return placeholders
-end
-
 local function measurement_list_query(authors, subjects, limit, cursor, direction)
   local where, values = { "measurement.collection = $1" }, { MEASUREMENT }
   if authors then add_in(where, values, "measurement.did", authors) end
