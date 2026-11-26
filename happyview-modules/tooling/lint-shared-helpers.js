@@ -14,6 +14,18 @@ const DEFINITION_PATTERNS = [
   /^\s*(?:local\s+)?([A-Za-z_][\w.]*)\s*=\s*function\s*\(/,
 ];
 
+// The same shapes anchored at column 0: only these count as a shared helper's definition.
+const TOP_LEVEL_PATTERNS = DEFINITION_PATTERNS.map(
+  (pattern) => new RegExp(pattern.source.replace("^\\s*", "^")),
+);
+
+// Every top-level function in lua/shared is protected. It is not a registry family, so it has no patterns.
+const SHARED_FAMILY = {
+  id: "shared-helper",
+  description: "a function already defined in lua/shared",
+  homes: [],
+};
+
 async function luaFiles(root, directory) {
   const entries = await readdir(path.join(root, directory), { withFileTypes: true });
   return entries
@@ -22,8 +34,8 @@ async function luaFiles(root, directory) {
     .sort();
 }
 
-function definitionName(line) {
-  for (const pattern of DEFINITION_PATTERNS) {
+function definitionName(line, patterns = DEFINITION_PATTERNS) {
+  for (const pattern of patterns) {
     const match = pattern.exec(line);
     if (match) return match[1].split(/[.:]/).pop();
   }
@@ -41,11 +53,14 @@ function familyProblems(family, seen) {
     problems.push(`family id missing or duplicated: ${family.id}`);
   seen.add(family.id);
   if (!family.description) problems.push(`family ${family.id} needs a description`);
-  if (!Array.isArray(family.owners)) problems.push(`family ${family.id} needs an owners array`);
-  if (family.owners?.length === 0 && !family.unowned) {
+  if (!Array.isArray(family.homes)) problems.push(`family ${family.id} needs a homes array`);
+  if (family.homes?.length === 0 && !family.unowned) {
     problems.push(
-      `family ${family.id} has no owners; set "unowned": "<what to do first>" or name an owner file`,
+      `family ${family.id} has no homes; set "unowned": "<what to do first>" or name the shared file where its patterns belong`,
     );
+  }
+  if (!family.lookalikes?.length && !family.inline?.length) {
+    problems.push(`family ${family.id} needs "lookalikes" or "inline" patterns`);
   }
   return problems;
 }
@@ -79,82 +94,87 @@ function validateRegistry(registry) {
   }
 }
 
-function ownersDefine(family, sources) {
-  const defined = new Set();
-  for (const owner of family.owners) {
-    const source = sources.get(owner);
-    if (source === undefined) continue;
-    for (const line of source.split("\n")) {
-      const name = definitionName(line);
-      if (name) defined.add(name);
-    }
-  }
-  return defined;
+function registryFindings(registry, sources) {
+  return registry.families.flatMap((family) =>
+    family.homes
+      .filter((home) => !sources.has(home))
+      .map((home) => ({
+        message: `${registryFile}: family "${family.id}" home ${home} does not exist. Update the path or remove it.`,
+      })),
+  );
 }
 
-function registryFindings(registry, sources) {
-  const findings = [];
-  for (const family of registry.families) {
-    for (const owner of family.owners) {
-      if (!sources.has(owner)) {
-        findings.push({
-          kind: "registry",
-          message: `${registryFile}: family "${family.id}" owner ${owner} does not exist. Update the owner path or remove the family.`,
-        });
-      }
-    }
-    const defined = ownersDefine(family, sources);
-    for (const name of family.names ?? []) {
-      if (family.owners.length > 0 && !defined.has(name)) {
-        findings.push({
-          kind: "registry",
-          message: `${registryFile}: family "${family.id}" protects "${name}" but no owner file defines it. Fix the name or the owner list.`,
-        });
-      }
+function homeHint(family) {
+  if (family.homes.length === 0) {
+    return `No shared helper exists yet (${family.unowned}).`;
+  }
+  return `Use the shared helper from ${family.homes.join(" or ")} (declare it in the module's sharedSourcePaths).`;
+}
+
+/** Maps each top-level function name in lua/shared to the first file that defines it. */
+function sharedHelperOwners(sources) {
+  const owners = new Map();
+  for (const [file, source] of sources) {
+    if (!file.startsWith("lua/shared/")) continue;
+    for (const line of source.split("\n")) {
+      const name = definitionName(stripComment(line), TOP_LEVEL_PATTERNS);
+      if (name && !owners.has(name)) owners.set(name, file);
     }
   }
+  return owners;
+}
+
+function patternFindings(family, file, lines, shared) {
+  const findings = [];
+  const lookalikes = (family.lookalikes ?? []).map((pattern) => new RegExp(pattern));
+  const inline = (family.inline ?? []).map((rule) => ({
+    ...rule,
+    regex: new RegExp(rule.pattern),
+  }));
+  lines.forEach((rawLine, index) => {
+    const line = stripComment(rawLine);
+    const name = definitionName(line);
+    // A copy of a name another shared file defines is reported once, as a shared-helper copy.
+    const owner = name && shared.get(name);
+    if (name && (!owner || owner === file) && lookalikes.some((regex) => regex.test(name))) {
+      findings.push({ kind: "lookalike", file, line: index + 1, family, symbol: name });
+    }
+    for (const rule of inline) {
+      if (rule.regex.test(line)) {
+        findings.push({ kind: "inline", file, line: index + 1, family, symbol: rule.id, rule });
+      }
+    }
+  });
   return findings;
 }
 
-function ownerHint(family) {
-  if (family.owners.length === 0) {
-    return `No shared helper exists yet (${family.unowned}).`;
-  }
-  return `Use the shared helper from ${family.owners.join(" or ")} (declare it in the module's sharedSourcePaths).`;
-}
-
 function sourceFindings(registry, sources) {
+  const shared = sharedHelperOwners(sources);
   const findings = [];
-  // A name another family protects is that family's business, not a lookalike here.
-  const protectedElsewhere = (family) =>
-    new Set(
-      registry.families.filter((other) => other !== family).flatMap((other) => other.names ?? []),
-    );
   for (const [file, source] of sources) {
     const lines = source.split("\n");
+    lines.forEach((rawLine, index) => {
+      const line = stripComment(rawLine);
+      const name = definitionName(line);
+      const owner = name && shared.get(name);
+      // Inside lua/shared only a top-level definition can be a second copy; nested locals are private.
+      const counts = file.startsWith("lua/shared/")
+        ? definitionName(line, TOP_LEVEL_PATTERNS) === name
+        : true;
+      if (owner && owner !== file && counts) {
+        findings.push({
+          kind: "redefinition",
+          file,
+          line: index + 1,
+          family: SHARED_FAMILY,
+          symbol: name,
+          owner,
+        });
+      }
+    });
     for (const family of registry.families) {
-      if (family.owners.includes(file)) continue;
-      const protectedNames = new Set(family.names ?? []);
-      const elsewhere = protectedElsewhere(family);
-      const lookalikes = (family.lookalikes ?? []).map((pattern) => new RegExp(pattern));
-      const inline = (family.inline ?? []).map((rule) => ({
-        ...rule,
-        regex: new RegExp(rule.pattern),
-      }));
-      lines.forEach((rawLine, index) => {
-        const line = stripComment(rawLine);
-        const name = definitionName(line);
-        if (name && protectedNames.has(name)) {
-          findings.push({ kind: "redefinition", file, line: index + 1, family, symbol: name });
-        } else if (name && !elsewhere.has(name) && lookalikes.some((regex) => regex.test(name))) {
-          findings.push({ kind: "lookalike", file, line: index + 1, family, symbol: name });
-        }
-        for (const rule of inline) {
-          if (rule.regex.test(line)) {
-            findings.push({ kind: "inline", file, line: index + 1, family, symbol: rule.id, rule });
-          }
-        }
-      });
+      if (family.homes.includes(file)) continue;
+      findings.push(...patternFindings(family, file, lines, shared));
     }
   }
   return findings;
@@ -162,9 +182,14 @@ function sourceFindings(registry, sources) {
 
 function findingMessage(finding, allowedCount) {
   const { kind, file, line, family, symbol, rule, count } = finding;
+  const hint =
+    kind === "redefinition"
+      ? `Use ${symbol} from ${finding.owner} (declare it in the module's sharedSourcePaths), or rename this one.`
+      : homeHint(family);
   const where = `${file}:${line}`;
   const what = {
-    redefinition: () => `defines "${symbol}", a protected shared helper (${family.description}).`,
+    redefinition: () =>
+      `defines "${symbol}", which lua/shared already defines in ${finding.owner}.`,
     lookalike: () =>
       `defines "${symbol}", which looks like a new copy of the ${family.id} helpers (${family.description}).`,
     inline: () => `re-implements ${rule.description} inline (${family.description}).`,
@@ -180,7 +205,7 @@ function findingMessage(finding, allowedCount) {
     allowedCount === undefined
       ? `If the copy must stay, add to "allowlist" in ${registryFile}:`
       : `The allowlist covers ${allowedCount} occurrence(s) but ${count} exist now. Remove the new copy, or raise "count" with a reason:`;
-  return [`${where}: ${what}`, `  ${ownerHint(family)} ${advice}`, `  ${entry}`].join("\n");
+  return [`${where}: ${what}`, `  ${hint} ${advice}`, `  ${entry}`].join("\n");
 }
 
 function allowlistKey(file, family, symbol) {

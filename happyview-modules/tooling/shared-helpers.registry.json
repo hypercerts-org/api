@@ -3,8 +3,6 @@
     {
       "id": "did-validation",
       "description": "DID syntax check",
-      "owners": ["lua/shared/didValidation.lua"],
-      "names": ["valid_did"],
       "lookalikes": ["^valid_[a-z_]*did"],
       "inline": [
         {
@@ -12,20 +10,18 @@
           "pattern": "\\^did:",
           "description": "the DID syntax pattern"
         }
-      ]
+      ],
+      "homes": ["lua/shared/didValidation.lua"]
     },
     {
       "id": "nsid-validation",
       "description": "NSID syntax check",
-      "owners": ["lua/shared/nsidValidation.lua"],
-      "names": ["valid_nsid"],
-      "lookalikes": ["^valid_[a-z_]*nsid"]
+      "lookalikes": ["^valid_[a-z_]*nsid"],
+      "homes": ["lua/shared/nsidValidation.lua"]
     },
     {
       "id": "record-identifier",
       "description": "AT-URI record key and record URI parsing",
-      "owners": ["lua/shared/recordIdentifier.lua"],
-      "names": ["valid_record_uri", "valid_record_key"],
       "lookalikes": ["valid_record_(uri|key)"],
       "inline": [
         {
@@ -33,42 +29,24 @@
           "pattern": "\\^at://",
           "description": "the AT-URI parsing pattern"
         }
-      ]
-    },
-    {
-      "id": "subject-record-uri",
-      "description": "DID-authority subject AT-URI check",
-      "owners": ["lua/shared/subjectRecordUri.lua"],
-      "names": ["valid_subject_record_uri", "valid_did_percent_escapes"]
+      ],
+      "homes": ["lua/shared/recordIdentifier.lua"]
     },
     {
       "id": "datetime-validation",
       "description": "RFC 3339 datetime check",
-      "owners": ["lua/shared/datetimeValidation.lua"],
-      "names": ["valid_datetime"],
-      "lookalikes": ["^valid_[a-z_]*(datetime|timestamp)"]
+      "lookalikes": ["^valid_[a-z_]*(datetime|timestamp)"],
+      "homes": ["lua/shared/datetimeValidation.lua"]
     },
     {
       "id": "handle-resolver",
       "description": "handle syntax check and handle resolution",
-      "owners": ["lua/shared/profileLookup.lua"],
-      "names": [
-        "valid_handle",
-        "valid_resolver_authority",
-        "valid_ipv4",
-        "valid_ipv6",
-        "valid_port",
-        "resolver_base_url",
-        "resolve_handle",
-        "fail_resolver_config"
-      ],
-      "lookalikes": ["^valid_(handle|ipv4|ipv6|port)", "resolve_handle"]
+      "lookalikes": ["^valid_(handle|ipv4|ipv6|port)", "resolve_handle"],
+      "homes": ["lua/shared/profileLookup.lua"]
     },
     {
       "id": "list-cursor",
       "description": "list cursor encoding and decoding",
-      "owners": ["lua/shared/listCursor.lua", "lua/shared/listQuery.lua"],
-      "names": ["decode_cursor", "cursor_encode"],
       "lookalikes": ["cursor_(decode|encode)", "(decode|encode)_([a-z_]+_)?cursor"],
       "inline": [
         {
@@ -81,17 +59,12 @@
           "pattern": "#token > 8192",
           "description": "the cursor length cap"
         }
-      ]
+      ],
+      "homes": ["lua/shared/listCursor.lua", "lua/shared/listQuery.lua"]
     },
     {
       "id": "list-params",
       "description": "limit, includeTotal and sortDirection parsing",
-      "owners": [
-        "lua/shared/listValidation.lua",
-        "lua/shared/includeTotal.lua",
-        "lua/shared/listQuery.lua"
-      ],
-      "names": ["parse_list_limit", "parse_include_total", "parse_sort_direction"],
       "lookalikes": ["^parse_[a-z_]*(limit|include_total|sort_direction)"],
       "inline": [
         {
@@ -109,13 +82,16 @@
           "pattern": "sortDirection must be",
           "description": "sortDirection parsing"
         }
+      ],
+      "homes": [
+        "lua/shared/listValidation.lua",
+        "lua/shared/includeTotal.lua",
+        "lua/shared/listQuery.lua"
       ]
     },
     {
       "id": "query-params",
       "description": "InvalidRequest errors, unknown-parameter checks and single-value parameters",
-      "owners": ["lua/shared/query.lua"],
-      "names": ["invalid", "keys_only", "scalar"],
       "lookalikes": ["(^|_)(invalid|keys_only|scalar)$"],
       "inline": [
         {
@@ -123,20 +99,19 @@
           "pattern": "must occur once",
           "description": "single-value parameter parsing"
         }
-      ]
+      ],
+      "homes": ["lua/shared/query.lua"]
     },
     {
       "id": "repeated-query-array",
       "description": "repeated query parameter (array) parsing",
-      "owners": [],
       "unowned": "each endpoint has its own; add a shared parser in lua/shared and register it before adding another",
-      "lookalikes": ["(^|_)array(_values)?$"]
+      "lookalikes": ["(^|_)array(_values)?$"],
+      "homes": []
     },
     {
       "id": "record-view",
       "description": "the {uri, cid, indexedAt, did, record} view of an indexed row",
-      "owners": ["lua/shared/recordView.lua"],
-      "names": ["record_view"],
       "lookalikes": ["record_view"],
       "inline": [
         {
@@ -144,21 +119,20 @@
           "pattern": "indexed_at == nil and NULL",
           "description": "the indexedAt null fallback"
         }
-      ]
+      ],
+      "homes": ["lua/shared/recordView.lua"]
     },
     {
       "id": "actor-view",
       "description": "actor profile/organization hydration",
-      "owners": ["lua/shared/actorView.lua"],
-      "names": ["hydrate_actor_views"],
-      "lookalikes": ["^[a-z_]*hydrate_[a-z_]*actor_views$"]
+      "lookalikes": ["^[a-z_]*hydrate_[a-z_]*actor_views$"],
+      "homes": ["lua/shared/actorView.lua"]
     },
     {
       "id": "batch-request-target",
       "description": "batch GET request-target size limit",
-      "owners": ["lua/shared/batchRequestTarget.lua"],
-      "names": ["assert_batch_request_target", "encoded_query_value_length"],
-      "lookalikes": ["^[a-z_]*request_target[a-z_]*$"]
+      "lookalikes": ["^[a-z_]*request_target[a-z_]*$"],
+      "homes": ["lua/shared/batchRequestTarget.lua"]
     }
   ],
   "allowlist": [
@@ -406,12 +380,6 @@
     {
       "file": "lua/shared/organizationList.lua",
       "family": "list-cursor",
-      "symbol": "cursor_decode",
-      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
-    },
-    {
-      "file": "lua/shared/organizationList.lua",
-      "family": "list-cursor",
       "symbol": "cursor-hex-decode",
       "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
     },
@@ -430,12 +398,6 @@
     {
       "file": "lua/shared/profileList.lua",
       "family": "list-cursor",
-      "symbol": "cursor_decode",
-      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
-    },
-    {
-      "file": "lua/shared/profileList.lua",
-      "family": "list-cursor",
       "symbol": "cursor-hex-decode",
       "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
     },
@@ -444,12 +406,6 @@
       "family": "record-identifier",
       "symbol": "at-uri-pattern",
       "reason": "Existing record-URI check that predates the registry; kept to avoid a behavior change. Build on valid_record_uri where the shape allows."
-    },
-    {
-      "file": "lua/shared/profileList.lua",
-      "family": "repeated-query-array",
-      "symbol": "array",
-      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
     },
     {
       "file": "lua/shared/recentFollows.lua",
@@ -506,12 +462,6 @@
       "reason": "Existing actor hydration variant; kept to avoid a behavior change. Build on hydrate_actor_views where the shape allows."
     },
     {
-      "file": "lua/shared/workscopeRecordView.lua",
-      "family": "record-view",
-      "symbol": "record_view",
-      "reason": "Deliberately differs from recordView.lua: workscope sidecars omit a missing indexedAt instead of encoding JSON null (see the file comment). Both define record_view, so a bundle must not include both."
-    },
-    {
       "file": "lua/shared/workscopeTag.lua",
       "family": "record-identifier",
       "symbol": "workscope_tag_valid_record_uri",
@@ -545,12 +495,6 @@
       "file": "lua/src/listBadgeAwards.lua",
       "family": "list-params",
       "symbol": "include-total-message",
-      "reason": "Existing endpoint-local list parameter parsing; kept to avoid a behavior change. Use includeTotal.lua instead."
-    },
-    {
-      "file": "lua/src/listBadgeAwards.lua",
-      "family": "list-params",
-      "symbol": "parse_include_total",
       "reason": "Existing endpoint-local list parameter parsing; kept to avoid a behavior change. Use includeTotal.lua instead."
     },
     {
@@ -652,20 +596,8 @@
     {
       "file": "lua/src/listLocations.lua",
       "family": "list-cursor",
-      "symbol": "cursor_decode",
-      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
-    },
-    {
-      "file": "lua/src/listLocations.lua",
-      "family": "list-cursor",
       "symbol": "cursor-hex-decode",
       "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
-    },
-    {
-      "file": "lua/src/listLocations.lua",
-      "family": "repeated-query-array",
-      "symbol": "array",
-      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
     },
     {
       "file": "lua/src/listMeasurements.lua",
@@ -698,12 +630,6 @@
       "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
     },
     {
-      "file": "lua/src/listVocabTags.lua",
-      "family": "list-cursor",
-      "symbol": "decode_cursor",
-      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
-    },
-    {
       "file": "lua/src/searchBadgeDefinitions.lua",
       "family": "list-cursor",
       "symbol": "cursor-hex-decode",
@@ -720,6 +646,156 @@
       "family": "repeated-query-array",
       "symbol": "badge_definition_array",
       "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
+    },
+    {
+      "file": "lua/shared/actorFollow.lua",
+      "family": "shared-helper",
+      "symbol": "query",
+      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+    },
+    {
+      "file": "lua/shared/location.lua",
+      "family": "shared-helper",
+      "symbol": "query",
+      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+    },
+    {
+      "file": "lua/shared/organization.lua",
+      "family": "shared-helper",
+      "symbol": "query",
+      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+    },
+    {
+      "file": "lua/shared/organizationList.lua",
+      "family": "shared-helper",
+      "symbol": "cursor_decode",
+      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
+    },
+    {
+      "file": "lua/shared/profile.lua",
+      "family": "shared-helper",
+      "symbol": "query",
+      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+    },
+    {
+      "file": "lua/shared/profileList.lua",
+      "family": "shared-helper",
+      "symbol": "array",
+      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
+    },
+    {
+      "file": "lua/shared/profileList.lua",
+      "family": "shared-helper",
+      "symbol": "cursor_decode",
+      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
+    },
+    {
+      "file": "lua/shared/subjectRecordUri.lua",
+      "family": "did-validation",
+      "symbol": "valid_did_percent_escapes",
+      "reason": "Distinct check (percent escapes in a DID authority) for subject URIs, not a second DID validator."
+    },
+    {
+      "file": "lua/shared/workscopeRecordView.lua",
+      "family": "shared-helper",
+      "symbol": "record_view",
+      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
+    },
+    {
+      "file": "lua/src/getBadgeAward.lua",
+      "family": "shared-helper",
+      "symbol": "query",
+      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+    },
+    {
+      "file": "lua/src/getBadgeDefinition.lua",
+      "family": "shared-helper",
+      "symbol": "query",
+      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+    },
+    {
+      "file": "lua/src/getBadgeResponse.lua",
+      "family": "shared-helper",
+      "symbol": "query",
+      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+    },
+    {
+      "file": "lua/src/getVocabTag.lua",
+      "family": "shared-helper",
+      "symbol": "query",
+      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+    },
+    {
+      "file": "lua/src/listBadgeAwards.lua",
+      "family": "shared-helper",
+      "symbol": "valid_badge_definition_uri",
+      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
+    },
+    {
+      "file": "lua/src/listBadgeAwards.lua",
+      "family": "shared-helper",
+      "symbol": "query",
+      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+    },
+    {
+      "file": "lua/src/listBadgeAwards.lua",
+      "family": "shared-helper",
+      "symbol": "parse_include_total",
+      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
+    },
+    {
+      "file": "lua/src/listBadgeDefinitions.lua",
+      "family": "shared-helper",
+      "symbol": "query",
+      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+    },
+    {
+      "file": "lua/src/listBadgeResponses.lua",
+      "family": "shared-helper",
+      "symbol": "query",
+      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+    },
+    {
+      "file": "lua/src/listLocations.lua",
+      "family": "shared-helper",
+      "symbol": "array",
+      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
+    },
+    {
+      "file": "lua/src/listLocations.lua",
+      "family": "shared-helper",
+      "symbol": "add_in",
+      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
+    },
+    {
+      "file": "lua/src/listLocations.lua",
+      "family": "shared-helper",
+      "symbol": "cursor_decode",
+      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
+    },
+    {
+      "file": "lua/src/listMeasurements.lua",
+      "family": "shared-helper",
+      "symbol": "bind_values",
+      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
+    },
+    {
+      "file": "lua/src/listVocabTags.lua",
+      "family": "shared-helper",
+      "symbol": "query",
+      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+    },
+    {
+      "file": "lua/src/listVocabTags.lua",
+      "family": "shared-helper",
+      "symbol": "decode_cursor",
+      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
+    },
+    {
+      "file": "lua/src/searchBadgeDefinitions.lua",
+      "family": "shared-helper",
+      "symbol": "query",
+      "reason": "Per-module query entry point that shares a name; not a reusable helper."
     }
   ],
   "allowlistNote": "The allowlist is a baseline of copies that existed when the lint was added. It is not approval to add more: new entries need a specific reason, and count must match the occurrences exactly."
