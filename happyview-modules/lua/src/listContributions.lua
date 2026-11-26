@@ -34,13 +34,6 @@ local function contribution_authors()
   return authors
 end
 
-local function decode_contribution_cursor(token, direction)
-  return decode_cursor(token, direction, function(value)
-    local valid = valid_contribution_uri(value.u)
-    return valid and valid_datetime(value.t)
-  end)
-end
-
 local function contribution_sort_key()
   local created = "contribution.record::jsonb->>'createdAt'"
   local zoned = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
@@ -88,7 +81,7 @@ function handle()
   local authors = contribution_authors()
   local limit = parse_list_limit(params)
   local direction = parse_sort_direction(params)
-  local cursor = decode_contribution_cursor(scalar(params, "cursor"), direction)
+  local cursor = decode_record_cursor(scalar(params, "cursor"), direction, valid_contribution_uri)
   local contributions, next_cursor = query_contributions(authors, limit, cursor, direction)
   local response = { contributions = toarray(contributions) }
   if next_cursor then response.cursor = next_cursor end

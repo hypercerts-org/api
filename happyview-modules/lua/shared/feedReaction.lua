@@ -20,13 +20,6 @@ local function feed_reaction_query(reaction, sql, values)
   return result
 end
 
-local function feed_reaction_decode_cursor(token, direction, collection)
-  return decode_cursor(token, direction, function(value)
-    local valid, cursor_collection = valid_record_uri(value.u)
-    return valid and cursor_collection == collection and valid_datetime(value.t)
-  end)
-end
-
 local function feed_reaction_query_page(reaction, mode, identity, limit, cursor, direction)
   local filters, values = { "collection = $1" }, { reaction.collection, identity }
   if mode == "subject" then
@@ -100,7 +93,7 @@ local function feed_reaction_list(reaction_name, mode)
 
   local limit = parse_list_limit(params)
   local direction = parse_sort_direction(params)
-  local cursor = feed_reaction_decode_cursor(scalar(params, "cursor"), direction, reaction.collection)
+  local cursor = decode_record_cursor(scalar(params, "cursor"), direction, reaction.collection)
   local sql, values = feed_reaction_query_page(reaction, mode, identity, limit, cursor, direction)
   local rows = feed_reaction_query(reaction, sql, values)
 

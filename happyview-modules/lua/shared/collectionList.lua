@@ -52,13 +52,6 @@ local function collection_array(key, kind)
   return unique
 end
 
-local function collection_list_cursor_decode(token, direction)
-  return decode_cursor(token, direction, function(value)
-    local valid, collection = valid_bounded_record_uri(value.u)
-    return valid_datetime(value.t) and valid and collection == COLLECTION
-  end)
-end
-
 local function collection_bind_values(values, items)
   local placeholders = {}
   for _, item in ipairs(items) do
@@ -217,7 +210,7 @@ local function collection_list_response(search_enabled)
   if not search_enabled then include_total = parse_include_total(params) end
   local direction = parse_sort_direction(params)
   local limit = parse_list_limit(params)
-  local cursor = collection_list_cursor_decode(scalar(params, "cursor"), direction)
+  local cursor = decode_record_cursor(scalar(params, "cursor"), direction, COLLECTION)
   local collections, next_cursor, total_count = collection_list_query({
     authors = authors,
     hasOrganizationRecord = has_organization_record,

@@ -45,7 +45,9 @@
         "../../lua/shared/query.lua",
         "../../lua/shared/scalarOrBoolean.lua",
         "../../lua/shared/listValidation.lua",
+        "../../lua/shared/cursorEncode.lua",
         "../../lua/shared/listQuery.lua",
+        "../../lua/shared/cursorToken.lua",
         "../../lua/shared/listCursor.lua",
         "../../lua/shared/listWhere.lua",
         "../../lua/shared/includeTotal.lua",
@@ -83,7 +85,9 @@
         "../../lua/shared/query.lua",
         "../../lua/shared/scalarOrBoolean.lua",
         "../../lua/shared/listValidation.lua",
+        "../../lua/shared/cursorEncode.lua",
         "../../lua/shared/listQuery.lua",
+        "../../lua/shared/cursorToken.lua",
         "../../lua/shared/listCursor.lua",
         "../../lua/shared/listWhere.lua",
         "../../lua/shared/includeTotal.lua",
@@ -107,6 +111,8 @@
         "../../lua/shared/activityProjection.lua",
         "../../lua/shared/featureProjection.lua",
         "../../lua/shared/listValidation.lua",
+        "../../lua/shared/cursorEncode.lua",
+        "../../lua/shared/cursorToken.lua",
         "../../lua/shared/collectionItems.lua"
       ],
       "config": {

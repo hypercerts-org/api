@@ -36,19 +36,12 @@ local function workscope_tag_array(key)
   return unique
 end
 
-local function workscope_tag_decode_cursor(token, direction)
-  return decode_cursor(token, direction, function(value)
-    local valid, collection = valid_record_uri(value.u)
-    return valid_datetime(value.t) and valid and collection == WORKSCOPE_TAG
-  end)
-end
-
 local function workscope_tag_list()
   keys_only(params, { authors = true, sortDirection = true, limit = true, cursor = true })
   local authors = workscope_tag_array("authors")
   local direction = parse_sort_direction(params)
   local limit = parse_list_limit(params)
-  local cursor = workscope_tag_decode_cursor(scalar(params, "cursor"), direction)
+  local cursor = decode_record_cursor(scalar(params, "cursor"), direction, WORKSCOPE_TAG)
 
   local where, values = { "workscope_tag.collection = $1" }, { WORKSCOPE_TAG }
   if authors then add_in(where, values, "workscope_tag.did", authors) end

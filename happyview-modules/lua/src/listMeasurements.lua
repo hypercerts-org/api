@@ -50,13 +50,6 @@ local function bind_values(values, items)
   return placeholders
 end
 
-local function decode_measurement_cursor(token, direction)
-  return decode_cursor(token, direction, function(value)
-    local valid, collection = valid_record_uri(value.u)
-    return valid_datetime(value.t) and valid and collection == MEASUREMENT
-  end)
-end
-
 local function measurement_list_query(authors, subjects, limit, cursor, direction)
   local where, values = { "measurement.collection = $1" }, { MEASUREMENT }
   if authors then add_in(where, values, "measurement.did", authors) end
@@ -121,7 +114,7 @@ function handle()
   local subjects = measurement_array("subjects", "at-uri")
   local direction = parse_sort_direction(params)
   local limit = parse_list_limit(params)
-  local cursor = decode_measurement_cursor(scalar(params, "cursor"), direction)
+  local cursor = decode_record_cursor(scalar(params, "cursor"), direction, MEASUREMENT)
   local measurements, next_cursor = measurement_list_query(authors, subjects, limit, cursor, direction)
 
   local response = { measurements = toarray(measurements) }

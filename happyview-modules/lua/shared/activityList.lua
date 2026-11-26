@@ -40,13 +40,6 @@ local function activity_array(key, format)
   return unique
 end
 
-local function decode_activity_cursor(token, direction)
-  return decode_cursor(token, direction, function(value)
-    local valid, collection = valid_record_uri(value.u)
-    return valid_datetime(value.t) and valid and collection == ACTIVITY
-  end)
-end
-
 local function bind_values(values, items)
   local placeholders = {}
   for _, item in ipairs(items) do
@@ -193,7 +186,7 @@ local function activity_list_response(search_enabled)
   if not search_enabled then include_total = parse_include_total(params) end
   local direction = parse_sort_direction(params)
   local limit = parse_list_limit(params)
-  local cursor = decode_activity_cursor(scalar(params, "cursor"), direction)
+  local cursor = decode_record_cursor(scalar(params, "cursor"), direction, ACTIVITY)
   local activities, next_cursor, total_count = activity_query(
     authors, has_organization_record, contributors, involved_actors, uris, search, limit, cursor, direction, include_total)
   local response = { activities = toarray(activities) }

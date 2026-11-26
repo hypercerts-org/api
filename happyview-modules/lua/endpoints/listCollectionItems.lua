@@ -295,6 +295,22 @@ local function parse_list_limit(params)
   return limit
 end
 
+-- Hex-encodes the JSON of a cursor table.
+local function cursor_encode(value)
+  local encoded = json.encode(value)
+  return (encoded:gsub(".", function(char) return string.format("%02x", string.byte(char)) end))
+end
+
+-- The hex prologue every list cursor shape shares: rejects empty, over-long (8192),
+-- odd-length and non-lowercase-hex tokens with "cursor is malformed" and returns the
+-- decoded JSON text. Shape and JSON checks stay with each cursor's own decoder.
+local function decode_hex_cursor_token(token)
+  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
+    invalid("cursor is malformed")
+  end
+  return (token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end))
+end
+
 local ITEM_COLLECTION = "org.hypercerts.collection"
 local ITEM_ACTIVITY = "org.hypercerts.claim.activity"
 local ITEM_FEATURE = "org.hypercerts.entity.feature"
@@ -302,10 +318,7 @@ local ITEM_NULL = json.decode("null")
 
 local function collection_items_cursor_decode(token, collection_uri)
   if token == nil then return nil end
-  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
-    invalid("cursor is malformed")
-  end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
+  local decoded = decode_hex_cursor_token(token)
   local ok, value = pcall(json.decode, decoded)
   if not ok or type(value) ~= "table" or value.v ~= 1 or value.u ~= collection_uri
     or type(value.i) ~= "number" or value.i < 1 or value.i % 1 ~= 0 then
@@ -315,12 +328,6 @@ local function collection_items_cursor_decode(token, collection_uri)
     if key ~= "v" and key ~= "u" and key ~= "i" then invalid("cursor is malformed") end
   end
   return value
-end
-
-local function collection_items_cursor_encode(value)
-  return (json.encode(value):gsub(".", function(char)
-    return string.format("%02x", string.byte(char))
-  end))
 end
 
 local function collection_items_query(sql, values)
@@ -483,7 +490,7 @@ local function collection_items_response()
 
   local response = { items = toarray(page) }
   if finish < #source_items then
-    response.cursor = collection_items_cursor_encode({ v = 1, u = collection_uri, i = finish })
+    response.cursor = cursor_encode({ v = 1, u = collection_uri, i = finish })
   end
   return response
 end

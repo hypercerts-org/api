@@ -60,13 +60,6 @@ local function funding_receipt_array(key, format)
   return unique
 end
 
-local function decode_funding_receipt_cursor(token, direction)
-  return decode_cursor(token, direction, function(value)
-    local valid, collection = valid_record_uri(value.u)
-    return valid_datetime(value.t) and valid and collection == RECEIPT
-  end)
-end
-
 local function bind_funding_receipt_values(values, items)
   local placeholders = {}
   for _, item in ipairs(items) do
@@ -185,7 +178,7 @@ local function funding_receipts_response()
 
   local direction = parse_sort_direction(params)
   local limit = parse_list_limit(params)
-  local cursor = decode_funding_receipt_cursor(scalar(params, "cursor"), direction)
+  local cursor = decode_record_cursor(scalar(params, "cursor"), direction, RECEIPT)
   local include_total = parse_include_total(params)
   local receipts, next_cursor, total_count = query_funding_receipts(
     authors, uris, from_values, to_values, for_uris, transaction_ids, limit, cursor, direction, include_total)

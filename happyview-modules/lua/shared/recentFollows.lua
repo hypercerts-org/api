@@ -9,11 +9,6 @@ end
 
 local recent_valid_datetime = valid_datetime
 
-local function recent_cursor_encode(value)
-  local encoded = json.encode(value)
-  return (encoded:gsub(".", function(char) return string.format("%02x", string.byte(char)) end))
-end
-
 local function recent_cursor_decode(token, before)
   if not token then return nil end
   if #token % 2 ~= 0 or token:find("[^0-9a-f]") then invalid("cursor is malformed") end
@@ -106,7 +101,7 @@ local function recent_follows_response()
   local response = { follows = toarray(follows) }
   if has_more then
     local last = rows[#rows]
-    response.cursor = recent_cursor_encode({ v = 1, t = last.sort_timestamp, u = last.uri, b = before or false })
+    response.cursor = cursor_encode({ v = 1, t = last.sort_timestamp, u = last.uri, b = before or false })
   end
   return response
 end

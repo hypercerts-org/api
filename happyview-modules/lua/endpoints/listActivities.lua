@@ -290,15 +290,26 @@ local function created_at_sort(alias)
     "::timestamptz, " .. created_at .. "::timestamptz) END"
 end
 
+-- Hex-encodes the JSON of a cursor table.
+local function cursor_encode(value)
+  local encoded = json.encode(value)
+  return (encoded:gsub(".", function(char) return string.format("%02x", string.byte(char)) end))
+end
+
 local function parse_sort_direction(params)
   local direction = scalar(params, "sortDirection") or "desc"
   if direction ~= "asc" and direction ~= "desc" then invalid("sortDirection must be 'asc' or 'desc'") end
   return direction
 end
 
-local function cursor_encode(value)
-  local encoded = json.encode(value)
-  return (encoded:gsub(".", function(char) return string.format("%02x", string.byte(char)) end))
+-- The hex prologue every list cursor shape shares: rejects empty, over-long (8192),
+-- odd-length and non-lowercase-hex tokens with "cursor is malformed" and returns the
+-- decoded JSON text. Shape and JSON checks stay with each cursor's own decoder.
+local function decode_hex_cursor_token(token)
+  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
+    invalid("cursor is malformed")
+  end
+  return (token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end))
 end
 
 -- Decodes a hex-encoded {v, d, t, u} list cursor. Rejects malformed tokens, other
@@ -307,10 +318,7 @@ end
 -- cap or accept extra keys.
 local function decode_cursor(token, direction, validate_value)
   if token == nil then return nil end
-  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
-    invalid("cursor is malformed")
-  end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
+  local decoded = decode_hex_cursor_token(token)
   local ok, value = pcall(json.decode, decoded)
   if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
     or type(value.t) ~= "string" or type(value.u) ~= "string" then
@@ -321,6 +329,19 @@ local function decode_cursor(token, direction, validate_value)
   end
   if not validate_value(value) then invalid("cursor is malformed") end
   return value
+end
+
+-- decode_cursor for the common case: t is a datetime and u a record URI.
+-- record_uri is the collection NSID u must belong to, or a predicate(uri) -> boolean
+-- for endpoints with stricter URI rules. valid_t(t) defaults to valid_datetime.
+local function decode_record_cursor(token, direction, record_uri, valid_t)
+  valid_t = valid_t or valid_datetime
+  return decode_cursor(token, direction, function(value)
+    if not valid_t(value.t) then return false end
+    if type(record_uri) == "function" then return record_uri(value.u) end
+    local valid, collection = valid_record_uri(value.u)
+    return valid and collection == record_uri
+  end)
 end
 
 -- Adds `column IN ($n, ...)` to where, binding items; an empty list matches nothing.
@@ -387,13 +408,6 @@ local function activity_array(key, format)
     end
   end
   return unique
-end
-
-local function decode_activity_cursor(token, direction)
-  return decode_cursor(token, direction, function(value)
-    local valid, collection = valid_record_uri(value.u)
-    return valid_datetime(value.t) and valid and collection == ACTIVITY
-  end)
 end
 
 local function bind_values(values, items)
@@ -542,7 +556,7 @@ local function activity_list_response(search_enabled)
   if not search_enabled then include_total = parse_include_total(params) end
   local direction = parse_sort_direction(params)
   local limit = parse_list_limit(params)
-  local cursor = decode_activity_cursor(scalar(params, "cursor"), direction)
+  local cursor = decode_record_cursor(scalar(params, "cursor"), direction, ACTIVITY)
   local activities, next_cursor, total_count = activity_query(
     authors, has_organization_record, contributors, involved_actors, uris, search, limit, cursor, direction, include_total)
   local response = { activities = toarray(activities) }

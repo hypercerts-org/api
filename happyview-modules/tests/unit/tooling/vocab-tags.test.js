@@ -15,6 +15,7 @@ const sharedSources = [
   "lua/shared/recordIdentifier.lua",
   "lua/shared/datetimeValidation.lua",
   "lua/shared/listValidation.lua",
+  "lua/shared/cursorEncode.lua",
   "lua/shared/listQuery.lua",
   "lua/shared/recordView.lua",
   "lua/shared/actorView.lua",

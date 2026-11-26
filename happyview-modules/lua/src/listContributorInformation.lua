@@ -48,12 +48,6 @@ local function contributor_information_array(params, key, validate, description)
   return unique
 end
 
-local function contributor_information_cursor_decode(token, direction)
-  return decode_cursor(token, direction, function(value)
-    return contributor_information_uri(value.u) and valid_datetime(value.t)
-  end)
-end
-
 local function preserve_contributor_author_timestamps(author)
   local null = json.decode("null")
   for _, field in ipairs({ "profile", "organization" }) do
@@ -120,7 +114,7 @@ function handle()
   local authors = contributor_information_array(params, "authors", valid_did, "valid DIDs")
   local limit = parse_list_limit(params)
   local direction = parse_sort_direction(params)
-  local cursor = contributor_information_cursor_decode(scalar(params, "cursor"), direction)
+  local cursor = decode_record_cursor(scalar(params, "cursor"), direction, contributor_information_uri)
   local views, next_cursor = query_contributor_information(authors, limit, cursor, direction)
   local response = { contributorInformation = toarray(views) }
   if next_cursor then response.cursor = next_cursor end

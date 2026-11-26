@@ -48,13 +48,6 @@ local function acknowledgement_array(key, format)
   return unique
 end
 
-local function decode_acknowledgement_cursor(token, direction)
-  return decode_cursor(token, direction, function(value)
-    local valid, collection = valid_record_uri(value.u)
-    return valid_cursor_timestamp(value.t) and valid and collection == ACKNOWLEDGEMENT
-  end)
-end
-
 local function acknowledgement_sort_expression()
   local created = "acknowledgement.record::jsonb->>'createdAt'"
   local pattern = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
@@ -106,7 +99,7 @@ local function list_acknowledgements()
   local subjects = acknowledgement_array("subjects", "at-uri")
   local direction = parse_sort_direction(params)
   local limit = parse_list_limit(params)
-  local cursor = decode_acknowledgement_cursor(scalar(params, "cursor"), direction)
+  local cursor = decode_record_cursor(scalar(params, "cursor"), direction, ACKNOWLEDGEMENT, valid_cursor_timestamp)
   local rows = acknowledgement_list_query(authors, subjects, limit, cursor, direction)
   local acknowledgements = {}
   for index = 1, math.min(#rows, limit) do

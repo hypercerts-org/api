@@ -71,6 +71,12 @@ local function parse_list_limit(params)
   return limit
 end
 
+-- Hex-encodes the JSON of a cursor table.
+local function cursor_encode(value)
+  local encoded = json.encode(value)
+  return (encoded:gsub(".", function(char) return string.format("%02x", string.byte(char)) end))
+end
+
 -- Some clients wrote account follows whose `via` points at the followed
 -- account's own org.hypercerts.collection, using the account follow as a
 -- project follow. Those records stay indexed but are not account follows, so
@@ -97,11 +103,6 @@ local function is_recent_follow_uri(value)
 end
 
 local recent_valid_datetime = valid_datetime
-
-local function recent_cursor_encode(value)
-  local encoded = json.encode(value)
-  return (encoded:gsub(".", function(char) return string.format("%02x", string.byte(char)) end))
-end
 
 local function recent_cursor_decode(token, before)
   if not token then return nil end
@@ -195,7 +196,7 @@ local function recent_follows_response()
   local response = { follows = toarray(follows) }
   if has_more then
     local last = rows[#rows]
-    response.cursor = recent_cursor_encode({ v = 1, t = last.sort_timestamp, u = last.uri, b = before or false })
+    response.cursor = cursor_encode({ v = 1, t = last.sort_timestamp, u = last.uri, b = before or false })
   end
   return response
 end

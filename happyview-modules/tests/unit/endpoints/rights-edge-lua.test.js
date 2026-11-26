@@ -21,7 +21,9 @@ async function endpointSources(name) {
     shared.push(
       "lua/shared/datetimeValidation.lua",
       "lua/shared/listValidation.lua",
+      "lua/shared/cursorEncode.lua",
       "lua/shared/listQuery.lua",
+      "lua/shared/cursorToken.lua",
       "lua/shared/listCursor.lua",
       "lua/shared/listWhere.lua",
       "lua/shared/createdAtSort.lua",

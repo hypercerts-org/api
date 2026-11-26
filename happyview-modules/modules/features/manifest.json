@@ -47,6 +47,7 @@
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/datetimeValidation.lua",
         "../../lua/shared/listValidation.lua",
+        "../../lua/shared/cursorEncode.lua",
         "../../lua/shared/listQuery.lua",
         "../../lua/shared/listWhere.lua",
         "../../lua/shared/featureValidation.lua",
