@@ -1,8 +1,8 @@
 # @hypercerts-org/api
 
-## 1.0.0
+## 1.0.0 (published by mistake; superseded by 0.6.0)
 
-### Major Changes
+### Major Changes (breaking, but released as part of 0.6.0)
 
 - [#103](https://github.com/hypercerts-org/api/pull/103) [`f1cf4ab`](https://github.com/hypercerts-org/api/commit/f1cf4abf4853d3a12862c3c1cfaf05fded7df375) Thanks [@Kzoeps](https://github.com/Kzoeps)! - Added DID-only `app.certified.actor.getActor` and `getActors` queries.
 
