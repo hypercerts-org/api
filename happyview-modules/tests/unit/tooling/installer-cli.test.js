@@ -108,10 +108,7 @@ test("importing the installer does not run the CLI or require configuration", ()
 
 test("CLI writes per-asset progress to stderr and keeps its JSON result on stdout", async () => {
   const server = createServer((request, response) => {
-    if (request.method === "GET" && request.url === "/admin/script-variables") {
-      response.writeHead(200, { "content-type": "application/json" });
-      response.end("[]");
-    } else if (request.method === "GET") {
+    if (request.method === "GET") {
       response.writeHead(404).end();
     } else {
       response.writeHead(204).end();
@@ -130,7 +127,6 @@ test("CLI writes per-asset progress to stderr and keeps its JSON result on stdou
         ...process.env,
         HAPPYVIEW_BASE_URL: `http://127.0.0.1:${address.port}`,
         HAPPYVIEW_ADMIN_TOKEN: "hv_cli-test-token",
-        HYPERCERTS_HANDLE_RESOLVER_URL: "https://resolver.example",
       },
     });
     let stdout = "";

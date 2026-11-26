@@ -108,7 +108,12 @@ if (hasModule("modules/location/manifest.json"))
       "lex:app.certified.actor.organization",
     );
     assert.deepEqual(shared.defs.actorView.required, ["did", "profile", "organization"]);
-    assert.deepEqual(shared.defs.actorView.nullable, ["profile", "organization"]);
+    assert.deepEqual(shared.defs.actorView.nullable, [
+      "profile",
+      "organization",
+      "location",
+      "handle",
+    ]);
     assert.equal(
       shared.defs.actorView.properties.profile.ref,
       "lex:org.hypercerts.api.defs#profileView",
@@ -140,88 +145,62 @@ if (hasModule("modules/location/manifest.json"))
   });
 
 if (hasModule("modules/organization/manifest.json"))
-  test("organization query Lexicons keep the shared defs unchanged and reuse the required nullable actor view", async () => {
+  test("organization queries use the shared actor view without changing their result envelopes or errors", async () => {
     const { lexicons, documents } = await validatePackageLexicons();
     const byId = new Map(documents.map((document) => [document.id, document]));
-    const shared = byId.get("org.hypercerts.api.defs");
-    const getOrganization = byId.get("app.certified.actor.getOrganization");
-    const getOrganizations = byId.get("app.certified.actor.getOrganizations");
-    const listOrganizations = byId.get("app.certified.actor.listOrganizations");
-    const searchOrganizations = byId.get("app.certified.actor.searchOrganizations");
-    assert.ok(
-      shared && getOrganization && getOrganizations && listOrganizations && searchOrganizations,
-    );
-    assert.equal(
-      shared.defs.organizationActorView,
-      undefined,
-      "avoid changing the installed shared defs Lexicon",
-    );
+    const get = byId.get("app.certified.actor.getOrganization");
+    const batch = byId.get("app.certified.actor.getOrganizations");
+    const list = byId.get("app.certified.actor.listOrganizations");
+    const search = byId.get("app.certified.actor.searchOrganizations");
+    const ref = "lex:org.hypercerts.api.defs#actorView";
 
-    const actorView = lexicons.getDefOrThrow(
-      "app.certified.actor.getOrganization#organizationActorView",
-    );
-    assert.deepEqual(actorView.required, ["did", "profile", "organization"]);
-    assert.deepEqual(actorView.nullable, ["profile", "location"]);
-    assert.equal(actorView.properties.profile.ref, "lex:org.hypercerts.api.defs#profileView");
-    assert.equal(
-      actorView.properties.location.ref,
-      "lex:app.certified.actor.getOrganization#locationRecordView",
-    );
-    assert.equal(
-      actorView.properties.organization.ref,
-      "lex:org.hypercerts.api.defs#organizationView",
-    );
-    assert.equal(
-      getOrganization.defs.output.properties.actor.ref,
-      "lex:app.certified.actor.getOrganization#organizationActorView",
-    );
-    const organizationQueryFailed = {
-      name: "OrganizationQueryFailed",
-      description:
-        "The indexed organization sidecar, associated profile or location could not be queried.",
-    };
-    assert.deepEqual(
-      getOrganization.defs.main.errors.map(({ name }) => name),
-      ["InvalidRequest", "RecordNotFound", "OrganizationQueryFailed"],
-    );
-    assert.deepEqual(
-      getOrganization.defs.main.errors.find(({ name }) => name === "OrganizationQueryFailed"),
-      organizationQueryFailed,
-    );
+    assert.equal(get.defs.output.properties.actor.ref, ref);
+    assert.equal(batch.defs.organizationResult.properties.organization.ref, ref);
+    assert.equal(list.defs.output.properties.actors.items.ref, ref);
+    assert.equal(search.defs.output.properties.actors.items.ref, ref);
 
-    assert.equal(
-      lexicons.getDefOrThrow(getOrganizations.defs.output.properties.organizations.items.ref).type,
-      "object",
-    );
-    assert.equal(
-      lexicons.getDefOrThrow(getOrganizations.defs.organizationResult.properties.organization.ref)
-        .type,
-      "object",
-    );
-
-    for (const query of [listOrganizations, searchOrganizations]) {
+    for (const query of [get, batch, list, search]) {
       assert.deepEqual(
         query.defs.main.errors.map(({ name }) => name),
-        ["InvalidRequest", "OrganizationQueryFailed"],
-      );
-      assert.deepEqual(
-        query.defs.main.errors.find(({ name }) => name === "OrganizationQueryFailed"),
-        organizationQueryFailed,
-      );
-      assert.equal(query.defs.main.parameters.properties.organizationTypes.maxLength, 100);
-      assert.equal(
-        query.defs.output.properties.actors.items.ref,
-        "lex:app.certified.actor.getOrganization#organizationActorView",
+        query === get
+          ? ["InvalidRequest", "RecordNotFound", "OrganizationQueryFailed"]
+          : ["InvalidRequest", "OrganizationQueryFailed"],
       );
     }
-    assert.equal(
-      lexicons.getDefOrThrow(listOrganizations.defs.output.properties.actors.items.ref).type,
-      "object",
-    );
-    assert.equal(
-      lexicons.getDefOrThrow(searchOrganizations.defs.output.properties.actors.items.ref).type,
-      "object",
-    );
+    lexicons.assertValidXrpcOutput(batch.id, {
+      organizations: [{ actor: "did:web:unindexed.example", organization: null }],
+    });
+  });
+
+if (hasModule("modules/actor/manifest.json"))
+  test("DID actor queries declare ordered batch inputs and reuse the nullable shared output", async () => {
+    const { lexicons, documents } = await validatePackageLexicons();
+    const byId = new Map(documents.map((document) => [document.id, document]));
+    const get = byId.get("app.certified.actor.getActor");
+    const batch = byId.get("app.certified.actor.getActors");
+    const ref = "lex:org.hypercerts.api.defs#actorView";
+    const actorView = lexicons.getDefOrThrow(ref);
+
+    assert.equal(get.defs.main.parameters.properties.actor.format, "did");
+    const actors = batch.defs.main.parameters.properties.actors;
+    assert.equal(actors.items.format, "did");
+    assert.equal(actors.minLength, 1);
+    assert.equal(actors.maxLength, 100);
+    assert.equal(get.defs.output.properties.actor.ref, ref);
+    assert.equal(batch.defs.output.properties.actors.items.ref, ref);
+    assert.equal(actorView.properties.handle.format, "handle");
+    const rawLocation = lexicons.getDefOrThrow(actorView.properties.location.ref);
+    assert.equal(rawLocation.properties.record.ref, "lex:app.certified.location");
+    assert.equal(rawLocation.properties.author, undefined);
+
+    const emptyActor = {
+      did: "did:web:unindexed.example",
+      profile: null,
+      organization: null,
+      location: null,
+    };
+    lexicons.assertValidXrpcOutput(get.id, { actor: emptyActor });
+    lexicons.assertValidXrpcOutput(batch.id, { actors: [emptyActor, emptyActor] });
   });
 
 if (hasModule("modules/workscope-tags/manifest.json"))
@@ -446,7 +425,6 @@ test("contribution query Lexicons expose exact lookup and publisher-based paging
       .record.ref,
     "lex:org.hypercerts.claim.contribution",
   );
-  assert.deepEqual(shared.defs.actorView.nullable, ["profile", "organization"]);
 });
 
 if (hasModule("modules/entity-follow/manifest.json"))

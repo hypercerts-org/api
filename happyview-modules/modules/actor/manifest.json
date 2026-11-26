@@ -1,0 +1,65 @@
+{
+  "assets": [
+    {
+      "kind": "lexicon",
+      "id": "app.certified.actor.getActor",
+      "path": "../../lexicons/app.certified.actor.getActor.json",
+      "config": {
+        "backfill": false
+      },
+      "dependsOn": ["org.hypercerts.api.defs"]
+    },
+    {
+      "kind": "lexicon",
+      "id": "app.certified.actor.getActors",
+      "path": "../../lexicons/app.certified.actor.getActors.json",
+      "config": {
+        "backfill": false
+      },
+      "dependsOn": ["org.hypercerts.api.defs"]
+    },
+    {
+      "kind": "script",
+      "id": "xrpc.query:app.certified.actor.getActor",
+      "path": "../../lua/endpoints/getActor.lua",
+      "sourcePath": "../../lua/src/getActor.lua",
+      "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/query.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/recordView.lua",
+        "../../lua/shared/actorView.lua",
+        "../../lua/shared/actorLocation.lua",
+        "../../lua/shared/identityResolver.lua",
+        "../../lua/shared/actorHandle.lua",
+        "../../lua/shared/actorLookup.lua"
+      ],
+      "config": {
+        "script_type": "lua",
+        "description": "Certified actor lookup handler"
+      },
+      "dependsOn": ["app.certified.actor.getActor"]
+    },
+    {
+      "kind": "script",
+      "id": "xrpc.query:app.certified.actor.getActors",
+      "path": "../../lua/endpoints/getActors.lua",
+      "sourcePath": "../../lua/src/getActors.lua",
+      "sharedSourcePaths": [
+        "../../lua/shared/didValidation.lua",
+        "../../lua/shared/query.lua",
+        "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/recordView.lua",
+        "../../lua/shared/actorView.lua",
+        "../../lua/shared/actorLocation.lua",
+        "../../lua/shared/actorLookup.lua",
+        "../../lua/shared/actorBatchParams.lua"
+      ],
+      "config": {
+        "script_type": "lua",
+        "description": "Certified actor batch lookup handler"
+      },
+      "dependsOn": ["app.certified.actor.getActors"]
+    }
+  ]
+}

@@ -292,7 +292,7 @@ export async function collectDocumentationSources(options = {}) {
 async function main() {
   if (process.argv.includes("--help") || process.argv.includes("-h")) {
     console.log(
-      `${usage}\nRefreshes docs/sources/index.json, committed Lexicon snapshots, OpenAPI, and coverage from happyview-modules/manifest.json.`,
+      `${usage}\nRefreshes docs/sources/index.json, committed Lexicon snapshots, and OpenAPI from happyview-modules/manifest.json.`,
     );
     return;
   }

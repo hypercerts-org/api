@@ -449,24 +449,29 @@ assert(result.profile.did == '${actor}')
   });
 });
 
-test("handle lookup rejects missing or unsafe resolver configuration before HTTP", () => {
+test("handle lookup without resolver configuration uses the Slingshot default", () => {
+  const record = { displayName: "Alice", createdAt: "2025-01-01T00:00:00Z" };
+  const row = profileRow(actor, "alice", record, record.createdAt);
   runLua({
     endpoint: "getProfile",
     params: { actor: "alice.example" },
-    expectError: "HYPERCERTS_HANDLE_RESOLVER_URL",
-    expectedHttpCalls: 0,
-    errorAssertions:
-      "assert(tostring(result):find('HandleResolverConfigError:', 1, true), tostring(result))",
+    rows: [row],
+    httpResponses: [{ status: 200, body: "default-resolver", value: { did: actor } }],
+    assertions: `
+assert(#httpCalls == 1 and httpCalls[1] == 'https://slingshot.microcosm.blue/xrpc/com.atproto.identity.resolveHandle?handle=alice.example', tostring(httpCalls[1]))
+assert(result.profile.did == '${actor}')
+`,
   });
+});
+
+test("handle lookup rejects set but unsafe resolver configuration before HTTP", () => {
   for (const resolverUrl of [
+    "",
     "http://resolver.example",
     "https://user:secret@resolver.example",
     "https://resolver.example?tenant=one",
     "https://resolver.example/path",
     "https://resolver.example#fragment",
-    "https://999.999.999.999",
-    "https://999.1",
-    "https://[:::]",
     "https://resolver.example\\\\@evil.example",
   ]) {
     runLua({

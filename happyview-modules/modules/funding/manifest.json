@@ -58,6 +58,7 @@
         "../../lua/shared/listCursor.lua",
         "../../lua/shared/listWhere.lua",
         "../../lua/shared/createdAtSort.lua",
+        "../../lua/shared/includeTotal.lua",
         "../../lua/shared/fundingReceiptList.lua"
       ],
       "config": {

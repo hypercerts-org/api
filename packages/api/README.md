@@ -31,6 +31,10 @@ The package exports [lex's NSID namespace tree](https://www.npmjs.com/package/@a
 
 ESM only. `@atproto/lex` and `@hypercerts-org/lexicon` are peer dependencies; install versions in the declared ranges.
 
+## Actor views
+
+Use `app.certified.actor.getActor` or `getActors` with DIDs. The shared `org.hypercerts.api.defs.ActorView` replaces `app.certified.actor.getOrganization.OrganizationActorView`; move imports of that type and `LocationRecordView` to `org.hypercerts.api.defs`. Narrow `actor.organization` before accessing its record. The shared type allows null even where the existing organization endpoints still return a populated sidecar.
+
 ## Response validation
 
 `Client` validates responses against the Lexicons by default. The indexer may still serve records that fail their Lexicon, and one such record fails a whole list response. Until it stops doing so (TECH-791), read with `new Client(url, { validateResponse: false })`. With validation off, responses are typed but not checked, and schema defaults are not applied: a record the indexer serves can differ from its type, so treat fields defensively.

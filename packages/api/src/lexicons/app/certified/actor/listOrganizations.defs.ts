@@ -3,7 +3,7 @@
  */
 
 import { l } from "@atproto/lex";
-import * as ActorGetOrganization from "./getOrganization.defs.js";
+import * as ApiDefs from "../../../org/hypercerts/api/defs.defs.js";
 
 const $nsid = "app.certified.actor.listOrganizations";
 
@@ -31,7 +31,7 @@ type $lxm = typeof $lxm;
 
 export { $lxm };
 
-type Output = { $type?: "app.certified.actor.listOrganizations#output";"actors":(ActorGetOrganization.OrganizationActorView)[];
+type Output = { $type?: "app.certified.actor.listOrganizations#output";"actors":(ApiDefs.ActorView)[];
 
   /**
    * Opaque cursor for the next page; omitted when there is no next page.
@@ -40,6 +40,6 @@ type Output = { $type?: "app.certified.actor.listOrganizations#output";"actors":
 
 export type { Output };
 
-const output = /*#__PURE__*/ l.typedObject<Output>($nsid, "output", /*#__PURE__*/ l.object({"actors":/*#__PURE__*/ l.array(/*#__PURE__*/ l.ref<ActorGetOrganization.OrganizationActorView>((() => ActorGetOrganization.organizationActorView) as any), ),"cursor":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string())}));
+const output = /*#__PURE__*/ l.typedObject<Output>($nsid, "output", /*#__PURE__*/ l.object({"actors":/*#__PURE__*/ l.array(/*#__PURE__*/ l.ref<ApiDefs.ActorView>((() => ApiDefs.actorView) as any), ),"cursor":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string())}));
 
 export { output };

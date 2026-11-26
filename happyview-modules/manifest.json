@@ -87,6 +87,14 @@
       "packagePath": "lexicons/app/certified/actor/profile.json"
     },
     {
+      "id": "app.certified.actor.getActor",
+      "path": "lexicons/app.certified.actor.getActor.json"
+    },
+    {
+      "id": "app.certified.actor.getActors",
+      "path": "lexicons/app.certified.actor.getActors.json"
+    },
+    {
       "id": "app.certified.actor.getProfile",
       "path": "lexicons/app.certified.actor.getProfile.json"
     },
@@ -495,6 +503,7 @@
     "modules/shared/manifest.json",
     "modules/badge-definitions/manifest.json",
     "modules/badge-queries/manifest.json",
+    "modules/actor/manifest.json",
     "modules/profile/manifest.json",
     "modules/organization/manifest.json",
     "modules/activity/manifest.json",

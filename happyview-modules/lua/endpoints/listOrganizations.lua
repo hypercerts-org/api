@@ -96,27 +96,9 @@ end
 
 local PROFILE = "app.certified.actor.profile"
 local ORGANIZATION = "app.certified.actor.organization"
-local LOCATION = "app.certified.location"
 
-local function query(sql, values)
-  if db.backend() ~= "postgres" then error("OrganizationQueryFailed: organization API requires PostgreSQL", 0) end
-  local ok, result = pcall(db.raw, sql, values)
-  if not ok or type(result) ~= "table" then
-    error("OrganizationQueryFailed: organization lookup failed", 0)
-  end
-  return result
-end
-
-local function organization_actor_view(row)
-  return {
-    did = row.did,
-    profile = NULL,
-    organization = record_view(row),
-    location = NULL,
-  }
-end
-
-local function hydrate_profiles(actors)
+local function hydrate_actor_views(actors, run_query)
+  if #actors == 0 then return end
   local dids, seen = {}, {}
   for _, actor in ipairs(actors) do
     if not seen[actor.did] then
@@ -124,26 +106,29 @@ local function hydrate_profiles(actors)
       dids[#dids + 1] = actor.did
     end
   end
-
-  local values, marks = { PROFILE }, {}
-  for _, did in ipairs(dids) do
-    values[#values + 1] = did
-    marks[#marks + 1] = "$" .. #values
+  local profiles, organizations = {}, {}
+  local function load(collection, target)
+    local params, marks = { collection }, {}
+    for _, did in ipairs(dids) do
+      params[#params + 1] = did
+      marks[#marks + 1] = "$" .. #params
+    end
+    local rows = run_query("SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record FROM happyview_records WHERE collection = $1 AND rkey = 'self' AND did IN (" .. table.concat(marks, ",") .. ")", params)
+    for _, row in ipairs(rows) do target[row.did] = row end
   end
-  local rows = query(
-    "SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record " ..
-      "FROM happyview_records WHERE collection = $1 AND rkey = 'self' AND did IN (" .. table.concat(marks, ", ") .. ")",
-    values)
-  local profiles = {}
-  for _, row in ipairs(rows) do profiles[row.did] = row end
+  load(PROFILE, profiles)
+  load(ORGANIZATION, organizations)
   for _, actor in ipairs(actors) do
     actor.profile = profiles[actor.did] and record_view(profiles[actor.did]) or NULL
+    actor.organization = organizations[actor.did] and record_view(organizations[actor.did]) or NULL
   end
 end
 
--- The organization's location reference pins a CID, but the lookup matches the URI only, so a newer
--- indexed version is returned as-is. Anything that is not a location record URI yields no lookup.
+local LOCATION = "app.certified.location"
+
+-- Match only the URI: the indexed version may differ from the organization's pinned CID.
 local function location_uri(organization)
+  if organization == NULL then return nil end
   local reference = organization.record.location
   if type(reference) ~= "table" or type(reference.uri) ~= "string" then return nil end
   local valid, collection = valid_record_uri(reference.uri)
@@ -151,7 +136,7 @@ local function location_uri(organization)
   return nil
 end
 
-local function hydrate_locations(actors)
+local function hydrate_actor_locations(actors, run_query)
   local uris, seen = {}, {}
   for _, actor in ipairs(actors) do
     local uri = location_uri(actor.organization)
@@ -167,7 +152,7 @@ local function hydrate_locations(actors)
     values[#values + 1] = uri
     marks[#marks + 1] = "$" .. #values
   end
-  local rows = query(
+  local rows = run_query(
     "SELECT uri, did, cid, indexed_at::text AS indexed_at, record::text AS record " ..
       "FROM happyview_records WHERE collection = $1 AND uri IN (" .. table.concat(marks, ", ") .. ")",
     values)
@@ -179,10 +164,35 @@ local function hydrate_locations(actors)
   end
 end
 
-local function hydrate_organization_actors(actors)
-  if #actors == 0 then return end
-  hydrate_profiles(actors)
-  hydrate_locations(actors)
+local function actor_query(sql, values)
+  if db.backend() ~= "postgres" then error("ActorQueryFailed: actor API requires PostgreSQL", 0) end
+  local ok, result = pcall(db.raw, sql, values)
+  if not ok or type(result) ~= "table" then
+    error("ActorQueryFailed: indexed actor lookup failed", 0)
+  end
+  return result
+end
+
+-- run_query defaults to the actor API's own error mapping; the organization
+-- endpoints pass theirs so their documented OrganizationQueryFailed is kept.
+local function lookup_actors(dids, run_query)
+  run_query = run_query or actor_query
+  local actors = {}
+  for index, did in ipairs(dids) do
+    actors[index] = { did = did, location = NULL }
+  end
+  hydrate_actor_views(actors, run_query)
+  hydrate_actor_locations(actors, run_query)
+  return actors
+end
+
+local function query(sql, values)
+  if db.backend() ~= "postgres" then error("OrganizationQueryFailed: organization API requires PostgreSQL", 0) end
+  local ok, result = pcall(db.raw, sql, values)
+  if not ok or type(result) ~= "table" then
+    error("OrganizationQueryFailed: organization lookup failed", 0)
+  end
+  return result
 end
 
 local CREATED_AT_SORT_PATTERN = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
@@ -212,6 +222,14 @@ local function add_in(where, binds, column, items)
     marks[#marks + 1] = "$" .. #binds
   end
   where[#where + 1] = column .. " IN (" .. table.concat(marks, ", ") .. ")"
+end
+
+-- Hydrates page rows through the shared actor lookup, keeping this API's error
+-- mapping. Rows are unique per DID, so the result keeps row order.
+local function organization_actors(rows)
+  local dids = {}
+  for index, row in ipairs(rows) do dids[index] = row.did end
+  return lookup_actors(dids, query)
 end
 
 local function valid_organization_uri(value)
@@ -327,16 +345,12 @@ local function query_organizations(actors, organization_types, visibility, searc
   local more = #rows > limit
   if more then rows[#rows] = nil end
 
-  local actors_result = {}
-  for _, row in ipairs(rows) do
-    actors_result[#actors_result + 1] = organization_actor_view(row)
-  end
+  local actors_result = organization_actors(rows)
   local next_cursor
   if more then
     local last = rows[#rows]
     next_cursor = cursor_encode({ v = 1, d = direction, t = last.sort_timestamp, u = last.uri })
   end
-  hydrate_organization_actors(actors_result)
   return actors_result, next_cursor
 end
 

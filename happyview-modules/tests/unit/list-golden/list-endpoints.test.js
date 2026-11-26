@@ -126,12 +126,13 @@ test("every cursor-taking manifest query has a cursor fixture", assertEndpointCo
 
 test("fixtures reach real handler paths for every endpoint", assertFixturesReachHandlerPaths);
 
-test("activity and collection totals are opt-in and preserve page-only behavior when disabled", () => {
+test("activity, collection, and receipt totals are opt-in and preserve page-only behavior when disabled", () => {
   const cases = (endpoint, name) =>
     records.find((record) => record.endpoint === endpoint && record.case === name);
   for (const [endpoint, pageKey, queryError] of [
     ["org.hypercerts.claim.listActivities", "activities", "ActivityQueryFailed"],
     ["org.hypercerts.collection.listCollections", "collections", "CollectionQueryFailed"],
+    ["org.hypercerts.funding.listReceipts", "receipts", "ReceiptQueryFailed"],
   ]) {
     const ordinary = cases(endpoint, "default");
     const disabled = cases(endpoint, "filter:includeTotal=boolean:false");

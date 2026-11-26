@@ -50,6 +50,7 @@
         "../../lua/shared/query.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/profile.lua",
+        "../../lua/shared/identityResolver.lua",
         "../../lua/shared/profileLookup.lua"
       ],
       "config": {
