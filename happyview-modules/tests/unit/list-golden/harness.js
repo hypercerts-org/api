@@ -20,7 +20,8 @@ export class LuaTable {
 /** Encodes a JS value as a Lua table/literal for the runner program. */
 export function lua(value) {
   if (value instanceof LuaTable) {
-    return `{${value.entries.map(([key, item]) => `[${lua(key)}]=${lua(item)}`).join(",")}}`;
+    const fields = value.entries.map(([key, item]) => "[" + lua(key) + "]=" + lua(item));
+    return "{" + fields.join(",") + "}";
   }
   if (typeof value === "string") return JSON.stringify(value);
   if (typeof value === "number" || typeof value === "boolean") return String(value);
