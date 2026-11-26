@@ -177,6 +177,7 @@ test("receipt query Lexicons expose the accepted filters and endpoint-local view
       "cursor",
       "forUris",
       "from",
+      "includeTotal",
       "limit",
       "sortDirection",
       "to",

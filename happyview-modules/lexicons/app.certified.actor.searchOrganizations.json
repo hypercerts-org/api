@@ -63,7 +63,7 @@
       "properties": {
         "actors": {
           "type": "array",
-          "items": { "type": "ref", "ref": "app.certified.actor.getOrganization#organizationActorView" }
+          "items": { "type": "ref", "ref": "org.hypercerts.api.defs#actorView" }
         },
         "cursor": {
           "type": "string",

@@ -4,7 +4,15 @@ This package owns the shared API installer and build tooling, pinned upstream Le
 
 ## Endpoint reference
 
-Use the [`docs/` endpoint explorer](../docs/) and generated [OpenAPI reference](../docs/openapi.json) for endpoint names and contracts. The [coverage report](../docs/coverage.json) lists manifest-registered operations; inclusion does not imply runtime or deployment validation. See [docs/README.md](../docs/README.md) to run the explorer locally and refresh its committed reference.
+Use the [`docs/` endpoint explorer](../docs/) and generated [OpenAPI reference](../docs/openapi.json) for endpoint names and contracts. The explorer lists manifest-registered operations; inclusion does not imply runtime or deployment validation. See [docs/README.md](../docs/README.md) to run the explorer locally and refresh its committed reference.
+
+## Actor lookups
+
+`app.certified.actor.getActor` takes one DID in `actor`. `app.certified.actor.getActors` takes 1–100 repeated, unbracketed `actors` values and preserves input order and duplicates. Both return a view even if no indexed records exist for the DID, with nullable `profile`, `organization`, and `location`. Use `getProfile` if you need a profile lookup by handle. Both actor lookups use generic DID syntax validation: opaque percent sequences such as `did:example:abc%ZZ` are accepted, but a trailing `%` is not.
+
+Only `getActor` enriches its view with a handle, with one lookup. After reading the index, it sends the DID to the trusted HTTPS origin in `HYPERCERTS_HANDLE_RESOLVER_URL` (default `https://slingshot.microcosm.blue` when unset) using Slingshot's `blue.microcosm.identity.resolveMiniDoc` query. If the setting is unsupported, the lookup fails, or the response does not contain a valid handle for the same DID, `handle` is omitted. `getActors` and every other endpoint returning an actor view make no resolver calls and omit `handle`: HappyView Lua HTTP runs serially, so a batch lookup would add up latency, and Lua imposes no timeout. This does not change `getProfile`'s resolver call or any legacy response.
+
+The primary location matches the strong reference's AT-URI, not its pinned CID. It can return a different version than the one named by the CID, or null when no primary location is indexed. Images, blobs, and additional location references stay as stored. Database errors are not empty projections. Existing organization and embedded author responses are unchanged.
 
 ## Graph follow capability
 
@@ -48,13 +56,12 @@ git clone --depth 1 --branch '@hypercerts-org/happyview-modules@X.Y.Z' https://g
 cd hypercerts-api
 pnpm install --frozen-lockfile
 cd happyview-modules
-HYPERCERTS_HANDLE_RESOLVER_URL='https://resolver.example' \
 HAPPYVIEW_BASE_URL='https://your-happyview.example' \
 HAPPYVIEW_ADMIN_TOKEN='<scoped-admin-token>' \
 pnpm install:api
 ```
 
-For bundles that register `app.certified.actor.getProfile`, handle lookups require `HYPERCERTS_HANDLE_RESOLVER_URL` to be an HTTPS origin without credentials, path, query, or fragment. Interactive installs prompt when it is absent; noninteractive installs must set it. The admin token needs `script-variables:read`, and `script-variables:create` if the installer must create the setting. Existing settings are retained; HappyView exposes only a masked preview, so the installer cannot verify the configured value. See [CONTRIBUTING.md](../CONTRIBUTING.md) for release-note requirements and installer safety details.
+For bundles that register `app.certified.actor.getProfile`, handle lookups use `https://slingshot.microcosm.blue` by default. To use another resolver, set the HappyView script variable `HYPERCERTS_HANDLE_RESOLVER_URL` to an HTTPS origin without credentials, path, query, or fragment, directly in HappyView. The installer does not prompt for, read, create or change it, so an existing value is kept. If the variable is set but invalid, `getProfile` fails with `HandleResolverConfigError` for handle lookups; remove or fix it. See [CONTRIBUTING.md](../CONTRIBUTING.md) for release-note requirements and installer safety details.
 
 ## Deploys
 
@@ -69,8 +76,7 @@ Pushing to `main`, `staging` or `production` runs [`.github/workflows/deploy.yml
 Each environment must allow deployments from its branch and define its own values; never reuse a token across environments:
 
 - variable `HAPPYVIEW_BASE_URL`: that environment's HappyView origin
-- secret `HAPPYVIEW_ADMIN_TOKEN`: a scoped admin token for that HappyView, including `script-variables:read`
-- variable `HYPERCERTS_HANDLE_RESOLVER_URL`: needed only if that HappyView does not already have this setting; the token then also needs `script-variables:create`
+- secret `HAPPYVIEW_ADMIN_TOKEN`: a scoped admin token for that HappyView
 
 Pushes that only change docs, tests or tooling skip the deploy (`paths-ignore` in `deploy.yml`). To deploy by hand, run the workflow with `workflow_dispatch`: choose the environment, run it from that environment's branch, and optionally give a rollback commit SHA, which must be on that branch. A smoke step runs after every install, in the same deploy job, and checks the live API.
 

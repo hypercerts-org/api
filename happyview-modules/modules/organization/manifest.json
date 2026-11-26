@@ -8,12 +8,7 @@
         "backfill": false,
         "target_collection": "app.certified.actor.organization"
       },
-      "dependsOn": [
-        "app.certified.actor.organization",
-        "app.certified.actor.profile",
-        "app.certified.location",
-        "org.hypercerts.api.defs"
-      ]
+      "dependsOn": ["app.certified.actor.organization", "org.hypercerts.api.defs"]
     },
     {
       "kind": "lexicon",
@@ -23,7 +18,7 @@
         "backfill": false,
         "target_collection": "app.certified.actor.organization"
       },
-      "dependsOn": ["app.certified.actor.getOrganization"]
+      "dependsOn": ["app.certified.actor.organization", "org.hypercerts.api.defs"]
     },
     {
       "kind": "lexicon",
@@ -33,7 +28,7 @@
         "backfill": false,
         "target_collection": "app.certified.actor.organization"
       },
-      "dependsOn": ["app.certified.actor.getOrganization"]
+      "dependsOn": ["app.certified.actor.organization", "org.hypercerts.api.defs"]
     },
     {
       "kind": "lexicon",
@@ -43,7 +38,7 @@
         "backfill": false,
         "target_collection": "app.certified.actor.organization"
       },
-      "dependsOn": ["app.certified.actor.getOrganization"]
+      "dependsOn": ["app.certified.actor.organization", "org.hypercerts.api.defs"]
     },
     {
       "kind": "script",
@@ -55,6 +50,9 @@
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/recordView.lua",
+        "../../lua/shared/actorView.lua",
+        "../../lua/shared/actorLocation.lua",
+        "../../lua/shared/actorLookup.lua",
         "../../lua/shared/organization.lua"
       ],
       "config": {
@@ -73,7 +71,11 @@
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/recordView.lua",
-        "../../lua/shared/organization.lua"
+        "../../lua/shared/actorView.lua",
+        "../../lua/shared/actorLocation.lua",
+        "../../lua/shared/actorLookup.lua",
+        "../../lua/shared/organization.lua",
+        "../../lua/shared/actorBatchParams.lua"
       ],
       "config": {
         "script_type": "lua",
@@ -94,6 +96,9 @@
         "../../lua/shared/listValidation.lua",
         "../../lua/shared/listQuery.lua",
         "../../lua/shared/recordView.lua",
+        "../../lua/shared/actorView.lua",
+        "../../lua/shared/actorLocation.lua",
+        "../../lua/shared/actorLookup.lua",
         "../../lua/shared/organization.lua",
         "../../lua/shared/createdAtSort.lua",
         "../../lua/shared/listWhere.lua",
@@ -118,6 +123,9 @@
         "../../lua/shared/listValidation.lua",
         "../../lua/shared/listQuery.lua",
         "../../lua/shared/recordView.lua",
+        "../../lua/shared/actorView.lua",
+        "../../lua/shared/actorLocation.lua",
+        "../../lua/shared/actorLookup.lua",
         "../../lua/shared/organization.lua",
         "../../lua/shared/createdAtSort.lua",
         "../../lua/shared/listWhere.lua",

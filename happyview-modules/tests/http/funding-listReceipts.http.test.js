@@ -83,6 +83,60 @@ test("listReceipts paginates stable createdAt and URI order without repeating or
   assert.equal(Object.hasOwn(third.body, "cursor"), false);
 });
 
+test("listReceipts counts only matching receipts before pagination, even on an empty page", async () => {
+  const filters = {
+    authors: [publisherA],
+    uris: [receiptUris.a, receiptUris.b, receiptUris.c, receiptUris.d],
+    from: [sender, senderRecord],
+    to: [recipient, recipientRecord],
+    forUris: [target],
+    transactionIds: ["Tx-CaseSensitive", "Tx-CaseSensitive"],
+    sortDirection: "asc",
+    limit: 1,
+  };
+  const first = await listReceipts({ ...filters, includeTotal: true });
+  assert.equal(first.response.status, 200, JSON.stringify(first.body));
+  assert.equal(first.body.totalCount, 2);
+  assert.deepEqual(
+    first.body.receipts.map(({ uri }) => uri),
+    [receiptUris.a],
+  );
+  assert.equal(typeof first.body.cursor, "string");
+
+  const next = await listReceipts({ ...filters, includeTotal: true, cursor: first.body.cursor });
+  assert.equal(next.response.status, 200, JSON.stringify(next.body));
+  assert.equal(next.body.totalCount, 2);
+  assert.deepEqual(
+    next.body.receipts.map(({ uri }) => uri),
+    [receiptUris.b],
+  );
+  assert.equal(Object.hasOwn(next.body, "cursor"), false);
+
+  // Get a real cursor positioned after the last match of the narrower filter.
+  const wider = await listReceipts({ sortDirection: "asc", limit: 2 });
+  assert.equal(wider.response.status, 200, JSON.stringify(wider.body));
+  assert.equal(typeof wider.body.cursor, "string");
+  const empty = await listReceipts({ ...filters, includeTotal: true, cursor: wider.body.cursor });
+  assert.equal(empty.response.status, 200, JSON.stringify(empty.body));
+  assert.deepEqual(empty.body, { receipts: [], totalCount: 2 });
+
+  const noMatches = await listReceipts({
+    ...filters,
+    transactionIds: ["no-match"],
+    includeTotal: true,
+  });
+  assert.equal(noMatches.response.status, 200, JSON.stringify(noMatches.body));
+  assert.deepEqual(noMatches.body, { receipts: [], totalCount: 0 });
+
+  const omitted = await listReceipts(filters);
+  const disabled = await listReceipts({ ...filters, includeTotal: false });
+  assert.equal(omitted.response.status, 200, JSON.stringify(omitted.body));
+  assert.equal(disabled.response.status, 200, JSON.stringify(disabled.body));
+  const { totalCount: _, ...countedPage } = first.body;
+  assert.deepEqual(omitted.body, countedPage);
+  assert.deepEqual(disabled.body, countedPage);
+});
+
 test("listReceipts exposes InvalidRequest using the pinned HappyView runtime error response", async () => {
   const { response, body } = await listReceipts({ limit: 101 });
   // The pinned HappyView release serializes ordinary Lua errors as runtime script_error responses.

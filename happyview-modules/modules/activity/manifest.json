@@ -55,6 +55,7 @@
         "../../lua/shared/listQuery.lua",
         "../../lua/shared/listCursor.lua",
         "../../lua/shared/listWhere.lua",
+        "../../lua/shared/includeTotal.lua",
         "../../lua/shared/activityList.lua"
       ],
       "config": {
@@ -80,6 +81,7 @@
         "../../lua/shared/listQuery.lua",
         "../../lua/shared/listCursor.lua",
         "../../lua/shared/listWhere.lua",
+        "../../lua/shared/includeTotal.lua",
         "../../lua/shared/activityList.lua"
       ],
       "config": {

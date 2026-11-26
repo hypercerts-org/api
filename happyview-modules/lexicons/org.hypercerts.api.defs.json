@@ -29,15 +29,38 @@
         "record": { "type": "ref", "ref": "app.certified.actor.organization" }
       }
     },
+    "locationRecordView": {
+      "type": "object",
+      "description": "Raw indexed location record view without a hydrated author; indexedAt may be null when the index has no timestamp.",
+      "required": ["uri", "cid", "indexedAt", "did", "record"],
+      "nullable": ["indexedAt"],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
+        "indexedAt": { "type": "string", "format": "datetime" },
+        "did": { "type": "string", "format": "did" },
+        "record": { "type": "ref", "ref": "app.certified.location" }
+      }
+    },
     "actorView": {
       "type": "object",
-      "description": "Actor DID with nullable profile and raw organization sidecar views.",
+      "description": "Actor DID with nullable indexed profile and organization sidecars. Direct actor and organization queries also return a nullable primary location. Records retain raw blobs and URI references, not resolved image URLs.",
       "required": ["did", "profile", "organization"],
-      "nullable": ["profile", "organization"],
+      "nullable": ["profile", "organization", "location", "handle"],
       "properties": {
         "did": { "type": "string", "format": "did" },
+        "handle": {
+          "type": "string",
+          "format": "handle",
+          "description": "Resolved handle, populated only by getActor when a best-effort lookup succeeds. Omitted by every other endpoint; null is accepted for older responses."
+        },
         "profile": { "type": "ref", "ref": "#profileView" },
-        "organization": { "type": "ref", "ref": "#organizationView" }
+        "organization": { "type": "ref", "ref": "#organizationView" },
+        "location": {
+          "type": "ref",
+          "ref": "#locationRecordView",
+          "description": "Raw primary location, or null when no valid primary location is indexed. Matched by AT-URI, not the pinned CID; the indexed version may differ. Additional locations stay as strong references in the organization record. Omitted in legacy author views."
+        }
       }
     },
     "acknowledgementView": {

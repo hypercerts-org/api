@@ -173,16 +173,12 @@ test("committed explorer operations and endpoint snapshots match the registered 
   const activeIds = [...activeQueries.keys()].sort();
   const sourceIndex = await readJson(path.join(docsRoot, "sources/index.json"));
   const openapi = await readJson(path.join(docsRoot, "openapi.json"));
-  const coverage = await readJson(path.join(docsRoot, "coverage.json"));
   const operationIds = Object.keys(openapi.paths)
     .map((operationPath) => operationPath.replace(/^\/xrpc\//, ""))
     .sort();
 
   assert.deepEqual(sourceIndex.endpoints.map(({ id }) => id).sort(), activeIds);
   assert.deepEqual(operationIds, activeIds);
-  assert.equal(coverage.endpointCount, activeIds.length);
-  assert.equal(coverage.inclusion["manifest-registered"], activeIds.length);
-  assert.deepEqual(coverage.unresolvedReferences, []);
   assert.equal(sourceIndex.runtimeValidation, "not-assessed");
   assert.equal(sourceIndex.deploymentValidation, "not-assessed");
 
@@ -196,6 +192,14 @@ test("committed explorer operations and endpoint snapshots match the registered 
     assert.equal(operation["x-hypercerts-coverage"], "manifest-registered");
     assert.deepEqual(operation["x-lexicon-errors"] ?? [], lexicon.defs.main.errors ?? []);
   }
+
+  const actorBatch = openapi.paths["/xrpc/app.certified.actor.getActors"].get;
+  const [actors] = actorBatch.parameters;
+  assert.equal(actors.name, "actors");
+  assert.equal(actors.style, "form");
+  assert.equal(actors.explode, true);
+  const actorView = openapi.components.schemas["org.hypercerts.api.defs.actorView"];
+  assert.ok(actorView.properties.location.anyOf.some(({ type }) => type === "null"));
 
   for (const id of [
     "app.certified.actor.getOrganization",

@@ -20,7 +20,7 @@ export const $output = /*#__PURE__*/ l.payload("application/json", /*#__PURE__*/
 export type $Output<B = l.BinaryData> = l.InferPayload<typeof $output, B>;
 export type $OutputBody<B = l.BinaryData> = l.InferPayloadBody<typeof $output, B>;
 
-/** Gets an indexed Certified profile by DID or handle. Handles resolve through the configured resolver's com.atproto.identity.resolveHandle endpoint; no DID document is fetched for independent verification. Authentication is not required. */
+/** Gets an indexed Certified profile by DID or handle. Handles resolve to a DID through com.atproto.identity.resolveHandle on the configured resolver, or on https://slingshot.microcosm.blue when none is configured; no DID document is fetched for independent verification. Authentication is not required. */
 const main = /*#__PURE__*/ l.query($nsid, $params, $output, ["InvalidRequest","HandleResolverConfigError","HandleResolutionFailed","RecordNotFound","ProfileQueryFailed"]);
 
 export { main };

@@ -143,7 +143,6 @@ jobs:
         env:
           HAPPYVIEW_BASE_URL: ${{ vars.HAPPYVIEW_BASE_URL }}
           HAPPYVIEW_ADMIN_TOKEN: ${{ secrets.HAPPYVIEW_ADMIN_TOKEN }}
-          HYPERCERTS_HANDLE_RESOLVER_URL: ${{ vars.HYPERCERTS_HANDLE_RESOLVER_URL }}
         # The repo is the source of truth: replace any differing installed assets.
         run: pnpm --filter @hypercerts-org/happyview-modules install:api --override
 

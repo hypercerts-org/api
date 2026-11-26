@@ -161,6 +161,22 @@ export function buildChecks(get) {
     return "100 counts";
   });
 
+  check("getActors: 100 DID occurrences preserve order and duplicates", async () => {
+    // Exercise the occurrence limit without triggering 50 serial upstream lookups.
+    const dids = need(s.actors, "followed accounts").slice(0, 2);
+    const requested = Array.from({ length: 100 }, (_, i) => dids[i % dids.length]);
+    const { actors } = await getOk("app.certified.actor.getActors", { actors: requested });
+    expect(
+      JSON.stringify(actors.map(({ did }) => did)) === JSON.stringify(requested),
+      "actors not in request order",
+    );
+    expect(
+      JSON.stringify(actors[0]) === JSON.stringify(actors[dids.length]),
+      "duplicate DID got a different view",
+    );
+    return "100 actor views";
+  });
+
   check("getFollowerCounts: 50 realistic entity URIs in one request", async () => {
     const subjects = Array.from(
       { length: 50 },

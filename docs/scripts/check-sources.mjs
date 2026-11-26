@@ -38,7 +38,6 @@ export async function assertDocumentationFresh(options = {}) {
   }
   await compare("openapi.json", jsonText(artifacts.openapi));
   await compare(path.join("..", SKILL_OPENAPI_PATH), jsonText(artifacts.skillOpenapi));
-  await compare("coverage.json", jsonText(artifacts.coverage));
 
   if (staleFiles.length > 0) {
     const paths = [...new Set(staleFiles)]

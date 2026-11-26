@@ -6,6 +6,24 @@
   "deploymentValidation": "not-assessed",
   "endpoints": [
     {
+      "id": "app.certified.actor.getActor",
+      "type": "query",
+      "module": "modules/actor/manifest.json",
+      "file": "sources/lexicons/app.certified.actor.getActor.json",
+      "source": {
+        "path": "../../lexicons/app.certified.actor.getActor.json"
+      }
+    },
+    {
+      "id": "app.certified.actor.getActors",
+      "type": "query",
+      "module": "modules/actor/manifest.json",
+      "file": "sources/lexicons/app.certified.actor.getActors.json",
+      "source": {
+        "path": "../../lexicons/app.certified.actor.getActors.json"
+      }
+    },
+    {
       "id": "app.certified.actor.getOrganization",
       "type": "query",
       "module": "modules/organization/manifest.json",
@@ -598,6 +616,24 @@
       "kind": "schema",
       "source": {
         "packagePath": "lexicons/app/bsky/richtext/facet.json"
+      }
+    },
+    {
+      "id": "app.certified.actor.getActor",
+      "file": "sources/lexicons/app.certified.actor.getActor.json",
+      "kind": "endpoint",
+      "source": {
+        "module": "modules/actor/manifest.json",
+        "path": "../../lexicons/app.certified.actor.getActor.json"
+      }
+    },
+    {
+      "id": "app.certified.actor.getActors",
+      "file": "sources/lexicons/app.certified.actor.getActors.json",
+      "kind": "endpoint",
+      "source": {
+        "module": "modules/actor/manifest.json",
+        "path": "../../lexicons/app.certified.actor.getActors.json"
       }
     },
     {

@@ -175,6 +175,7 @@
       "dependsOn": [
         "app.certified.actor.organization",
         "app.certified.actor.profile",
+        "app.certified.location",
         "org.hypercerts.vocab.tag",
         "org.hypercerts.claim.contribution"
       ]

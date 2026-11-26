@@ -1,6 +1,6 @@
 // Type-level tests for the built package: compiled by `pnpm test`
 // (tsconfig.test.json), never run. Each @ts-expect-error must stay an error.
-import { Client } from "@atproto/lex";
+import { Client, type l } from "@atproto/lex";
 import { app, org } from "@hypercerts-org/api";
 import type { org as records } from "@hypercerts-org/lexicon";
 
@@ -27,6 +27,22 @@ export type BadgeDefinitionView = app.certified.badge.getBadgeDefinition.BadgeDe
 export async function awards() {
   const { badgeAwards } = await api.call(app.certified.badge.listBadgeAwards, { limit: 5 });
   return badgeAwards;
+}
+
+export async function actorViews(did: l.DidString): Promise<org.hypercerts.api.defs.ActorView[]> {
+  const { actor } = await api.call(app.certified.actor.getActor, { actor: did });
+  const { actors } = await api.call(app.certified.actor.getActors, { actors: [did, did] });
+  return [actor, ...actors];
+}
+
+export async function organizationRecordFromActor(did: l.DidString) {
+  const { actor } = await api.call(app.certified.actor.getOrganization, { actor: did });
+  return actor.organization?.record;
+}
+
+export function uncheckedOrganizationUri(actor: org.hypercerts.api.defs.ActorView) {
+  // @ts-expect-error shared ActorView types require narrowing the nullable sidecar
+  return actor.organization.uri;
 }
 
 // @ts-expect-error unknown parameter

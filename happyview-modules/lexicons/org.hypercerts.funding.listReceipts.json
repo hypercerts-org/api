@@ -44,6 +44,10 @@
             "description": "Exact transaction ID matches; values are not normalized.",
             "items": { "type": "string" }
           },
+          "includeTotal": {
+            "type": "boolean",
+            "description": "When true, include the exact number of indexed receipts matching all filters before cursor and limit. Omit or set to false to skip counting."
+          },
           "sortDirection": {
             "type": "string",
             "default": "desc",
@@ -80,7 +84,12 @@
           "type": "array",
           "items": { "type": "ref", "ref": "org.hypercerts.funding.getReceipt#receiptView" }
         },
-        "cursor": { "type": "string", "description": "Opaque cursor for the next page; omitted when there is no next page." }
+        "cursor": { "type": "string", "description": "Opaque cursor for the next page; omitted when there is no next page." },
+        "totalCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of indexed receipts matching all filters before cursor and limit. Present only when includeTotal is true, including on empty pages."
+        }
       }
     }
   }

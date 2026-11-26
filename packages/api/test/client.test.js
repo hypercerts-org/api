@@ -88,6 +88,7 @@ test("embedded records are validated with the schemas from @hypercerts-org/lexic
   });
   const body = await valid.call(api.org.hypercerts.claim.getActivity, { uri });
   assert.equal(body.activity.record.title, "Reforestation");
+  assert.deepEqual(body.activity.author, view.author);
 
   const broken = { ...view, record: { ...view.record, title: 42 } };
   const invalid = new Client({

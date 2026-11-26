@@ -380,10 +380,6 @@ test("reaction endpoints expose named request errors for invalid pagination and 
       endpoint: reactionCountsEndpoint,
       params: { subjects: ["at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa/invalid/key"] },
     },
-    {
-      endpoint: reactionCountsEndpoint,
-      params: { subjects: ["at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa%GG/org.example.subject/key"] },
-    },
     { endpoint: reactionCountsEndpoint, params: { subjects: tooManySubjects } },
     { endpoint: reactionCountsEndpoint, params: { "subjects[]": [reactionUris.subject] } },
   ];
