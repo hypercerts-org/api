@@ -8,7 +8,7 @@
 
 A handle is a resolvable actor identifier, not a DID or record URI. `app.certified.actor.getProfile` accepts a DID or handle and uses the configured handle resolver; the declared contract does not claim independent DID-document verification. Batch profile/organization lookups take DIDs.
 
-The API's shared DID syntax check permits `%` without requiring a following pair of hexadecimal digits, so a value such as `did:example:abc%ZZ` passes DID syntax validation. When sending such a DID in a query string, use `URLSearchParams` to encode it as query data; see [request construction](request-patterns.md#build-one-public-xrpc-get). The shared syntax also permits empty internal colon-separated segments (for example, `did:example:a::b`), including for EVM-link identifiers; a trailing colon remains invalid.
+The API's shared DID syntax check permits `%` without requiring a following pair of hexadecimal digits, so a value such as `did:example:abc%ZZ` passes DID syntax validation, including in record AT-URI subjects. When sending such a DID in a query string, use `URLSearchParams` to encode it as query data; see [request construction](request-patterns.md#build-one-public-xrpc-get). The shared syntax also permits empty internal colon-separated segments (for example, `did:example:a::b`), including for EVM-link identifiers; a trailing colon remains invalid.
 
 ### Exact collection item versions
 

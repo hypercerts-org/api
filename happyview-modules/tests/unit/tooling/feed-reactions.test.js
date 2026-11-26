@@ -304,15 +304,6 @@ test("getReactionCounts rejects an invalid subject collection NSID before queryi
   });
 });
 
-test("getReactionCounts rejects malformed percent escapes in subject DIDs before querying", () => {
-  runLua({
-    endpoint: "getReactionCounts",
-    params: { subjects: ["at://did:plc:aaaaaaaaaaaaaaaaaaaaaaaa%GG/org.example.subject/key"] },
-    expectError: "InvalidRequest:",
-    expectedCalls: 0,
-  });
-});
-
 test("getReactionCounts reports named operational errors for database failures", () => {
   runLua({
     endpoint: "getReactionCounts",
