@@ -84,10 +84,6 @@ end
 local MEASUREMENT = "org.hypercerts.context.measurement"
 local MEASUREMENT_NULL = json.decode("null")
 
-local function measurement_valid_record_uri(value)
-  return valid_record_uri(value)
-end
-
 local function measurement_query(sql, values)
   if db.backend() ~= "postgres" then
     error("MeasurementQueryFailed: measurement queries require PostgreSQL", 0)
@@ -126,7 +122,7 @@ end
 function handle()
   keys_only(params, { uri = true })
   local uri = scalar(params, "uri")
-  local valid, collection = measurement_valid_record_uri(uri)
+  local valid, collection = valid_record_uri(uri)
   if not uri or not valid or collection ~= MEASUREMENT then
     invalid("uri must be a full " .. MEASUREMENT .. " AT-URI with a DID authority")
   end

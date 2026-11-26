@@ -39,6 +39,12 @@ local function valid_record_uri(value)
   return true, collection, authority
 end
 
+-- For user-supplied filter values: bounds the size before parsing.
+local function valid_bounded_record_uri(value)
+  if type(value) ~= "string" or #value > 8192 then return false end
+  return valid_record_uri(value)
+end
+
 local function valid_datetime(value)
   if type(value) ~= "string" then return false end
   local year, month, day, hour, minute, second, suffix = value:match(
@@ -266,11 +272,6 @@ local COLLECTION_PROJECTION_LOCATION = "app.certified.location"
 local COLLECTION_PROJECTION_TAG = "org.hypercerts.vocab.tag"
 local COLLECTION_PROJECTION_NULL = json.decode("null")
 
-local function collection_projection_valid_record_uri(value)
-  if type(value) ~= "string" or #value > 8192 then return false end
-  return valid_record_uri(value)
-end
-
 local function collection_projection_query(sql, values)
   if db.backend() ~= "postgres" then
     error("CollectionQueryFailed: collection API requires PostgreSQL", 0)
@@ -348,7 +349,7 @@ local function collection_projection_reference(value, field, expected_collection
     if omit_invalid then return nil end
     error("CollectionQueryFailed: indexed collection has an invalid " .. field .. " reference", 0)
   end
-  local valid, collection = collection_projection_valid_record_uri(value.uri)
+  local valid, collection = valid_bounded_record_uri(value.uri)
   if not valid then
     if omit_invalid then return nil end
     error("CollectionQueryFailed: indexed collection has an invalid " .. field .. " reference", 0)

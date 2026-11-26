@@ -2,7 +2,7 @@ local ACCOUNT_FOLLOW = "app.certified.graph.follow"
 local ENTITY_FOLLOW = "app.certified.graph.entityFollow"
 local NULL = json.decode("null")
 
-local function recent_valid_record_uri(value)
+local function is_recent_follow_uri(value)
   local valid, collection = valid_record_uri(value)
   return valid and (collection == ACCOUNT_FOLLOW or collection == ENTITY_FOLLOW)
 end
@@ -27,7 +27,7 @@ local function recent_cursor_decode(token, before)
   for key in pairs(value) do
     if key ~= "v" and key ~= "t" and key ~= "u" and key ~= "b" then invalid("cursor is malformed") end
   end
-  if not recent_valid_datetime(value.t) or not recent_valid_record_uri(value.u)
+  if not recent_valid_datetime(value.t) or not is_recent_follow_uri(value.u)
     or value.b ~= (before or false) then
     invalid("cursor is malformed or belongs to another before value")
   end

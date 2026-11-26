@@ -30,7 +30,7 @@
           "description": "the AT-URI parsing pattern"
         }
       ],
-      "homes": ["lua/shared/recordIdentifier.lua"]
+      "homes": ["lua/shared/recordIdentifier.lua", "lua/shared/boundedRecordIdentifier.lua"]
     },
     {
       "id": "datetime-validation",
@@ -216,12 +216,6 @@
       "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
     },
     {
-      "file": "lua/shared/collection.lua",
-      "family": "record-identifier",
-      "symbol": "collection_valid_record_uri",
-      "reason": "Existing record-URI check that predates the registry; kept to avoid a behavior change. Build on valid_record_uri where the shape allows."
-    },
-    {
       "file": "lua/shared/collectionItems.lua",
       "family": "list-cursor",
       "symbol": "collection_items_cursor_decode",
@@ -277,12 +271,6 @@
     },
     {
       "file": "lua/shared/collectionProjection.lua",
-      "family": "record-identifier",
-      "symbol": "collection_projection_valid_record_uri",
-      "reason": "Existing record-URI check that predates the registry; kept to avoid a behavior change. Build on valid_record_uri where the shape allows."
-    },
-    {
-      "file": "lua/shared/collectionProjection.lua",
       "family": "record-view",
       "symbol": "collection_projection_record_view",
       "reason": "Existing record view with endpoint-specific fields; kept to avoid a behavior change. Build on record_view where the shape allows."
@@ -322,12 +310,6 @@
       "family": "repeated-query-array",
       "symbol": "evaluation_array",
       "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
-    },
-    {
-      "file": "lua/shared/evmLinkIdentifier.lua",
-      "family": "record-identifier",
-      "symbol": "at-uri-pattern",
-      "reason": "Existing record-URI check that predates the registry; kept to avoid a behavior change. Build on valid_record_uri where the shape allows."
     },
     {
       "file": "lua/shared/evmLinkIdentifier.lua",
@@ -372,22 +354,10 @@
       "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
     },
     {
-      "file": "lua/shared/measurementQuery.lua",
-      "family": "record-identifier",
-      "symbol": "measurement_valid_record_uri",
-      "reason": "Existing record-URI check that predates the registry; kept to avoid a behavior change. Build on valid_record_uri where the shape allows."
-    },
-    {
       "file": "lua/shared/organizationList.lua",
       "family": "list-cursor",
       "symbol": "cursor-hex-decode",
       "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
-    },
-    {
-      "file": "lua/shared/organizationList.lua",
-      "family": "record-identifier",
-      "symbol": "at-uri-pattern",
-      "reason": "Existing record-URI check that predates the registry; kept to avoid a behavior change. Build on valid_record_uri where the shape allows."
     },
     {
       "file": "lua/shared/organizationList.lua",
@@ -400,12 +370,6 @@
       "family": "list-cursor",
       "symbol": "cursor-hex-decode",
       "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
-    },
-    {
-      "file": "lua/shared/profileList.lua",
-      "family": "record-identifier",
-      "symbol": "at-uri-pattern",
-      "reason": "Existing record-URI check that predates the registry; kept to avoid a behavior change. Build on valid_record_uri where the shape allows."
     },
     {
       "file": "lua/shared/recentFollows.lua",
@@ -427,21 +391,9 @@
     },
     {
       "file": "lua/shared/recentFollows.lua",
-      "family": "record-identifier",
-      "symbol": "recent_valid_record_uri",
-      "reason": "Existing record-URI check that predates the registry; kept to avoid a behavior change. Build on valid_record_uri where the shape allows."
-    },
-    {
-      "file": "lua/shared/recentFollows.lua",
       "family": "record-view",
       "symbol": "recent_record_view",
       "reason": "Existing record view with endpoint-specific fields; kept to avoid a behavior change. Build on record_view where the shape allows."
-    },
-    {
-      "file": "lua/shared/rightsIdentifier.lua",
-      "family": "record-identifier",
-      "symbol": "rights_valid_record_uri",
-      "reason": "Existing record-URI check that predates the registry; kept to avoid a behavior change. Build on valid_record_uri where the shape allows."
     },
     {
       "file": "lua/shared/rightsView.lua",
@@ -460,12 +412,6 @@
       "family": "actor-view",
       "symbol": "hydrate_vocab_actor_views",
       "reason": "Existing actor hydration variant; kept to avoid a behavior change. Build on hydrate_actor_views where the shape allows."
-    },
-    {
-      "file": "lua/shared/workscopeTag.lua",
-      "family": "record-identifier",
-      "symbol": "workscope_tag_valid_record_uri",
-      "reason": "Existing record-URI check that predates the registry; kept to avoid a behavior change. Build on valid_record_uri where the shape allows."
     },
     {
       "file": "lua/shared/workscopeTagList.lua",

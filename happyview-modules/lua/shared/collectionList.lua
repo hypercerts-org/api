@@ -33,16 +33,16 @@ local function collection_array(key, kind)
     if kind == "did" and not valid_did(item) then
       invalid("each authors value must be a valid DID; resolve handles to DIDs first")
     elseif kind == "collectionUri" then
-      local valid, collection = collection_valid_record_uri(item)
+      local valid, collection = valid_bounded_record_uri(item)
       if not valid or collection ~= COLLECTION then
         invalid("each uris value must be a full org.hypercerts.collection AT-URI with a DID authority")
       end
     elseif kind == "recordUri" then
-      if not collection_valid_record_uri(item) then
+      if not valid_bounded_record_uri(item) then
         invalid("each " .. key .. " value must be a full AT-URI with a DID authority")
       end
     elseif kind == "tagUri" then
-      local valid, collection = collection_valid_record_uri(item)
+      local valid, collection = valid_bounded_record_uri(item)
       if not valid or collection ~= "org.hypercerts.vocab.tag" then
         invalid("each tagUris value must be a full org.hypercerts.vocab.tag AT-URI with a DID authority")
       end
@@ -59,7 +59,7 @@ end
 
 local function collection_list_cursor_decode(token, direction)
   return decode_cursor(token, direction, function(value)
-    local valid, collection = collection_valid_record_uri(value.u)
+    local valid, collection = valid_bounded_record_uri(value.u)
     return valid_datetime(value.t) and valid and collection == COLLECTION
   end)
 end

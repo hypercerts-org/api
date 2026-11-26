@@ -38,7 +38,7 @@ end
 
 local function workscope_tag_decode_cursor(token, direction)
   return decode_cursor(token, direction, function(value)
-    local valid, collection = workscope_tag_valid_record_uri(value.u)
+    local valid, collection = valid_record_uri(value.u)
     return valid_datetime(value.t) and valid and collection == WORKSCOPE_TAG
   end)
 end

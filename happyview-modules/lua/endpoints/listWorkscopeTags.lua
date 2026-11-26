@@ -128,10 +128,6 @@ end
 local WORKSCOPE_TAG = "org.hypercerts.workscope.tag"
 local WORKSCOPE_TAG_NULL = json.decode("null")
 
-local function workscope_tag_valid_record_uri(value)
-  return valid_record_uri(value)
-end
-
 local function workscope_tag_query(sql, values)
   if db.backend() ~= "postgres" then
     error("WorkscopeTagQueryFailed: workscope-tag API requires PostgreSQL", 0)
@@ -230,7 +226,7 @@ end
 
 local function workscope_tag_decode_cursor(token, direction)
   return decode_cursor(token, direction, function(value)
-    local valid, collection = workscope_tag_valid_record_uri(value.u)
+    local valid, collection = valid_record_uri(value.u)
     return valid_datetime(value.t) and valid and collection == WORKSCOPE_TAG
   end)
 end

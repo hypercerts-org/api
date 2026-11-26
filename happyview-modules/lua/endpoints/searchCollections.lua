@@ -18,16 +18,17 @@ local function valid_record_uri(value)
   return true, collection, authority
 end
 
+-- For user-supplied filter values: bounds the size before parsing.
+local function valid_bounded_record_uri(value)
+  if type(value) ~= "string" or #value > 8192 then return false end
+  return valid_record_uri(value)
+end
+
 local COLLECTION_PROJECTION_PROFILE = "app.certified.actor.profile"
 local COLLECTION_PROJECTION_ORGANIZATION = "app.certified.actor.organization"
 local COLLECTION_PROJECTION_LOCATION = "app.certified.location"
 local COLLECTION_PROJECTION_TAG = "org.hypercerts.vocab.tag"
 local COLLECTION_PROJECTION_NULL = json.decode("null")
-
-local function collection_projection_valid_record_uri(value)
-  if type(value) ~= "string" or #value > 8192 then return false end
-  return valid_record_uri(value)
-end
 
 local function collection_projection_query(sql, values)
   if db.backend() ~= "postgres" then
@@ -106,7 +107,7 @@ local function collection_projection_reference(value, field, expected_collection
     if omit_invalid then return nil end
     error("CollectionQueryFailed: indexed collection has an invalid " .. field .. " reference", 0)
   end
-  local valid, collection = collection_projection_valid_record_uri(value.uri)
+  local valid, collection = valid_bounded_record_uri(value.uri)
   if not valid then
     if omit_invalid then return nil end
     error("CollectionQueryFailed: indexed collection has an invalid " .. field .. " reference", 0)
@@ -207,11 +208,6 @@ local function collection_projection_hydrate(views, omit_invalid)
 end
 
 local COLLECTION = "org.hypercerts.collection"
-
-local function collection_valid_record_uri(value)
-  if type(value) ~= "string" or #value > 8192 then return false end
-  return valid_record_uri(value)
-end
 
 local function collection_query(sql, values)
   if db.backend() ~= "postgres" then
@@ -392,16 +388,16 @@ local function collection_array(key, kind)
     if kind == "did" and not valid_did(item) then
       invalid("each authors value must be a valid DID; resolve handles to DIDs first")
     elseif kind == "collectionUri" then
-      local valid, collection = collection_valid_record_uri(item)
+      local valid, collection = valid_bounded_record_uri(item)
       if not valid or collection ~= COLLECTION then
         invalid("each uris value must be a full org.hypercerts.collection AT-URI with a DID authority")
       end
     elseif kind == "recordUri" then
-      if not collection_valid_record_uri(item) then
+      if not valid_bounded_record_uri(item) then
         invalid("each " .. key .. " value must be a full AT-URI with a DID authority")
       end
     elseif kind == "tagUri" then
-      local valid, collection = collection_valid_record_uri(item)
+      local valid, collection = valid_bounded_record_uri(item)
       if not valid or collection ~= "org.hypercerts.vocab.tag" then
         invalid("each tagUris value must be a full org.hypercerts.vocab.tag AT-URI with a DID authority")
       end
@@ -418,7 +414,7 @@ end
 
 local function collection_list_cursor_decode(token, direction)
   return decode_cursor(token, direction, function(value)
-    local valid, collection = collection_valid_record_uri(value.u)
+    local valid, collection = valid_bounded_record_uri(value.u)
     return valid_datetime(value.t) and valid and collection == COLLECTION
   end)
 end

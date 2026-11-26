@@ -1,7 +1,7 @@
 local function valid_profile_uri(value)
-  if type(value) ~= "string" or value:find("[?#]") then return false end
-  local authority, collection, rkey = value:match("^at://([^/]+)/([^/]+)/([^/]+)$")
-  return authority ~= nil and valid_did(authority) and collection == PROFILE and rkey == "self"
+  local valid, collection = valid_record_uri(value)
+  -- The record key is the last path segment, so this suffix means rkey == "self".
+  return valid and collection == PROFILE and value:sub(-5) == "/self"
 end
 
 local function array(params, key)

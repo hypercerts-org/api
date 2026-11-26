@@ -39,10 +39,6 @@ local function valid_record_uri(value)
   return true, collection, authority
 end
 
-local function rights_valid_record_uri(value)
-  return valid_record_uri(value)
-end
-
 local NULL = json.decode("null")
 
 local function record_view(row)
@@ -118,7 +114,7 @@ end
 function handle()
   keys_only(params, { uri = true })
   local uri = scalar(params, "uri")
-  local valid, collection = rights_valid_record_uri(uri)
+  local valid, collection = valid_record_uri(uri)
   if not uri or not valid or collection ~= RIGHTS then
     invalid("uri must be a full org.hypercerts.claim.rights AT-URI with a DID authority")
   end

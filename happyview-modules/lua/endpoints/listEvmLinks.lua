@@ -114,9 +114,7 @@ local EVMLINK_COLLECTION = "app.certified.link.evm"
 local function valid_evm_link_uri(value)
   if type(value) ~= "string" or value:find("[?#]") then return false end
   local valid, collection = valid_record_uri(value)
-  if not valid or collection ~= EVMLINK_COLLECTION then return false end
-  local authority = value:match("^at://([^/]+)/")
-  return valid_did(authority)
+  return valid and collection == EVMLINK_COLLECTION
 end
 
 local function evm_link_record_view(row)

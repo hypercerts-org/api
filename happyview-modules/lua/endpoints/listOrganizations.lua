@@ -233,9 +233,9 @@ local function organization_actors(rows)
 end
 
 local function valid_organization_uri(value)
-  if type(value) ~= "string" or value:find("[?#]") then return false end
-  local authority, collection, rkey = value:match("^at://([^/]+)/([^/]+)/([^/]+)$")
-  return authority ~= nil and valid_did(authority) and collection == ORGANIZATION and rkey == "self"
+  local valid, collection = valid_record_uri(value)
+  -- The record key is the last path segment, so this suffix means rkey == "self".
+  return valid and collection == ORGANIZATION and value:sub(-5) == "/self"
 end
 
 local function array(params, key)

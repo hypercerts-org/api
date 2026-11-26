@@ -127,10 +127,6 @@ end
 local MEASUREMENT = "org.hypercerts.context.measurement"
 local MEASUREMENT_NULL = json.decode("null")
 
-local function measurement_valid_record_uri(value)
-  return valid_record_uri(value)
-end
-
 local function measurement_query(sql, values)
   if db.backend() ~= "postgres" then
     error("MeasurementQueryFailed: measurement queries require PostgreSQL", 0)
@@ -264,7 +260,7 @@ local function measurement_array(key, format)
     if format == "did" and not valid_did(item) then
       invalid("each " .. key .. " value must be a valid DID")
     elseif format == "at-uri" then
-      local valid, collection = measurement_valid_record_uri(item)
+      local valid, collection = valid_record_uri(item)
       if not valid or not valid_nsid(collection) then
         invalid("each " .. key .. " value must be a full AT-URI with a DID authority and valid collection NSID")
       end
@@ -288,7 +284,7 @@ end
 
 local function decode_measurement_cursor(token, direction)
   return decode_cursor(token, direction, function(value)
-    local valid, collection = measurement_valid_record_uri(value.u)
+    local valid, collection = valid_record_uri(value.u)
     return valid_datetime(value.t) and valid and collection == MEASUREMENT
   end)
 end

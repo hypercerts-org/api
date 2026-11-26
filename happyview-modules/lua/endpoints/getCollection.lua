@@ -39,16 +39,17 @@ local function valid_record_uri(value)
   return true, collection, authority
 end
 
+-- For user-supplied filter values: bounds the size before parsing.
+local function valid_bounded_record_uri(value)
+  if type(value) ~= "string" or #value > 8192 then return false end
+  return valid_record_uri(value)
+end
+
 local COLLECTION_PROJECTION_PROFILE = "app.certified.actor.profile"
 local COLLECTION_PROJECTION_ORGANIZATION = "app.certified.actor.organization"
 local COLLECTION_PROJECTION_LOCATION = "app.certified.location"
 local COLLECTION_PROJECTION_TAG = "org.hypercerts.vocab.tag"
 local COLLECTION_PROJECTION_NULL = json.decode("null")
-
-local function collection_projection_valid_record_uri(value)
-  if type(value) ~= "string" or #value > 8192 then return false end
-  return valid_record_uri(value)
-end
 
 local function collection_projection_query(sql, values)
   if db.backend() ~= "postgres" then
@@ -127,7 +128,7 @@ local function collection_projection_reference(value, field, expected_collection
     if omit_invalid then return nil end
     error("CollectionQueryFailed: indexed collection has an invalid " .. field .. " reference", 0)
   end
-  local valid, collection = collection_projection_valid_record_uri(value.uri)
+  local valid, collection = valid_bounded_record_uri(value.uri)
   if not valid then
     if omit_invalid then return nil end
     error("CollectionQueryFailed: indexed collection has an invalid " .. field .. " reference", 0)
@@ -229,11 +230,6 @@ end
 
 local COLLECTION = "org.hypercerts.collection"
 
-local function collection_valid_record_uri(value)
-  if type(value) ~= "string" or #value > 8192 then return false end
-  return valid_record_uri(value)
-end
-
 local function collection_query(sql, values)
   if db.backend() ~= "postgres" then
     error("CollectionQueryFailed: collection API requires PostgreSQL", 0)
@@ -256,7 +252,7 @@ end
 function handle()
   keys_only(params, { uri = true }, "unknown query parameter: ")
   local uri = scalar(params, "uri")
-  local valid, collection = collection_valid_record_uri(uri)
+  local valid, collection = valid_bounded_record_uri(uri)
   if not uri or not valid or collection ~= COLLECTION then
     invalid("uri must be a full org.hypercerts.collection AT-URI with a DID authority")
   end

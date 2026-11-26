@@ -9,6 +9,7 @@
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/boundedRecordIdentifier.lua",
         "../../lua/shared/collectionProjection.lua",
         "../../lua/shared/collection.lua"
       ],
@@ -36,6 +37,7 @@
       "sharedSourcePaths": [
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/boundedRecordIdentifier.lua",
         "../../lua/shared/collectionProjection.lua",
         "../../lua/shared/collection.lua",
         "../../lua/shared/datetimeValidation.lua",
@@ -72,6 +74,7 @@
       "sharedSourcePaths": [
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/boundedRecordIdentifier.lua",
         "../../lua/shared/collectionProjection.lua",
         "../../lua/shared/collection.lua",
         "../../lua/shared/datetimeValidation.lua",
