@@ -15,9 +15,10 @@ const DEFINITION_PATTERNS = [
 ];
 
 // The same shapes anchored at column 0: only these count as a shared helper's definition.
-const TOP_LEVEL_PATTERNS = DEFINITION_PATTERNS.map(
-  (pattern) => new RegExp(pattern.source.replace("^\\s*", "^")),
-);
+const TOP_LEVEL_PATTERNS = [
+  /^(?:local\s+)?function\s+([A-Za-z_][\w.:]*)\s*\(/,
+  /^(?:local\s+)?([A-Za-z_][\w.]*)\s*=\s*function\s*\(/,
+];
 
 // Every top-level function in lua/shared is protected. It is not a registry family, so it has no patterns.
 const SHARED_FAMILY = {
