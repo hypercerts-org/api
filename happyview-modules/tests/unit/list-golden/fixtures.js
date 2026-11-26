@@ -1,4 +1,4 @@
-import { hexCursor } from "./harness.js";
+import { hexCursor, LuaTable } from "./harness.js";
 
 const DID = "did:plc:abcdefghijklmnopqrstuvwx";
 const TIMESTAMP = "2025-01-01T00:00:00Z";
@@ -222,6 +222,47 @@ function mixedIdentifierCase(name, base) {
   };
 }
 
+/** Longest repeated query parameter every array filter is documented to accept. */
+const ARRAY_MAX_VALUES = 100;
+
+/**
+ * Repeated-parameter shape and size cases. They record how each endpoint's own
+ * parser treats counts, item types, oversize items and the keyed or sparse
+ * tables that only a lenient parser walks past; the golden
+ * records whichever outcome each endpoint has.
+ */
+function arrayShapeCases(name, values, base) {
+  const withValue = (suffix, value) => ({
+    name: `array:${name}:${suffix}`,
+    params: { ...base, [name]: value },
+  });
+  const repeat = (count) => Array.from({ length: count }, () => values[0]);
+  return [
+    withValue("100-duplicates", repeat(ARRAY_MAX_VALUES)),
+    withValue("101-values", repeat(ARRAY_MAX_VALUES + 1)),
+    withValue("invalid-item", [values[0], "not a valid value"]),
+    withValue("non-string-item", [values[0], 7]),
+    withValue("oversize-item", [values[0], "a".repeat(5000)]),
+    withValue("nested-array-item", [values[0], [values[1]]]),
+    withValue(
+      "keyed-table",
+      new LuaTable([
+        [1, values[0]],
+        ["x", values[1]],
+      ]),
+    ),
+    withValue("string-keyed-table", new LuaTable([["x", values[0]]])),
+    withValue(
+      "sparse-table",
+      new LuaTable([
+        [1, values[0]],
+        [3, values[1]],
+      ]),
+    ),
+    withValue("sparse-table-from-2", new LuaTable([[2, values[0]]])),
+  ];
+}
+
 function arrayFilterCases(endpoint, name, property, base, index) {
   const values = [0, 1, 2].map((n) => filterValue(endpoint, name, property, n));
   const cases = [
@@ -243,6 +284,7 @@ function arrayFilterCases(endpoint, name, property, base, index) {
   if (MIXED_IDENTIFIERS.has(name) && MIXED_LIST_ENDPOINTS.has(endpoint.id)) {
     cases.push(mixedIdentifierCase(name, base));
   }
+  cases.push(...arrayShapeCases(name, values, base));
   // Alternate the window so adjacent array filters get different value sets in
   // filter:all and a swap of their inputs changes the recorded binds.
   const start = index % 2;
@@ -752,6 +794,18 @@ export function casesFor(endpoint) {
     cases.push({
       name: "error:includeTotal-on-search",
       params: { ...base, includeTotal: true },
+    });
+  }
+  if (endpoint.id !== "org.hypercerts.collection.listCollectionItems") {
+    // A row whose indexed_at is SQL NULL (the key is absent from the Lua row). Every
+    // query, including actor hydration, sees it, so record and sidecar views are both
+    // exercised: it pins whether indexedAt comes out as JSON null or is omitted.
+    // The explicit rowsByCall keeps the count-row substitution below from replacing it.
+    cases.push({
+      name: "row:indexed-at-null",
+      params: base,
+      rows: [{ ...pageRow(endpoint, 0), indexed_at: undefined }],
+      rowsByCall: [],
     });
   }
   if (endpoint.id === "org.hypercerts.collection.listCollectionItems") {
