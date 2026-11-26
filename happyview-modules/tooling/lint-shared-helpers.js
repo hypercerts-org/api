@@ -9,15 +9,10 @@ const scannedDirectories = ["lua/shared", "lua/src"];
 
 // Matches `function name(`, `function M.name(`, `function M:name(` and `M.name = function(`.
 // Only the last segment is the helper's name, so a module-table copy is still a copy.
+// \s* also spans newlines, so a definition split across lines is still found.
 const DEFINITION_PATTERNS = [
-  /^\s*(?:local\s+)?function\s+([A-Za-z_][\w.:]*)\s*\(/,
-  /^\s*(?:local\s+)?([A-Za-z_][\w.]*)\s*=\s*function\s*\(/,
-];
-
-// The same shapes anchored at column 0: only these count as a shared helper's definition.
-const TOP_LEVEL_PATTERNS = [
-  /^(?:local\s+)?function\s+([A-Za-z_][\w.:]*)\s*\(/,
-  /^(?:local\s+)?([A-Za-z_][\w.]*)\s*=\s*function\s*\(/,
+  /^[ \t]*(?:local\s+)?function\s+([A-Za-z_][\w.:]*)\s*\(/gm,
+  /^[ \t]*(?:local\s+)?([A-Za-z_][\w.]*)\s*=\s*function\s*\(/gm,
 ];
 
 // Every top-level function in lua/shared is protected. It is not a registry family, so it has no patterns.
@@ -35,17 +30,77 @@ async function luaFiles(root, directory) {
     .sort();
 }
 
-function definitionName(line, patterns = DEFINITION_PATTERNS) {
-  for (const pattern of patterns) {
-    const match = pattern.exec(line);
-    if (match) return match[1].split(/[.:]/).pop();
+const LONG_BRACKET = /^\[(=*)\[/;
+
+/**
+ * Returns the source with Lua comments blanked to spaces, and string contents too unless
+ * keepStrings is set. Newlines and offsets are preserved so matches map back to lines.
+ * Tracking both together is what keeps a `--` inside a string and a `function` inside a
+ * long comment from being misread.
+ */
+function blankLua(source, { keepStrings = false } = {}) {
+  let out = "";
+  let i = 0;
+  const blank = (text) => text.replace(/[^\n]/g, " ");
+  while (i < source.length) {
+    const rest = source.slice(i);
+    const isComment = rest.startsWith("--");
+    const long = LONG_BRACKET.exec(isComment ? rest.slice(2) : rest);
+    if (long) {
+      const close = `]${long[1]}]`;
+      const start = i + (isComment ? 2 : 0) + long[0].length;
+      const end = source.indexOf(close, start);
+      const stop = end === -1 ? source.length : end + close.length;
+      const text = source.slice(i, stop);
+      out += isComment || !keepStrings ? blank(text) : text;
+      i = stop;
+    } else if (isComment) {
+      const end = source.indexOf("\n", i);
+      const stop = end === -1 ? source.length : end;
+      out += blank(source.slice(i, stop));
+      i = stop;
+    } else if (rest[0] === '"' || rest[0] === "'") {
+      let stop = i + 1;
+      while (stop < source.length && source[stop] !== rest[0] && source[stop] !== "\n") {
+        stop += source[stop] === "\\" ? 2 : 1;
+      }
+      stop = Math.min(stop + 1, source.length);
+      const text = source.slice(i, stop);
+      out += keepStrings ? text : rest[0] + blank(text.slice(1, -1)) + text.slice(-1);
+      i = stop;
+    } else {
+      out += source[i];
+      i += 1;
+    }
   }
-  return null;
+  return out;
 }
 
-function stripComment(line) {
-  const index = line.indexOf("--");
-  return index === -1 ? line : line.slice(0, index);
+/** Block nesting depth before each offset: function/if/do/repeat open, end/until close. */
+function depthTracker(code) {
+  const events = [...code.matchAll(/\b(function|if|do|repeat|end|until)\b/g)].map((m) => ({
+    index: m.index,
+    delta: m[1] === "end" || m[1] === "until" ? -1 : 1,
+  }));
+  return (offset) =>
+    events.filter((event) => event.index < offset).reduce((sum, event) => sum + event.delta, 0);
+}
+
+/** Every function definition in a Lua file: last-segment name, 1-based line, top-level or nested. */
+function definitions(source) {
+  const code = blankLua(source);
+  const depthAt = depthTracker(code);
+  return DEFINITION_PATTERNS.flatMap((pattern) =>
+    [...code.matchAll(pattern)].map((match) => {
+      const nameStart = match.index + match[0].indexOf(match[1]);
+      return {
+        name: match[1].split(/[.:]/).pop(),
+        // Report the line of the name, not of leading blank space.
+        line: code.slice(0, nameStart).split("\n").length,
+        topLevel: depthAt(match.index) === 0,
+      };
+    }),
+  );
 }
 
 function familyProblems(family, seen) {
@@ -113,69 +168,69 @@ function homeHint(family) {
 }
 
 /** Maps each top-level function name in lua/shared to the first file that defines it. */
-function sharedHelperOwners(sources) {
+function sharedHelperOwners(parsed) {
   const owners = new Map();
-  for (const [file, source] of sources) {
+  for (const [file, { defs }] of parsed) {
     if (!file.startsWith("lua/shared/")) continue;
-    for (const line of source.split("\n")) {
-      const name = definitionName(stripComment(line), TOP_LEVEL_PATTERNS);
-      if (name && !owners.has(name)) owners.set(name, file);
+    for (const def of defs) {
+      if (def.topLevel && !owners.has(def.name)) owners.set(def.name, file);
     }
   }
   return owners;
 }
 
-function patternFindings(family, file, lines, shared) {
+function patternFindings(family, file, { defs, inlineLines }, shared) {
   const findings = [];
   const lookalikes = (family.lookalikes ?? []).map((pattern) => new RegExp(pattern));
-  const inline = (family.inline ?? []).map((rule) => ({
-    ...rule,
-    regex: new RegExp(rule.pattern),
-  }));
-  lines.forEach((rawLine, index) => {
-    const line = stripComment(rawLine);
-    const name = definitionName(line);
+  for (const { name, line } of defs) {
+    const owner = shared.get(name);
     // A copy of a name another shared file defines is reported once, as a shared-helper copy.
-    const owner = name && shared.get(name);
-    if (name && (!owner || owner === file) && lookalikes.some((regex) => regex.test(name))) {
-      findings.push({ kind: "lookalike", file, line: index + 1, family, symbol: name });
+    if ((!owner || owner === file) && lookalikes.some((regex) => regex.test(name))) {
+      findings.push({ kind: "lookalike", file, line, family, symbol: name });
     }
-    for (const rule of inline) {
-      if (rule.regex.test(line)) {
+  }
+  for (const rule of family.inline ?? []) {
+    const regex = new RegExp(rule.pattern, "g");
+    inlineLines.forEach((text, index) => {
+      for (let n = [...text.matchAll(regex)].length; n > 0; n -= 1) {
         findings.push({ kind: "inline", file, line: index + 1, family, symbol: rule.id, rule });
       }
-    }
-  });
+    });
+  }
   return findings;
 }
 
 function sourceFindings(registry, sources) {
-  const shared = sharedHelperOwners(sources);
+  const parsed = new Map(
+    [...sources].map(([file, source]) => [
+      file,
+      {
+        defs: definitions(source),
+        inlineLines: blankLua(source, { keepStrings: true }).split("\n"),
+      },
+    ]),
+  );
+  const shared = sharedHelperOwners(parsed);
   const findings = [];
-  for (const [file, source] of sources) {
-    const lines = source.split("\n");
-    lines.forEach((rawLine, index) => {
-      const line = stripComment(rawLine);
-      const name = definitionName(line);
-      const owner = name && shared.get(name);
+  for (const [file, entry] of parsed) {
+    for (const { name, line, topLevel } of entry.defs) {
+      const owner = shared.get(name);
       // Inside lua/shared only a top-level definition can be a second copy; nested locals are private.
-      const counts = file.startsWith("lua/shared/")
-        ? definitionName(line, TOP_LEVEL_PATTERNS) === name
-        : true;
+      const counts = file.startsWith("lua/shared/") ? topLevel : true;
       if (owner && owner !== file && counts) {
         findings.push({
           kind: "redefinition",
           file,
-          line: index + 1,
+          line,
           family: SHARED_FAMILY,
           symbol: name,
           owner,
         });
       }
-    });
+    }
     for (const family of registry.families) {
       if (family.homes.includes(file)) continue;
-      findings.push(...patternFindings(family, file, lines, shared));
+      findings.push(...patternFindings(family, file, entry, shared));
     }
   }
   return findings;
