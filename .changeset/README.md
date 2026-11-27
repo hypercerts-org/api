@@ -11,7 +11,7 @@ Add a Changeset when a pull request changes what either package ships. Run:
 pnpm changeset
 ```
 
-and select each package the pull request changes. Use `patch` for compatible fixes, `minor` for additive capabilities, and `major` for incompatible changes.
+and select each package the pull request changes. Use `patch` for compatible fixes, `minor` for additive capabilities, and `major` for incompatible changes. Apply the pre-1.0 rule to each package on its own: if that package is below 1.0.0, mark its breaking changes `minor`, not `major` (`major` would release 1.0.0), and describe the breaking change in the entry. When `@hypercerts-org/happyview-modules` reaches 1.0.0, release `@hypercerts-org/api` as 1.0.0 too.
 
 - For `@hypercerts-org/happyview-modules`, write release notes for endpoint or schema additions, compatible behavior changes, fixes, breaking changes, and installer or configuration changes that operators need to know about.
 - For `@hypercerts-org/api`, write release notes for client-visible changes: new or changed queries, parameters and types, and the `@hypercerts-org/lexicon` version it builds on. An API change that touches both the modules and the generated client gets an entry for each package.
