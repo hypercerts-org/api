@@ -1,0 +1,796 @@
+{
+  "families": [
+    {
+      "id": "did-validation",
+      "description": "DID syntax check",
+      "lookalikes": ["^valid_[a-z_]*did"],
+      "inline": [
+        {
+          "id": "did-pattern",
+          "pattern": "\\^did:",
+          "description": "the DID syntax pattern"
+        }
+      ],
+      "homes": ["lua/shared/didValidation.lua"]
+    },
+    {
+      "id": "nsid-validation",
+      "description": "NSID syntax check",
+      "lookalikes": ["^valid_[a-z_]*nsid"],
+      "homes": ["lua/shared/nsidValidation.lua"]
+    },
+    {
+      "id": "record-identifier",
+      "description": "AT-URI record key and record URI parsing",
+      "lookalikes": ["valid_record_(uri|key)"],
+      "inline": [
+        {
+          "id": "at-uri-pattern",
+          "pattern": "\\^at://",
+          "description": "the AT-URI parsing pattern"
+        }
+      ],
+      "homes": ["lua/shared/recordIdentifier.lua"]
+    },
+    {
+      "id": "datetime-validation",
+      "description": "RFC 3339 datetime check",
+      "lookalikes": ["^valid_[a-z_]*(datetime|timestamp)"],
+      "homes": ["lua/shared/datetimeValidation.lua"]
+    },
+    {
+      "id": "handle-resolver",
+      "description": "handle syntax check and handle resolution",
+      "lookalikes": ["^valid_(handle|ipv4|ipv6|port)", "resolve_handle"],
+      "homes": ["lua/shared/identityResolver.lua", "lua/shared/profileLookup.lua"]
+    },
+    {
+      "id": "list-cursor",
+      "description": "list cursor encoding and decoding",
+      "lookalikes": ["cursor_(decode|encode)", "(decode|encode)_([a-z_]+_)?cursor"],
+      "inline": [
+        {
+          "id": "cursor-hex-decode",
+          "pattern": "tonumber\\(pair,\\s*16\\)",
+          "description": "hex cursor decoding"
+        },
+        {
+          "id": "cursor-length-cap",
+          "pattern": "#token\\s*>\\s*8192",
+          "description": "the cursor length cap"
+        }
+      ],
+      "homes": ["lua/shared/listCursor.lua", "lua/shared/listQuery.lua"]
+    },
+    {
+      "id": "list-params",
+      "description": "limit, includeTotal and sortDirection parsing",
+      "lookalikes": ["^parse_[a-z_]*(limit|include_total|sort_direction)"],
+      "inline": [
+        {
+          "id": "limit-message",
+          "pattern": "limit must be an integer",
+          "description": "limit parsing"
+        },
+        {
+          "id": "include-total-message",
+          "pattern": "includeTotal must be true or false",
+          "description": "includeTotal parsing"
+        },
+        {
+          "id": "sort-direction-message",
+          "pattern": "sortDirection must be",
+          "description": "sortDirection parsing"
+        }
+      ],
+      "homes": [
+        "lua/shared/listValidation.lua",
+        "lua/shared/includeTotal.lua",
+        "lua/shared/listQuery.lua"
+      ]
+    },
+    {
+      "id": "query-params",
+      "description": "InvalidRequest errors, unknown-parameter checks and single-value parameters",
+      "lookalikes": ["(^|_)(invalid|keys_only|scalar)$"],
+      "inline": [
+        {
+          "id": "occur-once-message",
+          "pattern": "must occur once",
+          "description": "single-value parameter parsing"
+        }
+      ],
+      "homes": ["lua/shared/query.lua"]
+    },
+    {
+      "id": "repeated-query-array",
+      "description": "repeated query parameter (array) parsing",
+      "unowned": "each endpoint has its own; add a shared parser in lua/shared and register it before adding another",
+      "lookalikes": ["(^|_)array(_values)?$"],
+      "homes": []
+    },
+    {
+      "id": "record-view",
+      "description": "the {uri, cid, indexedAt, did, record} view of an indexed row",
+      "lookalikes": ["record_view"],
+      "inline": [
+        {
+          "id": "indexed-at-null",
+          "pattern": "indexed_at == nil and NULL",
+          "description": "the indexedAt null fallback"
+        }
+      ],
+      "homes": ["lua/shared/recordView.lua"]
+    },
+    {
+      "id": "actor-view",
+      "description": "actor profile/organization hydration",
+      "lookalikes": ["^[a-z_]*hydrate_[a-z_]*actor_views$"],
+      "homes": ["lua/shared/actorView.lua"]
+    },
+    {
+      "id": "batch-request-target",
+      "description": "batch GET request-target size limit",
+      "lookalikes": ["^[a-z_]*request_target[a-z_]*$"],
+      "homes": ["lua/shared/batchRequestTarget.lua"]
+    }
+  ],
+  "allowlist": [
+    {
+      "file": "lua/shared/acknowledgement.lua",
+      "family": "record-view",
+      "symbol": "acknowledgement_record_view",
+      "reason": "Existing record view with endpoint-specific fields; kept to avoid a behavior change. Build on record_view where the shape allows."
+    },
+    {
+      "file": "lua/shared/acknowledgementList.lua",
+      "family": "datetime-validation",
+      "symbol": "valid_cursor_timestamp",
+      "reason": "Existing cursor timestamp check with its own rules; kept to avoid a behavior change."
+    },
+    {
+      "file": "lua/shared/acknowledgementList.lua",
+      "family": "list-cursor",
+      "symbol": "decode_acknowledgement_cursor",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/shared/acknowledgementList.lua",
+      "family": "repeated-query-array",
+      "symbol": "acknowledgement_array",
+      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
+    },
+    {
+      "file": "lua/shared/activityList.lua",
+      "family": "list-cursor",
+      "symbol": "decode_activity_cursor",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/shared/activityList.lua",
+      "family": "query-params",
+      "symbol": "activity_scalar",
+      "reason": "Existing endpoint-local copy of the shared query helpers; kept to avoid a behavior change. Use query.lua helpers instead."
+    },
+    {
+      "file": "lua/shared/activityList.lua",
+      "family": "record-identifier",
+      "symbol": "at-uri-pattern",
+      "reason": "Existing record-URI check that predates the registry; kept to avoid a behavior change. Build on valid_record_uri where the shape allows.",
+      "count": 2
+    },
+    {
+      "file": "lua/shared/activityList.lua",
+      "family": "repeated-query-array",
+      "symbol": "activity_array",
+      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
+    },
+    {
+      "file": "lua/shared/activityProjection.lua",
+      "family": "record-view",
+      "symbol": "activity_projection_record_view",
+      "reason": "Existing record view with endpoint-specific fields; kept to avoid a behavior change. Build on record_view where the shape allows."
+    },
+    {
+      "file": "lua/shared/actorFollowList.lua",
+      "family": "list-cursor",
+      "symbol": "cursor_decode",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/shared/actorFollowList.lua",
+      "family": "list-cursor",
+      "symbol": "cursor-hex-decode",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/shared/attachmentList.lua",
+      "family": "list-cursor",
+      "symbol": "attachment_cursor_decode",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/shared/attachmentList.lua",
+      "family": "repeated-query-array",
+      "symbol": "attachment_array",
+      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
+    },
+    {
+      "file": "lua/shared/collection.lua",
+      "family": "record-identifier",
+      "symbol": "collection_valid_record_uri",
+      "reason": "Existing record-URI check that predates the registry; kept to avoid a behavior change. Build on valid_record_uri where the shape allows."
+    },
+    {
+      "file": "lua/shared/collectionItems.lua",
+      "family": "list-cursor",
+      "symbol": "collection_items_cursor_decode",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/shared/collectionItems.lua",
+      "family": "list-cursor",
+      "symbol": "collection_items_cursor_encode",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/shared/collectionItems.lua",
+      "family": "list-cursor",
+      "symbol": "cursor-hex-decode",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/shared/collectionItems.lua",
+      "family": "list-cursor",
+      "symbol": "cursor-length-cap",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/shared/collectionItems.lua",
+      "family": "query-params",
+      "symbol": "collection_items_invalid",
+      "reason": "Existing endpoint-local copy of the shared query helpers; kept to avoid a behavior change. Use query.lua helpers instead."
+    },
+    {
+      "file": "lua/shared/collectionItems.lua",
+      "family": "query-params",
+      "symbol": "collection_items_keys_only",
+      "reason": "Existing endpoint-local copy of the shared query helpers; kept to avoid a behavior change. Use query.lua helpers instead."
+    },
+    {
+      "file": "lua/shared/collectionList.lua",
+      "family": "list-cursor",
+      "symbol": "collection_list_cursor_decode",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/shared/collectionList.lua",
+      "family": "query-params",
+      "symbol": "collection_scalar",
+      "reason": "Existing endpoint-local copy of the shared query helpers; kept to avoid a behavior change. Use query.lua helpers instead."
+    },
+    {
+      "file": "lua/shared/collectionList.lua",
+      "family": "repeated-query-array",
+      "symbol": "collection_array",
+      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
+    },
+    {
+      "file": "lua/shared/collectionProjection.lua",
+      "family": "record-identifier",
+      "symbol": "collection_projection_valid_record_uri",
+      "reason": "Existing record-URI check that predates the registry; kept to avoid a behavior change. Build on valid_record_uri where the shape allows."
+    },
+    {
+      "file": "lua/shared/collectionProjection.lua",
+      "family": "record-view",
+      "symbol": "collection_projection_record_view",
+      "reason": "Existing record view with endpoint-specific fields; kept to avoid a behavior change. Build on record_view where the shape allows."
+    },
+    {
+      "file": "lua/shared/entityFollow.lua",
+      "family": "record-view",
+      "symbol": "entity_follow_indexed_record_view",
+      "reason": "Existing record view with endpoint-specific fields; kept to avoid a behavior change. Build on record_view where the shape allows."
+    },
+    {
+      "file": "lua/shared/entityFollow.lua",
+      "family": "record-view",
+      "symbol": "entity_follow_record_view",
+      "reason": "Existing record view with endpoint-specific fields; kept to avoid a behavior change. Build on record_view where the shape allows."
+    },
+    {
+      "file": "lua/shared/entityFollowPagination.lua",
+      "family": "list-cursor",
+      "symbol": "entity_follow_decode_cursor",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/shared/evaluation.lua",
+      "family": "repeated-query-array",
+      "symbol": "evaluation_evaluator_array",
+      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
+    },
+    {
+      "file": "lua/shared/evaluationList.lua",
+      "family": "list-cursor",
+      "symbol": "decode_evaluation_cursor",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/shared/evaluationList.lua",
+      "family": "repeated-query-array",
+      "symbol": "evaluation_array",
+      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
+    },
+    {
+      "file": "lua/shared/evmLinkIdentifier.lua",
+      "family": "record-identifier",
+      "symbol": "at-uri-pattern",
+      "reason": "Existing record-URI check that predates the registry; kept to avoid a behavior change. Build on valid_record_uri where the shape allows."
+    },
+    {
+      "file": "lua/shared/evmLinkIdentifier.lua",
+      "family": "record-view",
+      "symbol": "evm_link_record_view",
+      "reason": "Existing record view with endpoint-specific fields; kept to avoid a behavior change. Build on record_view where the shape allows."
+    },
+    {
+      "file": "lua/shared/featureProjection.lua",
+      "family": "record-view",
+      "symbol": "feature_projection_record_view",
+      "reason": "Existing record view with endpoint-specific fields; kept to avoid a behavior change. Build on record_view where the shape allows."
+    },
+    {
+      "file": "lua/shared/feedActorReactions.lua",
+      "family": "record-view",
+      "symbol": "feed_actor_reaction_record_view",
+      "reason": "Existing record view with endpoint-specific fields; kept to avoid a behavior change. Build on record_view where the shape allows."
+    },
+    {
+      "file": "lua/shared/feedReaction.lua",
+      "family": "list-cursor",
+      "symbol": "feed_reaction_decode_cursor",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/shared/fundingReceipt.lua",
+      "family": "record-view",
+      "symbol": "indexed-at-null",
+      "reason": "funding_receipt_view repeats the record_view null indexedAt fallback because it also adds author; kept to avoid a behavior change."
+    },
+    {
+      "file": "lua/shared/fundingReceiptList.lua",
+      "family": "list-cursor",
+      "symbol": "decode_funding_receipt_cursor",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/shared/fundingReceiptList.lua",
+      "family": "repeated-query-array",
+      "symbol": "funding_receipt_array",
+      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
+    },
+    {
+      "file": "lua/shared/measurementQuery.lua",
+      "family": "record-identifier",
+      "symbol": "measurement_valid_record_uri",
+      "reason": "Existing record-URI check that predates the registry; kept to avoid a behavior change. Build on valid_record_uri where the shape allows."
+    },
+    {
+      "file": "lua/shared/organizationList.lua",
+      "family": "list-cursor",
+      "symbol": "cursor-hex-decode",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/shared/organizationList.lua",
+      "family": "record-identifier",
+      "symbol": "at-uri-pattern",
+      "reason": "Existing record-URI check that predates the registry; kept to avoid a behavior change. Build on valid_record_uri where the shape allows."
+    },
+    {
+      "file": "lua/shared/organizationList.lua",
+      "family": "repeated-query-array",
+      "symbol": "array",
+      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
+    },
+    {
+      "file": "lua/shared/profileList.lua",
+      "family": "list-cursor",
+      "symbol": "cursor-hex-decode",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/shared/profileList.lua",
+      "family": "record-identifier",
+      "symbol": "at-uri-pattern",
+      "reason": "Existing record-URI check that predates the registry; kept to avoid a behavior change. Build on valid_record_uri where the shape allows."
+    },
+    {
+      "file": "lua/shared/recentFollows.lua",
+      "family": "list-cursor",
+      "symbol": "cursor-hex-decode",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/shared/recentFollows.lua",
+      "family": "list-cursor",
+      "symbol": "recent_cursor_decode",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/shared/recentFollows.lua",
+      "family": "list-cursor",
+      "symbol": "recent_cursor_encode",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/shared/recentFollows.lua",
+      "family": "record-identifier",
+      "symbol": "recent_valid_record_uri",
+      "reason": "Existing record-URI check that predates the registry; kept to avoid a behavior change. Build on valid_record_uri where the shape allows."
+    },
+    {
+      "file": "lua/shared/recentFollows.lua",
+      "family": "record-view",
+      "symbol": "recent_record_view",
+      "reason": "Existing record view with endpoint-specific fields; kept to avoid a behavior change. Build on record_view where the shape allows."
+    },
+    {
+      "file": "lua/shared/rightsIdentifier.lua",
+      "family": "record-identifier",
+      "symbol": "rights_valid_record_uri",
+      "reason": "Existing record-URI check that predates the registry; kept to avoid a behavior change. Build on valid_record_uri where the shape allows."
+    },
+    {
+      "file": "lua/shared/rightsView.lua",
+      "family": "actor-view",
+      "symbol": "rights_hydrate_actor_views",
+      "reason": "Existing actor hydration variant; kept to avoid a behavior change. Build on hydrate_actor_views where the shape allows."
+    },
+    {
+      "file": "lua/shared/rightsView.lua",
+      "family": "record-view",
+      "symbol": "rights_record_view",
+      "reason": "Existing record view with endpoint-specific fields; kept to avoid a behavior change. Build on record_view where the shape allows."
+    },
+    {
+      "file": "lua/shared/vocabTagValidation.lua",
+      "family": "actor-view",
+      "symbol": "hydrate_vocab_actor_views",
+      "reason": "Existing actor hydration variant; kept to avoid a behavior change. Build on hydrate_actor_views where the shape allows."
+    },
+    {
+      "file": "lua/shared/workscopeTag.lua",
+      "family": "record-identifier",
+      "symbol": "workscope_tag_valid_record_uri",
+      "reason": "Existing record-URI check that predates the registry; kept to avoid a behavior change. Build on valid_record_uri where the shape allows."
+    },
+    {
+      "file": "lua/shared/workscopeTagList.lua",
+      "family": "list-cursor",
+      "symbol": "workscope_tag_decode_cursor",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/shared/workscopeTagList.lua",
+      "family": "repeated-query-array",
+      "symbol": "workscope_tag_array",
+      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
+    },
+    {
+      "file": "lua/src/listBadgeAwards.lua",
+      "family": "list-cursor",
+      "symbol": "cursor-hex-decode",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/src/listBadgeAwards.lua",
+      "family": "list-cursor",
+      "symbol": "decode_badge_award_cursor",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/src/listBadgeAwards.lua",
+      "family": "list-params",
+      "symbol": "include-total-message",
+      "reason": "Existing endpoint-local list parameter parsing; kept to avoid a behavior change. Use includeTotal.lua instead."
+    },
+    {
+      "file": "lua/src/listBadgeAwards.lua",
+      "family": "repeated-query-array",
+      "symbol": "array_values",
+      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
+    },
+    {
+      "file": "lua/src/listBadgeDefinitions.lua",
+      "family": "list-cursor",
+      "symbol": "cursor-hex-decode",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/src/listBadgeDefinitions.lua",
+      "family": "list-cursor",
+      "symbol": "decode_badge_definition_cursor",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/src/listBadgeDefinitions.lua",
+      "family": "repeated-query-array",
+      "symbol": "badge_definition_array",
+      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
+    },
+    {
+      "file": "lua/src/listBadgeResponses.lua",
+      "family": "list-cursor",
+      "symbol": "cursor-hex-decode",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/src/listBadgeResponses.lua",
+      "family": "list-cursor",
+      "symbol": "decode_badge_response_cursor",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/src/listContributions.lua",
+      "family": "list-cursor",
+      "symbol": "decode_contribution_cursor",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/src/listContributorInformation.lua",
+      "family": "list-cursor",
+      "symbol": "contributor_information_cursor_decode",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/src/listContributorInformation.lua",
+      "family": "repeated-query-array",
+      "symbol": "contributor_information_array",
+      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
+    },
+    {
+      "file": "lua/src/listEvmLinks.lua",
+      "family": "list-cursor",
+      "symbol": "cursor-hex-decode",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/src/listEvmLinks.lua",
+      "family": "list-cursor",
+      "symbol": "decode_evm_link_cursor",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/src/listEvmLinks.lua",
+      "family": "repeated-query-array",
+      "symbol": "array_values",
+      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
+    },
+    {
+      "file": "lua/src/listFeatures.lua",
+      "family": "list-cursor",
+      "symbol": "cursor-hex-decode",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/src/listFeatures.lua",
+      "family": "list-cursor",
+      "symbol": "feature_cursor_decode",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/src/listFeatures.lua",
+      "family": "query-params",
+      "symbol": "occur-once-message",
+      "reason": "Existing endpoint-local copy of the shared query helpers; kept to avoid a behavior change. Use query.lua helpers instead."
+    },
+    {
+      "file": "lua/src/listFeatures.lua",
+      "family": "repeated-query-array",
+      "symbol": "feature_array",
+      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
+    },
+    {
+      "file": "lua/src/listLocations.lua",
+      "family": "list-cursor",
+      "symbol": "cursor-hex-decode",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/src/listMeasurements.lua",
+      "family": "list-cursor",
+      "symbol": "decode_measurement_cursor",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/src/listMeasurements.lua",
+      "family": "repeated-query-array",
+      "symbol": "measurement_array",
+      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
+    },
+    {
+      "file": "lua/src/listRights.lua",
+      "family": "list-cursor",
+      "symbol": "rights_list_cursor_decode",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/src/listRights.lua",
+      "family": "repeated-query-array",
+      "symbol": "rights_list_array",
+      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
+    },
+    {
+      "file": "lua/src/listVocabTags.lua",
+      "family": "list-cursor",
+      "symbol": "cursor-hex-decode",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/src/searchBadgeDefinitions.lua",
+      "family": "list-cursor",
+      "symbol": "cursor-hex-decode",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/src/searchBadgeDefinitions.lua",
+      "family": "list-cursor",
+      "symbol": "decode_badge_definition_cursor",
+      "reason": "Existing endpoint-local cursor code that predates the registry; kept to avoid a behavior change. Move onto decode_cursor where the cursor shape allows."
+    },
+    {
+      "file": "lua/src/searchBadgeDefinitions.lua",
+      "family": "repeated-query-array",
+      "symbol": "badge_definition_array",
+      "reason": "Existing endpoint-local repeated-parameter parser; no shared parser exists yet. Kept to avoid a behavior change."
+    },
+    {
+      "file": "lua/shared/actorFollow.lua",
+      "family": "shared-helper",
+      "symbol": "query",
+      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+    },
+    {
+      "file": "lua/shared/location.lua",
+      "family": "shared-helper",
+      "symbol": "query",
+      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+    },
+    {
+      "file": "lua/shared/organization.lua",
+      "family": "shared-helper",
+      "symbol": "query",
+      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+    },
+    {
+      "file": "lua/shared/organizationList.lua",
+      "family": "shared-helper",
+      "symbol": "cursor_decode",
+      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
+    },
+    {
+      "file": "lua/shared/profile.lua",
+      "family": "shared-helper",
+      "symbol": "query",
+      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+    },
+    {
+      "file": "lua/shared/profileList.lua",
+      "family": "shared-helper",
+      "symbol": "array",
+      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
+    },
+    {
+      "file": "lua/shared/profileList.lua",
+      "family": "shared-helper",
+      "symbol": "cursor_decode",
+      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
+    },
+    {
+      "file": "lua/shared/workscopeRecordView.lua",
+      "family": "shared-helper",
+      "symbol": "record_view",
+      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
+    },
+    {
+      "file": "lua/src/getBadgeAward.lua",
+      "family": "shared-helper",
+      "symbol": "query",
+      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+    },
+    {
+      "file": "lua/src/getBadgeDefinition.lua",
+      "family": "shared-helper",
+      "symbol": "query",
+      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+    },
+    {
+      "file": "lua/src/getBadgeResponse.lua",
+      "family": "shared-helper",
+      "symbol": "query",
+      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+    },
+    {
+      "file": "lua/src/getVocabTag.lua",
+      "family": "shared-helper",
+      "symbol": "query",
+      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+    },
+    {
+      "file": "lua/src/listBadgeAwards.lua",
+      "family": "shared-helper",
+      "symbol": "valid_badge_definition_uri",
+      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
+    },
+    {
+      "file": "lua/src/listBadgeAwards.lua",
+      "family": "shared-helper",
+      "symbol": "query",
+      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+    },
+    {
+      "file": "lua/src/listBadgeAwards.lua",
+      "family": "shared-helper",
+      "symbol": "parse_include_total",
+      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
+    },
+    {
+      "file": "lua/src/listBadgeDefinitions.lua",
+      "family": "shared-helper",
+      "symbol": "query",
+      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+    },
+    {
+      "file": "lua/src/listBadgeResponses.lua",
+      "family": "shared-helper",
+      "symbol": "query",
+      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+    },
+    {
+      "file": "lua/src/listLocations.lua",
+      "family": "shared-helper",
+      "symbol": "array",
+      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
+    },
+    {
+      "file": "lua/src/listLocations.lua",
+      "family": "shared-helper",
+      "symbol": "add_in",
+      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
+    },
+    {
+      "file": "lua/src/listLocations.lua",
+      "family": "shared-helper",
+      "symbol": "cursor_decode",
+      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
+    },
+    {
+      "file": "lua/src/listMeasurements.lua",
+      "family": "shared-helper",
+      "symbol": "bind_values",
+      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
+    },
+    {
+      "file": "lua/src/listVocabTags.lua",
+      "family": "shared-helper",
+      "symbol": "query",
+      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+    },
+    {
+      "file": "lua/src/listVocabTags.lua",
+      "family": "shared-helper",
+      "symbol": "decode_cursor",
+      "reason": "Existing duplicate of a lua/shared helper; baseline until the consolidation PRs land."
+    },
+    {
+      "file": "lua/src/searchBadgeDefinitions.lua",
+      "family": "shared-helper",
+      "symbol": "query",
+      "reason": "Per-module query entry point that shares a name; not a reusable helper."
+    }
+  ],
+  "allowlistNote": "The allowlist is a baseline of copies that existed when the lint was added. It is not approval to add more: new entries need a specific reason, and count must match the occurrences exactly."
+}

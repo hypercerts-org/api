@@ -104,7 +104,8 @@
         "happyview-modules/tooling/seed.js",
         "happyview-modules/tooling/smoke.js",
         "happyview-modules/tooling/e2e.js",
-        "happyview-modules/tooling/lint-lua.js"
+        "happyview-modules/tooling/lint-lua.js",
+        "happyview-modules/tooling/lint-shared-helpers.js"
       ],
       "linter": {
         "rules": {
