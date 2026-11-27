@@ -12,17 +12,15 @@ async function endpointSources(name) {
     "lua/shared/didValidation.lua",
     "lua/shared/query.lua",
     "lua/shared/recordIdentifier.lua",
-    "lua/shared/rightsIdentifier.lua",
     "lua/shared/recordView.lua",
     "lua/shared/actorView.lua",
-    "lua/shared/rightsView.lua",
   ];
   if (name === "listRights")
     shared.push(
       "lua/shared/datetimeValidation.lua",
       "lua/shared/listValidation.lua",
-      "lua/shared/listQuery.lua",
       "lua/shared/listCursor.lua",
+      "lua/shared/listQuery.lua",
       "lua/shared/listWhere.lua",
       "lua/shared/createdAtSort.lua",
     );

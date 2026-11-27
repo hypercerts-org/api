@@ -95,6 +95,7 @@ local handler = table.concat({
   source("lua/shared/recordIdentifier.lua"),
   source("lua/shared/datetimeValidation.lua"),
   source("lua/shared/listValidation.lua"),
+  source("lua/shared/listCursor.lua"),
   source("lua/shared/accountFollowFilter.lua"),
   source("lua/shared/recentFollows.lua"),
   source("lua/src/listRecentFollows.lua"),

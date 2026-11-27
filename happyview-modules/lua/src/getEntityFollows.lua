@@ -23,7 +23,7 @@ local function get_entity_follows()
     values)
 
   local follows_by_entity = {}
-  for _, row in ipairs(rows) do follows_by_entity[row.target] = entity_follow_record_view(row) end
+  for _, row in ipairs(rows) do follows_by_entity[row.target] = entity_follow_typed_view(row) end
 
   local results = {}
   for _, entity_uri in ipairs(entities) do

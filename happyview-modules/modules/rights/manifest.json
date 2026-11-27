@@ -16,10 +16,8 @@
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
-        "../../lua/shared/rightsIdentifier.lua",
         "../../lua/shared/recordView.lua",
-        "../../lua/shared/actorView.lua",
-        "../../lua/shared/rightsView.lua"
+        "../../lua/shared/actorView.lua"
       ],
       "config": { "script_type": "lua", "description": "Look up one rights record" },
       "dependsOn": ["org.hypercerts.claim.getRights"]
@@ -40,14 +38,12 @@
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
-        "../../lua/shared/rightsIdentifier.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",
-        "../../lua/shared/rightsView.lua",
         "../../lua/shared/datetimeValidation.lua",
         "../../lua/shared/listValidation.lua",
-        "../../lua/shared/listQuery.lua",
         "../../lua/shared/listCursor.lua",
+        "../../lua/shared/listQuery.lua",
         "../../lua/shared/listWhere.lua",
         "../../lua/shared/createdAtSort.lua"
       ],

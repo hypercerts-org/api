@@ -19,6 +19,15 @@ local function scalar(params, key)
   return tostring(value)
 end
 
+-- luacheck: push ignore 211
+-- Like scalar(), but a boolean comes back as "true" or "false": HappyView can hand
+-- boolean-typed query parameters to Lua as booleans rather than strings.
+local function scalar_or_boolean(values, key)
+  if type(values[key]) == "boolean" then return tostring(values[key]) end
+  return scalar(values, key)
+end
+-- luacheck: pop
+
 local function valid_did(value)
   if type(value) ~= "string" or #value > 2048 then return false end
   local method, specific = value:match("^did:([a-z]+):(.+)$")
@@ -38,6 +47,14 @@ local function valid_record_uri(value)
   if not authority or not valid_did(authority) or not valid_record_key(rkey) then return false end
   return true, collection, authority
 end
+
+-- luacheck: push ignore 211
+-- For user-supplied filter values: bounds the size before parsing.
+local function valid_bounded_record_uri(value)
+  if type(value) ~= "string" or #value > 8192 then return false end
+  return valid_record_uri(value)
+end
+-- luacheck: pop
 
 local ACTIVITY_PROJECTION_CONTRIBUTOR_INFORMATION = "org.hypercerts.claim.contributorInformation"
 local ACTIVITY_PROJECTION_PROFILE = "app.certified.actor.profile"
@@ -217,6 +234,32 @@ local function activity_projection_hydrate_views(views)
   end
 end
 
+local NULL = json.decode("null")
+
+local function record_view(row)
+  return {
+    uri = row.uri,
+    cid = row.cid,
+    indexedAt = row.indexed_at == nil and NULL or row.indexed_at,
+    did = row.did,
+    record = json.decode(row.record),
+  }
+end
+
+-- luacheck: push ignore 211
+-- Like record_view, but a row without indexed_at has no indexedAt key instead of JSON null.
+-- Pass it to hydrate_actor_views for sidecars that preserve the omission.
+local function record_view_omitting_indexed_at(row)
+  return {
+    uri = row.uri,
+    cid = row.cid,
+    indexedAt = row.indexed_at,
+    did = row.did,
+    record = json.decode(row.record),
+  }
+end
+-- luacheck: pop
+
 local FEATURE_PROJECTION_PROFILE = "app.certified.actor.profile"
 local FEATURE_PROJECTION_ORGANIZATION = "app.certified.actor.organization"
 local FEATURE_PROJECTION_NULL = json.decode("null")
@@ -248,16 +291,6 @@ local function feature_projection_load_actor_records(collection, dids)
   return by_did
 end
 
-local function feature_projection_record_view(row)
-  return {
-    uri = row.uri,
-    cid = row.cid,
-    indexedAt = row.indexed_at == nil and FEATURE_PROJECTION_NULL or row.indexed_at,
-    did = row.did,
-    record = json.decode(row.record),
-  }
-end
-
 local function feature_projection_view(row)
   return {
     ["$type"] = "org.hypercerts.collection.listCollectionItems#featureView",
@@ -282,8 +315,8 @@ local function feature_projection_hydrate(views)
   local profiles = feature_projection_load_actor_records(FEATURE_PROJECTION_PROFILE, dids)
   local organizations = feature_projection_load_actor_records(FEATURE_PROJECTION_ORGANIZATION, dids)
   for _, view in ipairs(views) do
-    view.author.profile = profiles[view.did] and feature_projection_record_view(profiles[view.did]) or FEATURE_PROJECTION_NULL
-    view.author.organization = organizations[view.did] and feature_projection_record_view(organizations[view.did]) or FEATURE_PROJECTION_NULL
+    view.author.profile = profiles[view.did] and record_view(profiles[view.did]) or FEATURE_PROJECTION_NULL
+    view.author.organization = organizations[view.did] and record_view(organizations[view.did]) or FEATURE_PROJECTION_NULL
   end
 end
 
@@ -295,40 +328,97 @@ local function parse_list_limit(params)
   return limit
 end
 
+local function valid_datetime(value)
+  if type(value) ~= "string" then return false end
+  local year, month, day, hour, minute, second, suffix = value:match(
+    "^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)(.*)$")
+  if not year then return false end
+  year, month, day = tonumber(year), tonumber(month), tonumber(day)
+  if year < 1 then return false end
+  hour, minute, second = tonumber(hour), tonumber(minute), tonumber(second)
+  if month < 1 or month > 12 or hour > 23 or minute > 59 or second > 59 then return false end
+  local leap = year % 4 == 0 and (year % 100 ~= 0 or year % 400 == 0)
+  local month_days = { 31, leap and 29 or 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
+  if day < 1 or day > month_days[month] then return false end
+  local fraction, zone = suffix:match("^(%.%d+)(Z)$")
+  if not fraction then fraction, zone = suffix:match("^(%.%d+)([+-]%d%d:%d%d)$") end
+  if not fraction then zone = suffix:match("^(Z)$") end
+  if not zone then zone = suffix:match("^([+-]%d%d:%d%d)$") end
+  if not zone or zone == "-00:00" then return false end
+  if zone ~= "Z" then
+    local zh, zm = zone:match("^[+-](%d%d):(%d%d)$")
+    if not zh or tonumber(zh) > 23 or tonumber(zm) > 59 then return false end
+  end
+  return true
+end
+
+-- The hex prologue every list cursor shape shares: rejects empty, over-long (8192),
+-- odd-length and non-lowercase-hex tokens with "cursor is malformed" and returns the
+-- decoded JSON text. Shape and JSON checks stay with each cursor's own decoder.
+local function decode_hex_cursor_token(token)
+  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
+    invalid("cursor is malformed")
+  end
+  return (token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end))
+end
+
+-- Hex-encodes the JSON of a cursor table.
+local function cursor_encode(value)
+  local encoded = json.encode(value)
+  return (encoded:gsub(".", function(char) return string.format("%02x", string.byte(char)) end))
+end
+
+-- luacheck: push ignore 211
+-- Decodes a hex-encoded {v, d, t, u} list cursor. Rejects malformed tokens, other
+-- sort directions and unknown keys; validate_value(value) -> boolean runs the
+-- endpoint-specific check on t and u. Not for endpoints that skip the 8192-character
+-- cap or accept extra keys.
+local function decode_cursor(token, direction, validate_value)
+  if token == nil then return nil end
+  local decoded = decode_hex_cursor_token(token)
+  local ok, value = pcall(json.decode, decoded)
+  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
+    or type(value.t) ~= "string" or type(value.u) ~= "string" then
+    invalid("cursor is malformed or belongs to another sortDirection")
+  end
+  for key in pairs(value) do
+    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
+  end
+  if not validate_value(value) then invalid("cursor is malformed") end
+  return value
+end
+
+-- decode_cursor for the common case: t is a datetime and u a record URI.
+-- record_uri is the collection NSID u must belong to, or a predicate(uri) -> boolean
+-- for endpoints with stricter URI rules. valid_t(t) defaults to valid_datetime.
+local function decode_record_cursor(token, direction, record_uri, valid_t)
+  valid_t = valid_t or valid_datetime
+  return decode_cursor(token, direction, function(value)
+    if not valid_t(value.t) then return false end
+    if type(record_uri) == "function" then return record_uri(value.u) end
+    local valid, collection = valid_record_uri(value.u)
+    return valid and collection == record_uri
+  end)
+end
+-- luacheck: pop
+
 local ITEM_COLLECTION = "org.hypercerts.collection"
 local ITEM_ACTIVITY = "org.hypercerts.claim.activity"
 local ITEM_FEATURE = "org.hypercerts.entity.feature"
 local ITEM_NULL = json.decode("null")
 
-local function collection_items_invalid(message)
-  error("InvalidRequest: " .. message, 0)
-end
-
-local function collection_items_keys_only(values, allowed)
-  keys_only(values, allowed, "unknown query parameter: ")
-end
-
 local function collection_items_cursor_decode(token, collection_uri)
   if token == nil then return nil end
-  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
-    collection_items_invalid("cursor is malformed")
-  end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
+  local decoded = decode_hex_cursor_token(token)
   local ok, value = pcall(json.decode, decoded)
   if not ok or type(value) ~= "table" or value.v ~= 1 or value.u ~= collection_uri
     or type(value.i) ~= "number" or value.i < 1 or value.i % 1 ~= 0 then
-    collection_items_invalid("cursor is malformed or belongs to another collection")
+    invalid("cursor is malformed or belongs to another collection")
   end
   for key in pairs(value) do
-    if key ~= "v" and key ~= "u" and key ~= "i" then collection_items_invalid("cursor is malformed") end
+    if key ~= "v" and key ~= "u" and key ~= "i" then invalid("cursor is malformed") end
   end
   return value
-end
-
-local function collection_items_cursor_encode(value)
-  return (json.encode(value):gsub(".", function(char)
-    return string.format("%02x", string.byte(char))
-  end))
 end
 
 local function collection_items_query(sql, values)
@@ -445,11 +535,11 @@ local function collection_items_resolve(items)
 end
 
 local function collection_items_response()
-  collection_items_keys_only(params, { collection = true, limit = true, cursor = true })
+  keys_only(params, { collection = true, limit = true, cursor = true }, "unknown query parameter: ")
   local collection_uri = scalar(params, "collection")
   local valid, collection = valid_record_uri(collection_uri)
   if not collection_uri or not valid or collection ~= ITEM_COLLECTION then
-    collection_items_invalid("collection must be a full org.hypercerts.collection AT-URI with a DID authority")
+    invalid("collection must be a full org.hypercerts.collection AT-URI with a DID authority")
   end
   local limit = parse_list_limit(params)
   local cursor = collection_items_cursor_decode(scalar(params, "cursor"), collection_uri)
@@ -491,7 +581,7 @@ local function collection_items_response()
 
   local response = { items = toarray(page) }
   if finish < #source_items then
-    response.cursor = collection_items_cursor_encode({ v = 1, u = collection_uri, i = finish })
+    response.cursor = cursor_encode({ v = 1, u = collection_uri, i = finish })
   end
   return response
 end

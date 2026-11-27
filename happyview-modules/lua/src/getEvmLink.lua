@@ -22,7 +22,7 @@ function handle()
     { EVMLINK, uri })
   if #rows == 0 then error("RecordNotFound: EVM-link record is not indexed", 0) end
 
-  local view = evm_link_record_view(rows[1])
+  local view = record_view(rows[1])
   view.actor = { did = view.did }
   local hydrated_actors = { view.actor }
   hydrate_actor_views(hydrated_actors, evm_link_query)

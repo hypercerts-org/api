@@ -27,6 +27,15 @@ local function scalar(params, key)
   return tostring(value)
 end
 
+-- luacheck: push ignore 211
+-- Like scalar(), but a boolean comes back as "true" or "false": HappyView can hand
+-- boolean-typed query parameters to Lua as booleans rather than strings.
+local function scalar_or_boolean(values, key)
+  if type(values[key]) == "boolean" then return tostring(values[key]) end
+  return scalar(values, key)
+end
+-- luacheck: pop
+
 local function valid_record_key(value)
   return #value >= 1 and #value <= 512 and value ~= "." and value ~= ".."
     and not value:find("[^%w_~%.:%-]")
@@ -38,6 +47,14 @@ local function valid_record_uri(value)
   if not authority or not valid_did(authority) or not valid_record_key(rkey) then return false end
   return true, collection, authority
 end
+
+-- luacheck: push ignore 211
+-- For user-supplied filter values: bounds the size before parsing.
+local function valid_bounded_record_uri(value)
+  if type(value) ~= "string" or #value > 8192 then return false end
+  return valid_record_uri(value)
+end
+-- luacheck: pop
 
 local function valid_datetime(value)
   if type(value) ~= "string" then return false end
@@ -71,6 +88,56 @@ local function parse_list_limit(params)
   return limit
 end
 
+-- The hex prologue every list cursor shape shares: rejects empty, over-long (8192),
+-- odd-length and non-lowercase-hex tokens with "cursor is malformed" and returns the
+-- decoded JSON text. Shape and JSON checks stay with each cursor's own decoder.
+local function decode_hex_cursor_token(token)
+  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
+    invalid("cursor is malformed")
+  end
+  return (token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end))
+end
+
+-- Hex-encodes the JSON of a cursor table.
+local function cursor_encode(value)
+  local encoded = json.encode(value)
+  return (encoded:gsub(".", function(char) return string.format("%02x", string.byte(char)) end))
+end
+
+-- luacheck: push ignore 211
+-- Decodes a hex-encoded {v, d, t, u} list cursor. Rejects malformed tokens, other
+-- sort directions and unknown keys; validate_value(value) -> boolean runs the
+-- endpoint-specific check on t and u. Not for endpoints that skip the 8192-character
+-- cap or accept extra keys.
+local function decode_cursor(token, direction, validate_value)
+  if token == nil then return nil end
+  local decoded = decode_hex_cursor_token(token)
+  local ok, value = pcall(json.decode, decoded)
+  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
+    or type(value.t) ~= "string" or type(value.u) ~= "string" then
+    invalid("cursor is malformed or belongs to another sortDirection")
+  end
+  for key in pairs(value) do
+    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
+  end
+  if not validate_value(value) then invalid("cursor is malformed") end
+  return value
+end
+
+-- decode_cursor for the common case: t is a datetime and u a record URI.
+-- record_uri is the collection NSID u must belong to, or a predicate(uri) -> boolean
+-- for endpoints with stricter URI rules. valid_t(t) defaults to valid_datetime.
+local function decode_record_cursor(token, direction, record_uri, valid_t)
+  valid_t = valid_t or valid_datetime
+  return decode_cursor(token, direction, function(value)
+    if not valid_t(value.t) then return false end
+    if type(record_uri) == "function" then return record_uri(value.u) end
+    local valid, collection = valid_record_uri(value.u)
+    return valid and collection == record_uri
+  end)
+end
+-- luacheck: pop
+
 -- Some clients wrote account follows whose `via` points at the followed
 -- account's own org.hypercerts.collection, using the account follow as a
 -- project follow. Those records stay indexed but are not account follows, so
@@ -91,17 +158,12 @@ local ACCOUNT_FOLLOW = "app.certified.graph.follow"
 local ENTITY_FOLLOW = "app.certified.graph.entityFollow"
 local NULL = json.decode("null")
 
-local function recent_valid_record_uri(value)
+local function is_recent_follow_uri(value)
   local valid, collection = valid_record_uri(value)
   return valid and (collection == ACCOUNT_FOLLOW or collection == ENTITY_FOLLOW)
 end
 
 local recent_valid_datetime = valid_datetime
-
-local function recent_cursor_encode(value)
-  local encoded = json.encode(value)
-  return (encoded:gsub(".", function(char) return string.format("%02x", string.byte(char)) end))
-end
 
 local function recent_cursor_decode(token, before)
   if not token then return nil end
@@ -116,7 +178,7 @@ local function recent_cursor_decode(token, before)
   for key in pairs(value) do
     if key ~= "v" and key ~= "t" and key ~= "u" and key ~= "b" then invalid("cursor is malformed") end
   end
-  if not recent_valid_datetime(value.t) or not recent_valid_record_uri(value.u)
+  if not recent_valid_datetime(value.t) or not is_recent_follow_uri(value.u)
     or value.b ~= (before or false) then
     invalid("cursor is malformed or belongs to another before value")
   end
@@ -195,7 +257,7 @@ local function recent_follows_response()
   local response = { follows = toarray(follows) }
   if has_more then
     local last = rows[#rows]
-    response.cursor = recent_cursor_encode({ v = 1, t = last.sort_timestamp, u = last.uri, b = before or false })
+    response.cursor = cursor_encode({ v = 1, t = last.sort_timestamp, u = last.uri, b = before or false })
   end
   return response
 end

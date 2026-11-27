@@ -1,10 +1,3 @@
-local function activity_scalar(values, key)
-  if key == "hasOrganizationRecord" and type(values[key]) == "boolean" then
-    return tostring(values[key])
-  end
-  return scalar(values, key)
-end
-
 local function activity_array(key, format)
   local value = params[key]
   if value == nil then return nil end
@@ -45,13 +38,6 @@ local function activity_array(key, format)
     end
   end
   return unique
-end
-
-local function decode_activity_cursor(token, direction)
-  return decode_cursor(token, direction, function(value)
-    local valid, collection = valid_record_uri(value.u)
-    return valid_datetime(value.t) and valid and collection == ACTIVITY
-  end)
 end
 
 local function bind_values(values, items)
@@ -176,7 +162,7 @@ local function activity_list_response(search_enabled)
   keys_only(params, allowed, "unknown query parameter: ")
 
   local authors = activity_array("authors", "did")
-  local has_organization_record = activity_scalar(params, "hasOrganizationRecord")
+  local has_organization_record = scalar_or_boolean(params, "hasOrganizationRecord")
   if has_organization_record ~= nil then
     if has_organization_record == "true" then
       has_organization_record = true
@@ -200,7 +186,7 @@ local function activity_list_response(search_enabled)
   if not search_enabled then include_total = parse_include_total(params) end
   local direction = parse_sort_direction(params)
   local limit = parse_list_limit(params)
-  local cursor = decode_activity_cursor(scalar(params, "cursor"), direction)
+  local cursor = decode_record_cursor(scalar(params, "cursor"), direction, ACTIVITY)
   local activities, next_cursor, total_count = activity_query(
     authors, has_organization_record, contributors, involved_actors, uris, search, limit, cursor, direction, include_total)
   local response = { activities = toarray(activities) }

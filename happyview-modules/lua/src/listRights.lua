@@ -41,13 +41,6 @@ local function rights_list_array(value)
   return unique
 end
 
-local function rights_list_cursor_decode(token, direction)
-  return decode_cursor(token, direction, function(value)
-    local valid, collection = rights_valid_record_uri(value.u)
-    return valid_datetime(value.t) and valid and collection == RIGHTS
-  end)
-end
-
 local function rights_list_query(authors, limit, cursor, direction)
   local where, values = { "rights.collection = $1" }, { RIGHTS }
 
@@ -77,12 +70,12 @@ local function rights_list_query(authors, limit, cursor, direction)
 
   local views, authors_to_hydrate = {}, {}
   for _, row in ipairs(rows) do
-    local view = rights_record_view(row)
+    local view = record_view(row)
     view.author = { did = view.did }
     views[#views + 1] = view
     authors_to_hydrate[#authors_to_hydrate + 1] = view.author
   end
-  rights_hydrate_actor_views(authors_to_hydrate, rights_list_run_query)
+  hydrate_actor_views(authors_to_hydrate, rights_list_run_query)
 
   local next_cursor
   if more then
@@ -97,7 +90,7 @@ local function rights_list_response()
   local authors = rights_list_array(params.authors)
   local direction = parse_sort_direction(params)
   local limit = parse_list_limit(params)
-  local cursor = rights_list_cursor_decode(scalar(params, "cursor"), direction)
+  local cursor = decode_record_cursor(scalar(params, "cursor"), direction, RIGHTS)
   local rights, next_cursor = rights_list_query(authors, limit, cursor, direction)
   local response = { rights = toarray(rights) }
   if next_cursor then response.cursor = next_cursor end

@@ -18,6 +18,14 @@ local function valid_record_uri(value)
   return true, collection, authority
 end
 
+-- luacheck: push ignore 211
+-- For user-supplied filter values: bounds the size before parsing.
+local function valid_bounded_record_uri(value)
+  if type(value) ~= "string" or #value > 8192 then return false end
+  return valid_record_uri(value)
+end
+-- luacheck: pop
+
 local ACTIVITY_PROJECTION_CONTRIBUTOR_INFORMATION = "org.hypercerts.claim.contributorInformation"
 local ACTIVITY_PROJECTION_PROFILE = "app.certified.actor.profile"
 local ACTIVITY_PROJECTION_ORGANIZATION = "app.certified.actor.organization"
@@ -216,6 +224,15 @@ local function scalar(params, key)
   end
   return tostring(value)
 end
+
+-- luacheck: push ignore 211
+-- Like scalar(), but a boolean comes back as "true" or "false": HappyView can hand
+-- boolean-typed query parameters to Lua as booleans rather than strings.
+local function scalar_or_boolean(values, key)
+  if type(values[key]) == "boolean" then return tostring(values[key]) end
+  return scalar(values, key)
+end
+-- luacheck: pop
 
 local ACTIVITY = "org.hypercerts.claim.activity"
 

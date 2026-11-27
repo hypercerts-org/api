@@ -50,12 +50,6 @@ local function attachment_subject_filter(where, values, subjects)
     "WHERE subject.value->>'uri' IN (" .. table.concat(placeholders, ", ") .. "))"
 end
 
-local function attachment_cursor_decode(token, direction)
-  return decode_cursor(token, direction, function(value)
-    return valid_datetime(value.t) and valid_attachment_uri(value.u)
-  end)
-end
-
 local function query_attachments(filters, limit, cursor, direction)
   local where, values = { "attachment.collection = $1" }, { ATTACHMENT_COLLECTION }
   if filters.authors then add_in(where, values, "attachment.did", filters.authors) end
@@ -119,7 +113,7 @@ local function list_attachments()
   local content_types = attachment_array(params, "contentTypes")
   local limit = parse_list_limit(params)
   local direction = parse_sort_direction(params)
-  local cursor = attachment_cursor_decode(scalar(params, "cursor"), direction)
+  local cursor = decode_record_cursor(scalar(params, "cursor"), direction, valid_attachment_uri)
   local attachments, next_cursor = query_attachments({
     authors = authors,
     uris = uris,

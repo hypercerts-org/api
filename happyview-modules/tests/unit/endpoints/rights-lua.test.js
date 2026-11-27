@@ -8,25 +8,15 @@ const root = fileURLToPath(new URL("../../../", import.meta.url));
 const read = (relative) => readFile(path.resolve(root, relative), "utf8");
 
 test("getRights returns the full indexed record and a nullable hydrated publisher", async () => {
-  const [
-    didValidation,
-    query,
-    recordIdentifier,
-    rightsIdentifier,
-    recordView,
-    actorView,
-    rightsView,
-    getRights,
-  ] = await Promise.all([
-    read("lua/shared/didValidation.lua"),
-    read("lua/shared/query.lua"),
-    read("lua/shared/recordIdentifier.lua"),
-    read("lua/shared/rightsIdentifier.lua"),
-    read("lua/shared/recordView.lua"),
-    read("lua/shared/actorView.lua"),
-    read("lua/shared/rightsView.lua"),
-    read("lua/src/getRights.lua"),
-  ]);
+  const [didValidation, query, recordIdentifier, recordView, actorView, getRights] =
+    await Promise.all([
+      read("lua/shared/didValidation.lua"),
+      read("lua/shared/query.lua"),
+      read("lua/shared/recordIdentifier.lua"),
+      read("lua/shared/recordView.lua"),
+      read("lua/shared/actorView.lua"),
+      read("lua/src/getRights.lua"),
+    ]);
   const program = [
     `local null_value = {}`,
     `local rights_record = {
@@ -72,10 +62,8 @@ test("getRights returns the full indexed record and a nullable hydrated publishe
     didValidation,
     query,
     recordIdentifier,
-    rightsIdentifier,
     recordView,
     actorView,
-    rightsView,
     getRights,
     `local response = handle()
     assert(response.rights.uri == params.uri)
@@ -99,14 +87,12 @@ async function listRightsSources() {
     read("lua/shared/didValidation.lua"),
     read("lua/shared/query.lua"),
     read("lua/shared/recordIdentifier.lua"),
-    read("lua/shared/rightsIdentifier.lua"),
     read("lua/shared/recordView.lua"),
     read("lua/shared/actorView.lua"),
-    read("lua/shared/rightsView.lua"),
     read("lua/shared/datetimeValidation.lua"),
     read("lua/shared/listValidation.lua"),
-    read("lua/shared/listQuery.lua"),
     read("lua/shared/listCursor.lua"),
+    read("lua/shared/listQuery.lua"),
     read("lua/shared/listWhere.lua"),
     read("lua/shared/createdAtSort.lua"),
     read("lua/src/listRights.lua"),

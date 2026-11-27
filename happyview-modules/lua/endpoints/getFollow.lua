@@ -27,6 +27,15 @@ local function scalar(params, key)
   return tostring(value)
 end
 
+-- luacheck: push ignore 211
+-- Like scalar(), but a boolean comes back as "true" or "false": HappyView can hand
+-- boolean-typed query parameters to Lua as booleans rather than strings.
+local function scalar_or_boolean(values, key)
+  if type(values[key]) == "boolean" then return tostring(values[key]) end
+  return scalar(values, key)
+end
+-- luacheck: pop
+
 local NULL = json.decode("null")
 
 local function record_view(row)
@@ -38,6 +47,20 @@ local function record_view(row)
     record = json.decode(row.record),
   }
 end
+
+-- luacheck: push ignore 211
+-- Like record_view, but a row without indexed_at has no indexedAt key instead of JSON null.
+-- Pass it to hydrate_actor_views for sidecars that preserve the omission.
+local function record_view_omitting_indexed_at(row)
+  return {
+    uri = row.uri,
+    cid = row.cid,
+    indexedAt = row.indexed_at,
+    did = row.did,
+    record = json.decode(row.record),
+  }
+end
+-- luacheck: pop
 
 -- Some clients wrote account follows whose `via` points at the followed
 -- account's own org.hypercerts.collection, using the account follow as a

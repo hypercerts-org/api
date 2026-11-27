@@ -12,7 +12,7 @@ end
 function handle()
   keys_only(params, { uri = true })
   local uri = scalar(params, "uri")
-  local valid, collection = rights_valid_record_uri(uri)
+  local valid, collection = valid_record_uri(uri)
   if not uri or not valid or collection ~= RIGHTS then
     invalid("uri must be a full org.hypercerts.claim.rights AT-URI with a DID authority")
   end
@@ -23,8 +23,8 @@ function handle()
     { RIGHTS, uri })
   if #rows == 0 then error("RecordNotFound: rights record is not indexed", 0) end
 
-  local view = rights_record_view(rows[1])
+  local view = record_view(rows[1])
   view.author = { did = view.did }
-  rights_hydrate_actor_views({ view.author }, rights_query)
+  hydrate_actor_views({ view.author }, rights_query)
   return { rights = view }
 end

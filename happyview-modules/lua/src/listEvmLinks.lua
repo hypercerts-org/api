@@ -106,7 +106,7 @@ local function list_evm_links(actors, addresses, limit, cursor, direction)
 
   local views, actors_to_hydrate = {}, {}
   for _, row in ipairs(rows) do
-    local view = evm_link_record_view(row)
+    local view = record_view(row)
     view.actor = { did = view.did }
     views[#views + 1] = view
     actors_to_hydrate[#actors_to_hydrate + 1] = view.actor

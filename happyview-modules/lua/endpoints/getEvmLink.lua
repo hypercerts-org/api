@@ -27,6 +27,15 @@ local function scalar(params, key)
   return tostring(value)
 end
 
+-- luacheck: push ignore 211
+-- Like scalar(), but a boolean comes back as "true" or "false": HappyView can hand
+-- boolean-typed query parameters to Lua as booleans rather than strings.
+local function scalar_or_boolean(values, key)
+  if type(values[key]) == "boolean" then return tostring(values[key]) end
+  return scalar(values, key)
+end
+-- luacheck: pop
+
 local function valid_record_key(value)
   return #value >= 1 and #value <= 512 and value ~= "." and value ~= ".."
     and not value:find("[^%w_~%.:%-]")
@@ -38,6 +47,14 @@ local function valid_record_uri(value)
   if not authority or not valid_did(authority) or not valid_record_key(rkey) then return false end
   return true, collection, authority
 end
+
+-- luacheck: push ignore 211
+-- For user-supplied filter values: bounds the size before parsing.
+local function valid_bounded_record_uri(value)
+  if type(value) ~= "string" or #value > 8192 then return false end
+  return valid_record_uri(value)
+end
+-- luacheck: pop
 
 local NULL = json.decode("null")
 
@@ -51,20 +68,26 @@ local function record_view(row)
   }
 end
 
+-- luacheck: push ignore 211
+-- Like record_view, but a row without indexed_at has no indexedAt key instead of JSON null.
+-- Pass it to hydrate_actor_views for sidecars that preserve the omission.
+local function record_view_omitting_indexed_at(row)
+  return {
+    uri = row.uri,
+    cid = row.cid,
+    indexedAt = row.indexed_at,
+    did = row.did,
+    record = json.decode(row.record),
+  }
+end
+-- luacheck: pop
+
 local EVMLINK_COLLECTION = "app.certified.link.evm"
 
 local function valid_evm_link_uri(value)
   if type(value) ~= "string" or value:find("[?#]") then return false end
   local valid, collection = valid_record_uri(value)
-  if not valid or collection ~= EVMLINK_COLLECTION then return false end
-  local authority = value:match("^at://([^/]+)/")
-  return valid_did(authority)
-end
-
-local function evm_link_record_view(row)
-  local view = record_view(row)
-  if view.indexedAt == nil then view.indexedAt = NULL end
-  return view
+  return valid and collection == EVMLINK_COLLECTION
 end
 
 local function normalize_evm_actor_indexed_at(actors)
@@ -81,7 +104,9 @@ end
 local PROFILE = "app.certified.actor.profile"
 local ORGANIZATION = "app.certified.actor.organization"
 
-local function hydrate_actor_views(actors, run_query)
+-- view(row) builds each profile/organization sidecar; it defaults to record_view.
+local function hydrate_actor_views(actors, run_query, view)
+  view = view or record_view
   if #actors == 0 then return end
   local dids, seen = {}, {}
   for _, actor in ipairs(actors) do
@@ -103,8 +128,8 @@ local function hydrate_actor_views(actors, run_query)
   load(PROFILE, profiles)
   load(ORGANIZATION, organizations)
   for _, actor in ipairs(actors) do
-    actor.profile = profiles[actor.did] and record_view(profiles[actor.did]) or NULL
-    actor.organization = organizations[actor.did] and record_view(organizations[actor.did]) or NULL
+    actor.profile = profiles[actor.did] and view(profiles[actor.did]) or NULL
+    actor.organization = organizations[actor.did] and view(organizations[actor.did]) or NULL
   end
 end
 
@@ -132,7 +157,7 @@ function handle()
     { EVMLINK, uri })
   if #rows == 0 then error("RecordNotFound: EVM-link record is not indexed", 0) end
 
-  local view = evm_link_record_view(rows[1])
+  local view = record_view(rows[1])
   view.actor = { did = view.did }
   local hydrated_actors = { view.actor }
   hydrate_actor_views(hydrated_actors, evm_link_query)

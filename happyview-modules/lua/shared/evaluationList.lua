@@ -58,13 +58,6 @@ local function evaluation_evaluator_match(values, dids)
     "WHERE evaluator.value->>'did' IN (" .. table.concat(marks, ", ") .. "))"
 end
 
-local function decode_evaluation_cursor(token, direction)
-  return decode_cursor(token, direction, function(value)
-    local valid, collection = valid_record_uri(value.u)
-    return valid_datetime(value.t) and valid and collection == EVALUATION
-  end)
-end
-
 local function evaluation_list_filters(authors, evaluators, subjects)
   local where, values = { "evaluation.collection = $1" }, { EVALUATION }
   if authors then add_in(where, values, "evaluation.did", authors) end
@@ -157,7 +150,7 @@ local function list_evaluations()
   local subjects = evaluation_array("subjects", "at-uri")
   local direction = parse_sort_direction(params)
   local limit = parse_list_limit(params)
-  local cursor = decode_evaluation_cursor(scalar(params, "cursor"), direction)
+  local cursor = decode_record_cursor(scalar(params, "cursor"), direction, EVALUATION)
   local evaluations, next_cursor = evaluation_list_query(authors, evaluators, subjects, limit, cursor, direction)
 
   local response = { evaluations = toarray(evaluations) }

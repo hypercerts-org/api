@@ -25,7 +25,7 @@ local function get_vocab_tag()
   local view = record_view(rows[1])
   if rows[1].indexed_at == nil then view.indexedAt = json.decode("null") end
   view.author = { did = view.did }
-  hydrate_vocab_actor_views({ view.author }, query)
+  hydrate_actor_views({ view.author }, query, record_view_omitting_indexed_at)
   return { vocabTag = view }
 end
 

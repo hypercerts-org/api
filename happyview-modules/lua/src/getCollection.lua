@@ -1,7 +1,7 @@
 function handle()
   keys_only(params, { uri = true }, "unknown query parameter: ")
   local uri = scalar(params, "uri")
-  local valid, collection = collection_valid_record_uri(uri)
+  local valid, collection = valid_bounded_record_uri(uri)
   if not uri or not valid or collection ~= COLLECTION then
     invalid("uri must be a full org.hypercerts.collection AT-URI with a DID authority")
   end

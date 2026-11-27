@@ -1,6 +1,6 @@
 local function workscope_tag_get(uri)
   keys_only(params, { uri = true })
-  local valid, collection = workscope_tag_valid_record_uri(uri)
+  local valid, collection = valid_record_uri(uri)
   if not uri or not valid or collection ~= WORKSCOPE_TAG then
     invalid("uri must be a full org.hypercerts.workscope.tag AT-URI with a DID authority")
   end
@@ -12,7 +12,7 @@ local function workscope_tag_get(uri)
   if #rows == 0 then error("RecordNotFound: work-scope tag is not indexed", 0) end
 
   local view = workscope_tag_view(rows[1])
-  hydrate_actor_views({ view.author }, workscope_tag_query)
+  hydrate_actor_views({ view.author }, workscope_tag_query, record_view_omitting_indexed_at)
   return { workscopeTag = view }
 end
 

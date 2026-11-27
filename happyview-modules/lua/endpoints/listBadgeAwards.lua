@@ -19,6 +19,25 @@ local function scalar(params, key)
   return tostring(value)
 end
 
+-- luacheck: push ignore 211
+-- Like scalar(), but a boolean comes back as "true" or "false": HappyView can hand
+-- boolean-typed query parameters to Lua as booleans rather than strings.
+local function scalar_or_boolean(values, key)
+  if type(values[key]) == "boolean" then return tostring(values[key]) end
+  return scalar(values, key)
+end
+-- luacheck: pop
+
+local function parse_include_total(values)
+  local value = values.includeTotal
+  if value == nil then return false end
+  if type(value) == "boolean" then return value end
+  value = scalar(values, "includeTotal")
+  if value == "true" then return true end
+  if value == "false" then return false end
+  invalid("includeTotal must be true or false")
+end
+
 local function valid_did(value)
   if type(value) ~= "string" or #value > 2048 then return false end
   local method, specific = value:match("^did:([a-z]+):(.+)$")
@@ -38,6 +57,14 @@ local function valid_record_uri(value)
   if not authority or not valid_did(authority) or not valid_record_key(rkey) then return false end
   return true, collection, authority
 end
+
+-- luacheck: push ignore 211
+-- For user-supplied filter values: bounds the size before parsing.
+local function valid_bounded_record_uri(value)
+  if type(value) ~= "string" or #value > 8192 then return false end
+  return valid_record_uri(value)
+end
+-- luacheck: pop
 
 local function valid_datetime(value)
   if type(value) ~= "string" then return false end
@@ -71,15 +98,60 @@ local function parse_list_limit(params)
   return limit
 end
 
+-- The hex prologue every list cursor shape shares: rejects empty, over-long (8192),
+-- odd-length and non-lowercase-hex tokens with "cursor is malformed" and returns the
+-- decoded JSON text. Shape and JSON checks stay with each cursor's own decoder.
+local function decode_hex_cursor_token(token)
+  if #token == 0 or #token > 8192 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
+    invalid("cursor is malformed")
+  end
+  return (token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end))
+end
+
+-- Hex-encodes the JSON of a cursor table.
+local function cursor_encode(value)
+  local encoded = json.encode(value)
+  return (encoded:gsub(".", function(char) return string.format("%02x", string.byte(char)) end))
+end
+
+-- luacheck: push ignore 211
+-- Decodes a hex-encoded {v, d, t, u} list cursor. Rejects malformed tokens, other
+-- sort directions and unknown keys; validate_value(value) -> boolean runs the
+-- endpoint-specific check on t and u. Not for endpoints that skip the 8192-character
+-- cap or accept extra keys.
+local function decode_cursor(token, direction, validate_value)
+  if token == nil then return nil end
+  local decoded = decode_hex_cursor_token(token)
+  local ok, value = pcall(json.decode, decoded)
+  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
+    or type(value.t) ~= "string" or type(value.u) ~= "string" then
+    invalid("cursor is malformed or belongs to another sortDirection")
+  end
+  for key in pairs(value) do
+    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
+  end
+  if not validate_value(value) then invalid("cursor is malformed") end
+  return value
+end
+
+-- decode_cursor for the common case: t is a datetime and u a record URI.
+-- record_uri is the collection NSID u must belong to, or a predicate(uri) -> boolean
+-- for endpoints with stricter URI rules. valid_t(t) defaults to valid_datetime.
+local function decode_record_cursor(token, direction, record_uri, valid_t)
+  valid_t = valid_t or valid_datetime
+  return decode_cursor(token, direction, function(value)
+    if not valid_t(value.t) then return false end
+    if type(record_uri) == "function" then return record_uri(value.u) end
+    local valid, collection = valid_record_uri(value.u)
+    return valid and collection == record_uri
+  end)
+end
+-- luacheck: pop
+
 local function parse_sort_direction(params)
   local direction = scalar(params, "sortDirection") or "desc"
   if direction ~= "asc" and direction ~= "desc" then invalid("sortDirection must be 'asc' or 'desc'") end
   return direction
-end
-
-local function cursor_encode(value)
-  local encoded = json.encode(value)
-  return (encoded:gsub(".", function(char) return string.format("%02x", string.byte(char)) end))
 end
 
 local CREATED_AT_SORT_PATTERN = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
@@ -109,10 +181,26 @@ local function record_view(row)
   }
 end
 
+-- luacheck: push ignore 211
+-- Like record_view, but a row without indexed_at has no indexedAt key instead of JSON null.
+-- Pass it to hydrate_actor_views for sidecars that preserve the omission.
+local function record_view_omitting_indexed_at(row)
+  return {
+    uri = row.uri,
+    cid = row.cid,
+    indexedAt = row.indexed_at,
+    did = row.did,
+    record = json.decode(row.record),
+  }
+end
+-- luacheck: pop
+
 local PROFILE = "app.certified.actor.profile"
 local ORGANIZATION = "app.certified.actor.organization"
 
-local function hydrate_actor_views(actors, run_query)
+-- view(row) builds each profile/organization sidecar; it defaults to record_view.
+local function hydrate_actor_views(actors, run_query, view)
+  view = view or record_view
   if #actors == 0 then return end
   local dids, seen = {}, {}
   for _, actor in ipairs(actors) do
@@ -134,8 +222,8 @@ local function hydrate_actor_views(actors, run_query)
   load(PROFILE, profiles)
   load(ORGANIZATION, organizations)
   for _, actor in ipairs(actors) do
-    actor.profile = profiles[actor.did] and record_view(profiles[actor.did]) or NULL
-    actor.organization = organizations[actor.did] and record_view(organizations[actor.did]) or NULL
+    actor.profile = profiles[actor.did] and view(profiles[actor.did]) or NULL
+    actor.organization = organizations[actor.did] and view(organizations[actor.did]) or NULL
   end
 end
 
@@ -332,16 +420,6 @@ local function badge_award_view(row)
   return view
 end
 
-local function parse_include_total()
-  local value = params.includeTotal
-  if value == nil then return false end
-  if type(value) == "boolean" then return value end
-  value = scalar(params, "includeTotal")
-  if value == "true" then return true end
-  if value == "false" then return false end
-  invalid("includeTotal must be true or false")
-end
-
 local function list_badge_awards(authors, badge_uris, badge_types, subjects, responses, limit, cursor, direction,
   include_total)
   local where, values = { "award.collection = $1" }, { AWARD }
@@ -471,7 +549,7 @@ local function handle_list_badge_awards()
   local limit = parse_list_limit(params)
   local direction = parse_sort_direction(params)
   local cursor = decode_badge_award_cursor(scalar(params, "cursor"), direction)
-  local include_total = parse_include_total()
+  local include_total = parse_include_total(params)
   local views, next_cursor, total_count = list_badge_awards(authors, badge_uris, badge_types, subjects, responses,
     limit, cursor, direction, include_total)
   local response = { badgeAwards = toarray(views) }

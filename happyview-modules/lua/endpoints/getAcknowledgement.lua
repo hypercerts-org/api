@@ -27,6 +27,15 @@ local function scalar(params, key)
   return tostring(value)
 end
 
+-- luacheck: push ignore 211
+-- Like scalar(), but a boolean comes back as "true" or "false": HappyView can hand
+-- boolean-typed query parameters to Lua as booleans rather than strings.
+local function scalar_or_boolean(values, key)
+  if type(values[key]) == "boolean" then return tostring(values[key]) end
+  return scalar(values, key)
+end
+-- luacheck: pop
+
 local function valid_record_key(value)
   return #value >= 1 and #value <= 512 and value ~= "." and value ~= ".."
     and not value:find("[^%w_~%.:%-]")
@@ -39,10 +48,43 @@ local function valid_record_uri(value)
   return true, collection, authority
 end
 
+-- luacheck: push ignore 211
+-- For user-supplied filter values: bounds the size before parsing.
+local function valid_bounded_record_uri(value)
+  if type(value) ~= "string" or #value > 8192 then return false end
+  return valid_record_uri(value)
+end
+-- luacheck: pop
+
+local NULL = json.decode("null")
+
+local function record_view(row)
+  return {
+    uri = row.uri,
+    cid = row.cid,
+    indexedAt = row.indexed_at == nil and NULL or row.indexed_at,
+    did = row.did,
+    record = json.decode(row.record),
+  }
+end
+
+-- luacheck: push ignore 211
+-- Like record_view, but a row without indexed_at has no indexedAt key instead of JSON null.
+-- Pass it to hydrate_actor_views for sidecars that preserve the omission.
+local function record_view_omitting_indexed_at(row)
+  return {
+    uri = row.uri,
+    cid = row.cid,
+    indexedAt = row.indexed_at,
+    did = row.did,
+    record = json.decode(row.record),
+  }
+end
+-- luacheck: pop
+
 local ACKNOWLEDGEMENT = "org.hypercerts.context.acknowledgement"
 local PROFILE = "app.certified.actor.profile"
 local ORGANIZATION = "app.certified.actor.organization"
-local NULL = json.decode("null")
 
 local function acknowledgement_query(sql, values)
   if db.backend() ~= "postgres" then
@@ -53,16 +95,6 @@ local function acknowledgement_query(sql, values)
     error("AcknowledgementQueryFailed: indexed record or publisher lookup failed", 0)
   end
   return result
-end
-
-local function acknowledgement_record_view(row)
-  return {
-    uri = row.uri,
-    cid = row.cid,
-    indexedAt = row.indexed_at or NULL,
-    did = row.did,
-    record = json.decode(row.record),
-  }
 end
 
 local function hydrate_acknowledgement_authors(views)
@@ -93,8 +125,8 @@ local function hydrate_acknowledgement_authors(views)
   for _, view in ipairs(views) do
     view.author = {
       did = view.did,
-      profile = profiles[view.did] and acknowledgement_record_view(profiles[view.did]) or NULL,
-      organization = organizations[view.did] and acknowledgement_record_view(organizations[view.did]) or NULL,
+      profile = profiles[view.did] and record_view(profiles[view.did]) or NULL,
+      organization = organizations[view.did] and record_view(organizations[view.did]) or NULL,
     }
   end
 end
@@ -113,7 +145,7 @@ function handle()
     { ACKNOWLEDGEMENT, uri })
   if #rows == 0 then error("RecordNotFound: acknowledgement record is not indexed", 0) end
 
-  local acknowledgement = acknowledgement_record_view(rows[1])
+  local acknowledgement = record_view(rows[1])
   hydrate_acknowledgement_authors({ acknowledgement })
   return { acknowledgement = acknowledgement }
 end

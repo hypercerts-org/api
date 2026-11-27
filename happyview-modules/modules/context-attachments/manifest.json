@@ -50,11 +50,11 @@
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/datetimeValidation.lua",
         "../../lua/shared/listValidation.lua",
+        "../../lua/shared/listCursor.lua",
         "../../lua/shared/listQuery.lua",
         "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",
         "../../lua/shared/attachment.lua",
-        "../../lua/shared/listCursor.lua",
         "../../lua/shared/listWhere.lua",
         "../../lua/shared/createdAtSort.lua",
         "../../lua/shared/attachmentList.lua"

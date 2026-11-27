@@ -27,6 +27,15 @@ local function scalar(params, key)
   return tostring(value)
 end
 
+-- luacheck: push ignore 211
+-- Like scalar(), but a boolean comes back as "true" or "false": HappyView can hand
+-- boolean-typed query parameters to Lua as booleans rather than strings.
+local function scalar_or_boolean(values, key)
+  if type(values[key]) == "boolean" then return tostring(values[key]) end
+  return scalar(values, key)
+end
+-- luacheck: pop
+
 local function valid_record_key(value)
   return #value >= 1 and #value <= 512 and value ~= "." and value ~= ".."
     and not value:find("[^%w_~%.:%-]")
@@ -39,16 +48,45 @@ local function valid_record_uri(value)
   return true, collection, authority
 end
 
+-- luacheck: push ignore 211
+-- For user-supplied filter values: bounds the size before parsing.
+local function valid_bounded_record_uri(value)
+  if type(value) ~= "string" or #value > 8192 then return false end
+  return valid_record_uri(value)
+end
+-- luacheck: pop
+
+local NULL = json.decode("null")
+
+local function record_view(row)
+  return {
+    uri = row.uri,
+    cid = row.cid,
+    indexedAt = row.indexed_at == nil and NULL or row.indexed_at,
+    did = row.did,
+    record = json.decode(row.record),
+  }
+end
+
+-- luacheck: push ignore 211
+-- Like record_view, but a row without indexed_at has no indexedAt key instead of JSON null.
+-- Pass it to hydrate_actor_views for sidecars that preserve the omission.
+local function record_view_omitting_indexed_at(row)
+  return {
+    uri = row.uri,
+    cid = row.cid,
+    indexedAt = row.indexed_at,
+    did = row.did,
+    record = json.decode(row.record),
+  }
+end
+-- luacheck: pop
+
 local COLLECTION_PROJECTION_PROFILE = "app.certified.actor.profile"
 local COLLECTION_PROJECTION_ORGANIZATION = "app.certified.actor.organization"
 local COLLECTION_PROJECTION_LOCATION = "app.certified.location"
 local COLLECTION_PROJECTION_TAG = "org.hypercerts.vocab.tag"
 local COLLECTION_PROJECTION_NULL = json.decode("null")
-
-local function collection_projection_valid_record_uri(value)
-  if type(value) ~= "string" or #value > 8192 then return false end
-  return valid_record_uri(value)
-end
 
 local function collection_projection_query(sql, values)
   if db.backend() ~= "postgres" then
@@ -59,16 +97,6 @@ local function collection_projection_query(sql, values)
     error("CollectionQueryFailed: collection lookup failed", 0)
   end
   return result
-end
-
-local function collection_projection_record_view(row)
-  return {
-    uri = row.uri,
-    cid = row.cid,
-    indexedAt = row.indexed_at == nil and COLLECTION_PROJECTION_NULL or row.indexed_at,
-    did = row.did,
-    record = json.decode(row.record),
-  }
 end
 
 local function collection_projection_ref_key(uri, cid)
@@ -127,7 +155,7 @@ local function collection_projection_reference(value, field, expected_collection
     if omit_invalid then return nil end
     error("CollectionQueryFailed: indexed collection has an invalid " .. field .. " reference", 0)
   end
-  local valid, collection = collection_projection_valid_record_uri(value.uri)
+  local valid, collection = valid_bounded_record_uri(value.uri)
   if not valid then
     if omit_invalid then return nil end
     error("CollectionQueryFailed: indexed collection has an invalid " .. field .. " reference", 0)
@@ -193,8 +221,8 @@ local function collection_projection_hydrate(views, omit_invalid)
   local tags = collection_projection_load_exact_refs(COLLECTION_PROJECTION_TAG, tag_refs)
 
   for _, view in ipairs(views) do
-    view.author.profile = profiles[view.did] and collection_projection_record_view(profiles[view.did]) or COLLECTION_PROJECTION_NULL
-    view.author.organization = organizations[view.did] and collection_projection_record_view(organizations[view.did]) or COLLECTION_PROJECTION_NULL
+    view.author.profile = profiles[view.did] and record_view(profiles[view.did]) or COLLECTION_PROJECTION_NULL
+    view.author.organization = organizations[view.did] and record_view(organizations[view.did]) or COLLECTION_PROJECTION_NULL
 
     local source_location = view.record.location ~= nil and
       collection_projection_reference(view.record.location, "location", COLLECTION_PROJECTION_LOCATION, omit_invalid) or nil
@@ -204,7 +232,7 @@ local function collection_projection_hydrate(views, omit_invalid)
       view.location = {
         uri = source_location.uri,
         cid = source_location.cid,
-        record = row and collection_projection_record_view(row) or COLLECTION_PROJECTION_NULL,
+        record = row and record_view(row) or COLLECTION_PROJECTION_NULL,
       }
     end
 
@@ -218,7 +246,7 @@ local function collection_projection_hydrate(views, omit_invalid)
           projected_tags[#projected_tags + 1] = {
             uri = reference.uri,
             cid = reference.cid,
-            record = row and collection_projection_record_view(row) or COLLECTION_PROJECTION_NULL,
+            record = row and record_view(row) or COLLECTION_PROJECTION_NULL,
           }
         end
       end
@@ -228,11 +256,6 @@ local function collection_projection_hydrate(views, omit_invalid)
 end
 
 local COLLECTION = "org.hypercerts.collection"
-
-local function collection_valid_record_uri(value)
-  if type(value) ~= "string" or #value > 8192 then return false end
-  return valid_record_uri(value)
-end
 
 local function collection_query(sql, values)
   if db.backend() ~= "postgres" then
@@ -256,7 +279,7 @@ end
 function handle()
   keys_only(params, { uri = true }, "unknown query parameter: ")
   local uri = scalar(params, "uri")
-  local valid, collection = collection_valid_record_uri(uri)
+  local valid, collection = valid_bounded_record_uri(uri)
   if not uri or not valid or collection ~= COLLECTION then
     invalid("uri must be a full org.hypercerts.collection AT-URI with a DID authority")
   end

@@ -1,10 +1,6 @@
 local MEASUREMENT = "org.hypercerts.context.measurement"
 local MEASUREMENT_NULL = json.decode("null")
 
-local function measurement_valid_record_uri(value)
-  return valid_record_uri(value)
-end
-
 local function measurement_query(sql, values)
   if db.backend() ~= "postgres" then
     error("MeasurementQueryFailed: measurement queries require PostgreSQL", 0)

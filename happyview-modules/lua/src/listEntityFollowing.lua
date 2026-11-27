@@ -15,7 +15,7 @@ local function list_entity_following_page(actor, limit, cursor, direction)
     end
 
     if #candidates == limit + 1 or not batch_cursor then break end
-    scan_cursor = entity_follow_decode_cursor(batch_cursor, direction)
+    scan_cursor = decode_record_cursor(batch_cursor, direction, ENTITY_FOLLOW)
   end
 
   local rows = {}
@@ -39,7 +39,7 @@ local function list_entity_following()
 
   local limit = parse_list_limit(params)
   local direction = parse_sort_direction(params)
-  local cursor = entity_follow_decode_cursor(scalar(params, "cursor"), direction)
+  local cursor = decode_record_cursor(scalar(params, "cursor"), direction, ENTITY_FOLLOW)
   local rows, next_cursor, subjects_by_row = list_entity_following_page(actor, limit, cursor, direction)
   local response = { entities = toarray(entity_follow_resolve_entities(rows, subjects_by_row)) }
   if next_cursor then response.cursor = next_cursor end

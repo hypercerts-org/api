@@ -27,6 +27,15 @@ local function scalar(params, key)
   return tostring(value)
 end
 
+-- luacheck: push ignore 211
+-- Like scalar(), but a boolean comes back as "true" or "false": HappyView can hand
+-- boolean-typed query parameters to Lua as booleans rather than strings.
+local function scalar_or_boolean(values, key)
+  if type(values[key]) == "boolean" then return tostring(values[key]) end
+  return scalar(values, key)
+end
+-- luacheck: pop
+
 local function valid_record_key(value)
   return #value >= 1 and #value <= 512 and value ~= "." and value ~= ".."
     and not value:find("[^%w_~%.:%-]")
@@ -39,9 +48,13 @@ local function valid_record_uri(value)
   return true, collection, authority
 end
 
-local function rights_valid_record_uri(value)
+-- luacheck: push ignore 211
+-- For user-supplied filter values: bounds the size before parsing.
+local function valid_bounded_record_uri(value)
+  if type(value) ~= "string" or #value > 8192 then return false end
   return valid_record_uri(value)
 end
+-- luacheck: pop
 
 local NULL = json.decode("null")
 
@@ -55,10 +68,26 @@ local function record_view(row)
   }
 end
 
+-- luacheck: push ignore 211
+-- Like record_view, but a row without indexed_at has no indexedAt key instead of JSON null.
+-- Pass it to hydrate_actor_views for sidecars that preserve the omission.
+local function record_view_omitting_indexed_at(row)
+  return {
+    uri = row.uri,
+    cid = row.cid,
+    indexedAt = row.indexed_at,
+    did = row.did,
+    record = json.decode(row.record),
+  }
+end
+-- luacheck: pop
+
 local PROFILE = "app.certified.actor.profile"
 local ORGANIZATION = "app.certified.actor.organization"
 
-local function hydrate_actor_views(actors, run_query)
+-- view(row) builds each profile/organization sidecar; it defaults to record_view.
+local function hydrate_actor_views(actors, run_query, view)
+  view = view or record_view
   if #actors == 0 then return end
   local dids, seen = {}, {}
   for _, actor in ipairs(actors) do
@@ -80,27 +109,8 @@ local function hydrate_actor_views(actors, run_query)
   load(PROFILE, profiles)
   load(ORGANIZATION, organizations)
   for _, actor in ipairs(actors) do
-    actor.profile = profiles[actor.did] and record_view(profiles[actor.did]) or NULL
-    actor.organization = organizations[actor.did] and record_view(organizations[actor.did]) or NULL
-  end
-end
-
-local RIGHTS_NULL = json.decode("null")
-
-local function rights_record_view(row)
-  local view = record_view(row)
-  if row.indexed_at == nil then view.indexedAt = RIGHTS_NULL end
-  return view
-end
-
-local function rights_hydrate_actor_views(actors, run_query)
-  hydrate_actor_views(actors, run_query)
-  for _, actor in ipairs(actors) do
-    for _, sidecar in ipairs({ actor.profile, actor.organization }) do
-      if type(sidecar) == "table" and sidecar.uri ~= nil and sidecar.indexedAt == nil then
-        sidecar.indexedAt = RIGHTS_NULL
-      end
-    end
+    actor.profile = profiles[actor.did] and view(profiles[actor.did]) or NULL
+    actor.organization = organizations[actor.did] and view(organizations[actor.did]) or NULL
   end
 end
 
@@ -118,7 +128,7 @@ end
 function handle()
   keys_only(params, { uri = true })
   local uri = scalar(params, "uri")
-  local valid, collection = rights_valid_record_uri(uri)
+  local valid, collection = valid_record_uri(uri)
   if not uri or not valid or collection ~= RIGHTS then
     invalid("uri must be a full org.hypercerts.claim.rights AT-URI with a DID authority")
   end
@@ -129,8 +139,8 @@ function handle()
     { RIGHTS, uri })
   if #rows == 0 then error("RecordNotFound: rights record is not indexed", 0) end
 
-  local view = rights_record_view(rows[1])
+  local view = record_view(rows[1])
   view.author = { did = view.did }
-  rights_hydrate_actor_views({ view.author }, rights_query)
+  hydrate_actor_views({ view.author }, rights_query)
   return { rights = view }
 end

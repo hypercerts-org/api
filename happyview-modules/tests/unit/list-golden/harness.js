@@ -7,8 +7,22 @@ import { loadAssets } from "../../../tooling/installer.js";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 
+/**
+ * A Lua table with explicit keys, for shapes JS arrays and objects cannot express:
+ * integer keys that are sparse or mixed with string keys. Numeric keys stay integers.
+ */
+export class LuaTable {
+  constructor(entries) {
+    this.entries = entries;
+  }
+}
+
 /** Encodes a JS value as a Lua table/literal for the runner program. */
 export function lua(value) {
+  if (value instanceof LuaTable) {
+    const fields = value.entries.map(([key, item]) => "[" + lua(key) + "]=" + lua(item));
+    return "{" + fields.join(",") + "}";
+  }
   if (typeof value === "string") return JSON.stringify(value);
   if (typeof value === "number" || typeof value === "boolean") return String(value);
   if (Array.isArray(value)) return `{${value.map(lua).join(",")}}`;

@@ -19,7 +19,7 @@
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
-        "../../lua/shared/workscopeRecordView.lua",
+        "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",
         "../../lua/shared/workscopeTag.lua"
       ],
@@ -50,11 +50,11 @@
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/datetimeValidation.lua",
         "../../lua/shared/listValidation.lua",
+        "../../lua/shared/listCursor.lua",
         "../../lua/shared/listQuery.lua",
-        "../../lua/shared/workscopeRecordView.lua",
+        "../../lua/shared/recordView.lua",
         "../../lua/shared/actorView.lua",
         "../../lua/shared/workscopeTag.lua",
-        "../../lua/shared/listCursor.lua",
         "../../lua/shared/listWhere.lua",
         "../../lua/shared/workscopeTagList.lua"
       ],

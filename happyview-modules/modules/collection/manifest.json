@@ -9,6 +9,7 @@
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/recordView.lua",
         "../../lua/shared/collectionProjection.lua",
         "../../lua/shared/collection.lua"
       ],
@@ -36,14 +37,15 @@
       "sharedSourcePaths": [
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/recordView.lua",
         "../../lua/shared/collectionProjection.lua",
         "../../lua/shared/collection.lua",
         "../../lua/shared/datetimeValidation.lua",
         "../../lua/shared/createdAtSort.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/listValidation.lua",
-        "../../lua/shared/listQuery.lua",
         "../../lua/shared/listCursor.lua",
+        "../../lua/shared/listQuery.lua",
         "../../lua/shared/listWhere.lua",
         "../../lua/shared/includeTotal.lua",
         "../../lua/shared/collectionList.lua"
@@ -72,14 +74,15 @@
       "sharedSourcePaths": [
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/recordIdentifier.lua",
+        "../../lua/shared/recordView.lua",
         "../../lua/shared/collectionProjection.lua",
         "../../lua/shared/collection.lua",
         "../../lua/shared/datetimeValidation.lua",
         "../../lua/shared/createdAtSort.lua",
         "../../lua/shared/query.lua",
         "../../lua/shared/listValidation.lua",
-        "../../lua/shared/listQuery.lua",
         "../../lua/shared/listCursor.lua",
+        "../../lua/shared/listQuery.lua",
         "../../lua/shared/listWhere.lua",
         "../../lua/shared/includeTotal.lua",
         "../../lua/shared/collectionList.lua"
@@ -100,8 +103,11 @@
         "../../lua/shared/didValidation.lua",
         "../../lua/shared/recordIdentifier.lua",
         "../../lua/shared/activityProjection.lua",
+        "../../lua/shared/recordView.lua",
         "../../lua/shared/featureProjection.lua",
         "../../lua/shared/listValidation.lua",
+        "../../lua/shared/datetimeValidation.lua",
+        "../../lua/shared/listCursor.lua",
         "../../lua/shared/collectionItems.lua"
       ],
       "config": {

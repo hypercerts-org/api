@@ -52,8 +52,8 @@
         "../../lua/shared/datetimeValidation.lua",
         "../../lua/shared/listValidation.lua",
         "../../lua/shared/createdAtSort.lua",
-        "../../lua/shared/listQuery.lua",
         "../../lua/shared/listCursor.lua",
+        "../../lua/shared/listQuery.lua",
         "../../lua/shared/listWhere.lua",
         "../../lua/shared/includeTotal.lua",
         "../../lua/shared/activityList.lua"
@@ -78,8 +78,8 @@
         "../../lua/shared/datetimeValidation.lua",
         "../../lua/shared/listValidation.lua",
         "../../lua/shared/createdAtSort.lua",
-        "../../lua/shared/listQuery.lua",
         "../../lua/shared/listCursor.lua",
+        "../../lua/shared/listQuery.lua",
         "../../lua/shared/listWhere.lua",
         "../../lua/shared/includeTotal.lua",
         "../../lua/shared/activityList.lua"
