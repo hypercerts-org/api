@@ -51,12 +51,12 @@
       "inline": [
         {
           "id": "cursor-hex-decode",
-          "pattern": "tonumber\\(pair, 16\\)",
+          "pattern": "tonumber\\(pair,\\s*16\\)",
           "description": "hex cursor decoding"
         },
         {
           "id": "cursor-length-cap",
-          "pattern": "#token > 8192",
+          "pattern": "#token\\s*>\\s*8192",
           "description": "the cursor length cap"
         }
       ],

@@ -11,8 +11,8 @@ const scannedDirectories = ["lua/shared", "lua/src"];
 // Only the last segment is the helper's name, so a module-table copy is still a copy.
 // \s* also spans newlines, so a definition split across lines is still found.
 const DEFINITION_PATTERNS = [
-  /^[ \t]*(?:local\s+)?function\s+([A-Za-z_][\w.:]*)\s*\(/gm,
-  /^[ \t]*(?:local\s+)?([A-Za-z_][\w.]*)\s*=\s*function\s*\(/gm,
+  /^[ \t]*(?:local\s+)?function\s+([A-Za-z_]\w*(?:\s*[.:]\s*[A-Za-z_]\w*)*)\s*\(/gm,
+  /^[ \t]*(?:local\s+)?([A-Za-z_]\w*(?:\s*\.\s*[A-Za-z_]\w*)*)\s*=\s*function\s*\(/gm,
 ];
 
 // Every top-level function in lua/shared is protected. It is not a registry family, so it has no patterns.
@@ -23,10 +23,15 @@ const SHARED_FAMILY = {
 };
 
 async function luaFiles(root, directory) {
-  const entries = await readdir(path.join(root, directory), { withFileTypes: true });
+  const entries = await readdir(path.join(root, directory), {
+    withFileTypes: true,
+    recursive: true,
+  });
   return entries
     .filter((entry) => entry.isFile() && entry.name.endsWith(".lua"))
-    .map((entry) => `${directory}/${entry.name}`)
+    .map((entry) =>
+      path.relative(root, path.join(entry.parentPath, entry.name)).split(path.sep).join("/"),
+    )
     .sort();
 }
 
@@ -109,7 +114,7 @@ function definitions(source) {
     [...code.matchAll(pattern)].map((match) => {
       const nameStart = match.index + match[0].indexOf(match[1]);
       return {
-        name: match[1].split(/[.:]/).pop(),
+        name: match[1].split(/[.:]/).pop().trim(),
         // Report the line of the name, not of leading blank space.
         line: code.slice(0, nameStart).split("\n").length,
         topLevel: depthAt(match.index) === 0,
@@ -139,8 +144,17 @@ function familyProblems(family, seen) {
   return problems;
 }
 
-function allowlistEntryProblems(entry) {
+function allowlistEntryProblems(entry, index, entries) {
   const problems = [];
+  const first = entries.findIndex(
+    (other) =>
+      other.file === entry.file && other.family === entry.family && other.symbol === entry.symbol,
+  );
+  if (first !== index) {
+    problems.push(
+      `allowlist has more than one entry for ${entry.file} / ${entry.family} / ${entry.symbol}; keep one and set "count"`,
+    );
+  }
   if (entry.count !== undefined && !(Number.isInteger(entry.count) && entry.count >= 1)) {
     problems.push(
       `allowlist entry ${JSON.stringify(entry)} has an invalid "count"; use a positive integer`,
@@ -185,13 +199,20 @@ function homeHint(family) {
   return `Use the shared helper from ${family.homes.join(" or ")} (declare it in the module's sharedSourcePaths).`;
 }
 
-/** Maps each top-level function name in lua/shared to the first file that defines it. */
-function sharedHelperOwners(parsed) {
+/**
+ * Maps each top-level function name in lua/shared to the file that owns it: a registered home
+ * if one defines it, otherwise the first file that does.
+ */
+function sharedHelperOwners(parsed, registry) {
+  const homes = new Set(registry.families.flatMap((family) => family.homes));
   const owners = new Map();
   for (const [file, { defs }] of parsed) {
     if (!file.startsWith("lua/shared/")) continue;
     for (const def of defs) {
-      if (def.topLevel && !owners.has(def.name)) owners.set(def.name, file);
+      if (!def.topLevel) continue;
+      if (!owners.has(def.name) || (homes.has(file) && !homes.has(owners.get(def.name)))) {
+        owners.set(def.name, file);
+      }
     }
   }
   return owners;
@@ -228,7 +249,7 @@ function sourceFindings(registry, sources) {
       },
     ]),
   );
-  const shared = sharedHelperOwners(parsed);
+  const shared = sharedHelperOwners(parsed, registry);
   const findings = [];
   for (const [file, entry] of parsed) {
     for (const { name, line, topLevel, isLocal } of entry.defs) {
