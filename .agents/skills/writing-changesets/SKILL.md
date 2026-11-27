@@ -32,7 +32,8 @@ Choose the bump using this repo's release guidance:
 - `patch` for compatible fixes.
 - `minor` for new, additive API capabilities.
 - `major` for incompatible API changes.
-- While `@hypercerts-org/api` and `happyview-modules` are below 1.0.0, mark breaking changes `minor`, not `major` (`major` would release 1.0.0). Describe the breaking change in the entry.
+- Apply the pre-1.0 rule to each package on its own: if that package is below 1.0.0, mark its breaking changes `minor`, not `major` (`major` would release 1.0.0). Describe the breaking change in the entry.
+- When `@hypercerts-org/happyview-modules` reaches 1.0.0, release `@hypercerts-org/api` as 1.0.0 too.
 
 Do not target the endpoint-explorer package or invent additional package entries. Use a descriptive kebab-case filename in `.changeset/`.
 
