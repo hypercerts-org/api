@@ -30,7 +30,49 @@ async function luaFiles(root, directory) {
     .sort();
 }
 
-const LONG_BRACKET = /^\[(=*)\[/;
+// Sticky: matches only at lastIndex.
+const LONG_BRACKET = /\[(=*)\[/y;
+
+const blank = (text) => text.replace(/[^\n]/g, " ");
+
+/** End offset of the long bracket (`[[`, `[==[`) opening at `open`, or null if there is none. */
+function longBracketEnd(source, open) {
+  LONG_BRACKET.lastIndex = open;
+  const long = LONG_BRACKET.exec(source);
+  if (!long) return null;
+  const close = `]${long[1]}]`;
+  const end = source.indexOf(close, open + long[0].length);
+  return end === -1 ? source.length : end + close.length;
+}
+
+/** End offset of the quoted string opening at `i`; an unclosed string stops after the newline. */
+function quotedEnd(source, i) {
+  let stop = i + 1;
+  while (stop < source.length && source[stop] !== source[i] && source[stop] !== "\n") {
+    stop += source[stop] === "\\" ? 2 : 1;
+  }
+  return Math.min(stop + 1, source.length);
+}
+
+/** The comment, string or single code character starting at `i`, with its end offset. */
+function luaToken(source, i) {
+  if (source.startsWith("--", i)) {
+    const longStop = longBracketEnd(source, i + 2);
+    if (longStop !== null) return { kind: "comment", stop: longStop };
+    const end = source.indexOf("\n", i);
+    return { kind: "comment", stop: end === -1 ? source.length : end };
+  }
+  const longStop = longBracketEnd(source, i);
+  if (longStop !== null) return { kind: "longString", stop: longStop };
+  if (source[i] === '"' || source[i] === "'") return { kind: "quoted", stop: quotedEnd(source, i) };
+  return { kind: "code", stop: i + 1 };
+}
+
+function renderToken(kind, text, keepStrings) {
+  if (kind === "code" || (keepStrings && kind !== "comment")) return text;
+  if (kind === "quoted") return text[0] + blank(text.slice(1, -1)) + text.slice(-1);
+  return blank(text);
+}
 
 /**
  * Returns the source with Lua comments blanked to spaces, and string contents too unless
@@ -41,37 +83,10 @@ const LONG_BRACKET = /^\[(=*)\[/;
 function blankLua(source, { keepStrings = false } = {}) {
   let out = "";
   let i = 0;
-  const blank = (text) => text.replace(/[^\n]/g, " ");
   while (i < source.length) {
-    const rest = source.slice(i);
-    const isComment = rest.startsWith("--");
-    const long = LONG_BRACKET.exec(isComment ? rest.slice(2) : rest);
-    if (long) {
-      const close = `]${long[1]}]`;
-      const start = i + (isComment ? 2 : 0) + long[0].length;
-      const end = source.indexOf(close, start);
-      const stop = end === -1 ? source.length : end + close.length;
-      const text = source.slice(i, stop);
-      out += isComment || !keepStrings ? blank(text) : text;
-      i = stop;
-    } else if (isComment) {
-      const end = source.indexOf("\n", i);
-      const stop = end === -1 ? source.length : end;
-      out += blank(source.slice(i, stop));
-      i = stop;
-    } else if (rest[0] === '"' || rest[0] === "'") {
-      let stop = i + 1;
-      while (stop < source.length && source[stop] !== rest[0] && source[stop] !== "\n") {
-        stop += source[stop] === "\\" ? 2 : 1;
-      }
-      stop = Math.min(stop + 1, source.length);
-      const text = source.slice(i, stop);
-      out += keepStrings ? text : rest[0] + blank(text.slice(1, -1)) + text.slice(-1);
-      i = stop;
-    } else {
-      out += source[i];
-      i += 1;
-    }
+    const { kind, stop } = luaToken(source, i);
+    out += renderToken(kind, source.slice(i, stop), keepStrings);
+    i = stop;
   }
   return out;
 }
