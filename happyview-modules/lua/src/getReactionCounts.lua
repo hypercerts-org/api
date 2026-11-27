@@ -1,3 +1,5 @@
+-- Not query_string_values: subjects is required, keeps duplicates in request order, stops
+-- counting at 101 entries, and reports the range as "subjects must contain 1 through 100 AT-URIs".
 local function reaction_count_subjects()
   local value = params.subjects
   if value == nil then invalid("subjects is required") end

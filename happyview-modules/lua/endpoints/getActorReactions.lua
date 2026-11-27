@@ -160,6 +160,8 @@ local function actor_reaction_sort_key()
     ", 'timestamptz') THEN (" .. created .. ")::timestamptz ELSE COALESCE(indexed_at::timestamptz, created_at::timestamptz) END"
 end
 
+-- Not query_string_values: subjects is required, keeps duplicates in request order, and
+-- reports the range as "subjects must contain 1 through 100 AT-URIs".
 local function feed_actor_reaction_subjects(actor, value)
   if value == nil then invalid("subjects is required") end
 

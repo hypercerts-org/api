@@ -11,6 +11,7 @@ async function endpointSources(name) {
   const shared = [
     "lua/shared/didValidation.lua",
     "lua/shared/query.lua",
+    "lua/shared/queryArray.lua",
     "lua/shared/recordIdentifier.lua",
     "lua/shared/recordView.lua",
     "lua/shared/actorView.lua",

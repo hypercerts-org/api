@@ -9,27 +9,15 @@ local function query(sql, values)
   return result
 end
 
-local function badge_definition_array(key, validate, description, max_bytes)
-  local value = params[key]
-  if value == nil then return nil end
-  local values = {}
-  if type(value) == "string" then values[1] = value
-  elseif type(value) == "table" then
-    for i = 1, #value do
-      if type(value[i]) ~= "string" then invalid(key .. " entries must be strings") end
-      values[#values + 1] = value[i]
-    end
-  else invalid(key .. " must be a string or repeated string parameter") end
-  if #values > 100 then invalid(key .. " accepts at most 100 values") end
-  local unique, seen = {}, {}
-  for _, item in ipairs(values) do
+local function badge_definition_filter_values(key, validate, description, max_bytes)
+  local supplied = query_string_values(params, key)
+  if not supplied then return nil end
+  return unique_query_values(supplied, function(item)
     if max_bytes and #item > max_bytes then
       invalid(key .. " entries must be at most " .. max_bytes .. " UTF-8 bytes")
     end
     if validate and not validate(item) then invalid("each " .. key .. " value must be " .. description) end
-    if not seen[item] then seen[item] = true; unique[#unique + 1] = item end
-  end
-  return unique
+  end)
 end
 
 local function add_badge_definition_filter(where, values, column, items)
@@ -41,24 +29,6 @@ local function add_badge_definition_filter(where, values, column, items)
     placeholders[#placeholders + 1] = "$" .. #values
   end
   where[#where + 1] = column .. " IN (" .. table.concat(placeholders, ",") .. ")"
-end
-
-local function decode_badge_definition_cursor(token, direction)
-  if not token then return nil end
-  if #token % 2 ~= 0 or token:find("[^0-9a-f]") then invalid("cursor is malformed") end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
-  local ok, value = pcall(json.decode, decoded)
-  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
-    or type(value.t) ~= "string" or type(value.u) ~= "string" then
-    invalid("cursor is malformed or belongs to another sortDirection")
-  end
-  for key in pairs(value) do
-    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
-  end
-  if not valid_datetime(value.t) or not valid_badge_definition_uri(value.u) then
-    invalid("cursor is malformed")
-  end
-  return value
 end
 
 local function query_badge_definitions(authors, badge_types, search, limit, cursor, direction)
@@ -123,11 +93,11 @@ local function handle_search_badge_definitions()
   if search == nil then invalid("search is required") end
   search = search:match("^%s*(.-)%s*$")
   if search == "" then search = nil end
-  local authors = badge_definition_array("authors", valid_did, "valid DIDs")
-  local badge_types = badge_definition_array("badgeTypes", nil, nil, 100)
+  local authors = badge_definition_filter_values("authors", valid_did, "valid DIDs")
+  local badge_types = badge_definition_filter_values("badgeTypes", nil, nil, 100)
   local limit = parse_list_limit(params)
   local direction = parse_sort_direction(params)
-  local cursor = decode_badge_definition_cursor(scalar(params, "cursor"), direction)
+  local cursor = decode_record_cursor(scalar(params, "cursor"), direction, valid_badge_definition_uri)
   local views, next_cursor = query_badge_definitions(authors, badge_types, search, limit, cursor, direction)
   local response = { badgeDefinitions = toarray(views) }
   if next_cursor then response.cursor = next_cursor end

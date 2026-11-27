@@ -36,6 +36,49 @@ local function scalar_or_boolean(values, key)
 end
 -- luacheck: pop
 
+-- Reads a repeated query parameter (?key=a&key=b) as a list of strings, or nil when absent.
+-- A single value counts as a list of one. Rejects non-string entries, keyed or sparse
+-- tables and more than 100 values. Item rules stay with the caller so each endpoint keeps
+-- its own error messages; see unique_query_values.
+local function query_string_values(params, key)
+  local value = params[key]
+  if value == nil then return nil end
+  if type(value) == "string" then return { value } end
+  if type(value) ~= "table" then
+    invalid(key .. " must be a string or repeated string parameter")
+  end
+  local count = 0
+  for index in pairs(value) do
+    if type(index) ~= "number" or index < 1 or index % 1 ~= 0 then
+      invalid(key .. " must use repeated query values")
+    end
+    count = count + 1
+  end
+  if count ~= #value then invalid(key .. " must use repeated query values") end
+  local values = {}
+  for index = 1, count do
+    if type(value[index]) ~= "string" then invalid(key .. " entries must be strings") end
+    values[index] = value[index]
+  end
+  if #values > 100 then invalid(key .. " accepts at most 100 values") end
+  return values
+end
+
+-- Runs check(item, index) on every value in order, then returns the distinct results in
+-- first-seen order. check raises its own error for a bad item and may return a normalized
+-- replacement; returning nothing keeps the item.
+local function unique_query_values(values, check)
+  local unique, seen = {}, {}
+  for index, item in ipairs(values) do
+    local value = check and check(item, index) or item
+    if not seen[value] then
+      seen[value] = true
+      unique[#unique + 1] = value
+    end
+  end
+  return unique
+end
+
 local function valid_record_key(value)
   return #value >= 1 and #value <= 512 and value ~= "." and value ~= ".."
     and not value:find("[^%w_~%.:%-]")
@@ -229,54 +272,31 @@ local function contribution_view(row)
   return view
 end
 
+-- Appends each item to binds and returns its "$n" placeholders, in order.
+local function bind_values(binds, items)
+  local placeholders = {}
+  for _, item in ipairs(items) do
+    binds[#binds + 1] = item
+    placeholders[#placeholders + 1] = "$" .. #binds
+  end
+  return placeholders
+end
+
 -- Adds `column IN ($n, ...)` to where, binding items; an empty list matches nothing.
 local function add_in(where, binds, column, items)
   if #items == 0 then
     where[#where + 1] = "FALSE"
     return
   end
-  local marks = {}
-  for _, item in ipairs(items) do
-    binds[#binds + 1] = item
-    marks[#marks + 1] = "$" .. #binds
-  end
-  where[#where + 1] = column .. " IN (" .. table.concat(marks, ", ") .. ")"
+  where[#where + 1] = column .. " IN (" .. table.concat(bind_values(binds, items), ", ") .. ")"
 end
 
 local function contribution_authors()
-  local value = params.authors
-  if value == nil then return nil end
-
-  local supplied = {}
-  if type(value) == "string" then
-    supplied[1] = value
-  elseif type(value) == "table" then
-    local count = 0
-    for index in pairs(value) do
-      if type(index) ~= "number" or index < 1 or index % 1 ~= 0 then
-        invalid("authors must use repeated query values")
-      end
-      count = count + 1
-    end
-    if count ~= #value then invalid("authors must use repeated query values") end
-    for index = 1, count do
-      if type(value[index]) ~= "string" then invalid("authors entries must be strings") end
-      supplied[#supplied + 1] = value[index]
-    end
-  else
-    invalid("authors must be a string or repeated string parameter")
-  end
-  if #supplied > 100 then invalid("authors accepts at most 100 values") end
-
-  local authors, seen = {}, {}
-  for _, did in ipairs(supplied) do
+  local supplied = query_string_values(params, "authors")
+  if not supplied then return nil end
+  return unique_query_values(supplied, function(did)
     if not valid_did(did) then invalid("each authors value must be a valid DID; resolve handles to DIDs first") end
-    if not seen[did] then
-      seen[did] = true
-      authors[#authors + 1] = did
-    end
-  end
-  return authors
+  end)
 end
 
 local function contribution_sort_key()

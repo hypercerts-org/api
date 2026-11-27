@@ -315,6 +315,49 @@ local function scalar_or_boolean(values, key)
 end
 -- luacheck: pop
 
+-- Reads a repeated query parameter (?key=a&key=b) as a list of strings, or nil when absent.
+-- A single value counts as a list of one. Rejects non-string entries, keyed or sparse
+-- tables and more than 100 values. Item rules stay with the caller so each endpoint keeps
+-- its own error messages; see unique_query_values.
+local function query_string_values(params, key)
+  local value = params[key]
+  if value == nil then return nil end
+  if type(value) == "string" then return { value } end
+  if type(value) ~= "table" then
+    invalid(key .. " must be a string or repeated string parameter")
+  end
+  local count = 0
+  for index in pairs(value) do
+    if type(index) ~= "number" or index < 1 or index % 1 ~= 0 then
+      invalid(key .. " must use repeated query values")
+    end
+    count = count + 1
+  end
+  if count ~= #value then invalid(key .. " must use repeated query values") end
+  local values = {}
+  for index = 1, count do
+    if type(value[index]) ~= "string" then invalid(key .. " entries must be strings") end
+    values[index] = value[index]
+  end
+  if #values > 100 then invalid(key .. " accepts at most 100 values") end
+  return values
+end
+
+-- Runs check(item, index) on every value in order, then returns the distinct results in
+-- first-seen order. check raises its own error for a bad item and may return a normalized
+-- replacement; returning nothing keeps the item.
+local function unique_query_values(values, check)
+  local unique, seen = {}, {}
+  for index, item in ipairs(values) do
+    local value = check and check(item, index) or item
+    if not seen[value] then
+      seen[value] = true
+      unique[#unique + 1] = value
+    end
+  end
+  return unique
+end
+
 local function parse_list_limit(params)
   local limit_value = scalar(params, "limit")
   if limit_value and not limit_value:match("^%d+$") then invalid("limit must be an integer from 1 through 100") end
@@ -379,18 +422,23 @@ local function parse_sort_direction(params)
   return direction
 end
 
+-- Appends each item to binds and returns its "$n" placeholders, in order.
+local function bind_values(binds, items)
+  local placeholders = {}
+  for _, item in ipairs(items) do
+    binds[#binds + 1] = item
+    placeholders[#placeholders + 1] = "$" .. #binds
+  end
+  return placeholders
+end
+
 -- Adds `column IN ($n, ...)` to where, binding items; an empty list matches nothing.
 local function add_in(where, binds, column, items)
   if #items == 0 then
     where[#where + 1] = "FALSE"
     return
   end
-  local marks = {}
-  for _, item in ipairs(items) do
-    binds[#binds + 1] = item
-    marks[#marks + 1] = "$" .. #binds
-  end
-  where[#where + 1] = column .. " IN (" .. table.concat(marks, ", ") .. ")"
+  where[#where + 1] = column .. " IN (" .. table.concat(bind_values(binds, items), ", ") .. ")"
 end
 
 local function parse_include_total(values)
@@ -403,33 +451,10 @@ local function parse_include_total(values)
   invalid("includeTotal must be true or false")
 end
 
-local function collection_array(key, kind)
-  local value = params[key]
-  if value == nil then return nil end
-
-  local supplied = {}
-  if type(value) == "string" then
-    supplied[1] = value
-  elseif type(value) == "table" then
-    local count = 0
-    for index in pairs(value) do
-      if type(index) ~= "number" or index < 1 or index % 1 ~= 0 then
-        invalid(key .. " must use repeated query values")
-      end
-      count = count + 1
-    end
-    if count ~= #value then invalid(key .. " must use repeated query values") end
-    for index = 1, count do
-      if type(value[index]) ~= "string" then invalid(key .. " entries must be strings") end
-      supplied[#supplied + 1] = value[index]
-    end
-  else
-    invalid(key .. " must be a string or repeated string parameter")
-  end
-  if #supplied > 100 then invalid(key .. " accepts at most 100 values") end
-
-  local unique, seen = {}, {}
-  for _, item in ipairs(supplied) do
+local function collection_filter_values(key, kind)
+  local supplied = query_string_values(params, key)
+  if not supplied then return nil end
+  return unique_query_values(supplied, function(item)
     if kind == "did" and not valid_did(item) then
       invalid("each authors value must be a valid DID; resolve handles to DIDs first")
     elseif kind == "collectionUri" then
@@ -449,12 +474,7 @@ local function collection_array(key, kind)
     elseif kind == "type" and #item > 64 then
       invalid("types entries must be at most 64 UTF-8 bytes")
     end
-    if not seen[item] then
-      seen[item] = true
-      unique[#unique + 1] = item
-    end
-  end
-  return unique
+  end)
 end
 
 local function collection_bind_values(values, items)
@@ -589,7 +609,7 @@ local function collection_list_response(search_enabled)
   if search_enabled then allowed.search = true else allowed.includeTotal = true end
   keys_only(params, allowed, "unknown query parameter: ")
 
-  local authors = collection_array("authors", "did")
+  local authors = collection_filter_values("authors", "did")
   local has_organization_record = scalar_or_boolean(params, "hasOrganizationRecord")
   if has_organization_record ~= nil then
     if has_organization_record == "true" then
@@ -600,10 +620,10 @@ local function collection_list_response(search_enabled)
       invalid("hasOrganizationRecord must be true or false")
     end
   end
-  local types = collection_array("types", "type")
-  local uris = collection_array("uris", "collectionUri")
-  local item_uris = collection_array("itemUris", "recordUri")
-  local tag_uris = collection_array("tagUris", "tagUri")
+  local types = collection_filter_values("types", "type")
+  local uris = collection_filter_values("uris", "collectionUri")
+  local item_uris = collection_filter_values("itemUris", "recordUri")
+  local tag_uris = collection_filter_values("tagUris", "tagUri")
   local search
   if search_enabled then
     search = scalar(params, "search")

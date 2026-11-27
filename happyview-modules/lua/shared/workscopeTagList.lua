@@ -1,44 +1,16 @@
-local function workscope_tag_array(key)
-  local value = params[key]
-  if value == nil then return nil end
-
-  local supplied = {}
-  if type(value) == "string" then
-    supplied[1] = value
-  elseif type(value) == "table" then
-    local count = 0
-    for index in pairs(value) do
-      if type(index) ~= "number" or index < 1 or index % 1 ~= 0 then
-        invalid(key .. " must use repeated query values")
-      end
-      count = count + 1
-    end
-    if count ~= #value then invalid(key .. " must use repeated query values") end
-    for index = 1, count do
-      if type(value[index]) ~= "string" then invalid(key .. " entries must be strings") end
-      supplied[#supplied + 1] = value[index]
-    end
-  else
-    invalid(key .. " must be a string or repeated string parameter")
-  end
-  if #supplied > 100 then invalid(key .. " accepts at most 100 values") end
-
-  local unique, seen = {}, {}
-  for _, did in ipairs(supplied) do
+local function workscope_tag_filter_values(key)
+  local supplied = query_string_values(params, key)
+  if not supplied then return nil end
+  return unique_query_values(supplied, function(did)
     if not valid_did(did) then
       invalid("each " .. key .. " value must be a valid DID; resolve handles to DIDs first")
     end
-    if not seen[did] then
-      seen[did] = true
-      unique[#unique + 1] = did
-    end
-  end
-  return unique
+  end)
 end
 
 local function workscope_tag_list()
   keys_only(params, { authors = true, sortDirection = true, limit = true, cursor = true })
-  local authors = workscope_tag_array("authors")
+  local authors = workscope_tag_filter_values("authors")
   local direction = parse_sort_direction(params)
   local limit = parse_list_limit(params)
   local cursor = decode_record_cursor(scalar(params, "cursor"), direction, WORKSCOPE_TAG)

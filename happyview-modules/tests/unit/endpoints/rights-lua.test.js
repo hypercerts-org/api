@@ -86,6 +86,7 @@ async function listRightsSources() {
   return Promise.all([
     read("lua/shared/didValidation.lua"),
     read("lua/shared/query.lua"),
+    read("lua/shared/queryArray.lua"),
     read("lua/shared/recordIdentifier.lua"),
     read("lua/shared/recordView.lua"),
     read("lua/shared/actorView.lua"),

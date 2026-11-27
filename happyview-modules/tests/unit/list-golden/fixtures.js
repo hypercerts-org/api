@@ -700,6 +700,46 @@ function defaultRowsByCall(endpoint) {
 
 export const CURSOR_FIXTURE_IDS = Object.keys(CURSORS);
 
+/**
+ * Endpoints whose cursor size is not bounded by an AT-URI: listRecentFollows echoes
+ * the caller's unbounded `before` datetime and listVocabTags echoes its author
+ * filter, so they keep their own decoders and no length cap.
+ */
+const UNBOUNDED_CURSOR_IDS = new Set([
+  "app.certified.graph.listRecentFollows",
+  "org.hypercerts.vocab.listVocabTags",
+]);
+
+/**
+ * A page whose rows carry the longest record URI the handlers accept (2048-character
+ * DID, 512-character record key), so the cursor it issues is the largest possible one
+ * for that endpoint's collection. Null for endpoints without a size bound.
+ */
+export function maximalCursorCase(endpoint) {
+  const spec = CURSORS[endpoint.id];
+  if (!spec?.collection || UNBOUNDED_CURSOR_IDS.has(endpoint.id)) return null;
+  const did = `did:plc:${"a".repeat(2040)}`;
+  const rows = Array.from({ length: PAGE_ROWS }, (_, n) => ({
+    ...pageRow(endpoint, n),
+    uri: `at://${did}/${spec.collection}/${spec.rkey ?? "k".repeat(512)}`,
+    did,
+    actor_did: did,
+    subject_did: did,
+  }));
+  const direction = endpoint.properties.sortDirection ? "desc" : undefined;
+  return {
+    collection: spec.collection,
+    direction,
+    name: "maximal-cursor",
+    params: {
+      ...baseParams(endpoint),
+      ...(direction ? { sortDirection: direction } : {}),
+      limit: PAGE_ROWS - 1,
+    },
+    rowsByCall: [direction === "asc" ? rows : rows.toReversed()],
+  };
+}
+
 /** Fixed input cases for one endpoint. Names starting `year0000:` are quarantined. */
 export function casesFor(endpoint) {
   const base = baseParams(endpoint);

@@ -1,37 +1,9 @@
 local function contribution_authors()
-  local value = params.authors
-  if value == nil then return nil end
-
-  local supplied = {}
-  if type(value) == "string" then
-    supplied[1] = value
-  elseif type(value) == "table" then
-    local count = 0
-    for index in pairs(value) do
-      if type(index) ~= "number" or index < 1 or index % 1 ~= 0 then
-        invalid("authors must use repeated query values")
-      end
-      count = count + 1
-    end
-    if count ~= #value then invalid("authors must use repeated query values") end
-    for index = 1, count do
-      if type(value[index]) ~= "string" then invalid("authors entries must be strings") end
-      supplied[#supplied + 1] = value[index]
-    end
-  else
-    invalid("authors must be a string or repeated string parameter")
-  end
-  if #supplied > 100 then invalid("authors accepts at most 100 values") end
-
-  local authors, seen = {}, {}
-  for _, did in ipairs(supplied) do
+  local supplied = query_string_values(params, "authors")
+  if not supplied then return nil end
+  return unique_query_values(supplied, function(did)
     if not valid_did(did) then invalid("each authors value must be a valid DID; resolve handles to DIDs first") end
-    if not seen[did] then
-      seen[did] = true
-      authors[#authors + 1] = did
-    end
-  end
-  return authors
+  end)
 end
 
 local function contribution_sort_key()

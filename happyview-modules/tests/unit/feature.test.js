@@ -135,6 +135,7 @@ async function runListFeatures(
     [
       "lua/shared/didValidation.lua",
       "lua/shared/query.lua",
+      "lua/shared/queryArray.lua",
       "lua/shared/recordIdentifier.lua",
       "lua/shared/datetimeValidation.lua",
       "lua/shared/listValidation.lua",

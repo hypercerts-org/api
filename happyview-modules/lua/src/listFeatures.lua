@@ -1,41 +1,14 @@
 local FEATURE_VIEW_TYPE = "org.hypercerts.entity.defs#featureView"
 
-local function feature_array(params, key, validate, description, max_bytes)
-  local value = params[key]
-  if value == nil then return nil end
-  local values = {}
-  if type(value) == "string" then
-    values[1] = value
-  elseif type(value) == "table" then
-    local count = 0
-    for index in pairs(value) do
-      if type(index) ~= "number" or index < 1 or index % 1 ~= 0 then
-        invalid(key .. " must use repeated string query parameters")
-      end
-      count = count + 1
-    end
-    if count ~= #value then invalid(key .. " must use repeated string query parameters") end
-    for index = 1, #value do
-      if type(value[index]) ~= "string" then invalid(key .. " entries must be strings") end
-      values[#values + 1] = value[index]
-    end
-  else
-    invalid(key .. " must be a string or repeated string parameter")
-  end
-  if #values > 100 then invalid(key .. " accepts at most 100 values") end
-
-  local unique, seen = {}, {}
-  for _, item in ipairs(values) do
+local function feature_filter_values(params, key, validate, description, max_bytes)
+  local supplied = query_string_values(params, key)
+  if not supplied then return nil end
+  return unique_query_values(supplied, function(item)
     if max_bytes and #item > max_bytes then
       invalid(key .. " entries must be at most " .. max_bytes .. " UTF-8 bytes")
     end
     if validate and not validate(item) then invalid("each " .. key .. " value must be " .. description) end
-    if not seen[item] then
-      seen[item] = true
-      unique[#unique + 1] = item
-    end
-  end
-  return unique
+  end)
 end
 
 local function feature_add_types(where, values, binds)
@@ -61,26 +34,6 @@ local function feature_parse_organization_filter(params)
   if value == "true" then return true end
   if value == "false" then return false end
   invalid("hasOrganizationRecord must be true or false")
-end
-
-local function feature_cursor_decode(token, direction)
-  if token == nil then return nil end
-  if type(token) ~= "string" or #token > 32768 or #token % 2 ~= 0 or token:find("[^0-9a-f]") then
-    invalid("cursor is malformed")
-  end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
-  local ok, value = pcall(json.decode, decoded)
-  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
-    or type(value.t) ~= "string" or type(value.u) ~= "string" then
-    invalid("cursor is malformed or belongs to another sortDirection")
-  end
-  for key in pairs(value) do
-    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
-  end
-  if not feature_valid_uri(value.u) or not valid_datetime(value.t) then
-    invalid("cursor is malformed")
-  end
-  return value
 end
 
 local function feature_query_rows(sql, binds)
@@ -146,14 +99,14 @@ local function list_features()
     limit = true,
     cursor = true,
   })
-  local authors = feature_array(params, "authors", valid_did, "valid DIDs")
-  local types = feature_array(params, "types", nil, nil, 64)
+  local authors = feature_filter_values(params, "authors", valid_did, "valid DIDs")
+  local types = feature_filter_values(params, "types", nil, nil, 64)
   local has_organization_record = feature_parse_organization_filter(params)
   local limit = parse_list_limit(params)
   local direction = parse_sort_direction(params)
   local cursor_value = params.cursor
   if cursor_value ~= nil and type(cursor_value) ~= "string" then invalid("cursor must occur once as a string") end
-  local cursor = feature_cursor_decode(cursor_value, direction)
+  local cursor = decode_record_cursor(cursor_value, direction, feature_valid_uri)
   local rows = feature_list_rows({
     authors = authors,
     hasOrganizationRecord = has_organization_record,

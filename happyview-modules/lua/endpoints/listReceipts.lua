@@ -36,6 +36,49 @@ local function scalar_or_boolean(values, key)
 end
 -- luacheck: pop
 
+-- Reads a repeated query parameter (?key=a&key=b) as a list of strings, or nil when absent.
+-- A single value counts as a list of one. Rejects non-string entries, keyed or sparse
+-- tables and more than 100 values. Item rules stay with the caller so each endpoint keeps
+-- its own error messages; see unique_query_values.
+local function query_string_values(params, key)
+  local value = params[key]
+  if value == nil then return nil end
+  if type(value) == "string" then return { value } end
+  if type(value) ~= "table" then
+    invalid(key .. " must be a string or repeated string parameter")
+  end
+  local count = 0
+  for index in pairs(value) do
+    if type(index) ~= "number" or index < 1 or index % 1 ~= 0 then
+      invalid(key .. " must use repeated query values")
+    end
+    count = count + 1
+  end
+  if count ~= #value then invalid(key .. " must use repeated query values") end
+  local values = {}
+  for index = 1, count do
+    if type(value[index]) ~= "string" then invalid(key .. " entries must be strings") end
+    values[index] = value[index]
+  end
+  if #values > 100 then invalid(key .. " accepts at most 100 values") end
+  return values
+end
+
+-- Runs check(item, index) on every value in order, then returns the distinct results in
+-- first-seen order. check raises its own error for a bad item and may return a normalized
+-- replacement; returning nothing keeps the item.
+local function unique_query_values(values, check)
+  local unique, seen = {}, {}
+  for index, item in ipairs(values) do
+    local value = check and check(item, index) or item
+    if not seen[value] then
+      seen[value] = true
+      unique[#unique + 1] = value
+    end
+  end
+  return unique
+end
+
 local function valid_record_key(value)
   return #value >= 1 and #value <= 512 and value ~= "." and value ~= ".."
     and not value:find("[^%w_~%.:%-]")
@@ -249,18 +292,23 @@ local function parse_sort_direction(params)
   return direction
 end
 
+-- Appends each item to binds and returns its "$n" placeholders, in order.
+local function bind_values(binds, items)
+  local placeholders = {}
+  for _, item in ipairs(items) do
+    binds[#binds + 1] = item
+    placeholders[#placeholders + 1] = "$" .. #binds
+  end
+  return placeholders
+end
+
 -- Adds `column IN ($n, ...)` to where, binding items; an empty list matches nothing.
 local function add_in(where, binds, column, items)
   if #items == 0 then
     where[#where + 1] = "FALSE"
     return
   end
-  local marks = {}
-  for _, item in ipairs(items) do
-    binds[#binds + 1] = item
-    marks[#marks + 1] = "$" .. #binds
-  end
-  where[#where + 1] = column .. " IN (" .. table.concat(marks, ", ") .. ")"
+  where[#where + 1] = column .. " IN (" .. table.concat(bind_values(binds, items), ", ") .. ")"
 end
 
 local CREATED_AT_SORT_PATTERN = "^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]([.][0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
@@ -294,32 +342,10 @@ local function valid_funding_record_uri(value)
   return true, collection
 end
 
-local function funding_receipt_array(key, format)
-  local value = params[key]
-  if value == nil then return nil end
-
-  local supplied, occurrences = {}, 0
-  if type(value) == "string" then
-    supplied[1] = value
-  elseif type(value) == "table" then
-    for index in pairs(value) do
-      if type(index) ~= "number" or index < 1 or index % 1 ~= 0 then
-        invalid(key .. " must use repeated query values")
-      end
-      occurrences = occurrences + 1
-    end
-    if occurrences ~= #value then invalid(key .. " must use repeated query values") end
-    for index = 1, occurrences do
-      if type(value[index]) ~= "string" then invalid(key .. " entries must be strings") end
-      supplied[#supplied + 1] = value[index]
-    end
-  else
-    invalid(key .. " must be a string or repeated string parameter")
-  end
-  if #supplied > 100 then invalid(key .. " accepts at most 100 values") end
-
-  local unique, seen = {}, {}
-  for _, item in ipairs(supplied) do
+local function funding_receipt_filter_values(key, format)
+  local supplied = query_string_values(params, key)
+  if not supplied then return nil end
+  return unique_query_values(supplied, function(item)
     if format == "did" and not valid_did(item) then
       invalid(key .. " entry " .. string.format("%q", item) .. " must be a valid DID")
     elseif format == "receiptUri" then
@@ -341,13 +367,7 @@ local function funding_receipt_array(key, format)
           " must be a valid DID or full record AT-URI; resolve handles to DIDs before querying")
       end
     end
-
-    if not seen[item] then
-      seen[item] = true
-      unique[#unique + 1] = item
-    end
-  end
-  return unique
+  end)
 end
 
 local function bind_funding_receipt_values(values, items)
@@ -459,12 +479,12 @@ local function funding_receipts_response()
     cursor = true,
   })
 
-  local authors = funding_receipt_array("authors", "did")
-  local uris = funding_receipt_array("uris", "receiptUri")
-  local from_values = funding_receipt_array("from", "party")
-  local to_values = funding_receipt_array("to", "party")
-  local for_uris = funding_receipt_array("forUris", "atUri")
-  local transaction_ids = funding_receipt_array("transactionIds")
+  local authors = funding_receipt_filter_values("authors", "did")
+  local uris = funding_receipt_filter_values("uris", "receiptUri")
+  local from_values = funding_receipt_filter_values("from", "party")
+  local to_values = funding_receipt_filter_values("to", "party")
+  local for_uris = funding_receipt_filter_values("forUris", "atUri")
+  local transaction_ids = funding_receipt_filter_values("transactionIds")
 
   local direction = parse_sort_direction(params)
   local limit = parse_list_limit(params)

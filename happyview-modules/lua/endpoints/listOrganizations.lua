@@ -36,6 +36,49 @@ local function scalar_or_boolean(values, key)
 end
 -- luacheck: pop
 
+-- Reads a repeated query parameter (?key=a&key=b) as a list of strings, or nil when absent.
+-- A single value counts as a list of one. Rejects non-string entries, keyed or sparse
+-- tables and more than 100 values. Item rules stay with the caller so each endpoint keeps
+-- its own error messages; see unique_query_values.
+local function query_string_values(params, key)
+  local value = params[key]
+  if value == nil then return nil end
+  if type(value) == "string" then return { value } end
+  if type(value) ~= "table" then
+    invalid(key .. " must be a string or repeated string parameter")
+  end
+  local count = 0
+  for index in pairs(value) do
+    if type(index) ~= "number" or index < 1 or index % 1 ~= 0 then
+      invalid(key .. " must use repeated query values")
+    end
+    count = count + 1
+  end
+  if count ~= #value then invalid(key .. " must use repeated query values") end
+  local values = {}
+  for index = 1, count do
+    if type(value[index]) ~= "string" then invalid(key .. " entries must be strings") end
+    values[index] = value[index]
+  end
+  if #values > 100 then invalid(key .. " accepts at most 100 values") end
+  return values
+end
+
+-- Runs check(item, index) on every value in order, then returns the distinct results in
+-- first-seen order. check raises its own error for a bad item and may return a normalized
+-- replacement; returning nothing keeps the item.
+local function unique_query_values(values, check)
+  local unique, seen = {}, {}
+  for index, item in ipairs(values) do
+    local value = check and check(item, index) or item
+    if not seen[value] then
+      seen[value] = true
+      unique[#unique + 1] = value
+    end
+  end
+  return unique
+end
+
 local function valid_record_key(value)
   return #value >= 1 and #value <= 512 and value ~= "." and value ~= ".."
     and not value:find("[^%w_~%.:%-]")
@@ -288,18 +331,23 @@ local function created_at_sort(alias)
     "::timestamptz, " .. created_at .. "::timestamptz) END"
 end
 
+-- Appends each item to binds and returns its "$n" placeholders, in order.
+local function bind_values(binds, items)
+  local placeholders = {}
+  for _, item in ipairs(items) do
+    binds[#binds + 1] = item
+    placeholders[#placeholders + 1] = "$" .. #binds
+  end
+  return placeholders
+end
+
 -- Adds `column IN ($n, ...)` to where, binding items; an empty list matches nothing.
 local function add_in(where, binds, column, items)
   if #items == 0 then
     where[#where + 1] = "FALSE"
     return
   end
-  local marks = {}
-  for _, item in ipairs(items) do
-    binds[#binds + 1] = item
-    marks[#marks + 1] = "$" .. #binds
-  end
-  where[#where + 1] = column .. " IN (" .. table.concat(marks, ", ") .. ")"
+  where[#where + 1] = column .. " IN (" .. table.concat(bind_values(binds, items), ", ") .. ")"
 end
 
 -- Hydrates page rows through the shared actor lookup, keeping this API's error
@@ -316,41 +364,15 @@ local function valid_organization_uri(value)
   return valid and collection == ORGANIZATION and value:sub(-5) == "/self"
 end
 
-local function array(params, key)
-  local value = params[key]
-  if value == nil then return nil end
-  local values, occurrences = {}, 0
-  if type(value) == "string" then
-    values[1] = value
-  elseif type(value) == "table" then
-    for index in pairs(value) do
-      if type(index) ~= "number" or index < 1 or index % 1 ~= 0 then
-        invalid(key .. " must use repeated query values")
-      end
-      occurrences = occurrences + 1
-    end
-    if occurrences ~= #value then invalid(key .. " must use repeated query values") end
-    for index = 1, occurrences do
-      if type(value[index]) ~= "string" then invalid(key .. " entries must be strings") end
-      values[#values + 1] = value[index]
-    end
-  else
-    invalid(key .. " must be a string or repeated string parameter")
-  end
-  if #values > 100 then invalid(key .. " accepts at most 100 values") end
-
-  local unique, seen = {}, {}
-  for _, item in ipairs(values) do
+local function organization_filter_values(params, key)
+  local supplied = query_string_values(params, key)
+  if not supplied then return nil end
+  return unique_query_values(supplied, function(item)
     if key == "actors" and not valid_did(item) then invalid("each actors value must be a valid DID") end
     if key == "organizationTypes" and #item > 128 then
       invalid("each organizationTypes value must be at most 128 characters")
     end
-    if not seen[item] then
-      seen[item] = true
-      unique[#unique + 1] = item
-    end
-  end
-  return unique
+  end)
 end
 
 local function add_organization_types(where, values, organization_types)
@@ -365,22 +387,6 @@ local function add_organization_types(where, values, organization_types)
     "THEN organization.record::jsonb->'organizationType' ELSE '[]'::jsonb END"
   where[#where + 1] = "EXISTS (SELECT 1 FROM jsonb_array_elements_text(" .. array_value ..
     ") AS organization_type(value) WHERE organization_type.value IN (" .. table.concat(placeholders, ", ") .. "))"
-end
-
-local function cursor_decode(token, direction)
-  if token == nil then return nil end
-  if #token % 2 ~= 0 or token:find("[^0-9a-f]") then invalid("cursor is malformed") end
-  local decoded = token:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end)
-  local ok, value = pcall(json.decode, decoded)
-  if not ok or type(value) ~= "table" or value.v ~= 1 or value.d ~= direction
-    or type(value.t) ~= "string" or type(value.u) ~= "string" then
-    invalid("cursor is malformed or belongs to another sortDirection")
-  end
-  for key in pairs(value) do
-    if key ~= "v" and key ~= "d" and key ~= "t" and key ~= "u" then invalid("cursor is malformed") end
-  end
-  if not valid_organization_uri(value.u) or not valid_datetime(value.t) then invalid("cursor is malformed") end
-  return value
 end
 
 local function query_organizations(actors, organization_types, visibility, search, limit, cursor, direction)
@@ -447,8 +453,8 @@ local function organizations_response(search_enabled)
   keys_only(params, allowed)
 
   local actors
-  if search_enabled then actors = array(params, "actors") end
-  local organization_types = array(params, "organizationTypes")
+  if search_enabled then actors = organization_filter_values(params, "actors") end
+  local organization_types = organization_filter_values(params, "organizationTypes")
   local visibility = scalar(params, "visibility")
   local search
   if search_enabled then
@@ -461,7 +467,7 @@ local function organizations_response(search_enabled)
   local limit = parse_list_limit(params)
 
   local direction = parse_sort_direction(params)
-  local cursor = cursor_decode(scalar(params, "cursor"), direction)
+  local cursor = decode_record_cursor(scalar(params, "cursor"), direction, valid_organization_uri)
   local actors_result, next_cursor = query_organizations(actors, organization_types, visibility, search, limit, cursor, direction)
   local response = { actors = toarray(actors_result) }
   if next_cursor then response.cursor = next_cursor end

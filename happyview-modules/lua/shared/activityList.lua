@@ -1,29 +1,7 @@
-local function activity_array(key, format)
-  local value = params[key]
-  if value == nil then return nil end
-  local supplied = {}
-  if type(value) == "string" then
-    supplied[1] = value
-  elseif type(value) == "table" then
-    local count = 0
-    for index in pairs(value) do
-      if type(index) ~= "number" or index < 1 or index % 1 ~= 0 then
-        invalid(key .. " must use repeated query values")
-      end
-      count = count + 1
-    end
-    if count ~= #value then invalid(key .. " must use repeated query values") end
-    for index = 1, count do
-      if type(value[index]) ~= "string" then invalid(key .. " entries must be strings") end
-      supplied[#supplied + 1] = value[index]
-    end
-  else
-    invalid(key .. " must be a string or repeated string parameter")
-  end
-  if #supplied > 100 then invalid(key .. " accepts at most 100 values") end
-
-  local unique, seen = {}, {}
-  for _, item in ipairs(supplied) do
+local function activity_filter_values(key, format)
+  local supplied = query_string_values(params, key)
+  if not supplied then return nil end
+  return unique_query_values(supplied, function(item)
     if format == "did" and not valid_did(item) then
       invalid("each " .. key .. " value must be a valid DID; resolve handles to DIDs first")
     elseif format == "activityUri" then
@@ -32,21 +10,7 @@ local function activity_array(key, format)
         invalid("each uris value must be a full org.hypercerts.claim.activity AT-URI with a DID authority")
       end
     end
-    if not seen[item] then
-      seen[item] = true
-      unique[#unique + 1] = item
-    end
-  end
-  return unique
-end
-
-local function bind_values(values, items)
-  local placeholders = {}
-  for _, item in ipairs(items) do
-    values[#values + 1] = item
-    placeholders[#placeholders + 1] = "$" .. #values
-  end
-  return placeholders
+  end)
 end
 
 local function activity_contributor_match(values, dids)
@@ -161,7 +125,7 @@ local function activity_list_response(search_enabled)
   if search_enabled then allowed.search = true else allowed.includeTotal = true end
   keys_only(params, allowed, "unknown query parameter: ")
 
-  local authors = activity_array("authors", "did")
+  local authors = activity_filter_values("authors", "did")
   local has_organization_record = scalar_or_boolean(params, "hasOrganizationRecord")
   if has_organization_record ~= nil then
     if has_organization_record == "true" then
@@ -172,9 +136,9 @@ local function activity_list_response(search_enabled)
       invalid("hasOrganizationRecord must be true or false")
     end
   end
-  local contributors = activity_array("contributors", "did")
-  local involved_actors = activity_array("involvedActors", "did")
-  local uris = activity_array("uris", "activityUri")
+  local contributors = activity_filter_values("contributors", "did")
+  local involved_actors = activity_filter_values("involvedActors", "did")
+  local uris = activity_filter_values("uris", "activityUri")
   local search
   if search_enabled then
     search = scalar(params, "search")
